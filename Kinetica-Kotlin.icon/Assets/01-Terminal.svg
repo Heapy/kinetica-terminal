@@ -1,0 +1,5 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><g transform="matrix(1.5 0 0 1.5 -170 -294)"><path id="06-Window-dot-1" fill="#ede4ff" fill-rule="evenodd" stroke="none" opacity="0.32" d="M 208 300 C 208 306.627441 213.372589 312 220 312 C 226.627411 312 232 306.627441 232 300 C 232 293.372559 226.627411 288 220 288 C 213.372589 288 208 293.372559 208 300 Z" />
+    <path id="07-Window-dot-2" fill="#ede4ff" fill-rule="evenodd" stroke="none" opacity="0.32" d="M 256 300 C 256 306.627441 261.372589 312 268 312 C 274.627411 312 280 306.627441 280 300 C 280 293.372559 274.627411 288 268 288 C 261.372589 288 256 293.372559 256 300 Z" />
+    <path id="08-Window-dot-3" fill="#ede4ff" fill-rule="evenodd" stroke="none" opacity="0.32" d="M 304 300 C 304 306.627441 309.372589 312 316 312 C 322.627411 312 328 306.627441 328 300 C 328 293.372559 322.627411 288 316 288 C 309.372589 288 304 293.372559 304 300 Z" />
+</g></svg>

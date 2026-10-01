@@ -1,0 +1,32 @@
+{
+  "repository": "https://github.com/ghostty-org/ghostty",
+  "commit": "4da7523faba68ccb4042ea20585817098a51c015",
+  "license": "MIT",
+  "adaptedSources": [
+    "src/terminal/Parser.zig",
+    "src/terminal/parse_table.zig",
+    "src/terminal/Screen.zig",
+    "src/terminal/PageList.zig",
+    "src/terminal/Terminal.zig",
+    "src/unicode/grapheme.zig",
+    "src/build/uucode_config.zig",
+    "src/terminal/color.zig",
+    "src/terminal/fraction.zig",
+    "src/terminal/osc/parsers/color.zig",
+    "src/terminal/stream_terminal.zig",
+    "src/terminal/stream.zig",
+    "src/terminal/dcs.zig",
+    "src/input/key_encode.zig",
+    "src/input/function_keys.zig",
+    "src/terminal/modes.zig"
+  ],
+  "adaptedTests": [
+    "src/terminal/Parser.zig",
+    "src/terminal/UTF8Decoder.zig"
+  ],
+  "referenceSemantics": [
+    "src/terminal/stream.zig",
+    "src/terminal/sgr.zig"
+  ],
+  "zig": "0.16.0"
+}

@@ -1,0 +1,12 @@
+build/
+**/build/
+.kotlin/
+.idea/
+.DS_Store
+node_modules/
+__pycache__/
+*.pyc
+*.log
+.env
+.env.*
+/projects/

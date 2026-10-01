@@ -1,0 +1,21 @@
+settings:
+  publishing:
+    enabled: true
+    group: io.heapy.kinetica
+    version: 0.1.0
+    publishSources: true
+    pom:
+      name: Kinetica Terminal
+      description: Shared Kotlin VT engine with browser and macOS terminal surfaces.
+      url: https://github.com/Heapy/kinetica-terminal
+      scm: https://github.com/Heapy/kinetica-terminal.git
+      developers:
+        - name: Ruslan Ibrahimau
+      licenses:
+        - name: The Apache License, Version 2.0
+          url: https://www.apache.org/licenses/LICENSE-2.0.txt
+
+repositories:
+  - id: mavenLocal
+    url: mavenLocal
+    publish: true

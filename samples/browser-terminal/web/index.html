@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kinetica Terminal</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #101114; color: #d4d4d4; }
+    body { margin: 0; height: 100vh; display: flex; flex-direction: column; }
+    header { padding: 14px 20px; border-bottom: 1px solid #333; font-size: 14px; }
+    header span { color: #999; margin-left: 16px; }
+    #app { flex: 1; min-height: 0; margin: 12px; }
+  </style>
+</head>
+<body>
+  <header>Kinetica Terminal <span>Shared Kotlin engine · local echo demo</span></header>
+  <main id="app"></main>
+  <script type="module" src="../../../build/artifacts/CompiledWebArtifact/browser-terminaljsrelease/kotlin-output/browser-terminal.mjs"></script>
+</body>
+</html>

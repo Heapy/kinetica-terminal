@@ -1,0 +1,49 @@
+{
+  "features" : [
+    "specular-location"
+  ],
+  "fill" : {
+    "automatic-gradient" : "extended-srgb:0.08627,0.05098,0.16863,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "05-Cursor.svg",
+          "name" : "05-Cursor"
+        },
+        {
+          "image-name" : "04-Glyph.svg",
+          "name" : "04-Glyph"
+        },
+        {
+          "image-name" : "03-Motion-near.svg",
+          "name" : "03-Motion-near"
+        },
+        {
+          "image-name" : "02-Motion-far.svg",
+          "name" : "02-Motion-far"
+        },
+        {
+          "image-name" : "01-Terminal.svg",
+          "name" : "01-Window-controls"
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.2
+      },
+      "specular" : "inside",
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.15
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

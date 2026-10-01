@@ -1,0 +1,3 @@
+package = io.heapy.kinetica.terminal.pty
+headers = terminalpty.h
+headerFilter = terminalpty.h

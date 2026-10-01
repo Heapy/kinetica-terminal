@@ -1,0 +1,15 @@
+product:
+  type: macos/app
+  platforms: [macosArm64]
+
+apply:
+  - //common.module-template.yaml
+
+settings:
+  native:
+    entryPoint: app.native.terminal.main
+
+dependencies:
+  - //kinetica-terminal
+
+description: "Native AppKit terminal backed by a local macOS shell PTY."

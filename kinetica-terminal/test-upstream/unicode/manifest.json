@@ -1,0 +1,19 @@
+{
+  "repository": "https://github.com/jacobsandlund/uucode",
+  "commit": "9d55524551411b493cca41ca06363625d90aff1e",
+  "unicodeVersion": "18.0.0",
+  "source": "Pinned UCD snapshot distributed with the Ghostty uucode dependency; identified by exact file hashes, not the host Unicode version.",
+  "files": {
+    "ucd/UnicodeData.txt": "0736451de439ae7baf1425136617da495e09ee5afbe6e394374db7009ea08950",
+    "ucd/DerivedCoreProperties.txt": "09c928886a178fcafd93c29e4bd59073a058e5a100b716d425cb563ab50f68c9",
+    "ucd/auxiliary/GraphemeBreakProperty.txt": "0839dcb79e4ac639ecd538b1abf7c9d22e3f9dd265b7e182d33627aa4d75b45a",
+    "ucd/auxiliary/GraphemeBreakTest.txt": "b0cf047ee94485bbdc846de2b902f5f8a815f6b674f9d04223cddadd91c9df31",
+    "ucd/extracted/DerivedEastAsianWidth.txt": "f4c7bc4537a71e12452f6347ecbbc71c31cba21b5190c92be1ae296b0ef32b09",
+    "ucd/emoji/emoji-data.txt": "80d00f8e616a0ef27fd6b8de3b758c06383b5d917e2977709578e68baf733bf1",
+    "ucd/emoji/emoji-variation-sequences.txt": "ff1707564aa1f1b2fcf4ec92d609d4cb26940bc0d4dcf07f5328ad6879e84da3"
+  },
+  "adaptedSources": [
+    "src/grapheme.zig",
+    "src/components.zig"
+  ]
+}

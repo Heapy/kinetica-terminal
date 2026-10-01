@@ -1,0 +1,8 @@
+{
+  "source": "https://github.com/ghostty-org/ghostty/blob/4da7523faba68ccb4042ea20585817098a51c015/src/terminal/res/rgb.txt",
+  "sha256": "f8e3a7bea17acc0b91e6285c5d32001db27d84c4461c655afdbce9dbeb4fb6f0",
+  "upstream": "https://gitlab.freedesktop.org/xorg/app/rgb",
+  "licenseSource": "https://raw.githubusercontent.com/freedesktop-unofficial-mirror/xorg__app__rgb/master/COPYING",
+  "licenseSha256": "1d08eb3384f5dedc7735bcfae1aa58cb64643ca9389edce3312b1c3cefbfdaa7",
+  "generator": "scripts/generate-terminal-x11-colors.py"
+}

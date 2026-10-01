@@ -1,0 +1,9 @@
+product: js/app
+
+apply:
+  - //common.module-template.yaml
+
+dependencies:
+  - //kinetica-terminal
+
+description: "WebGL2/Canvas terminal demo using the shared Kotlin VT engine."

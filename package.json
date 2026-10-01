@@ -1,0 +1,8 @@
+{
+  "name": "kinetica-terminal-checks",
+  "private": true,
+  "description": "Browser integration tools for Kinetica Terminal",
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

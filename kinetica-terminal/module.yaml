@@ -1,0 +1,15 @@
+product:
+  type: kmp/lib
+  platforms: [jvm, js, macosArm64]
+
+apply:
+  - //common.module-template.yaml
+  - //publish.module-template.yaml
+
+dependencies@js:
+  - org.jetbrains.kotlin:kotlin-dom-api-compat:2.4.10: exported
+
+test-dependencies:
+  - org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0
+
+description: "Shared streaming VT terminal engine with WebGL2 and Metal glyph-atlas renderers."

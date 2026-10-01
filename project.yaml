@@ -1,0 +1,4 @@
+modules:
+  - ./kinetica-terminal
+  - ./samples/browser-terminal
+  - ./samples/native-terminal
