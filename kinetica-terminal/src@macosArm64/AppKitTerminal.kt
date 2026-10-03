@@ -365,7 +365,7 @@ public class AppKitTerminalView(
         if (dy != 0) {
             val button = if (dy > 0) 64 else 65
             if (mouse(event, x, y, button)) repeat((kotlin.math.abs(dy) - 1).coerceAtMost(63)) { mouse(event, x, y, button) }
-            else viewport.scroll(dy)
+            else if (!session.sendAlternateScroll(dy, shift = event.modifierFlags and NSEventModifierFlagShift != 0uL)) viewport.scroll(dy)
         }
         if (dx != 0) repeat(kotlin.math.abs(dx).coerceAtMost(64)) { mouse(event, x, y, if (dx > 0) 66 else 67) }
     }

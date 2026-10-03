@@ -4,6 +4,9 @@ package io.heapy.kinetica.terminal
 
 import kotlinx.cinterop.*
 import platform.Foundation.*
+import platform.AppKit.*
+import platform.CoreGraphics.*
+import platform.CoreFoundation.CFRelease
 import platform.posix.*
 import kotlin.test.*
 import kotlin.time.TimeSource
@@ -78,6 +81,31 @@ class MacOsTuiTest {
             try { assertTrue(closed, "TUI shell was not reaped") }
             finally { NSFileManager.defaultManager.removeItemAtPath(directory, null) }
         }
+    }
+
+    @Test fun nanoScrollsBothDirectionsWithTheMouseWheelWithoutEditingTheFile() {
+        NSApplication.sharedApplication()
+        val shell = Shell()
+        val view = AppKitTerminalView(shell.session, rendering = TerminalRendering.SOFTWARE)
+        fun wheel(lines: Int) {
+            val event = checkNotNull(CGEventCreateScrollWheelEvent2(null, kCGScrollEventUnitLine, 1u, lines, 0, 0))
+            try { view.scrollWheel(checkNotNull(NSEvent.eventWithCGEvent(event))) } finally { CFRelease(event) }
+        }
+        try {
+            val initial = (1..120).joinToString("\n", postfix = "\n") { "ROW ${it.toString().padStart(3, '0')}" }
+            shell.file("nano-scroll.txt", initial)
+            // macOS /usr/bin/nano is Pico; exercise the command users actually launch.
+            shell.send("/usr/bin/nano nano-scroll.txt\r")
+            shell.await("nano ready") { shell.session.alternateScreen && shell.screen().contains("ROW 001") }
+            assertEquals(0, shell.session.mouseTracking)
+            wheel(-20)
+            shell.await("wheel scrolls nano down") { shell.screen().contains("ROW 061") && !shell.screen().contains("ROW 001") }
+            wheel(20)
+            shell.await("wheel scrolls nano up") { shell.screen().contains("ROW 001") }
+            shell.key("x", control = true)
+            shell.await("nano exits without a save prompt") { shell.prompt() }
+            assertEquals(initial, shell.file("nano-scroll.txt"))
+        } finally { view.dispose(); shell.close() }
     }
 
     @Test fun zshEditsUnicodeCommandsAndRestoresPromptAfterInterruptAndResize() {

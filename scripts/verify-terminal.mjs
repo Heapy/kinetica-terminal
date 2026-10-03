@@ -259,7 +259,33 @@ try {
   await page.locator("[data-terminal]").dispatchEvent("pointercancel", { pointerId: 1 });
   await page.mouse.up();
   assert.equal(Buffer.from(await readMouse()).toString(), "\x1b[<0;2;2M\x1b[<0;2;2m");
+  // Full-screen editors such as nano often do not enable mouse reporting. Wheel
+  // input then uses cursor keys, with mode 1007 and Shift retaining local control.
+  const wheel = (deltaY, shiftKey = false, deltaX = 0) => page.locator("[data-terminal]").evaluate((element, options) => {
+    const rect = element.getBoundingClientRect();
+    element.dispatchEvent(new WheelEvent("wheel", {
+      ...options, clientX: rect.left + 1, clientY: rect.top + 1, bubbles: true, cancelable: true,
+    }));
+  }, { deltaY, shiftKey, deltaX });
+  await resetMouse("\x1b[?1049h");
+  await wheel(-1); await wheel(1); await wheel(0, false, 1); await wheel(0);
+  assert.equal(Buffer.from(await readMouse()).toString(), "\x1b[A".repeat(3) + "\x1b[B".repeat(3));
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?1h"));
+  await wheel(-1); await wheel(1);
+  assert.equal(Buffer.from(await readMouse()).toString(), "\x1bOA".repeat(3) + "\x1bOB".repeat(3));
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?1007l"));
+  await wheel(-1); await wheel(1);
+  assert.deepEqual(await readMouse(), []);
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?1007h"));
+  await wheel(-1, true); await wheel(1, true);
+  assert.deepEqual(await readMouse(), []);
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?1000;1006h"));
+  await wheel(-1); await wheel(1);
+  assert.equal(Buffer.from(await readMouse()).toString(), "\x1b[<64;1;1M\x1b[<65;1;1M");
+  await resetMouse("");
+  await wheel(-1); await wheel(1);
+  assert.deepEqual(await readMouse(), []);
   await page.evaluate(() => kineticaTerminalDemo.dispose());
   assert.deepEqual(errors, []);
-  console.log("Browser terminal: WebGL/Canvas atomic frames, hold timeout, cursor shapes/blink, dynamic palette, glyph cache, context recovery, font resize, keypad/IME input, binary mouse reports, pointer capture/chords, history, and disposal passed");
+  console.log("Browser terminal: WebGL/Canvas atomic frames, hold timeout, cursor shapes/blink, dynamic palette, glyph cache, context recovery, font resize, keypad/IME input, binary mouse reports, alternate-screen wheel scrolling, pointer capture/chords, history, and disposal passed");
 } finally { await browser.close(); }

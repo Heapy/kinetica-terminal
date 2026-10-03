@@ -161,7 +161,10 @@ public class BrowserTerminalView(
             if (dy != 0.0 || dx != 0.0) {
                 event.preventDefault(); event.stopPropagation()
                 val (x, y) = coordinates(event)
-                if (dy != 0.0 && !mouse(event, x, y, if (dy < 0) 64 else 65)) viewport.scroll(if (dy < 0) 3 else -3)
+                if (dy != 0.0 && !mouse(event, x, y, if (dy < 0) 64 else 65)) {
+                    val lines = if (dy < 0) 3 else -3
+                    if (!session.sendAlternateScroll(lines, shift = event.shiftKey == true)) viewport.scroll(lines)
+                }
                 if (dx != 0.0) mouse(event, x, y, if (dx < 0) 66 else 67)
             }
         }

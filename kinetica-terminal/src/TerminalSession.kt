@@ -54,6 +54,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         private set
     public var sgrMouse: Boolean = false
         private set
+    /** Mode 1007: translate wheel scrolling to cursor keys on the alternate screen. */
+    public var alternateScroll: Boolean = true
+        private set
     internal var mouseEpoch: Int = 0
         private set
     public var newlineMode: Boolean = false
@@ -393,7 +396,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         protectedCell = false; protectionMode = 0; primaryProtectionMode = 0; alternateProtectionMode = 0
         origin = false; wrap = true; pendingWrap = false; insertMode = false; graphics = false; g1Graphics = false; useG1 = false
         applicationCursor = false; bracketedPaste = false; focusReporting = false
-        applicationKeypad = false; keypadNumericOverride = true
+        applicationKeypad = false; keypadNumericOverride = true; alternateScroll = true
         mouseTracking = 0; sgrMouse = false; mouseEpoch++; newlineMode = false; graphemeClustering = defaultGraphemeClustering
         parser.reset(); utfNeeded = 0; highSurrogate = null; title = ""
         saved = SavedCursor(); primaryCursor = SavedCursor(); alternateCursor = SavedCursor()
@@ -801,6 +804,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             1000, 1002, 1003 -> { mouseTracking = if (enabled) number else 0; mouseEpoch++ }
             1004 -> focusReporting = enabled
             1006 -> { sgrMouse = enabled; mouseEpoch++ }
+            1007 -> alternateScroll = enabled
             2004 -> bracketedPaste = enabled
             2026 -> setSynchronizedOutput(enabled)
             2027 -> graphemeClustering = enabled
@@ -851,6 +855,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             1000, 1002, 1003 -> mouseTracking == number
             1004 -> focusReporting
             1006 -> sgrMouse
+            1007 -> alternateScroll
             2004 -> bracketedPaste
             2026 -> synchronizedOutput
             2027 -> graphemeClustering
