@@ -291,8 +291,8 @@ Shift+PageUp/PageDown, and accessibility text are available.
 - Session IDs label platform surfaces for diagnostics. Dispose a view before removing it;
   the session and transport remain application-owned. Observers and timers return
   `TerminalDisposable`, with no dependency on a UI framework.
-- Kinetica host DSL adapters are maintained in the separate `Heapy/kinetica` repository,
-  module `kinetica-terminal-integration`.
+- Kinetica host DSL adapters live in `../kinetica-terminal-ui`. The app shell comes from
+  the external Kinetica framework; the engine and standalone views remain independent.
 
 ## Compatibility scope
 

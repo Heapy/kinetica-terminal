@@ -23,8 +23,9 @@ jobs:
         with:
           node-version: '22'
       - name: JVM engine tests
-        run: ./kotlin test -m kinetica-terminal -p jvm
-      - name: Build browser and JavaScript tests
-        run: ./kotlin build -m kinetica-terminal -m browser-terminal -p js -v release
+        run: bash scripts/engine.sh test -m kinetica-terminal -p jvm
+      # App integration uses the unpublished Kinetica application-shell API; see README bootstrap.
+      - name: Build JavaScript engine tests
+        run: bash scripts/engine.sh build -m kinetica-terminal -p js -v release
       - name: JavaScript engine tests
-        run: node build/artifacts/CompiledWebArtifact/kinetica-terminaljsTestrelease/kotlin-output/kinetica-terminal_test.mjs
+        run: node build/engine-project/build/artifacts/CompiledWebArtifact/kinetica-terminaljsTestrelease/kotlin-output/kinetica-terminal_test.mjs

@@ -1,0 +1,19 @@
+product:
+  type: kmp/lib
+  platforms: [jvm, js, macosArm64]
+
+apply:
+  - //common.module-template.yaml
+  - //kinetica-ui.module-template.yaml
+
+dependencies:
+  - //kinetica-terminal: exported
+  - io.heapy.kinetica:kinetica-runtime:0.4.0: exported
+
+dependencies@js:
+  - io.heapy.kinetica:kinetica-browser:0.4.0: exported
+
+dependencies@macosArm64:
+  - io.heapy.kinetica:kinetica-appkit:0.4.0: exported
+
+description: "Kinetica components that embed the independent terminal surfaces."

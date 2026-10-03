@@ -4,7 +4,10 @@
 - Common VT state, parsing and rendering geometry live in `kinetica-terminal/src`.
   Keep browser/AppKit dependencies confined to platform source sets.
 - The standalone engine and views must not depend on the Kinetica UI framework.
-  Kinetica DSL adapters live in the separate Heapy/kinetica repository.
+  Kinetica DSL adapters live in `kinetica-terminal-ui`; application windows, menus,
+  tabs and command routing use the external Kinetica framework.
+- Bootstrap unpublished development framework APIs with `scripts/bootstrap-kinetica.sh`.
+  Never add a dependency on the UI framework to the terminal engine.
 - Preserve pinned upstream revisions, fixtures, license notices and generated-data provenance.
   Regenerate data using `scripts/`; do not hand-edit generated tables.
 - Native changes need relevant macOS tests; shared engine changes need JVM and JS checks.
