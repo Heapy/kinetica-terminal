@@ -2,14 +2,20 @@
 
 A shared Kotlin terminal engine with a native macOS app and browser surfaces.
 The browser renders through WebGL2 (Canvas 2D fallback); macOS uses Metal with
-AppKit input, windows and controls. The JVM target provides the headless VT engine.
+AppKit input. Kinetica owns the macOS app shell, menus, tabs, settings and search UI. The JVM target provides the headless VT engine.
 
 ## Run
 
 Use the included Kotlin Toolchain 0.12.2 wrapper (Kotlin 2.4.10). It provisions
 the compiler and dependencies. Native builds require Apple Silicon, macOS and Xcode.
 
+The apps currently consume the **development** Kinetica 0.4.0 artifacts from Maven local,
+including the new `kinetica-application` API. These APIs are not yet available as a
+published framework release. Bootstrap a checkout containing that API once, and repeat
+after changing framework sources. The engine itself needs no framework artifacts; `scripts/engine.sh` selects an isolated engine-only build graph.
+
 ```sh
+bash scripts/bootstrap-kinetica.sh /path/to/kinetica
 ./kotlin run -m native-terminal
 bash scripts/package-native-terminal.sh
 open 'build/apps/Kinetica Terminal.app'
@@ -30,13 +36,13 @@ to a server-side PTY; the library does not start a public shell server.
 ## Develop and verify
 
 ```sh
-./kotlin test -m kinetica-terminal -p jvm
+bash scripts/engine.sh test -m kinetica-terminal -p jvm
 ./kotlin build -m kinetica-terminal -m browser-terminal -p js -v release
 node build/artifacts/CompiledWebArtifact/kinetica-terminaljsTestrelease/kotlin-output/kinetica-terminal_test.mjs
 
 # macOS: live TUI tests also require tmux and Neovim.
 # KINETICA_TMUX / KINETICA_NVIM can select their executable paths.
-./kotlin test -m kinetica-terminal -p macosArm64
+bash scripts/engine.sh test -m kinetica-terminal -p macosArm64
 ./kotlin test -m native-terminal -p macosArm64
 ```
 
@@ -48,6 +54,7 @@ are documented in the [module guide](kinetica-terminal/README.md#run-and-verify)
 ## Layout and embedding
 
 - `kinetica-terminal/`: shared VT engine, renderers, native PTY, tests and pinned upstream fixtures.
+- `kinetica-terminal-ui/`: Kinetica host adapters; depends on the engine and external framework artifacts.
 - `samples/native-terminal/`: macOS application with tabs, search, settings and scrollback.
 - `samples/browser-terminal/`: browser demo and browser-test harness.
 - `scripts/`: app packaging, fixture generation, renderer checks and benchmarks.
@@ -58,11 +65,25 @@ compiler plugin. Use `BrowserTerminalView` or `AppKitTerminalView` directly;
 `AppKitTerminalPane` adds search and the automatic scrollbar. API examples and VT
 limits are in the [module guide](kinetica-terminal/README.md).
 
-Kinetica DSL integration lives in
-[`Heapy/kinetica`](https://github.com/Heapy/kinetica), module
-`kinetica-terminal-integration`. For local development, publish this library with
-`./kotlin publish -m kinetica-terminal mavenLocal` before building those adapters.
-Version 0.1.0 is a local development coordinate, not a published Maven Central release.
+The native app uses Kinetica's `AppKitApplication` for window/tab ownership, menus,
+shortcuts, focus, geometry restoration and asynchronous shutdown. Settings and search are
+Kinetica components; the embedded surface owns terminal drawing, input and scrollback.
+Closing a tab disposes its component renderer and waits for that session's PTY to close.
+Cmd+Q also waits for tabs already shutting down. The browser demo mounts its surface
+through `BrowserKineticaApp`, with the same retained-host contract.
+
+The shared engine CI uses `scripts/engine.sh` and remains independent of unpublished framework artifacts. To verify
+apps against a development checkout, bootstrap it above, then run:
+
+```sh
+./kotlin test -m kinetica-terminal-ui -m native-terminal -p macosArm64
+./kotlin build -m browser-terminal -p js -v release
+# With the local HTTP server running:
+node scripts/verify-terminal.mjs
+```
+
+Version 0.1.0 of the terminal and the new 0.4.0 framework API are local development
+coordinates. This migration does not publish them to Maven Central.
 
 ## Origin and licenses
 

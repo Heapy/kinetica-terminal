@@ -1,6 +1,8 @@
 package app.browser.terminal
 
 import io.heapy.kinetica.terminal.*
+import io.heapy.kinetica.Semantics
+import io.heapy.kinetica.browser.BrowserKineticaApp
 import kotlinx.browser.document
 
 fun main() {
@@ -28,10 +30,10 @@ fun main() {
     }
     var fontSize = 14.0
     var fontFamily: String? = null
-    val surface = BrowserTerminalView(session, "demo", rendering, renderObserver)
-    surface.view.setAttribute("data-testid", "terminal")
-    surface.view.setAttribute("aria-label", "Kinetica terminal")
-    checkNotNull(document.querySelector("#app")).appendChild(surface.view)
+    val app = BrowserKineticaApp(checkNotNull(document.querySelector("#app")),
+        hostWidgets = browserTerminalHosts(mapOf("demo" to session), rendering, renderObserver),
+    ) { terminal("demo", fontSize = fontSize, fontFamily = fontFamily,
+        semantics = Semantics(label = "Kinetica terminal", testTag = "terminal", focusable = true)) }.also { it.render() }
     session.write("\u001b[1;36mKinetica — shared Kotlin terminal\u001b[0m\r\n")
     session.write("WebGL2 / Metal surfaces · shared glyph atlas · common VT engine\r\n\r\n")
     for (i in 0..15) session.write("\u001b[48;5;${i}m  ")
@@ -102,8 +104,8 @@ fun main() {
     api.alternateScreen = { session.alternateScreen }
     api.cursorRow = { session.cursorRow }; api.cursorColumn = { session.cursorColumn }
     api.mouseTracking = { session.mouseTracking }
-    api.rerender = { surface.configureFont(fontFamily, fontSize) }; api.dispose = { connection?.dispose(); input.dispose(); surface.dispose(); surface.view.parentNode?.removeChild(surface.view) }
-    api.fontSize = { value: Double -> fontSize = value; surface.configureFont(fontFamily, fontSize) }
-    api.fontFamily = { value: String? -> fontFamily = value; surface.configureFont(fontFamily, fontSize) }
+    api.rerender = { app.render() }; api.dispose = { connection?.dispose(); input.dispose(); app.dispose() }
+    api.fontSize = { value: Double -> fontSize = value; app.render() }
+    api.fontFamily = { value: String? -> fontFamily = value; app.render() }
     js("globalThis").kineticaTerminalDemo = api
 }

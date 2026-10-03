@@ -2,8 +2,9 @@ product: js/app
 
 apply:
   - //common.module-template.yaml
+  - //kinetica-ui.module-template.yaml
 
 dependencies:
-  - //kinetica-terminal
+  - //kinetica-terminal-ui
 
 description: "WebGL2/Canvas terminal demo using the shared Kotlin VT engine."
