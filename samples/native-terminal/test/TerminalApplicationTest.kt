@@ -15,6 +15,7 @@ class TerminalApplicationTest {
         val application = NSApplication.sharedApplication()
         application.setActivationPolicy(NSApplicationActivationPolicy.NSApplicationActivationPolicyRegular)
         application.finishLaunching()
+        application.activateIgnoringOtherApps(true)
         NSWindow.setAllowsAutomaticWindowTabbing(false)
         val owner = TerminalApplication(application, settings = TerminalSettingsStore(null))
         val windows = mutableListOf<NSWindow>()
@@ -25,7 +26,7 @@ class TerminalApplicationTest {
                     ?.let { application.sendEvent(it) }
                 application.updateWindows()
             }
-            assertTrue(condition(), "Shell exit did not close its window/tab")
+            assertTrue(condition(), "Shell lifecycle timed out: windows=${owner.terminals.map { it.handle.id to it.window.visible }}, closing=${owner.shell.closingWindowCount}")
         }
         fun text(terminal: TerminalWindow) = (0 until terminal.session.rows).joinToString("\n") { terminal.session.screenLine(it).text() }
         fun pid(terminal: TerminalWindow): Int {
@@ -36,10 +37,13 @@ class TerminalApplicationTest {
         }
         fun gone(pid: Int) = kill(pid, 0) != 0 && errno == ESRCH
         try {
-            owner.newWindow(null)
+            owner.open()
             val first = owner.terminals.single(); windows += first.window
             val firstPid = pid(first)
-            owner.newTab(null)
+            application.activateIgnoringOtherApps(true)
+            first.window.makeKeyAndOrderFront(null)
+            await { application.keyWindow == first.window }
+            owner.open(tabbed = true)
             val second = owner.terminals.last(); windows += second.window
             val secondPid = pid(second)
             assertEquals(2, first.window.tabGroup?.windows?.size)
@@ -49,7 +53,7 @@ class TerminalApplicationTest {
             assertFalse(gone(secondPid))
             assertTrue(second.window.visible)
 
-            owner.newWindow(null)
+            owner.open()
             val failed = owner.terminals.last(); windows += failed.window
             val failedPid = pid(failed)
             failed.session.sendInput("exit 7\r")
@@ -62,8 +66,8 @@ class TerminalApplicationTest {
             second.session.sendInput("\u0004")
             await { owner.terminals.isEmpty() && !second.window.visible }
             assertTrue(gone(secondPid))
-            assertTrue(owner.applicationShouldTerminateAfterLastWindowClosed(application))
-        } finally { owner.dispose(); windows.forEach { it.close() } }
+            assertTrue(owner.shell.applicationShouldTerminateAfterLastWindowClosed(application))
+        } finally { owner.dispose(); await { owner.shell.closingWindowCount == 0 }; windows.forEach { it.close() } }
     }
 
     @Test fun menuShortcutsCreateIndependentTabsAndCloseTheirShellProcesses() {
@@ -78,11 +82,21 @@ class TerminalApplicationTest {
         lateinit var owner: TerminalApplication
         owner = TerminalApplication(application, quit = {
             quit = true
-            assertEquals(NSTerminateLater, owner.applicationShouldTerminate(application))
+            assertEquals(NSTerminateLater, owner.shell.applicationShouldTerminate(application))
         }, completeTermination = { terminated = true }, settings = TerminalSettingsStore(null))
         application.mainMenu = owner.menu
         val windows = mutableListOf<NSWindow>()
         fun shortcut(char: String, shift: Boolean = false) {
+            val target = application.keyWindow ?: application.mainWindow
+            application.activateIgnoringOtherApps(true)
+            target?.makeKeyAndOrderFront(null)
+            if (target != null) {
+                val focusDeadline = TimeSource.Monotonic.markNow()
+                while (application.keyWindow != target && focusDeadline.elapsedNow().inWholeSeconds < 5) {
+                    application.nextEventMatchingMask(NSEventMaskAny, NSDate.dateWithTimeIntervalSinceNow(0.01), NSDefaultRunLoopMode, true)?.let(application::sendEvent)
+                }
+                assertEquals(target, application.keyWindow, "Synthetic shortcut requires its application window to be key")
+            }
             val flags = NSEventModifierFlagCommand or if (shift) NSEventModifierFlagShift else 0uL
             val characters = if (shift) when (char) { "[" -> "{"; "]" -> "}"; else -> char.uppercase() } else char
             val event = requireNotNull(NSEvent.keyEventWithType(NSEventTypeKeyDown, NSMakePoint(0.0, 0.0),
@@ -109,6 +123,9 @@ class TerminalApplicationTest {
             assertEquals(1, owner.terminals.size)
             val first = owner.terminals.single(); windows.add(first.window)
             val firstPid = pid(first)
+            application.activateIgnoringOtherApps(true)
+            first.window.makeKeyAndOrderFront(null)
+            await { application.keyWindow == first.window }
             shortcut("t")
             assertEquals(2, owner.terminals.size)
             val second = owner.terminals.last(); windows.add(second.window)
@@ -133,7 +150,7 @@ class TerminalApplicationTest {
             await { terminated }
             assertTrue(gone(firstPid))
         } finally {
-            owner.dispose(); windows.forEach { it.close() }
+            owner.dispose(); await { owner.shell.closingWindowCount == 0 }; windows.forEach { it.close() }
             application.mainMenu = previousMenu
         }
     }

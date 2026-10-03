@@ -4,12 +4,13 @@ product:
 
 apply:
   - //common.module-template.yaml
+  - //kinetica-ui.module-template.yaml
 
 settings:
   native:
     entryPoint: app.native.terminal.main
 
 dependencies:
-  - //kinetica-terminal
+  - //kinetica-terminal-ui
 
 description: "Native AppKit terminal backed by a local macOS shell PTY."

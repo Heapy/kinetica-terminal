@@ -1,227 +1,122 @@
-@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 
 package app.native.terminal
 
+import io.heapy.kinetica.appkit.*
+import io.heapy.kinetica.application.*
 import io.heapy.kinetica.terminal.*
-import kotlinx.cinterop.ObjCAction
-import kotlinx.cinterop.useContents
-import platform.AppKit.*
-import platform.Foundation.*
-import platform.darwin.NSObject
-import platform.darwin.dispatch_async
-import platform.darwin.dispatch_get_main_queue
+import platform.AppKit.NSApplication
+import platform.Foundation.NSHomeDirectory
 
-/** Each native window/tab owns its view, session and child process for exactly its lifetime. */
+/** Domain policy. Kinetica owns windows, tabs, focus, menus and asynchronous shutdown. */
 internal class TerminalApplication(
-    private val application: NSApplication,
-    private val quit: () -> Unit = { application.terminate(null) },
-    private val completeTermination: () -> Unit = { application.replyToApplicationShouldTerminate(true) },
+    application: NSApplication,
+    quit: () -> Unit = { application.terminate(null) },
+    completeTermination: () -> Unit = { application.replyToApplicationShouldTerminate(true) },
     internal val settings: TerminalSettingsStore = TerminalSettingsStore(),
-) : NSObject(), NSApplicationDelegateProtocol {
+) {
+    val shell = AppKitApplication("Kinetica Terminal", nativeApplication = application,
+        requestNativeTermination = quit, replyToTermination = { if (it) completeTermination() })
     internal val terminals = mutableListOf<TerminalWindow>()
-    internal val menu = NSMenu()
-    private var disposed = false
+    internal val menu get() = shell.menu
     private var sequence = 0
-    private var terminating = false
-    private val closing = mutableSetOf<TerminalWindow>()
-    private var settingsWindow: TerminalSettingsWindow? = null
-    private val active: TerminalWindow? get() = terminals.firstOrNull { it.window == application.keyWindow }
-        ?: terminals.firstOrNull { it.window == application.mainWindow } ?: terminals.lastOrNull()
+    private var settingsWindow: AppKitWindow? = null
+    private val active: TerminalWindow? get() = terminals.firstOrNull { it.handle == shell.activeWindow }
 
     init {
-        fun submenu(title: String): NSMenu {
-            val child = NSMenu(title)
-            menu.addItem(NSMenuItem().also { it.title = title; it.submenu = child })
-            return child
+        fun global(id: String, title: String, key: String, action: () -> Unit) {
+            shell.commands.register(ApplicationCommand(id, title, listOf(KeyShortcut(key))) { action() })
         }
-        fun NSMenu.command(title: String, selector: String, key: String, shift: Boolean = false) {
-            // AppKit matches charactersIgnoringModifiers, which still includes Shift.
-            val equivalent = if (shift) when (key) { "[" -> "{"; "]" -> "}"; else -> key.uppercase() } else key
-            addItem(NSMenuItem(title, NSSelectorFromString(selector), equivalent).also {
-                it.target = this@TerminalApplication
-                it.keyEquivalentModifierMask = NSEventModifierFlagCommand or if (shift) NSEventModifierFlagShift else 0uL
-            })
+        fun terminal(id: String, title: String, shortcuts: List<KeyShortcut>,
+            enabled: (TerminalWindow) -> Boolean = { true }, action: (TerminalWindow) -> Unit) {
+            shell.commands.register(ApplicationCommand(id, title, shortcuts, windowRequired = true,
+                state = { context -> CommandState(enabled = terminals.firstOrNull { it.handle.id == context.windowId }?.let(enabled) == true) },
+                action = { context -> terminals.firstOrNull { it.handle.id == context.windowId }?.let(action) }))
         }
-        submenu("Kinetica Terminal").apply {
-            command("Settings…", "showSettings:", ",")
-            addItem(NSMenuItem.separatorItem())
-            command("Quit Kinetica Terminal", "quitApplication:", "q")
-        }
-        submenu("Shell").apply {
-            command("New Window", "newWindow:", "n")
-            command("New Tab", "newTab:", "t")
-            addItem(NSMenuItem.separatorItem())
-            command("Close Tab", "closeTab:", "w")
-        }
-        submenu("Window").apply {
-            command("Next Tab", "nextTab:", "]", shift = true)
-            command("Previous Tab", "previousTab:", "[", shift = true)
-            addItem(NSMenuItem.separatorItem())
-            for (number in 1..9) {
-                command("Select Tab $number", "selectTab:", number.toString())
-                itemAtIndex(numberOfItems - 1)!!.setTag(number.toLong())
-            }
-        }
-        submenu("Edit").apply {
-            for ((title, selector, key) in listOf(Triple("Copy", "copy:", "c"), Triple("Paste", "paste:", "v"), Triple("Select All", "selectAll:", "a"))) {
-                addItem(NSMenuItem(title, NSSelectorFromString(selector), key).apply { target = null })
-            }
-            addItem(NSMenuItem.separatorItem())
-            command("Find…", "showFind:", "f")
-            command("Find Next", "findNext:", "g")
-            command("Find Previous", "findPrevious:", "g", shift = true)
-            addItem(NSMenuItem.separatorItem())
-            command("Clear Screen", "clearScreen:", "k")
-            command("Clear Scrollback", "clearHistory:", "k", shift = true)
-        }
-        submenu("View").apply {
-            command("Increase Text Size", "zoomIn:", "+")
-            command("Increase Text Size", "zoomIn:", "=")
-            itemAtIndex(numberOfItems - 1)!!.hidden = true // Cmd+= is the unshifted + key.
-            itemAtIndex(numberOfItems - 1)!!.allowsKeyEquivalentWhenHidden = true
-            command("Decrease Text Size", "zoomOut:", "-")
-            command("Reset Text Size", "zoomReset:", "0")
-        }
+        fun key(value: String, shift: Boolean = false) = KeyShortcut(value,
+            if (shift) setOf(KeyModifier.PRIMARY, KeyModifier.SHIFT) else setOf(KeyModifier.PRIMARY))
+        global("app.quit", "Quit Kinetica Terminal", "q", shell::requestQuit)
+        global("app.settings", "Settings…", ",", ::showSettings)
+        global("window.new", "New Window", "n") { open() }
+        global("window.tab", "New Tab", "t") { open(tabbed = true) }
+        shell.commands.register(ApplicationCommand("window.close", "Close", listOf(key("w")), windowRequired = true) { shell.activeWindow?.close() })
+        terminal("tab.next", "Next Tab", listOf(key("]", true))) { shell.nextTab() }
+        terminal("tab.previous", "Previous Tab", listOf(key("[", true))) { shell.nextTab(backwards = true) }
+        for (number in 1..9) terminal("tab.$number", "Select Tab $number", listOf(key(number.toString()))) { shell.selectTab(number - 1) }
+        for ((id, title, shortcut, edit) in listOf(
+            Edit("undo", "Undo", "z", EditingCommand.UNDO), Edit("cut", "Cut", "x", EditingCommand.CUT),
+            Edit("copy", "Copy", "c", EditingCommand.COPY), Edit("paste", "Paste", "v", EditingCommand.PASTE),
+            Edit("selectAll", "Select All", "a", EditingCommand.SELECT_ALL),
+        )) shell.editingCommand("edit.$id", title, key(shortcut), edit)
+        terminal("find.show", "Find…", listOf(key("f"))) { it.showFind() }
+        terminal("find.next", "Find Next", listOf(key("g"))) { it.navigate(1) }
+        terminal("find.previous", "Find Previous", listOf(key("g", true))) { it.navigate(-1) }
+        terminal("find.close", "Close Search", listOf(KeyShortcut("Escape", emptySet())), { it.search.value.visible }) { it.hideFind() }
+        // Enter acts only while the Kinetica search field is focused; it must not swallow shell input.
+        terminal("find.enter", "Next Match", listOf(KeyShortcut("Enter", emptySet())), { it.isSearchFocused }) { it.navigate(1) }
+        terminal("find.shiftEnter", "Previous Match", listOf(KeyShortcut("Enter", setOf(KeyModifier.SHIFT))), { it.isSearchFocused }) { it.navigate(-1) }
+        terminal("screen.clear", "Clear Screen", listOf(key("k"))) { it.view.clearScreen(null) }
+        terminal("history.clear", "Clear Scrollback", listOf(key("k", true))) { it.view.clearHistory(null) }
+        terminal("font.increase", "Increase Text Size", listOf(key("+"), key("="))) { it.zoom(1.0) }
+        terminal("font.decrease", "Decrease Text Size", listOf(key("-"))) { it.zoom(-1.0) }
+        terminal("font.reset", "Reset Text Size", listOf(key("0"))) { it.resetZoom() }
+        fun items(vararg ids: String) = ids.map { MenuItem.Command(it) }
+        shell.setMenus(listOf(
+            ApplicationMenu("Kinetica Terminal", items("app.settings", "app.quit")),
+            ApplicationMenu("Shell", items("window.new", "window.tab", "window.close")),
+            ApplicationMenu("Window", items("tab.next", "tab.previous") + MenuItem.Separator + (1..9).map { MenuItem.Command("tab.$it") }),
+            ApplicationMenu("Edit", items("edit.undo", "edit.cut", "edit.copy", "edit.paste", "edit.selectAll") + MenuItem.Separator +
+                items("find.show", "find.next", "find.previous", "screen.clear", "history.clear")),
+            ApplicationMenu("View", items("font.increase", "font.decrease", "font.reset")),
+        ))
+        shell.install()
     }
 
-    @ObjCAction fun newWindow(sender: NSObject?) { create(null) }
-    @ObjCAction fun newTab(sender: NSObject?) { create(active?.window) }
-    @ObjCAction fun closeTab(sender: NSObject?) { active?.window?.performClose(sender) }
-    @ObjCAction fun nextTab(sender: NSObject?) { active?.window?.selectNextTab(sender); focusActive() }
-    @ObjCAction fun previousTab(sender: NSObject?) { active?.window?.selectPreviousTab(sender); focusActive() }
-    @ObjCAction fun quitApplication(sender: NSObject?) { if (!disposed) quit() }
-    @ObjCAction fun showSettings(sender: NSObject?) {
-        val panel = settingsWindow ?: TerminalSettingsWindow(settings) { terminals.forEach { it.applySettings() } }.also { settingsWindow = it }
-        panel.show()
-    }
-    @ObjCAction fun showFind(sender: NSObject?) { active?.pane?.showFind(sender) }
-    @ObjCAction fun findNext(sender: NSObject?) { active?.pane?.findNext(sender) }
-    @ObjCAction fun findPrevious(sender: NSObject?) { active?.pane?.findPrevious(sender) }
-    @ObjCAction fun clearScreen(sender: NSObject?) { active?.pane?.terminal?.clearScreen(sender) }
-    @ObjCAction fun clearHistory(sender: NSObject?) { active?.pane?.terminal?.clearHistory(sender) }
-    @ObjCAction fun zoomIn(sender: NSObject?) { active?.zoom(1.0) }
-    @ObjCAction fun zoomOut(sender: NSObject?) { active?.zoom(-1.0) }
-    @ObjCAction fun zoomReset(sender: NSObject?) { active?.resetZoom() }
-    @ObjCAction fun selectTab(sender: NSObject?) {
-        val index = (sender as? NSMenuItem)?.tag?.toInt()?.minus(1) ?: return
-        val group = active?.window?.tabGroup?.windows?.filterIsInstance<NSWindow>() ?: active?.let { listOf(it.window) }.orEmpty()
-        group.getOrNull(index)?.makeKeyAndOrderFront(null); focusActive()
-    }
-
-    private fun create(tabParent: NSWindow?) {
-        if (disposed) return
-        val directory = if (tabParent != null) active?.currentWorkingDirectory() else null
-        val terminal = TerminalWindow(++sequence, settings, directory) { terminals.remove(it); awaitClosed(it) }
-        terminals.add(terminal)
-        if (tabParent == null) {
-            if (!settings.restoreFrame(terminal.window)) terminal.window.center()
-        } else tabParent.addTabbedWindow(terminal.window, NSWindowAbove)
-        terminal.window.makeKeyAndOrderFront(null)
-        terminal.focus()
-    }
-
-    private fun focusActive() { active?.focus() }
-    override fun applicationShouldTerminateAfterLastWindowClosed(sender: NSApplication): Boolean = true
-    override fun applicationShouldTerminate(sender: NSApplication): NSApplicationTerminateReply {
-        if (terminals.isEmpty() && closing.isEmpty()) return NSTerminateNow
-        terminating = true
-        dispose()
-        return NSTerminateLater
-    }
-    override fun applicationWillTerminate(notification: NSNotification) { dispose() }
-
-    private fun awaitClosed(terminal: TerminalWindow) {
-        if (!closing.add(terminal)) return
-        terminal.close {
-            closing.remove(terminal)
-            // Even an already-exited shell must reply after applicationShouldTerminate returns.
-            dispatch_async(dispatch_get_main_queue()) {
-                if (terminating && terminals.isEmpty() && closing.isEmpty()) {
-                    terminating = false
-                    completeTermination()
-                }
-            }
-        }
-    }
-
-    fun dispose() {
-        if (disposed) return
-        disposed = true
-        settingsWindow?.close(); settingsWindow = null
-        val remaining = terminals.toList()
-        terminals.clear()
-        remaining.forEach { awaitClosed(it) }
-    }
-}
-
-internal class TerminalWindow(number: Int, private val settings: TerminalSettingsStore,
-    directory: String?, private val closed: (TerminalWindow) -> Unit) : NSObject(), NSWindowDelegateProtocol {
-    val window = NSWindow(NSMakeRect(0.0, 0.0, 960.0, 600.0),
-        NSWindowStyleMaskTitled or NSWindowStyleMaskClosable or NSWindowStyleMaskMiniaturizable or NSWindowStyleMaskResizable,
-        NSBackingStoreBuffered, false)
-    val session = TerminalSession(theme = settings.settings.colorTheme.colors)
-    private val fallbackTitle = "Shell $number"
-    private var disposed = false
-    private var zoom = 0.0
-    private var configuredTheme = settings.settings.colorTheme
-    val pane = AppKitTerminalPane(AppKitTerminalView(session, "shell")).also {
-        it.terminal.configureFont(settings.settings.fontName, settings.settings.fontSize)
-        it.setFrame(window.contentView!!.bounds)
-        it.autoresizingMask = NSViewWidthSizable or NSViewHeightSizable
-        window.contentView = it
-    }
-    private val titleSubscription = session.observe {
-        if (!disposed) window.title = session.title.ifEmpty { fallbackTitle }
-    }
-    private val transport: MacOsPty
-
-    init {
-        window.title = fallbackTitle
-        window.tabbingIdentifier = "io.heapy.kinetica.terminal"
-        window.setReleasedWhenClosed(false)
-        window.minSize = NSMakeSize(520.0, 280.0)
+    fun open(tabbed: Boolean = false): TerminalWindow {
+        val parent = if (tabbed) active else null
+        val number = ++sequence
+        val terminal = TerminalWindow(number, settings, parent?.currentWorkingDirectory() ?: NSHomeDirectory())
         try {
-            transport = MacOsPty(session, workingDirectory = directory ?: NSHomeDirectory(), onExit = {
-                // EOF is delivered on the main thread after the child has been reaped.
-                // Close this shell's window, including when its tab is not selected.
-                if (!disposed) window.close()
-            })
-        } catch (error: Throwable) {
-            titleSubscription.dispose(); pane.dispose(); window.close()
-            throw error
+            terminal.handle = shell.openWindow(ApplicationWindow("shell-$number", "Shell $number",
+                size = WindowSize(960.0, 600.0), minimumSize = WindowSize(520.0, 280.0),
+                tabGroup = "io.heapy.kinetica.terminal", initialFocus = "terminal"),
+                tabOf = parent?.handle?.id, restoredBounds = if (parent == null) settings.bounds else null,
+                callbacks = WindowCallbacks(boundsChanged = settings::saveBounds,
+                    closed = { terminals.remove(terminal) }, release = terminal::close),
+                hostWidgets = appKitTerminalHosts(mapOf("shell" to terminal.session), controls = true,
+                    onView = { _, view -> terminal.attached(view) }),
+            ) { TerminalContent(terminal) }
+            terminals += terminal
+            // Establish the actual grid before spawning the PTY, including native tab chrome.
+            terminal.window.contentView?.layoutSubtreeIfNeeded()
+            terminal.start()
+            return terminal
+        } catch (failure: Throwable) {
+            terminal.close {}
+            terminal.closeWindowIfMounted()
+            throw failure
         }
-        window.delegate = this
     }
 
-    fun focus() { window.makeFirstResponder(pane.terminal) }
-    fun currentWorkingDirectory(): String? = transport.currentWorkingDirectory()
-    fun applySettings() {
-        val value = settings.settings
-        applyFont()
-        if (configuredTheme != value.colorTheme) {
-            configuredTheme = value.colorTheme
-            session.configureTheme(value.colorTheme.colors)
+    private fun showSettings() {
+        settingsWindow?.let { it.show(); return }
+        val returnTo = active?.handle?.id
+        val editor = TerminalSettingsEditor(settings) {
+            terminals.forEach { it.applySettings() }
+            settingsWindow?.close()
         }
+        settingsWindow = shell.openWindow(ApplicationWindow("settings", "Terminal Settings",
+            size = WindowSize(500.0, 260.0), minimumSize = WindowSize(500.0, 260.0),
+            resizable = false, minimizable = false, initialFocus = "font-size"),
+            callbacks = WindowCallbacks(closed = {
+                settingsWindow = null
+                returnTo?.let { shell.window(it)?.show() }
+            }),
+        ) { TerminalSettingsContent(editor) }
     }
-    private fun applyFont() {
-        val value = settings.settings
-        pane.terminal.configureFont(value.fontName, (value.fontSize + zoom).coerceIn(6.0, 96.0))
-    }
-    fun zoom(delta: Double) {
-        val current = pane.terminal.currentFontSize
-        zoom = (current + delta).coerceIn(6.0, 96.0) - settings.settings.fontSize
-        applyFont()
-    }
-    fun resetZoom() { zoom = 0.0; applyFont() }
-    override fun windowDidBecomeKey(notification: NSNotification) { focus() }
-    override fun windowDidMove(notification: NSNotification) { if (!disposed && window.visible) settings.saveFrame(window.frame) }
-    override fun windowDidResize(notification: NSNotification) { if (!disposed && window.visible) settings.saveFrame(window.frame) }
-    override fun windowWillClose(notification: NSNotification) { dispose(); closed(this) }
-    fun close(onClosed: () -> Unit) { dispose(); transport.close(onClosed) }
-    fun dispose() {
-        if (disposed) return
-        disposed = true
-        titleSubscription.dispose(); transport.dispose(); pane.dispose()
-        window.delegate = null
-    }
+
+    fun run() { open(); shell.run() }
+    fun dispose() { shell.dispose() }
 }
+
+private data class Edit(val id: String, val title: String, val shortcut: String, val command: EditingCommand)
