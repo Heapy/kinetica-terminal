@@ -81,8 +81,8 @@ and an internal `G` command parser with fixed header storage, bounded Base64 cap
 32-bit signed/unsigned fields and ownership-safe completion/reset. At that checkpoint all eight
 command actions were parsed, including animation commands, but the session still ignored image
 requests. The later session
-execution increment is described below; the subsequent browser increment enables static
-graphics in Canvas/WebGL views. Native views remain disabled until their renderers are available.
+execution increment is described below; subsequent browser and native increments enable static
+graphics in Canvas/WebGL and AppKit/Metal views respectively.
 Tests adapted from the pinned Ghostty parser cover flags, malformed headers, duplicate keys,
 integer overflow, padding/tail bits, every input split, 150 KB data and resource release.
 This checkpoint passes 490 JVM tests, the freshly built JS suite and 11 focused Native tests;
@@ -186,6 +186,24 @@ built JS suite, 68 selected Native graphics/GPU/block/presentation tests and the
 integration verifier. These are browser pixels and shared Native tests, not AppKit/Metal image
 presentation tests. Native rendering, animation, Unicode placeholders and external media remain
 open, so the overall graphics acceptance items below remain incomplete.
+
+The native rendering increment connects the same image snapshots/tiles to AppKit and Metal.
+AppKit uses explicitly released CGImages backed by copied CFData, so pinned Kotlin buffers
+never escape their lifetime. Fractional tile clips disable edge antialiasing to avoid seams;
+image interpolation remains linear. Metal uploads premultiplied RGBA tiles and uses a separate
+linear sampler for images while retaining nearest sampling for the glyph atlas. Each image
+draw copies its instance bytes into command-owned storage; interactive rendering keeps the
+existing single asynchronous frame in flight and does not wait for GPU completion.
+
+Native views now enable the same configurable 64 MiB decoded budget per screen as browser
+views, with a separate 64 MiB renderer tile cache. Deletion, screen changes and disposal drop
+cache entries; submitted Metal commands own resources until completion. New offscreen pixel
+tests cover all three layers and block glyphs, blending, source crops, orientation, tile seams,
+cache reuse/disposal, held replacements and scroll/screen transitions. Metal runs at 1x, 1.25x
+and 2x. All 77 selected Native graphics/GPU/block/presentation/Metal tests pass, and the native
+application plus its UI module compile without installing or replacing the user's app. The
+shared/browser implementation is unchanged from the preceding verified commit. Animation,
+Unicode placeholders and external media remain open.
 
 Graphics acceptance work:
 

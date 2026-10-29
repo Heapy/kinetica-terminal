@@ -51,23 +51,27 @@ For diagnostics, the browser host exposes `data-terminal-renderer`, `data-termin
 `renderingBackend` and `renderingFailure`. Kadingirra/Babylon are not dependencies of these
 graphics backends; the JVM target currently remains a headless engine, not a desktop surface.
 
-Browser Canvas and WebGL views render static Kitty graphics from direct RGB/RGBA, PNG and
+Canvas, WebGL, AppKit and Metal views render static Kitty graphics from direct RGB/RGBA, PNG and
 zlib transmissions. Images follow source crops, placement scaling, three z layers, scrollback,
 relative placement anchors and screen switches. The lowest layer shows through default cell
 backgrounds; explicit backgrounds remain opaque. Synchronized output and resize holds retain
 the completed image generation together with the text frame, including during WebGL recovery.
 
-`BrowserTerminalView(graphicsStorageBytes = 64 * 1024 * 1024)` enables a 64 MiB decoded image
-budget per screen by default; pass zero to disable command capture and replies. This setting
+`BrowserTerminalView` and `AppKitTerminalView` accept `graphicsStorageBytes = 64 * 1024 * 1024`,
+enabling a 64 MiB decoded image budget per screen by default; pass zero to disable command capture and replies. This setting
 belongs to the session, so views sharing a session should use the same value. Each browser
 renderer separately owns a 64 MiB LRU cache of bounded image tiles with sampling gutters.
-Offscreen/deleted tiles and disposed views release their canvas/texture resources. The host
+The native renderers use the same budget and tiling. Offscreen/deleted tiles and disposed views
+release their bitmap/texture cache entries. Submitted Metal commands retain their resources
+until completion; image draws copy their small instance data into command-owned storage.
+The host
 still owns session image data after a view is disposed. Diagnostics expose
 `data-terminal-image-bytes`, `data-terminal-image-tiles` and cumulative
-`data-terminal-image-uploads`. AppKit/Metal image rendering, animation, Unicode placeholders
-and external file/shared-memory transmission are not implemented yet; native views keep
-graphics disabled. Run `node scripts/verify-terminal-graphics.mjs` against the built browser
+`data-terminal-image-uploads`. Animation, Unicode placeholders and external file/shared-memory
+transmission are not implemented yet. Run `node scripts/verify-terminal-graphics.mjs` against the built browser
 demo for actual Canvas/WebGL pixel, scroll, context-loss and resource-lifecycle checks.
+`NativeGraphicsRenderingTest` reads actual offscreen AppKit/Metal pixels, including fractional
+Metal scales, image orientation, crop/alpha/layers, synchronized frames and tile seams.
 
 Pass an optional `renderObserver: TerminalRenderObserver` to `BrowserTerminalView` or
 `AppKitTerminalView` to measure rendering. `onFrameStarted` supplies the viewport actually
@@ -548,6 +552,7 @@ python3 -m http.server 4173 --bind 127.0.0.1
 ./kotlin build -m kinetica-terminal -p js -v release
 node build/artifacts/CompiledWebArtifact/kinetica-terminaljsTestrelease/kotlin-output/kinetica-terminal_test.mjs
 node scripts/verify-terminal.mjs
+node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-blocks.mjs
 node scripts/verify-terminal-glyphs.mjs
 node scripts/verify-terminal-selection.mjs

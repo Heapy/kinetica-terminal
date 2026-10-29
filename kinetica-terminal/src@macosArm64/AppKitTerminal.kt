@@ -22,6 +22,7 @@ public class AppKitTerminalView(
     clipboard: TerminalClipboard? = null,
     notificationPolicy: (TerminalNotification) -> Boolean = { false },
     notifications: TerminalNotificationDelivery? = null,
+    graphicsStorageBytes: Int = 64 * 1024 * 1024,
 ) : NSView(NSMakeRect(0.0, 0.0, 800.0, 480.0)), NSTextInputClientProtocol, CALayerDelegateProtocol {
     private var fontSize = 14.0
     private var fontFamily: String? = null
@@ -78,6 +79,12 @@ public class AppKitTerminalView(
         if (!held && ready && !disposed) applyPendingGridSize()
     }
     private var gpu: MetalTerminalDrawing? = null
+    private val softwareImages = AppKitTerminalImages()
+    private val softwareImageFrame = TerminalGpuFrame()
+    private var softwareImagesVisible = false
+    internal val imageCacheBytes: Long get() = gpu?.imageCacheBytes ?: softwareImages.bytes
+    internal val imageTileCount: Int get() = gpu?.imageTileCount ?: softwareImages.tileCount
+    internal val imageUploads: Int get() = gpu?.imageUploads ?: softwareImages.uploads
     private val renderProbe = TerminalRenderProbe(renderObserver)
     private var compositionLayer: CATextLayer? = null
     internal val progressIndicator = TerminalNativeProgress(session)
@@ -87,6 +94,7 @@ public class AppKitTerminalView(
         private set
 
     init {
+        session.setGraphicsStorageLimit(graphicsStorageBytes)
         setAccessibilityElement(true)
         setAccessibilityRole("AXTextArea")
         setAccessibilityLabel("Terminal")
@@ -249,7 +257,7 @@ public class AppKitTerminalView(
         val first = dirtyRect.useContents { floor(origin.y / cellHeight).toInt().coerceAtLeast(0) }
         val last = dirtyRect.useContents { floor((origin.y + size.height) / cellHeight).toInt().coerceAtMost(viewport.rows - 1) }
         val scale = window?.backingScaleFactor ?: 1.0
-        viewport.paint(object : TerminalPainter {
+        val painter = object : TerminalPainter {
             override fun fill(x: Double, y: Double, width: Double, height: Double, color: Int) {
                 val left = round(x * scale) / scale
                 val top = round(y * scale) / scale
@@ -260,7 +268,27 @@ public class AppKitTerminalView(
             override fun text(value: String, x: Double, y: Double, color: Int, style: Int) {
                 NSAttributedString.create(string = value, attributes = textAttributes(color, style)).drawAtPoint(NSMakePoint(x, y))
             }
-        }, cellWidth, cellHeight, force = true, firstRow = first, lastRow = last)
+        }
+        val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, scale, viewport.columns, viewport.rows) }
+        if (images.isEmpty()) {
+            if (softwareImagesVisible) { softwareImages.clear(); softwareImagesVisible = false }
+            viewport.paint(painter, cellWidth, cellHeight, force = true, firstRow = first, lastRow = last)
+        } else {
+            if (!softwareImagesVisible) viewport.markAll()
+            softwareImagesVisible = true
+            softwareImageFrame.update(viewport, cellWidth, cellHeight)
+            softwareImages.beginFrame()
+            softwareImages.draw(images, TerminalGraphicsLayer.BELOW_BACKGROUND)
+            for (row in softwareImageFrame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground)
+                painter.fill(rect.x, rect.y, rect.width, rect.height, rect.color)
+            softwareImages.draw(images, TerminalGraphicsLayer.BELOW_TEXT)
+            for (row in softwareImageFrame.rows) for (glyph in row.glyphs)
+                painter.text(glyph.key.text, glyph.x, glyph.y, glyph.color, glyph.key.style)
+            for (row in softwareImageFrame.rows) for (rect in row.decorations)
+                painter.fill(rect.x, rect.y, rect.width, rect.height, rect.color)
+            softwareImages.draw(images, TerminalGraphicsLayer.ABOVE_TEXT)
+            softwareImages.endFrame()
+        }
         if (marked.isNotEmpty()) {
             val x = viewport.cursorColumn * cellWidth; val y = viewport.cursorRow * cellHeight
             color(viewport.theme.background).setFill()
@@ -558,7 +586,7 @@ public class AppKitTerminalView(
         notificationObservation.dispose(); notifications?.dispose(); notifications = null
         clipboardBinding.dispose()
         onViewportChanged = null; onScrollActivity = null
-        viewport.dispose(); releaseGpu(); inputContext()?.discardMarkedText()
+        viewport.dispose(); softwareImages.clear(); releaseGpu(); inputContext()?.discardMarkedText()
     } }
 }
 

@@ -52,6 +52,12 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     private val frame = TerminalGpuFrame()
     private val batches = TerminalGpuBatches()
     private val textures = mutableListOf<MTLTextureProtocol>()
+    private val imageCache = TerminalImageCache<MTLTextureProtocol>(64L * 1024 * 1024) { }
+    private val imageInstance = TerminalInstances()
+    val imageCacheBytes: Long get() = imageCache.bytes
+    val imageTileCount: Int get() = imageCache.size
+    var imageUploads: Int = 0
+        private set
     private val buffers = mutableListOf<MTLBufferProtocol>()
     private var busy = false
     private var pending = false
@@ -107,9 +113,9 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         val measurement = probe.begin(viewport, "metal")
         val drawable = layer.nextDrawable() ?: return
         measurement?.let { it.acquire = it.checkpoint() }
-        prepare(viewport, measurement)
+        val images = prepare(viewport, measurement)
         val command = checkNotNull(queue.commandBuffer())
-        encode(command, drawable.texture as MTLTextureProtocol, viewport.theme.background)
+        encode(command, drawable.texture as MTLTextureProtocol, viewport.theme.background, images)
         if (!transactional) command.presentDrawable(drawable as MTLDrawableProtocol)
         if (measurement != null) {
             drawable.addPresentedHandler { presented ->
@@ -145,7 +151,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         measurement?.submitted(drawCalls)
     }
 
-    private fun prepare(viewport: TerminalViewport, measurement: TerminalFrameMeasurement? = null) {
+    private fun prepare(viewport: TerminalViewport, measurement: TerminalFrameMeasurement? = null): List<TerminalImageQuad> {
         if (resetAtlas) {
             atlas.clear(); textures.clear(); attributes.clear()
             viewport.markAll(); resetAtlas = false
@@ -156,11 +162,13 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         // Bind a valid texture even to the untextured branch of the fragment shader.
         if (textures.isEmpty()) createTexture()
         measurement?.let { it.atlas = it.checkpoint() }
-        batches.build(frame, atlas, scale)
+        val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, scale, viewport.columns, viewport.rows) }
+        batches.build(frame, atlas, scale, transparentDefaultBackground = images.isNotEmpty())
         measurement?.let { it.batch = it.checkpoint() }
+        return images
     }
 
-    private fun encode(command: MTLCommandBufferProtocol, target: MTLTextureProtocol, background: Int) {
+    private fun encode(command: MTLCommandBufferProtocol, target: MTLTextureProtocol, background: Int, images: List<TerminalImageQuad>) {
         val pass = MTLRenderPassDescriptor()
         pass.colorAttachments.objectAtIndexedSubscript(0u).apply {
             texture = target
@@ -175,10 +183,48 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         val viewport = floatArrayOf((target.width.toDouble() / scale).toFloat(), (target.height.toDouble() / scale).toFloat())
         viewport.usePinned { encoder.setVertexBytes(it.addressOf(0), 8u, 1u) }
         drawCalls = 0
+        imageCache.beginFrame()
+        drawImages(encoder, images, TerminalGraphicsLayer.BELOW_BACKGROUND)
         submit(encoder, batches.backgrounds, false, 0, 0)
+        drawImages(encoder, images, TerminalGraphicsLayer.BELOW_TEXT)
         for (page in batches.pages.indices) submit(encoder, batches.pages[page], true, page, page + 1)
         submit(encoder, batches.decorations, false, 0, batches.pages.size + 1)
+        drawImages(encoder, images, TerminalGraphicsLayer.ABOVE_TEXT)
+        imageCache.endFrame()
         encoder.endEncoding()
+    }
+
+    private fun drawImages(encoder: MTLRenderCommandEncoderProtocol, images: List<TerminalImageQuad>, layer: TerminalGraphicsLayer) {
+        for (image in images) if (image.layer == layer) for (draw in image.tiles()) {
+            val tile = draw.tile
+            val texture = imageCache.get(tile) {
+                val descriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(MTLPixelFormatRGBA8Unorm,
+                    tile.width.toULong(), tile.height.toULong(), false)
+                descriptor.storageMode = MTLStorageModeShared; descriptor.usage = MTLTextureUsageShaderRead
+                val texture = checkNotNull(device.newTextureWithDescriptor(descriptor))
+                image.image.pixels.tileBytes(tile, premultiplied = true).usePinned {
+                    texture.replaceRegion(MTLRegionMake2D(0u, 0u, tile.width.toULong(), tile.height.toULong()),
+                        0u, it.addressOf(0), (tile.width * 4).toULong())
+                }
+                imageUploads++
+                texture
+            }
+            val q = draw.quad
+            imageInstance.clear()
+            imageInstance.add(q.x, q.y, q.width, q.height, 0xffffff,
+                (q.sourceX / tile.width).toFloat(), (q.sourceY / tile.height).toFloat(),
+                ((q.sourceX + q.sourceWidth) / tile.width).toFloat(), ((q.sourceY + q.sourceHeight) / tile.height).toFloat())
+            // Metal copies these small bytes into command-owned storage. Reusing a mutable
+            // shared buffer here would make earlier image draws see the final placement.
+            imageInstance.data.usePinned { encoder.setVertexBytes(it.addressOf(0), 48u, 0u) }
+            encoder.setFragmentTexture(texture, 0u)
+            memScoped {
+                val flag = alloc<UIntVar>(); flag.value = 2u
+                encoder.setFragmentBytes(flag.ptr, 4u, 0u)
+            }
+            encoder.drawPrimitives(MTLPrimitiveTypeTriangleStrip, 0u, 4u, 1u)
+            drawCalls++
+        }
     }
 
     private fun submit(encoder: MTLRenderCommandEncoderProtocol, instances: TerminalInstances, textured: Boolean, page: Int, slot: Int) {
@@ -242,14 +288,14 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     /** Readback for native pixel tests only; interactive presentation never waits or reads back. */
     internal fun snapshot(viewport: TerminalViewport): ByteArray {
         check(!busy && !disposed)
-        prepare(viewport)
+        val images = prepare(viewport)
         val pixelWidth = ceil(width * scale).toInt(); val pixelHeight = ceil(height * scale).toInt()
         val descriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(MTLPixelFormatBGRA8Unorm,
             pixelWidth.toULong(), pixelHeight.toULong(), false)
         descriptor.storageMode = MTLStorageModeShared; descriptor.usage = MTLTextureUsageRenderTarget
         val target = checkNotNull(device.newTextureWithDescriptor(descriptor))
         val command = checkNotNull(queue.commandBuffer())
-        encode(command, target, viewport.theme.background); command.commit(); command.waitUntilCompleted()
+        encode(command, target, viewport.theme.background, images); command.commit(); command.waitUntilCompleted()
         check(command.error == null) { command.error?.localizedDescription.orEmpty() }
         val result = ByteArray(pixelWidth * pixelHeight * 4)
         result.usePinned { target.getBytes(it.addressOf(0), (pixelWidth * 4).toULong(),
@@ -260,7 +306,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     fun dispose() {
         if (disposed) return
         disposed = true; pending = false
-        layer.removeFromSuperlayer(); textures.clear(); buffers.clear(); atlas.clear(); attributes.clear()
+        layer.removeFromSuperlayer(); imageCache.clear(); textures.clear(); buffers.clear(); atlas.clear(); attributes.clear()
         // Submitted command buffers retain their resources until completion.
     }
 
@@ -283,7 +329,9 @@ vertex Vertex terminalVertex(uint vertexId [[vertex_id]], uint instanceId [[inst
 fragment float4 terminalFragment(Vertex in [[stage_in]], texture2d<float> atlas [[texture(0)]],
     constant uint& textured [[buffer(0)]]) {
     constexpr sampler s(coord::normalized, address::clamp_to_edge, filter::nearest);
-    return textured ? atlas.sample(s, in.uv) * in.tint : in.tint;
+    constexpr sampler imageSampler(coord::normalized, address::clamp_to_edge, filter::linear);
+    return textured == 2 ? atlas.sample(imageSampler, in.uv) * in.tint :
+        (textured ? atlas.sample(s, in.uv) * in.tint : in.tint);
 }
 """
     }
