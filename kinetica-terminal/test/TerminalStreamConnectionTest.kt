@@ -3,6 +3,70 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalStreamConnectionTest {
+    @Test fun throwingCancellationCallbackStillReleasesTransportAndNotifiesFailure() {
+        for (transportFailure in listOf(false, true)) {
+            val session = TerminalSession(); val transport = Transport(); val loop = Loop()
+            var failures = 0
+            val connection = connection(session, transport, loop, failure = { failures++ })
+            session.onProgramStatus {}
+            session.write("\u001b]7501;state=working\u001b\\")
+            transport.accept = if (transportFailure) -1 else 0
+            session.sendProtocolReply(byteArrayOf(1)) { assertFalse(it); error("cancel callback failed") }
+            var second: Boolean? = null
+            session.sendProtocolReply(byteArrayOf(2)) { second = it }
+            assertFailsWith<IllegalStateException> {
+                if (transportFailure) loop.runNext() else connection.dispose()
+            }
+            assertEquals(false, second)
+            assertTrue(connection.disposed)
+            assertEquals(0, connection.pendingInputBytes)
+            assertTrue(loop.jobs.isEmpty())
+            assertTrue(session.programStatuses.isEmpty())
+            assertEquals(if (transportFailure) 1 else 0, failures)
+        }
+    }
+
+    @Test fun replyAcknowledgementFollowsPartialWritesAndTransportCancellation() {
+        val session = TerminalSession(); val transport = Transport(); val loop = Loop()
+        val connection = connection(session, transport, loop)
+        val completed = mutableListOf<Boolean>()
+        var writes = 0
+        transport.writeHook = { transport.accept = if (writes++ == 0) 3 else 0 }
+        session.sendInput("ab")
+        session.sendProtocolReply("reply".encodeToByteArray()) { completed.add(it) }
+        loop.runNext()
+        assertEquals("abr", transport.writes.toByteArray().decodeToString())
+        assertTrue(completed.isEmpty())
+        transport.writeHook = null; transport.accept = 2
+        loop.drain()
+        assertEquals(listOf(true), completed)
+        assertEquals("abreply", transport.writes.toByteArray().decodeToString())
+        transport.accept = 0
+        session.sendProtocolReply("canceled".encodeToByteArray()) { completed.add(it) }
+        loop.runNext(); connection.dispose()
+        assertEquals(listOf(true, false), completed)
+        assertTrue(loop.jobs.isEmpty())
+        session.sendProtocolReply(byteArrayOf(1)) { completed.add(it) }
+        assertEquals(listOf(true, false, false), completed)
+    }
+
+    @Test fun replyAcknowledgementsCanProduceMoreInputWithoutRecursiveTransportWrites() {
+        val session = TerminalSession(); val transport = Transport(); val loop = Loop()
+        val connection = connection(session, transport, loop)
+        var completed = 0
+        fun next() {
+            session.sendProtocolReply(byteArrayOf(42)) {
+                assertTrue(it); completed++
+                if (completed < 2000) next()
+            }
+        }
+        next(); loop.drain()
+        assertEquals(2000, completed)
+        assertEquals(List(2000) { 42.toByte() }, transport.writes)
+        assertEquals(0, connection.pendingInputBytes)
+        connection.dispose()
+    }
+
     @Test fun deccolmPublishesGeometryToTheTransportAndRefreshesTheHostOnMode40() {
         val session = TerminalSession(90, 24)
         val transport = Transport(); val loop = Loop()

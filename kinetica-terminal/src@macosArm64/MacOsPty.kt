@@ -36,6 +36,7 @@ public class MacOsPty(
     private var outputSize = 0
     private val pending = TerminalInputBuffer()
     private var pumping = false
+    private var flushingWrites = false
     private var writesBlocked = false
     private var childReaped = false
     private val closedCallbacks = mutableListOf<() -> Unit>()
@@ -101,21 +102,25 @@ public class MacOsPty(
     }
 
     private fun flushWrites(start: TimeSource.Monotonic.ValueTimeMark) {
-        var writtenThisCall = 0
-        while (pending.size > 0 && !disposed && !ended && !writesBlocked &&
-            writtenThisCall < 64 * 1024 && start.elapsedNow() < 4.milliseconds) {
-            val written = pending.buffer!!.usePinned {
-                write(fd, it.addressOf(pending.offset), minOf(pending.contiguousSize, 64 * 1024 - writtenThisCall).toULong())
-            }.toInt()
-            if (written < 0) {
-                if (errno == EINTR) continue
-                if (errno == EAGAIN) writesBlocked = true else finish()
-                return
+        if (flushingWrites) return
+        flushingWrites = true
+        try {
+            var writtenThisCall = 0
+            while (pending.size > 0 && !disposed && !ended && !writesBlocked &&
+                writtenThisCall < 64 * 1024 && start.elapsedNow() < 4.milliseconds) {
+                val written = pending.buffer!!.usePinned {
+                    write(fd, it.addressOf(pending.offset), minOf(pending.contiguousSize, 64 * 1024 - writtenThisCall).toULong())
+                }.toInt()
+                if (written < 0) {
+                    if (errno == EINTR) continue
+                    if (errno == EAGAIN) writesBlocked = true else finish()
+                    return
+                }
+                if (written == 0) { writesBlocked = true; return }
+                pending.consume(written)
+                writtenThisCall += written
             }
-            if (written == 0) { writesBlocked = true; return }
-            pending.consume(written)
-            writtenThisCall += written
-        }
+        } finally { flushingWrites = false }
     }
 
     private fun pump() {
@@ -157,7 +162,6 @@ public class MacOsPty(
     private fun finish() {
         if (ended || disposed) return
         ended = true
-        pending.clear()
         outputOffset = 0; outputSize = 0
         session.finishInput()
         timer?.invalidate(); timer = null
@@ -172,6 +176,7 @@ public class MacOsPty(
                 try { if (!disposed) onExit(status) } finally { notifyClosed() }
             }
         }
+        pending.clear()
     }
 
     /** Dispose without blocking AppKit; notify on the main thread after the child is reaped. */
@@ -190,7 +195,7 @@ public class MacOsPty(
         check(NSThread.isMainThread) { "Dispose MacOsPty on the main thread" }
         if (disposed) return
         disposed = true; timer?.invalidate(); timer = null
-        inputSubscription.dispose(); resizeSubscription.dispose(); pending.clear()
+        inputSubscription.dispose(); resizeSubscription.dispose()
         outputOffset = 0; outputSize = 0
         if (fd >= 0) { close(fd); fd = -1 }
         val child = pid; pid = -1
@@ -198,6 +203,8 @@ public class MacOsPty(
             kinetica_pty_reap(child)
             dispatch_async(dispatch_get_main_queue()) { childReaped = true; notifyClosed() }
         }
-        if (!ended) session.finishProgramStatuses()
+        try { pending.clear() } finally {
+            if (!ended) session.finishProgramStatuses()
+        }
     }
 }

@@ -309,6 +309,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private var fullDamage = false
     private val observers = mutableListOf<(TerminalChange) -> Unit>()
     private val inputObservers = mutableListOf<(TerminalInputData) -> Unit>()
+    private val replyCompletions = ArrayDeque<Pair<(Boolean) -> Unit, Boolean>>()
+    private var completingReplies = false
     private val pointerObservers = mutableListOf<(TerminalPointerShape) -> Unit>()
     private val notificationObservers = mutableListOf<(TerminalNotification) -> Unit>()
     private val workingDirectoryObservers = mutableListOf<(String?) -> Unit>()
@@ -444,7 +446,33 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
 
     public fun sendInput(text: String) = emitInput(TerminalInputData.Text(text))
     internal fun sendProtocolBytes(bytes: ByteArray) = emitInput(TerminalInputData.Bytes(bytes))
-    private fun emitInput(data: TerminalInputData) { inputObservers.toList().forEach { it(data) } }
+    /** Success means every attached bounded transport accepted all bytes, not merely queued them. */
+    internal fun sendProtocolReply(bytes: ByteArray, complete: (Boolean) -> Unit) =
+        emitInput(TerminalInputData.ProtocolReply(bytes) { result ->
+            replyCompletions.addLast(complete to result)
+            drainReplyCompletions()
+        })
+    private fun drainReplyCompletions() {
+        if (completingReplies) return
+        completingReplies = true
+        var failure: Throwable? = null
+        try {
+            while (replyCompletions.isNotEmpty()) {
+                val (complete, result) = replyCompletions.removeFirst()
+                try { complete(result) } catch (error: Throwable) { if (failure == null) failure = error }
+            }
+        } finally { completingReplies = false }
+        failure?.let { throw it }
+    }
+    private fun emitInput(data: TerminalInputData) {
+        var success = false
+        try {
+            inputObservers.toList().forEach { it(data) }
+            success = true
+        } finally {
+            if (data is TerminalInputData.ProtocolReply) data.dispatchFinished(success)
+        }
+    }
 
     /** Index zero is the oldest retained history line; returned lines are live, read-only views. */
     public fun line(index: Int): TerminalLine {

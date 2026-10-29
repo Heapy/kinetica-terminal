@@ -594,6 +594,24 @@ manifest reproduce byte-for-byte. The dispatcher is still internal and unmounted
 routing with parser backpressure, transport delivery acknowledgements, secure paste events
 and native/browser MIME adapters remain necessary for end-to-end OSC 5522 support.
 
+The transport increment introduces optional internal delivery receipts for protocol replies.
+The byte ring acknowledges a reply only after the transport consumes its final byte; clearing
+the ring cancels outstanding receipts. Session dispatch waits for every accepting transport,
+and a plain input observer cannot claim delivery. Missing, rejecting or canceled consumers
+produce failure. Completion chains run iteratively, and the native PTY prevents nested write
+loops so callbacks can enqueue the next reply safely. Cleanup still releases queues, timers
+and program status when a completion callback throws.
+
+Validation passes 995 JVM tests, fresh Release JS tests and 35 Native delivery/stream/PTY
+tests. The isolated PTY verifies 2000 chained replies, an intact 2 MiB payload and cancellation
+of an undelivered tail. Initial large-PTY runs hit wall-clock deadlines; the fresh serial
+Native run passes with the original deadlines and unchanged transport logic. Diagnostic
+failure messages retain the delivery phase, pending byte count and terminal output.
+
+These receipts provide the delivery primitive for OSC 5522. The packet-sequence writer,
+parser pause/retry integration and mounted MIME host are still pending; the dispatcher is
+not enabled by adding receipts alone.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

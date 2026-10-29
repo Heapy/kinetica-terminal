@@ -11,6 +11,9 @@ internal class TerminalInputBuffer(private val capacity: Int = 1024 * 1024) {
         private set
     val contiguousSize: Int get() = minOf(size, (buffer?.size ?: capacity) - offset)
     val remaining: Int get() = (capacity - size).coerceAtLeast(0)
+    private data class Receipt(val end: Long, val complete: (Boolean) -> Unit)
+    private val receipts = ArrayDeque<Receipt>()
+    private var consumedBytes = 0L
 
     fun add(text: String) { require(tryAdd(text)) { "Terminal input buffer is full" } }
 
@@ -32,7 +35,7 @@ internal class TerminalInputBuffer(private val capacity: Int = 1024 * 1024) {
         return append(bytes, sourceOffset, length)
     }
 
-    fun tryAddProtocolReply(bytes: ByteArray): Boolean {
+    fun tryAddProtocolReply(bytes: ByteArray, complete: ((Boolean) -> Unit)? = null): Boolean {
         // Keep an entire OSC response together, even with a stalled writer. Normal input
         // and further output parsing stay backpressured until this reserve drains.
         val maximum = minOf(Int.MAX_VALUE.toLong(), capacity.toLong() + TERMINAL_CLIPBOARD_REPLY_BYTES).toInt()
@@ -48,7 +51,12 @@ internal class TerminalInputBuffer(private val capacity: Int = 1024 * 1024) {
             }
             buffer = grown; offset = 0
         }
-        return append(bytes, 0, bytes.size)
+        append(bytes, 0, bytes.size)
+        if (complete != null) {
+            if (bytes.isEmpty()) complete(true)
+            else receipts.addLast(Receipt(consumedBytes + size, complete))
+        }
+        return true
     }
 
     private fun append(bytes: ByteArray, sourceOffset: Int, length: Int): Boolean {
@@ -67,13 +75,37 @@ internal class TerminalInputBuffer(private val capacity: Int = 1024 * 1024) {
         val storageSize = buffer?.size ?: capacity
         offset = if (count >= storageSize - offset) count - (storageSize - offset) else offset + count
         size -= count
+        consumedBytes += count
         if (size == 0) {
             offset = 0
             if (storageSize > capacity) buffer = null
         }
+        // Remove all completed markers before callbacks can enqueue, consume or clear again.
+        if (receipts.isEmpty() || receipts.first().end > consumedBytes) {
+            if (size == 0) consumedBytes = 0
+            return
+        }
+        val delivered = mutableListOf<(Boolean) -> Unit>()
+        while (receipts.firstOrNull()?.let { it.end <= consumedBytes } == true)
+            delivered.add(receipts.removeFirst().complete)
+        if (size == 0) consumedBytes = 0
+        completeReceipts(delivered, true)
     }
 
-    fun clear() { buffer = null; offset = 0; size = 0 }
+    fun clear() {
+        val canceled = receipts.map { it.complete }
+        receipts.clear(); consumedBytes = 0
+        buffer = null; offset = 0; size = 0
+        completeReceipts(canceled, false)
+    }
+
+    private fun completeReceipts(callbacks: List<(Boolean) -> Unit>, success: Boolean) {
+        var failure: Throwable? = null
+        for (callback in callbacks) {
+            try { callback(success) } catch (error: Throwable) { if (failure == null) failure = error }
+        }
+        failure?.let { throw it }
+    }
 }
 
 // Keep enough room for a pending 4096-unit OSC palette request to dispatch its complete

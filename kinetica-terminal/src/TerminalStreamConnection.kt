@@ -106,8 +106,7 @@ public class TerminalStreamConnection internal constructor(
     private fun fail(error: Throwable) {
         if (disposed) return
         failure = error
-        dispose()
-        onFailure(error)
+        try { dispose() } finally { onFailure(error) }
     }
 
     private fun requestWork(delay: Int) {
@@ -173,9 +172,11 @@ public class TerminalStreamConnection internal constructor(
         val task = scheduled; scheduled = null
         inputSubscription?.dispose(); inputSubscription = null
         resizeSubscription?.dispose(); resizeSubscription = null
-        output.clear(); input.clear()
         task?.dispose()
-        if (!outputFinished) session.finishProgramStatuses()
+        output.clear()
+        try { input.clear() } finally {
+            if (!outputFinished) session.finishProgramStatuses()
+        }
     }
 
     private companion object {
