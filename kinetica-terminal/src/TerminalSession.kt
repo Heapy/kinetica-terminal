@@ -58,6 +58,15 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         private set
     public var applicationKeypad: Boolean = false
         private set
+    public var keyboardDisabled: Boolean = false
+        private set
+    /** Host opt-in to ANSI KAM, disabled by default as in Ghostty. Survives terminal resets. */
+    public var keyboardLockAllowed: Boolean = false
+    public val keyboardInputBlocked: Boolean get() = keyboardLockAllowed && keyboardDisabled
+    public var reverseWrap: Boolean = false
+        private set
+    public var reverseWrapExtended: Boolean = false
+        private set
     private val primaryKeyboard = TerminalKeyboardStack()
     private val alternateKeyboard = TerminalKeyboardStack()
     private val keyboard: TerminalKeyboardStack get() = if (alternateScreen) alternateKeyboard else primaryKeyboard
@@ -693,6 +702,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         protectedCell = false; protectionMode = 0; primaryProtectionMode = 0; alternateProtectionMode = 0
         origin = false; wrap = true; pendingWrap = false; insertMode = false; graphics = false; g1Graphics = false; useG1 = false
         applicationCursor = false; bracketedPaste = false; focusReporting = false
+        keyboardDisabled = false; reverseWrap = false; reverseWrapExtended = false
         colorSchemeReporting = false; visibilityReporting = false
         inBandResizeReporting = false
         leftRightMarginMode = false; left = 0; right = columns - 1
@@ -712,6 +722,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private fun softReset() {
         statusLineSelected = false; checksumFlags = defaultChecksumFlags
         cursorVisible = true; insertMode = false; origin = false; wrap = true
+        keyboardDisabled = false; reverseWrap = false; reverseWrapExtended = false
         applicationCursor = false; applicationKeypad = false; leftRightMarginMode = false
         top = 0; bottom = rows - 1; left = 0; right = columns - 1
         fg = -1; bg = -1; style = 0
@@ -759,7 +770,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         if (code in 0x80..0x9f) { escapeSequence(code - 0x40, 0); return }
         when (code) {
             7 -> bellCount++
-            8 -> { cursorColumn = (cursorColumn - 1).coerceAtLeast(if (cursorColumn < left) 0 else left); pendingWrap = false }
+            8 -> cursorLeft(1)
             9 -> { tab(1); pendingWrap = false }
             10, 11, 12 -> { lineFeed(); if (newlineMode) carriageReturn() }
             13 -> carriageReturn()
@@ -1119,7 +1130,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             'e' -> position(positionRow + p(), positionColumn)
             'C' -> cursorColumn = (cursorColumn + p()).coerceAtMost(if (cursorColumn <= right) right else columns - 1)
             'a' -> position(positionRow, positionColumn + p())
-            'D' -> cursorColumn = (cursorColumn - p()).coerceAtLeast(if (cursorColumn < left) 0 else left)
+            'D' -> cursorLeft(p())
             'E' -> { cursorRow = (cursorRow + p()).coerceAtMost(downLimit); carriageReturn() }
             'F' -> { cursorRow = (cursorRow - p()).coerceAtLeast(upLimit); carriageReturn() }
             'G', '`' -> position(positionRow, p())
@@ -1265,6 +1276,37 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         line.clear(cursorColumn, cursorColumn + n, -1, bg, 0); line.repairWideCells(); damage(cursorRow)
     }
 
+    // Ghostty Terminal.cursorLeft: BS/CUB share reverse-wrap and pending-wrap semantics.
+    private fun cursorLeft(requested: Int) {
+        val leftMargin = if (cursorColumn < left) 0 else left
+        if (!wrap || !reverseWrap && !reverseWrapExtended) {
+            cursorColumn = (cursorColumn - requested).coerceAtLeast(leftMargin)
+            pendingWrap = false
+            return
+        }
+        var remaining = requested
+        if (pendingWrap) {
+            remaining--; pendingWrap = false
+            if (remaining == 0) return
+        }
+        if (!reverseWrapExtended && cursorColumn == leftMargin && cursorRow <= top) {
+            cursorRow = top
+            return
+        }
+        while (true) {
+            val moved = minOf(cursorColumn - leftMargin,remaining)
+            cursorColumn -= moved; remaining -= moved
+            if (remaining == 0) return
+            if (cursorRow == top) {
+                if (!reverseWrapExtended) return
+                cursorColumn = right; cursorRow = bottom; remaining--
+                continue
+            }
+            if (cursorRow == 0 || !reverseWrapExtended && !screen[cursorRow - 1].wrapped) return
+            cursorColumn = right; cursorRow--; remaining--
+        }
+    }
+
     private fun tab(count: Int) {
         repeat(count.coerceAtMost(columns)) {
             if (cursorColumn < right) do { cursorColumn++ } while (cursorColumn < right && !tabs[cursorColumn])
@@ -1273,7 +1315,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
 
     private fun mode(number: Int, enabled: Boolean) {
         if (!privateCsi) {
-            when (number) { 4 -> insertMode = enabled; 20 -> newlineMode = enabled }
+            when (number) { 2 -> keyboardDisabled = enabled; 4 -> insertMode = enabled; 20 -> newlineMode = enabled }
             return
         }
         if (number in listOf(3, 9, 47, 1000, 1002, 1003, 1047, 1048, 1049)) sideEffectModes[number] = enabled
@@ -1289,8 +1331,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             7 -> wrap = enabled
             12 -> cursorBlink = enabled
             25 -> cursorVisible = enabled
+            45 -> reverseWrap = enabled
             66 -> applicationKeypad = enabled
             1035 -> keypadNumericOverride = enabled
+            1045 -> reverseWrapExtended = enabled
             47, 1047, 1049 -> switchScreen(number, enabled)
             1048 -> if (enabled) saved = saveCursor() else restoreCursor(saved)
             9, 1000, 1002, 1003 -> { mouseTracking = if (enabled) number else 0; mouseEpoch++ }
@@ -1346,9 +1390,11 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         7 -> wrap
         12 -> cursorBlink
         25 -> cursorVisible
+        45 -> reverseWrap
         66 -> applicationKeypad
         69 -> leftRightMarginMode
         1035 -> keypadNumericOverride
+        1045 -> reverseWrapExtended
         1004 -> focusReporting
         1006 -> sgrMouse
         1007 -> alternateScroll
@@ -1363,6 +1409,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
 
     private fun reportMode(number: Int, privateMode: Boolean) {
         val enabled = if (privateMode) privateModeState(number) else when (number) {
+            2 -> keyboardDisabled
             4 -> insertMode
             20 -> newlineMode
             else -> null

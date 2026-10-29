@@ -425,6 +425,14 @@ Browsers without the Keyboard Layout Map API infer unshifted punctuation from pr
 keys, with a US-layout fallback; exact first-key alternate reporting depends on host layout data.
 The default remains legacy input until an application negotiates Kitty.
 
+ANSI keyboard action mode (`CSI 2 h/l`, KAM) is tracked and queryable. As in Ghostty,
+hosts must explicitly set `keyboardLockAllowed = true` before applications can block
+typing. `sendKey` and committed `sendText`/IME input then respect the lock; raw
+`sendInput`, protocol replies, local shortcuts and paste remain available. The pure
+`encodeKey` function does not apply host policy. RIS and DECSTR clear the requested
+lock while retaining the host's permission setting. Both AppKit and browser views
+use these paths for keyboard and IME input.
+
 Numeric `modifyOtherKeys` mode 2 (`CSI > 4 ; 2 m`) follows the pinned Ghostty encoder;
 Kitty takes precedence while its flags are active. AppKit and browser input support
 modified Enter/Tab and printable keys, without encoding IME commitments twice.
@@ -479,6 +487,13 @@ releases or wheel events. The chosen legacy/SGR encoding remains independent of 
 Horizontal margins (DECSLRM, mode 69) constrain scrolling and character/line editing.
 Origin mode applies both horizontal and vertical offsets. Margin reports, saved modes,
 wide characters, grapheme wrapping and resize follow the pinned Ghostty oracle.
+
+BS and CUB support reverse-wrap mode 45 and extended reverse-wrap mode 1045. The first
+crosses soft-wrapped lines; the second also crosses hard line breaks and wraps from the
+top to the bottom of the scrolling region. Extended mode takes precedence when both
+are enabled. Both require autowrap (mode 7), consume a pending wrap before moving, and
+follow Ghostty's margin/outside-region behavior. Mode queries and DEC mode save/restore
+are supported; RIS and DECSTR disable both reverse-wrap modes.
 
 OSC 7 stores its raw payload in `workingDirectoryUri`; an empty report or reset clears it.
 `onWorkingDirectory` observes every accepted report, including repeated values, immediately

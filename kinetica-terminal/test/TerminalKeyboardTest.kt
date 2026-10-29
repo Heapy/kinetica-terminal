@@ -3,6 +3,42 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalKeyboardTest {
+    @Test fun keyboardLockRequiresHostOptInAndOnlySuppressesTyping() {
+        val session = TerminalSession()
+        val out = StringBuilder()
+        session.onInput { out.append(it.toByteArray().decodeToString()) }
+        session.write("\u001b[2h")
+        assertTrue(session.keyboardDisabled)
+        assertFalse(session.keyboardInputBlocked)
+        assertTrue(session.sendKey(TerminalKey("Enter")))
+        session.sendText("日本")
+        assertEquals("\r日本",out.toString())
+        session.keyboardLockAllowed = true
+        out.clear()
+        for (mode in listOf("","\u001b[>4;2m","\u001b[>31u")) {
+            session.write(mode)
+            for (action in TerminalKeyAction.entries) for (key in listOf("Enter","a","ArrowUp","Control"))
+                assertTrue(session.sendKey(TerminalKey(key,action = action)))
+            session.sendText("committed IME")
+        }
+        assertEquals("",out.toString())
+        assertNotNull(session.encodeKey(TerminalKey("Enter")),"Pure encoding remains independent of host KAM policy")
+        session.write("\u001b[?2004h\u001b[?1004h\u001b[2\$p")
+        session.paste("paste"); session.sendFocus(true); session.sendInput("raw")
+        assertEquals("\u001b[2;1\$y\u001b[200~paste\u001b[201~\u001b[Iraw",out.toString())
+        session.keyboardLockAllowed = false
+        out.clear(); session.sendText("unlocked")
+        assertEquals("unlocked",out.toString())
+        session.keyboardLockAllowed = true
+        session.write("\u001b[!p")
+        assertFalse(session.keyboardDisabled); assertTrue(session.keyboardLockAllowed)
+        session.sendText("soft")
+        session.write("\u001b[2h\u001bc")
+        assertFalse(session.keyboardDisabled); assertTrue(session.keyboardLockAllowed)
+        session.sendText("hard")
+        assertEquals("unlockedsofthard",out.toString())
+    }
+
     @Test fun negotiationStacksBelongToScreensAndReset() {
         val s = TerminalSession()
         val out = StringBuilder()

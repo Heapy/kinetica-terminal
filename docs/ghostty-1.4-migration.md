@@ -87,7 +87,9 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       output, graphics and unfinished image/frame transfers remain intact. Fifteen original-
       library scenarios cover 49 states, with another graphics execution scenario for transfers.
 - [x] Connect DECSTR/RIS to status-display/checksum state and configured checksum defaults.
-- [ ] Cover reverse-wrap/keyboard-disable modes and their soft-reset behavior.
+- [x] Reverse-wrap modes 45/1045 and ANSI keyboard-disable mode 2, including mode queries,
+      reverse-wrap save/restore and RIS/DECSTR. Host KAM enforcement is opt-in (default off,
+      matching Ghostty); AppKit/browser key and IME paths honor it while paste/replies remain usable.
 - [x] RIS resets palette overrides in addition to its existing state reset.
 - [x] DECXCPR (`CSI ?6n`) responds with `CSI ?row;column;1R`, including origin/margin handling.
 - [x] `CSI 19 t` reports screen size in characters; the release dispatches `.csi_19_t`.

@@ -395,6 +395,7 @@ public class AppKitTerminalView(
             viewport.scroll((session.rows - 1) * if (key == "PageUp") 1 else -1)
             onScrollActivity?.invoke(); return
         }
+        if (session.keyboardInputBlocked) return
         val extendedKeyboard = session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2
         val terminalKey = if (extendedKeyboard) terminalKey(event) else TerminalKey(key, control,
             optionAsMeta && flags and NSEventModifierFlagOption != 0uL, shift, keypad = keypad)
@@ -468,9 +469,9 @@ public class AppKitTerminalView(
         marked = ""; viewport.followOutput(); viewport.clearSelection()
         if (pending != null && (session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2)) {
             val key = pending.second.copy(text = value)
-            if (!session.sendKey(key)) session.sendInput(value)
+            if (!session.sendKey(key)) session.sendText(value)
             pressedKeys[pending.first] = key
-        } else session.sendInput(value)
+        } else session.sendText(value)
         viewport.markAll()
     }
     override fun setMarkedText(string: Any, selectedRange: CValue<NSRange>, replacementRange: CValue<NSRange>) {

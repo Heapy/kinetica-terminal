@@ -115,6 +115,7 @@ fun main() {
         state
     }
     api.sendInput = { text: String -> session.sendInput(text) }
+    api.allowKeyboardLock = { allowed: Boolean -> session.keyboardLockAllowed = allowed }
     api.write = { text: String -> session.write(text) }
     api.configureTheme = { background: Int -> session.configureTheme(TerminalTheme(background = background)) }
     api.screen = { (0 until session.rows).joinToString("\n") { session.screenLine(it).text() } }

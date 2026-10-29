@@ -142,7 +142,7 @@ public class BrowserTerminalView(
                 input.value = ""
                 val duplicateComposition = value == suppressComposition &&
                     (event.inputType == "insertCompositionText" || event.inputType == "insertFromComposition")
-                if (value.isNotEmpty() && !duplicateComposition) { viewport.followOutput(); viewport.clearSelection(); session.sendInput(value) }
+                if (value.isNotEmpty() && !duplicateComposition) { viewport.followOutput(); viewport.clearSelection(); session.sendText(value) }
                 suppressComposition = null
             }
         }
@@ -156,7 +156,7 @@ public class BrowserTerminalView(
             composing = false
             composition.style.display = "none"; composition.textContent = ""
             val text = (event.data as? String).orEmpty()
-            if (text.isNotEmpty()) { viewport.followOutput(); viewport.clearSelection(); session.sendInput(text) }
+            if (text.isNotEmpty()) { viewport.followOutput(); viewport.clearSelection(); session.sendText(text) }
             input.value = ""; suppressComposition = text
         }
         listen(input, "paste") { event ->

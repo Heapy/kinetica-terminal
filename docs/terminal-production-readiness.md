@@ -399,6 +399,21 @@ not a copied oracle registry. Validation passes all 631 JVM tests, fresh Release
 22 Native parser/registry/transport/backpressure tests and 8 macOS host/PTY tests, including
 real process exit and disposal. The fresh browser integration verifier also passes.
 
+BS/CUB now implement normal and extended reverse wrap (modes 45/1045), including pending
+wrap consumption, soft-line boundaries, hard-line crossing, scrolling-region wraparound,
+outside-margin behavior and extended-mode precedence. DECAWM gates both modes; RIS/DECSTR
+reset them. Fifty-four additional original-library scenarios cover 232 intermediate states,
+including one-cell grids, wide glyphs, mode queries, save/restore and screen changes. The main
+corpus now has 402 cases / 2273 states and regenerates byte-for-byte.
+
+ANSI KAM (mode 2) is tracked independently of host permission. `keyboardLockAllowed` defaults
+to false, as in Ghostty's `vt-kam-allowed`. With explicit opt-in, `sendKey` and committed
+`sendText`/IME input are suppressed, but paste, local shortcuts, raw host input and protocol
+replies remain available. The pure encoder is unchanged. AppKit and browser input paths use
+this policy, and RIS/DECSTR clear the requested lock while preserving host permission.
+Validation passes all 686 JVM tests, fresh Release JS tests, 402 Native oracle cases, six
+Native common keyboard tests, two AppKit keyboard/IME tests and the updated browser verifier.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

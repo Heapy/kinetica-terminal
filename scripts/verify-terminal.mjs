@@ -247,6 +247,37 @@ try {
     const event = new KeyboardEvent("keydown", { ...options, bubbles: true, cancelable: true });
     element.dispatchEvent(event); return event.defaultPrevented;
   }, { key, code, location: code.startsWith("Numpad") ? 3 : 0, ...modifiers });
+  // KAM is opt-in host policy. Keys and IME commits are blocked; paste and replies still work.
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[2h"));
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => keypadBytes.length === 1);
+  assert.deepEqual(await page.evaluate(() => keypadBytes), [13]);
+  await page.evaluate(() => { keypadBytes.length = 0; kineticaTerminalDemo.allowKeyboardLock(true); });
+  for (const mode of ["", "\x1b[>4;2m", "\x1b[>31u"]) {
+    await page.evaluate(mode => kineticaTerminalDemo.write(mode), mode);
+    await page.keyboard.press("a"); await page.keyboard.press("ArrowUp");
+    await input.evaluate(element => {
+      element.dispatchEvent(new CompositionEvent("compositionstart"));
+      element.dispatchEvent(new CompositionEvent("compositionend", { data:"日本" }));
+      element.value = "typed";
+      element.dispatchEvent(new InputEvent("input", { data:"typed", inputType:"insertText" }));
+    });
+  }
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[2$p"));
+  await page.waitForFunction(() => kineticaTerminalDemo.transportState().pendingInputBytes === 0 && keypadBytes.length > 0);
+  assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), "\x1b[2;1$y");
+  assert.equal(await keyEvent("v", "KeyV", { metaKey:true }), false, "KAM leaves the local paste shortcut available");
+  await input.evaluate(element => {
+    const data = new DataTransfer(); data.setData("text/plain","paste");
+    element.dispatchEvent(new ClipboardEvent("paste", { clipboardData:data, bubbles:true, cancelable:true }));
+  });
+  await page.waitForFunction(() => keypadBytes.length === 12);
+  assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), "\x1b[2;1$ypaste");
+  await page.evaluate(() => { kineticaTerminalDemo.reset(); keypadBytes.length = 0; });
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => keypadBytes.length === 1);
+  assert.deepEqual(await page.evaluate(() => keypadBytes), [13]);
+  await page.evaluate(() => { kineticaTerminalDemo.allowKeyboardLock(false); keypadBytes.length = 0; });
   // OSC 52 uses the actual browser clipboard, in this isolated browser context.
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   const clipboardText = "clipboard 世界\n" + "large ".repeat(20000);

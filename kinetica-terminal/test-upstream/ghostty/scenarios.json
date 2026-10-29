@@ -75438,5 +75438,1133 @@
         "write": "\u001b[!pF\u001b[4*y"
       }
     ]
+  },
+  {
+    "name": "reverse_wrap_off_bs",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefG"
+      },
+      {
+        "write": "\b\bX"
+      },
+      {
+        "write": "\bY"
+      },
+      {
+        "write": "\u001b[3;1H\bZ"
+      },
+      {
+        "write": "\u001b[?45$p\u001b[?1045$p"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_cub",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefG"
+      },
+      {
+        "write": "\u001b[D\u001b[DX"
+      },
+      {
+        "write": "\u001b[DY"
+      },
+      {
+        "write": "\u001b[3;1H\u001b[DZ"
+      },
+      {
+        "write": "\u001b[?45$p\u001b[?1045$p"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_pending",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdef"
+      },
+      {
+        "write": "\u001b[0DX"
+      },
+      {
+        "write": "\u001b[2DY"
+      },
+      {
+        "write": "\u001b[?7l\u001b[99DZ"
+      },
+      {
+        "write": "\u001b[?7h"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_hard_lines",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdef\r\nG"
+      },
+      {
+        "write": "\u001b[2DX"
+      },
+      {
+        "write": "\u001b[1;1H\u001b[7DY"
+      },
+      {
+        "write": "\u001b[65535DZ"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_above_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[1;1H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_above_inside",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[1;4H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_before_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[3;1H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_after_right",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[3;8H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_below_bottom",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[5;4H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_top_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_wide_screens",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcd\u754c\ud83d\ude00Z"
+      },
+      {
+        "write": "\u001b[4DX"
+      },
+      {
+        "write": "\u001b[?1049h1234567\u001b[2DY"
+      },
+      {
+        "write": "\u001b[?1049l\u001b[65535DZ"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_pending_above_margin",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?69h\u001b[1;2sAB\u001b7"
+      },
+      {
+        "write": "\u001b[2;6s\u001b[3;5r\u001b8"
+      },
+      {
+        "write": "\u001b[DX"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_off_counts",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3;4H\u001b[0D"
+      },
+      {
+        "write": "\u001b[6D"
+      },
+      {
+        "write": "\u001b[7D"
+      },
+      {
+        "write": "\u001b[35D"
+      },
+      {
+        "write": "\u001b[65535D"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_bs",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45habcdefG"
+      },
+      {
+        "write": "\b\bX"
+      },
+      {
+        "write": "\bY"
+      },
+      {
+        "write": "\u001b[3;1H\bZ"
+      },
+      {
+        "write": "\u001b[?45$p\u001b[?1045$p"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_cub",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45habcdefG"
+      },
+      {
+        "write": "\u001b[D\u001b[DX"
+      },
+      {
+        "write": "\u001b[DY"
+      },
+      {
+        "write": "\u001b[3;1H\u001b[DZ"
+      },
+      {
+        "write": "\u001b[?45$p\u001b[?1045$p"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_pending",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45habcdef"
+      },
+      {
+        "write": "\u001b[0DX"
+      },
+      {
+        "write": "\u001b[2DY"
+      },
+      {
+        "write": "\u001b[?7l\u001b[99DZ"
+      },
+      {
+        "write": "\u001b[?7h"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_hard_lines",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45habcdef\r\nG"
+      },
+      {
+        "write": "\u001b[2DX"
+      },
+      {
+        "write": "\u001b[1;1H\u001b[7DY"
+      },
+      {
+        "write": "\u001b[65535DZ"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_above_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[1;1H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_above_inside",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[1;4H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_before_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[3;1H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_after_right",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[3;8H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_below_bottom",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[5;4H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_top_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_wide_screens",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45habcd\u754c\ud83d\ude00Z"
+      },
+      {
+        "write": "\u001b[4DX"
+      },
+      {
+        "write": "\u001b[?1049h1234567\u001b[2DY"
+      },
+      {
+        "write": "\u001b[?1049l\u001b[65535DZ"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_pending_above_margin",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45h\u001b[?69h\u001b[1;2sAB\u001b7"
+      },
+      {
+        "write": "\u001b[2;6s\u001b[3;5r\u001b8"
+      },
+      {
+        "write": "\u001b[DX"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_counts",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45h\u001b[3;4H\u001b[0D"
+      },
+      {
+        "write": "\u001b[6D"
+      },
+      {
+        "write": "\u001b[7D"
+      },
+      {
+        "write": "\u001b[35D"
+      },
+      {
+        "write": "\u001b[65535D"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_bs",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045habcdefG"
+      },
+      {
+        "write": "\b\bX"
+      },
+      {
+        "write": "\bY"
+      },
+      {
+        "write": "\u001b[3;1H\bZ"
+      },
+      {
+        "write": "\u001b[?45$p\u001b[?1045$p"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_cub",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045habcdefG"
+      },
+      {
+        "write": "\u001b[D\u001b[DX"
+      },
+      {
+        "write": "\u001b[DY"
+      },
+      {
+        "write": "\u001b[3;1H\u001b[DZ"
+      },
+      {
+        "write": "\u001b[?45$p\u001b[?1045$p"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_pending",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045habcdef"
+      },
+      {
+        "write": "\u001b[0DX"
+      },
+      {
+        "write": "\u001b[2DY"
+      },
+      {
+        "write": "\u001b[?7l\u001b[99DZ"
+      },
+      {
+        "write": "\u001b[?7h"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_hard_lines",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045habcdef\r\nG"
+      },
+      {
+        "write": "\u001b[2DX"
+      },
+      {
+        "write": "\u001b[1;1H\u001b[7DY"
+      },
+      {
+        "write": "\u001b[65535DZ"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_above_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[1;1H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_above_inside",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[1;4H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_before_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[3;1H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_after_right",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[3;8H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_below_bottom",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[5;4H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_top_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_wide_screens",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045habcd\u754c\ud83d\ude00Z"
+      },
+      {
+        "write": "\u001b[4DX"
+      },
+      {
+        "write": "\u001b[?1049h1234567\u001b[2DY"
+      },
+      {
+        "write": "\u001b[?1049l\u001b[65535DZ"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_pending_above_margin",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045h\u001b[?69h\u001b[1;2sAB\u001b7"
+      },
+      {
+        "write": "\u001b[2;6s\u001b[3;5r\u001b8"
+      },
+      {
+        "write": "\u001b[DX"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_1045_counts",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1045h\u001b[3;4H\u001b[0D"
+      },
+      {
+        "write": "\u001b[6D"
+      },
+      {
+        "write": "\u001b[7D"
+      },
+      {
+        "write": "\u001b[35D"
+      },
+      {
+        "write": "\u001b[65535D"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_bs",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045habcdefG"
+      },
+      {
+        "write": "\b\bX"
+      },
+      {
+        "write": "\bY"
+      },
+      {
+        "write": "\u001b[3;1H\bZ"
+      },
+      {
+        "write": "\u001b[?45$p\u001b[?1045$p"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_cub",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045habcdefG"
+      },
+      {
+        "write": "\u001b[D\u001b[DX"
+      },
+      {
+        "write": "\u001b[DY"
+      },
+      {
+        "write": "\u001b[3;1H\u001b[DZ"
+      },
+      {
+        "write": "\u001b[?45$p\u001b[?1045$p"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_pending",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045habcdef"
+      },
+      {
+        "write": "\u001b[0DX"
+      },
+      {
+        "write": "\u001b[2DY"
+      },
+      {
+        "write": "\u001b[?7l\u001b[99DZ"
+      },
+      {
+        "write": "\u001b[?7h"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_hard_lines",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045habcdef\r\nG"
+      },
+      {
+        "write": "\u001b[2DX"
+      },
+      {
+        "write": "\u001b[1;1H\u001b[7DY"
+      },
+      {
+        "write": "\u001b[65535DZ"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_above_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[1;1H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_above_inside",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[1;4H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_before_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[3;1H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_after_right",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[3;8H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_below_bottom",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[5;4H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_top_left",
+    "columns": 8,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045h\u001b[?69h\u001b[3;6s\u001b[2;4r\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[2D"
+      },
+      {
+        "write": "\u001b[99DX"
+      },
+      {
+        "write": "\u001b[?6h\u001b[H\u001b[17DY"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_wide_screens",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045habcd\u754c\ud83d\ude00Z"
+      },
+      {
+        "write": "\u001b[4DX"
+      },
+      {
+        "write": "\u001b[?1049h1234567\u001b[2DY"
+      },
+      {
+        "write": "\u001b[?1049l\u001b[65535DZ"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_pending_above_margin",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045h\u001b[?69h\u001b[1;2sAB\u001b7"
+      },
+      {
+        "write": "\u001b[2;6s\u001b[3;5r\u001b8"
+      },
+      {
+        "write": "\u001b[DX"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_45_1045_counts",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045h\u001b[3;4H\u001b[0D"
+      },
+      {
+        "write": "\u001b[6D"
+      },
+      {
+        "write": "\u001b[7D"
+      },
+      {
+        "write": "\u001b[35D"
+      },
+      {
+        "write": "\u001b[65535D"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_single_cell",
+    "columns": 1,
+    "rows": 1,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45;1045hX"
+      },
+      {
+        "write": "\u001b[D"
+      },
+      {
+        "write": "\u001b[65535D"
+      },
+      {
+        "write": "\u001b[?7l\b"
+      }
+    ]
+  },
+  {
+    "name": "reverse_wrap_keyboard_modes_reset",
+    "columns": 6,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?45$p\u001b[?1045$p\u001b[2$p\u001b[?2$p"
+      },
+      {
+        "write": "\u001b[?45;1045h\u001b[2h\u001b[?45$p\u001b[?1045$p\u001b[2$p\u001b[?2$p"
+      },
+      {
+        "write": "\u001b[?45;1045s\u001b[?45;1045l\u001b[?45$p\u001b[?1045$p\u001b[2$p\u001b[?2$p"
+      },
+      {
+        "write": "\u001b[?45;1045r\u001b[?45$p\u001b[?1045$p\u001b[2$p\u001b[?2$p"
+      },
+      {
+        "write": "\u001b[?1049h\u001b[?45$p\u001b[?1045$p\u001b[2$p\u001b[?2$p"
+      },
+      {
+        "write": "\u001b[!p\u001b[?45$p\u001b[?1045$p\u001b[2$p\u001b[?2$p"
+      },
+      {
+        "write": "\u001b[?1049l\u001b[?45$p\u001b[?1045$p\u001b[2$p\u001b[?2$p"
+      },
+      {
+        "write": "\u001b[?45;1045h\u001b[2h\u001bc\u001b[?45$p\u001b[?1045$p\u001b[2$p\u001b[?2$p"
+      }
+    ]
   }
 ]

@@ -61,7 +61,9 @@
     "src/terminal/stream.zig",
     "src/terminal/sgr.zig",
     "src/terminal/kitty/graphics_image.zig",
-    "src/termio/Termio.zig"
+    "src/termio/Termio.zig",
+    "src/Surface.zig",
+    "src/config/Config.zig"
   ],
   "zig": "0.17.0"
 }

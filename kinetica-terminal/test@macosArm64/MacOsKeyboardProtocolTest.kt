@@ -6,6 +6,36 @@ import platform.Foundation.*
 import kotlin.test.*
 
 class MacOsKeyboardProtocolTest {
+    @Test fun optedInKeyboardLockBlocksNativeKeysAndImeCommitsUntilReset() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession()
+        val view = AppKitTerminalView(session,rendering = TerminalRendering.SOFTWARE)
+        val window = NSWindow(NSMakeRect(0.0,0.0,640.0,320.0),NSWindowStyleMaskTitled,NSBackingStoreBuffered,false)
+        window.setReleasedWhenClosed(false); window.contentView = view
+        val out = StringBuilder()
+        val observer = session.onInput { out.append(it.toByteArray().decodeToString()) }
+        fun key(type: NSEventType = NSEventTypeKeyDown) = requireNotNull(NSEvent.keyEventWithType(
+            type,NSMakePoint(0.0,0.0),0u,0.0,window.windowNumber,null,"a","a",false,0u))
+        try {
+            assertTrue(window.makeFirstResponder(view))
+            session.write("\u001b[2h")
+            view.insertText("default",NSMakeRange(NSNotFound.toULong(),0u))
+            assertEquals("default",out.toString())
+            session.keyboardLockAllowed = true; out.clear()
+            for (mode in listOf("","\u001b[>4;2m","\u001b[>31u")) {
+                session.write(mode)
+                view.keyDown(key()); view.keyUp(key(NSEventTypeKeyUp))
+                view.setMarkedText("日",NSMakeRange(1u,0u),NSMakeRange(NSNotFound.toULong(),0u))
+                view.insertText("日本",NSMakeRange(NSNotFound.toULong(),0u))
+                assertFalse(view.hasMarkedText())
+            }
+            assertEquals("",out.toString())
+            session.write("\u001b[!p")
+            view.insertText("restored",NSMakeRange(NSNotFound.toULong(),0u))
+            assertEquals("restored",out.toString())
+        } finally { observer.dispose(); view.dispose(); window.close() }
+    }
+
     @Test fun nativeEventsSendKittyModifiersRepeatReleaseAndKeepImeText() {
         NSApplication.sharedApplication()
         val session = TerminalSession()

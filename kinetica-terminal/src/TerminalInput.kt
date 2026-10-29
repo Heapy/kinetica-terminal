@@ -90,10 +90,19 @@ public fun TerminalSession.encodeKey(event: TerminalKey): String? {
         ?: if (modifyOtherKeysMode == 2) event.text?.takeIf { it.isNotEmpty() } else null
 }
 
-public fun TerminalSession.sendKey(event: TerminalKey): Boolean = encodeKey(event)?.let {
-    if (it.isNotEmpty()) sendInput(it)
-    true
-} ?: false
+/** Returns true for consumed keys, including those suppressed by an opted-in KAM lock. */
+public fun TerminalSession.sendKey(event: TerminalKey): Boolean {
+    if (keyboardInputBlocked) return true
+    return encodeKey(event)?.let {
+        if (it.isNotEmpty()) sendInput(it)
+        true
+    } ?: false
+}
+
+/** Committed typing/IME text. Raw host input and protocol replies use [sendInput] instead. */
+public fun TerminalSession.sendText(text: String) {
+    if (!keyboardInputBlocked) sendInput(text)
+}
 
 public fun TerminalSession.paste(text: String) {
     // Pasted escape bytes must not terminate bracketed paste and inject terminal commands.
