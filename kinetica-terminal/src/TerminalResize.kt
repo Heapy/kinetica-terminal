@@ -12,7 +12,7 @@ internal data class TerminalResizeResult(
     val saved: TerminalPosition?,
 )
 
-/** Rewrites packed rows; only the two cursor positions allocate markers, never individual cells. */
+/** Rewrites packed rows and tracked positions without allocating markers for ordinary cells. */
 internal fun resizeTerminal(
     screen: Array<TerminalLine>,
     history: List<TerminalLine>,
@@ -48,7 +48,11 @@ private class TerminalResizer(
         when {
             !reflow -> {
                 if (columns != this.columns) {
-                    lines = ArrayDeque(lines.map { it.resized(columns) })
+                    lines = ArrayDeque(lines.map { source ->
+                        source.resized(columns).also { target ->
+                            source.graphicsAnchors().forEach { it.moveTo(target, it.column.coerceAtMost(columns - 1)) }
+                        }
+                    })
                     cursor = cursor.copy(x = cursor.x.coerceAtMost(columns - 1))
                     saved = saved?.let { it.copy(x = it.x.coerceAtMost(columns - 1)) }
                     this.columns = columns
@@ -75,6 +79,7 @@ private class TerminalResizer(
             return if (mapped.pendingWrap && mapped.x != columns - 1)
                 mapped.copy(x = mapped.x + 1, pendingWrap = false) else mapped
         }
+        repeat(firstHistory) { lines[it].invalidateGraphicsAnchors() }
         return TerminalResizeResult(
             history = (firstHistory until historySize).map { lines[it] },
             screen = Array(rows) { lines[historySize + it] },
@@ -89,7 +94,7 @@ private class TerminalResizer(
             var remaining = rows - next
             while (remaining-- > 0) {
                 val y = lines.lastIndex
-                if (lines.last().hasText() || cursor.y == y || saved?.y == y) break
+                if (lines.last().hasText() || lines.last().hasGraphicsAnchors || cursor.y == y || saved?.y == y) break
                 lines.removeLast()
             }
         } else if (next > rows) {
@@ -123,7 +128,9 @@ private class TerminalResizer(
             output.addLast(line)
             if (output.size > rows) historyBytes += output[output.size - rows - 1].storageBytes
             while (output.size > rows && (output.size > capacity || historyBytes > historyByteLimit)) {
-                historyBytes -= output.removeFirst().storageBytes
+                val retired = output.removeFirst()
+                historyBytes -= retired.storageBytes
+                retired.invalidateGraphicsAnchors()
                 dropped++
             }
         }
@@ -138,11 +145,20 @@ private class TerminalResizer(
         for ((y, source) in lines.withIndex()) {
             var length = columns
             if (!source.wrapped) while (length > 0 && source.isEmpty(length - 1)) length--
+            // Ghostty always tracks a viewport pin at the retained origin, even at the bottom.
+            // Its blank cell participates before later pins are clamped to the destination width.
+            if (y == 0) length = maxOf(length, 1)
             if (length == 0 && source.promptMarker != TerminalPromptMarker.NONE) length = 1
+            val anchors = source.graphicsAnchors().map { anchor ->
+                val column = if (anchor.column >= length)
+                    minOf(anchor.column, next - 1 - x.coerceAtMost(next - 1)) else anchor.column
+                anchor to column
+            }
             val savedHere = saved?.takeIf { it.y == y }?.let {
                 if (it.x >= length) it.copy(x = minOf(it.x, next - 1 - x.coerceAtMost(next - 1))) else it
             }
             if (savedHere != null) length = maxOf(length, savedHere.x + 1)
+            for ((_, column) in anchors) length = maxOf(length, column + 1)
             if (cursor.y == y) length = maxOf(length, cursor.x + 1)
             if (length == 0) {
                 if (!source.wrapContinuation) deferredRows++
@@ -161,6 +177,8 @@ private class TerminalResizer(
                 // Map before copying, including a wide glyph that first needs a spacer head.
                 if (newCursor == null && cursor.y == y && cursor.x == sourceX) newCursor = outputPosition(cursor)
                 if (newSaved == null && savedHere?.x == sourceX) newSaved = outputPosition(savedHere)
+                for ((anchor, column) in anchors) if (column == sourceX && anchor.line === source)
+                    anchor.moveTo(destination, x.coerceAtMost(next - 1))
                 when {
                     source.isSpacerHead(sourceX) -> sourceX++
                     source.width(sourceX) == 2 && next == 1 -> {
@@ -168,6 +186,8 @@ private class TerminalResizer(
                         x++
                         if (newCursor == null && cursor.y == y && cursor.x == sourceX + 1) newCursor = outputPosition(cursor)
                         if (newSaved == null && savedHere?.x == sourceX + 1) newSaved = outputPosition(savedHere)
+                        for ((anchor, column) in anchors) if (column == sourceX + 1 && anchor.line === source)
+                            anchor.moveTo(destination, x.coerceAtMost(next - 1))
                         sourceX += 2
                     }
                     source.width(sourceX) == 2 && x == next - 1 -> {

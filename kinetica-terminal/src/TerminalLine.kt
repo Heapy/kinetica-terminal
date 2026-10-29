@@ -38,8 +38,22 @@ public class TerminalLine internal constructor(public val columns: Int, internal
     private var linkHighWater = 0
     // Only selected rows have listeners. Normal output allocates no mutation events.
     private var textObservers: MutableList<(Int, Int) -> Unit>? = null
+    private var graphicsAnchors: MutableSet<TerminalGraphicsAnchor>? = null
+    internal val hasGraphicsAnchors: Boolean get() = graphicsAnchors != null
+    internal fun graphicsAnchors(): List<TerminalGraphicsAnchor> = graphicsAnchors?.toList() ?: emptyList()
+    internal fun attachGraphicsAnchor(anchor: TerminalGraphicsAnchor) {
+        (graphicsAnchors ?: mutableSetOf<TerminalGraphicsAnchor>().also { graphicsAnchors = it }).add(anchor)
+    }
+    internal fun detachGraphicsAnchor(anchor: TerminalGraphicsAnchor) {
+        graphicsAnchors?.let { it.remove(anchor); if (it.isEmpty()) graphicsAnchors = null }
+    }
+    internal fun invalidateGraphicsAnchors() { graphicsAnchors().forEach { it.dispose() } }
     internal var historySlot: Int = -1
     internal var recycleEpoch: Long = 0
+        set(value) {
+            if (value != field) invalidateGraphicsAnchors()
+            field = value
+        }
     internal fun observeText(observer: (Int, Int) -> Unit): TerminalDisposable {
         val listeners = textObservers ?: mutableListOf<(Int, Int) -> Unit>().also { textObservers = it }
         listeners += observer
@@ -274,19 +288,26 @@ internal class LineRing(private val capacity: Int, private val byteLimit: Long) 
         // An oversized newest row still retires older history, preserving a contiguous suffix.
         while (size > 0 && (size == capacity || line.storageBytes > byteLimit - storageBytes)) {
             val old = lines[start]!!
+            old.invalidateGraphicsAnchors()
             lines[start] = null
             start = (start + 1) % capacity
             size--; storageBytes -= old.storageBytes
             reused = old
         }
-        if (capacity == 0 || line.storageBytes > byteLimit) return line
+        if (capacity == 0 || line.storageBytes > byteLimit) {
+            line.invalidateGraphicsAnchors()
+            return line
+        }
         val slot = (start + size++) % capacity
         lines[slot] = line; line.historySlot = slot
         storageBytes += line.storageBytes
         return reused
     }
 
-    fun clear() { lines.fill(null); start = 0; size = 0; storageBytes = 0 }
+    fun clear(preserveAnchors: Boolean = false) {
+        if (!preserveAnchors) repeat(size) { get(it).invalidateGraphicsAnchors() }
+        lines.fill(null); start = 0; size = 0; storageBytes = 0
+    }
 }
 
 internal fun codePointString(code: Int): String = when {

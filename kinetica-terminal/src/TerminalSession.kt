@@ -121,6 +121,17 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         val row = screen.indexOfFirst { it === line }
         return if (row >= 0) historySize + row else -1
     }
+    internal fun graphicsAnchor(column: Int = cursorColumn, row: Int = cursorRow): TerminalGraphicsAnchor {
+        require(row in screen.indices)
+        return TerminalGraphicsAnchor(screen[row], column, alternateScreen)
+    }
+    /** Negative rows refer to retained history; an inactive screen has no viewport position. */
+    internal fun graphicsAnchorPosition(anchor: TerminalGraphicsAnchor): TerminalPosition? {
+        if (anchor.alternateScreen != alternateScreen) return null
+        val line = anchor.line ?: return null
+        val index = indexOfLine(line)
+        return if (index < 0) null else TerminalPosition(anchor.column, index - historySize, false)
+    }
     /** Accounted primary scrollback storage, including while the alternate screen is active. */
     public val historyStorageBytes: Long get() = history.storageBytes
     internal val cursorPendingWrap: Boolean get() = pendingWrap
@@ -514,7 +525,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             }
             if (primary) {
                 scrolledLines += (result.history.size - history.size).coerceAtLeast(0)
-                history.clear()
+                history.clear(preserveAnchors = true)
                 result.history.forEach { history.add(it) }
             }
             return result
@@ -548,6 +559,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         primaryKeyboard.reset(); alternateKeyboard.reset()
         primarySemantic.reset(); alternateSemantic.reset(); promptRedraw = TerminalPromptRedraw.ALL
         selectionEpoch++; screenEpoch++
+        screen.forEach { it.invalidateGraphicsAnchors() }
+        primary?.forEach { it.invalidateGraphicsAnchors() }
+        alternate?.forEach { it.invalidateGraphicsAnchors() }
         history.clear(); primary = null; alternate = null; alternateScreen = false
         screen = Array(rows) { TerminalLine(columns, colors, limits.hyperlinkBytesPerLine) }
         cursorColumn = 0; cursorRow = 0; cursorVisible = true

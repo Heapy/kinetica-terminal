@@ -129,6 +129,19 @@ oracle artifacts reproduce byte-for-byte; the 98 geometry C-helper paths pass Ad
 with the same instrumentation limits. These functions are not yet wired to live line anchors,
 reflow/screen lifecycle or renderers; the complete placement acceptance item stays open.
 
+The following increment adds row-owned graphics anchors to the session and resizer. Anchors
+survive ordinary text erasure and follow retained rows through scrolling, primary reflow and
+alternate-grid resizing. Retired rows invalidate anchors and release references on strict
+history eviction, clear/reset and recycling. Empty rows with anchors remain significant during
+height reduction; wide-cell and blank-cell remapping is checked against actual libghostty
+placements. The dedicated corpus contains 45 cases and 418 checkpoints, with whole/bytewise
+replay. Explicit history erasure deliberately invalidates deleted anchors instead of Ghostty's
+relocation to `(0, 0)`; the corpus documents that policy and preserves the original snapshots.
+This remains internal infrastructure: placement dispatch, margin integration and renderers are
+still outstanding. Validation passes all 515 JVM tests, the freshly built JS suite and 36 Native
+graphics tests. Both new generated artifacts reproduce byte-for-byte, and the 45 C-helper paths
+pass AddressSanitizer with the upstream library uninstrumented and leak detection disabled.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

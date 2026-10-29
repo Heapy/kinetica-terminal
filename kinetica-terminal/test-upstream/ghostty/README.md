@@ -30,6 +30,23 @@ margin scrolls. No expected geometry is calculated by the Python generator.
 These are component tests: actual line anchors, reflow/screen lifecycle, parent chains,
 placeholder rendering and platform pixels are not covered by this geometry corpus yet.
 
+The [row-anchor corpus](graphics-anchors-manifest.json) is generated with
+`python3 scripts/generate-terminal-graphics-anchors.py /path/to/ghostty`. Its 45 cases
+and 418 checkpoints create real placements in the original library and replay text writes,
+scrolling, width/height changes and screen switches. Common tests attach internal row anchors
+at the same cursor positions and compare viewport coordinates, cursor, pending wrap and history
+after whole and bytewise writes. Cases include blank pins, several pins in different insertion
+orders, overwritten/erased text, wide glyph heads/tails, one-column grids, saved cursors and
+resizing inactive screens. Tall placements make history origins observable through the public
+viewport API without inventing expected coordinates in the generator.
+
+One declared difference is `anchorPolicy: retire-cleared-history`: the pinned Ghostty's explicit
+history erasure moves pins in deleted rows to `(0, 0)`, whereas Kinetica invalidates them and
+releases their row references. The raw oracle snapshots retain Ghostty's result; only those
+previously observed history pins are compared against the declared retirement policy. Separate
+common tests check strict line/byte-limit eviction, recycling, disposal and reset of both screens.
+These tests prove anchor mechanics, not APC execution, margin clipping integration or rendering.
+
 `scenarios.json` is the input specification. The C helper in
 `scripts/terminal-ghostty-oracle.c` runs the original `libghostty-vt` through its
 public API. After every write/resize/key batch it exports logical cells, wraps, cursor,
