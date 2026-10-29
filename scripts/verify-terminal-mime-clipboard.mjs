@@ -50,7 +50,7 @@ try {
     });
   });
 
-  // The sample explicitly starts write-only; reading requires a separate host decision.
+  // Reads require a user paste grant or a separate host decision.
   assert.equal(await exchange(read("text/plain")), status("read", "EPERM"));
   const binary = Buffer.from(Array.from({ length: 8193 }, (_, index) => index % 251));
   const png = Buffer.from(await page.evaluate(async () => {
@@ -71,6 +71,37 @@ try {
   assert.match(byMime.get("text/html").toString(), /<b>hello 世界<\/b>/);
   assert.deepEqual(byMime.get("application/x-kinetica-binary"), binary);
   assert.equal(byMime.get("image/png").subarray(1, 4).toString(), "PNG");
+  // A real trusted paste must send metadata and a one-use password, without text insertion.
+  await page.evaluate(() => {
+    kineticaTerminalDemo.mimeClipboardPolicy("paste");
+    kineticaTerminalDemo.receiveBytes(new TextEncoder().encode("\x1b[?5522h\x1b[?2004h"));
+  });
+  assert.equal(await exchange("\x1b[?5522$p"), "\x1b[?5522;1$y");
+  await page.evaluate(() => { mimeReplies.length = 0; });
+  await page.locator("textarea").focus();
+  await page.keyboard.press(process.platform === "darwin" ? "Meta+v" : "Control+v");
+  await page.waitForFunction(() => new TextDecoder().decode(new Uint8Array(mimeReplies)).includes("status=DONE"));
+  const pasteEvent = Buffer.from(await page.evaluate(() => mimeReplies)).toString();
+  const password = pasteEvent.match(/:pw=([^\x1b\x07]+)/)?.[1];
+  assert.ok(password, "Trusted paste must emit a password");
+  assert.equal(Buffer.from(password, "base64").length, 22);
+  assert.ok(!pasteEvent.includes("\x1b[200~"));
+  assert.ok(!pasteEvent.includes(b64(formats[0][1])));
+  assert.ok(pasteEvent.includes(b64([...byMime.keys()].join(" ") + "\n")));
+  const granted = read("application/x-kinetica-binary", `:name=${b64("Paste event")}:pw=${password}`);
+  assert.equal(await exchange(granted), readReply([["application/x-kinetica-binary", binary]]));
+  assert.equal(await exchange(granted), status("read", "EPERM"));
+  // Script-created DOM events stay ordinary text and cannot create a clipboard grant.
+  await page.evaluate(() => {
+    mimeReplies.length = 0;
+    const data = new DataTransfer(); data.setData("text/plain", "synthetic");
+    document.querySelector("textarea").dispatchEvent(new ClipboardEvent("paste", {
+      clipboardData: data, bubbles: true, cancelable: true,
+    }));
+  });
+  await page.waitForFunction(() => mimeReplies.length > 0 && kineticaTerminalDemo.transportState().pendingInputBytes === 0);
+  assert.equal(Buffer.from(await page.evaluate(() => mimeReplies)).toString(), "\x1b[200~synthetic\x1b[201~");
+  assert.equal(await exchange("\x1b[?5522l\x1b[?2004l\x1b[?5522$p"), "\x1b[?5522;2$y");
   await page.evaluate(() => kineticaTerminalDemo.mimeClipboardPolicy("allow"));
   const listing = [...byMime.keys()].join(" ") + "\n";
   assert.equal(await exchange(read(". application/x-kinetica-binary text/plain")),

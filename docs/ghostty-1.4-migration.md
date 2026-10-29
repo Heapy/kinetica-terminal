@@ -103,8 +103,8 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Support is enabled by a host observer, matching libghostty's optional effect handler;
       views do not automatically show statuses. The bounded registry also implements record
       replacement, app inheritance, subtree clearing and prompt/transport lifecycle cleanup.
-- [ ] OSC 5522 clipboard transactions, host authorization, MIME data, aliases, cancellation,
-      bounded buffering and protocol replies. Existing OSC 52 support does not cover it.
+- [x] OSC 5522 clipboard transactions, host authorization, MIME data, aliases, cancellation,
+      bounded buffering and acknowledged protocol replies, with AppKit/browser MIME adapters.
 - [x] Reconcile origin-relative CHA/VPA/HPR/VPR, CUB/BS margin behavior and the changed reflow scenarios.
 - [x] Extend coverage for parameterless TBC and pending wrap with DECAWM disabled. Tab
       movement/clearing preserves pending wrap; TBC rejects extra parameters. CSI parameter
@@ -138,12 +138,13 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       erasure/protection, tabs, history/reflow, screens, resets and mode query/save/restore.
       Browser/AppKit restore host geometry on mode-40 requests; transports and native PTYs
       receive accepted size changes. Ordinary browser repainting preserves protocol geometry.
-- [ ] Close the clipboard paste-event mode 5522 gap.
-      Validate their behavior and host integration before advertising mutable support.
-      Internal metadata/write accumulation, response encoding and bounded password-grant
-      storage are implemented and compared with original modules. Session dispatch, async
-      authorization/reply delivery, secure paste-password generation and MIME-aware platform
-      adapters remain required before enabling the protocol.
+- [x] Close the clipboard paste-event mode 5522 gap. Mode reporting depends on a MIME host;
+      save/restore and RIS/DECSTR match the original. Trusted AppKit/browser paste sends metadata
+      and a secure one-time read grant, preserving order across OSC 52/5522 and gestures.
+      Session tests cover delivery failure, host replacement, reset and stale callbacks;
+      platform checks cover lazy AppKit providers and real trusted Chromium paste. Scripted
+      text and dropped paths keep their normal paste behavior. See the production-readiness
+      log for validation and the module guide for host policy and bounded queue semantics.
 
 ## Graphics and external media
 

@@ -86,6 +86,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         private set
     public var bracketedPaste: Boolean = false
         private set
+    public var kittyPasteEvents: Boolean = false
+        private set
+    public val clipboardPasteEventsEnabled: Boolean get() = kittyPasteEvents && kittyClipboardBinding?.hasHost == true
+    private var clipboardPasteEpoch = 0L
     public var focusReporting: Boolean = false
         private set
     public var colorSchemeReporting: Boolean = false
@@ -320,8 +324,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private var clipboardBinding: TerminalClipboardBinding? = null
     private var clipboardOwner: Any? = null
     private var kittyClipboardBinding: TerminalKittyClipboardBinding? = null
-    private data class PendingClipboard(val kitty: Boolean, val payload: String, val terminator: Int)
+    private data class PendingClipboard(val kitty: Boolean, val payload: String, val terminator: Int, val order: Long)
     private var pendingClipboard: PendingClipboard? = null
+    private data class PendingPaste(val order: Long, val epoch: Long, val binding: TerminalKittyClipboardBinding,
+        val location: TerminalClipboardLocation, val complete: (TerminalClipboardResult) -> Unit)
+    private val pendingPastes = ArrayDeque<PendingPaste>()
+    private var clipboardOrder = 0L
+    private var clipboardDraining = false
+    private var clipboardCancelDepth = 0
     private val outputReadyObservers = mutableListOf<() -> Unit>()
     private val clipboardReplies = TerminalClipboardReplies({ bytes, required, done -> emitProtocolReply(bytes, done, !required) },
         { cancelClipboardOperations() }, ::resumeClipboardOutput)
@@ -473,7 +483,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
      * Attach an OSC 5522 MIME host with explicit authorization (denied by default).
      * Use a bounded stream/PTY adapter or [writeAvailable] for asynchronous host operations.
      * Replacing or disposing this host cancels pending clipboard operations and remembered grants.
-     * This enables read/write commands; mode 5522 paste events require a separate secure paste host.
+     * This also enables mode 5522. Route trusted user clipboard gestures through [pasteClipboard].
      */
     public fun attachMimeClipboard(clipboard: TerminalMimeClipboard, policy: TerminalMimeClipboardPolicy = TerminalMimeClipboardPolicy.DENY): TerminalDisposable {
         cancelClipboardOperations()
@@ -496,36 +506,81 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private val clipboardOperationPending: Boolean get() =
         (clipboardBinding?.pendingRequests ?: 0) > 0 || (kittyClipboardBinding?.pendingRequests ?: 0) > 0
 
+    /**
+     * Handle a trusted user clipboard gesture as a protected mode-5522 event. Never call this
+     * for application output, synthetic browser events, IME or dropped/scripted text.
+     * False means mode/host unavailable: the caller may perform its ordinary text paste.
+     * True means handled, including failures: do not fall back to text. Completion runs once
+     * after delivery or cancellation. At most sixteen gestures wait behind clipboard I/O.
+     */
+    public fun pasteClipboard(location: TerminalClipboardLocation = TerminalClipboardLocation.STANDARD,
+        complete: (TerminalClipboardResult) -> Unit = {}): Boolean {
+        val binding = kittyClipboardBinding
+        if (!kittyPasteEvents || binding?.hasHost != true) return false
+        if (clipboardCancelDepth > 0 || pendingPastes.size >= 16) { complete(TerminalClipboardResult.BUSY); return true }
+        pendingPastes.addLast(PendingPaste(++clipboardOrder, clipboardPasteEpoch, binding, location, complete))
+        resumeClipboardOutput()
+        return true
+    }
+
     private fun acceptClipboard(payload: String, terminator: Int, kitty: Boolean) {
         if (!kitty && clipboardBinding == null) return
         if (kitty && kittyClipboardBinding == null) kittyClipboardBinding = newKittyClipboardBinding(null)
         check(pendingClipboard == null) { "Clipboard output is paused; retry the unconsumed suffix with writeAvailable" }
         // Preserve operation order across protocols, including asynchronous permission dialogs.
         // Ordinary output may continue until the next clipboard command needs the same host.
-        if (kittyClipboardBinding != null && clipboardOperationPending)
-            pendingClipboard = PendingClipboard(kitty, payload, terminator)
-        else if (kitty) {
-            if (kittyClipboardBinding!!.accept(payload, terminator) == false)
-                pendingClipboard = PendingClipboard(true, payload, terminator)
-        } else clipboardBinding?.accept(payload, terminator)
+        val command = PendingClipboard(kitty, payload, terminator, ++clipboardOrder)
+        if (kittyClipboardBinding != null && (clipboardOperationPending || pendingPastes.isNotEmpty())) pendingClipboard = command
+        else dispatchClipboard(command)
+    }
+
+    private fun dispatchClipboard(command: PendingClipboard) {
+        if (command.kitty) {
+            if (kittyClipboardBinding?.accept(command.payload, command.terminator) == false) pendingClipboard = command
+        } else clipboardBinding?.accept(command.payload, command.terminator)
     }
 
     private fun resumeClipboardOutput() {
-        val pending = pendingClipboard
-        if (pending != null) {
-            if (clipboardOperationPending) return
-            // Clear before retry: synchronous completion may call readiness again.
-            pendingClipboard = null
-            acceptClipboard(pending.payload, pending.terminator, pending.kitty)
-        }
+        if (clipboardDraining || clipboardCancelDepth > 0) return
+        clipboardDraining = true
+        try {
+            while (!clipboardOperationPending && !clipboardReplies.busy) {
+                val command = pendingClipboard
+                val paste = pendingPastes.firstOrNull()
+                if (command != null && (paste == null || command.order < paste.order)) {
+                    pendingClipboard = null
+                    dispatchClipboard(command)
+                    if (pendingClipboard != null) break
+                } else if (paste != null) {
+                    pendingPastes.removeFirst()
+                    fun valid() = kittyPasteEvents && paste.epoch == clipboardPasteEpoch && kittyClipboardBinding === paste.binding
+                    if (!valid()) paste.complete(TerminalClipboardResult.BUSY)
+                    else if (!paste.binding.paste(paste.location, ::valid) { status ->
+                        paste.complete(when (status) {
+                            KittyClipboardStatus.DONE -> TerminalClipboardResult.SUCCESS
+                            KittyClipboardStatus.EPERM -> TerminalClipboardResult.DENIED
+                            KittyClipboardStatus.ENOSYS -> TerminalClipboardResult.UNSUPPORTED
+                            KittyClipboardStatus.EBUSY -> TerminalClipboardResult.BUSY
+                            else -> TerminalClipboardResult.IO_ERROR
+                        })
+                    }) paste.complete(TerminalClipboardResult.BUSY)
+                } else break
+            }
+        } finally { clipboardDraining = false }
         if (!outputPaused) outputReadyObservers.toList().forEach { it() }
     }
 
     internal fun cancelClipboardOperations(preserveWrite: Boolean = false) {
-        pendingClipboard = null
-        clipboardReplies.cancel()
-        clipboardBinding?.reset()
-        kittyClipboardBinding?.reset(preserveWrite)
+        clipboardCancelDepth++
+        try {
+            pendingClipboard = null
+            val canceled = pendingPastes.toList(); pendingPastes.clear()
+            clipboardReplies.cancel()
+            clipboardBinding?.reset()
+            kittyClipboardBinding?.reset(preserveWrite)
+            canceled.forEach { it.complete(TerminalClipboardResult.BUSY) }
+        } finally { clipboardCancelDepth-- }
+        resumeClipboardOutput()
     }
 
     public fun sendInput(text: String) = emitInput(TerminalInputData.Text(text))
@@ -850,6 +905,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         protectedCell = false; protectionMode = 0; primaryProtectionMode = 0; alternateProtectionMode = 0
         origin = false; wrap = true; pendingWrap = false; insertMode = false; charset = TerminalCharsetState()
         applicationCursor = false; bracketedPaste = false; focusReporting = false
+        kittyPasteEvents = false; clipboardPasteEpoch++
         keyboardDisabled = false; reverseWrap = false; reverseWrapExtended = false
         colorSchemeReporting = false; visibilityReporting = false
         inBandResizeReporting = false
@@ -1530,6 +1586,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             2031 -> colorSchemeReporting = enabled
             2033 -> { visibilityReporting = enabled; if (enabled) reportVisibility() }
             2048 -> { inBandResizeReporting = enabled; if (enabled) reportSize() }
+            5522 -> { if (kittyPasteEvents != enabled) clipboardPasteEpoch++; kittyPasteEvents = enabled }
         }
     }
 
@@ -1590,11 +1647,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         2031 -> colorSchemeReporting
         2033 -> visibilityReporting
         2048 -> inBandResizeReporting
+        5522 -> kittyPasteEvents
         else -> null
     }
 
     private fun reportMode(number: Int, privateMode: Boolean) {
-        val enabled = if (privateMode) privateModeState(number) else when (number) {
+        val enabled = if (privateMode) {
+            if (number == 5522 && kittyClipboardBinding?.hasHost != true) null else privateModeState(number)
+        } else when (number) {
             2 -> keyboardDisabled
             4 -> insertMode
             12 -> sendReceiveMode

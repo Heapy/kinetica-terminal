@@ -627,15 +627,26 @@ copy/paste gestures retain their existing behavior independently of OSC 52 polic
 OSC 5522 supports MIME reads, available-type listings, chunked writes, aliases, clearing,
 status replies and remembered password grants. Supply a `TerminalMimeClipboard` implementation
 through `session.attachMimeClipboard(backend, policy)`. `TerminalMimeClipboardPolicy.DENY`
-is the default; `WRITE_ONLY`, `ALLOW` or a custom asynchronous policy can authorize operations.
+is the default; `WRITE_ONLY`, `WRITE_AND_PASTE`, `ALLOW` or a custom asynchronous policy can authorize operations.
 Requests expose the untrusted application name, direction, MIME types and grant state, never
 the password itself. A host must commit all write representations atomically, and report
 unsupported destinations or I/O errors explicitly. Without an attached host, reads return EPERM
 and writes return ENOSYS. Both platform views and DSL host adapters accept a separate
-`mimeClipboardPolicy`, defaulting to `DENY`; both samples explicitly select `WRITE_ONLY`.
+`mimeClipboardPolicy`, defaulting to `DENY`; both samples explicitly select `WRITE_AND_PASTE`.
 The views also accept a custom `mimeClipboard` backend and detach it on disposal.
-Secure mode-5522 paste events are still pending; their platform password generator is implemented
-and compared with Ghostty's rejection-sampling algorithm.
+
+With mode 5522 enabled, AppKit Paste and trusted browser paste events send a MIME-type listing
+and a cryptographically generated one-use read password instead of inserting clipboard text.
+`WRITE_AND_PASTE` allows that follow-up read and writes, without granting unsolicited reads.
+Explicit `DENY`/`WRITE_ONLY` policies still reject the follow-up read. Clipboard data is fetched
+only for the requested formats. Failures do not fall back to inserting text.
+Custom hosts should call `session.pasteClipboard()` only for trusted user clipboard gestures;
+its `false` return allows ordinary text paste when the mode or host is unavailable. A `true`
+return means handled, including failures; the optional completion reports delivery or cancellation.
+`session.paste(text)`, dropped paths, IME input and synthetic browser paste events remain text input.
+Mode queries report unknown without a MIME host; save/restore and RIS/DECSTR follow Ghostty.
+Up to sixteen gestures can wait behind clipboard I/O. Host replacement, reset and transport
+failure cancel pending gestures and revoke their passwords.
 
 The AppKit MIME adapter maps types through Uniform Type Identifiers, including custom binary
 formats, and publishes all representations as one pasteboard item. Listings inspect only declared

@@ -29,6 +29,10 @@ public fun interface TerminalMimeClipboardPolicy {
         public val WRITE_ONLY: TerminalMimeClipboardPolicy = TerminalMimeClipboardPolicy { request, done ->
             done(TerminalClipboardDecision(request.operation == TerminalClipboardOperation.WRITE))
         }
+        /** Permit writes and reads authorized by a user paste, without remembering new grants. */
+        public val WRITE_AND_PASTE: TerminalMimeClipboardPolicy = TerminalMimeClipboardPolicy { request, done ->
+            done(TerminalClipboardDecision(request.operation == TerminalClipboardOperation.WRITE || request.granted))
+        }
     }
 }
 

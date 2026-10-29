@@ -173,6 +173,53 @@ class MacOsNativeMimeClipboardTest {
         } finally { view.dispose(); input.dispose() }
     }
 
+    @Test fun userPasteListsLazyFormatsAndAuthorizesExactlyOneRead() = isolated { board ->
+        NSApplication.sharedApplication()
+        val loads = mutableListOf<String>()
+        val provider = object : NSObject(), NSPasteboardItemDataProviderProtocol {
+            override fun pasteboard(pasteboard: NSPasteboard?, item: NSPasteboardItem, provideDataForType: String?) {
+                loads += checkNotNull(provideDataForType)
+                item.setString("private clipboard", provideDataForType)
+            }
+        }
+        val item = NSPasteboardItem()
+        assertTrue(item.setDataProvider(provider, listOf(NSPasteboardTypeString, NSPasteboardTypeHTML)))
+        assertTrue(board.writeObjects(listOf(item)))
+        val session = TerminalSession()
+        val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE,
+            mimeClipboard = TerminalNativeMimeClipboard(board),
+            mimeClipboardPolicy = TerminalMimeClipboardPolicy.WRITE_AND_PASTE)
+        val replies = StringBuilder()
+        val input = session.onInput {
+            val delivered = (it as? TerminalInputData.ProtocolReply)?.trackDelivery()
+            replies.append(it.toByteArray().decodeToString())
+            delivered?.invoke(true)
+        }
+        try {
+            session.write("\u001b[?5522h\u001b[?2004h")
+            view.paste(null)
+            assertTrue(loads.isEmpty(), "Paste event must only list metadata")
+            val event = replies.toString()
+            val password = event.substringAfter(":pw=").substringBefore("\u001b\\")
+            assertEquals(22, Base64.decode(password).size)
+            assertContains(event, b64("text/plain text/html\n"))
+            assertFalse(event.contains("private clipboard"))
+            assertFalse(event.contains("\u001b[200~"))
+            val request = osc("type=read:name=${b64("Paste event")}:pw=$password;${b64("text/html")}")
+            replies.clear(); session.write(request)
+            assertEquals(listOf(checkNotNull(NSPasteboardTypeHTML)), loads)
+            assertEquals(osc("type=read:status=OK") +
+                osc("type=read:status=DATA:mime=${b64("text/html")};${b64("private clipboard")}") +
+                osc("type=read:status=DONE"), replies.toString())
+            replies.clear(); session.write(request)
+            assertEquals(osc("type=read:status=EPERM"), replies.toString())
+            assertEquals(1, loads.size)
+            replies.clear(); view.pasteFilePaths(listOf("/tmp/file name"))
+            assertEquals("\u001b[200~'/tmp/file name' \u001b[201~", replies.toString())
+            assertEquals(1, loads.size, "Dropped paths must not access clipboard")
+        } finally { view.dispose(); input.dispose() }
+    }
+
     private fun isolated(test: (NSPasteboard) -> Unit) {
         val board = NSPasteboard.pasteboardWithUniqueName()
         try { test(board) } finally { board.releaseGlobally() }

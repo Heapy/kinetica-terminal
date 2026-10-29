@@ -712,6 +712,24 @@ the expanded corpus and manifest reproduce byte-for-byte.
 Session mode state, cross-protocol gesture ordering and native/browser paste entry points
 remain to be wired before mode 5522 is advertised.
 
+Mode 5522 is now connected to session state and trusted AppKit/browser paste gestures.
+Its capability query requires an attached MIME host, while save/restore retains the mode bit;
+DECSTR preserves it and RIS clears it. User gestures join the ordered OSC 52/5522 queue,
+with at most sixteen waiting behind clipboard I/O. Metadata callbacks are invalidated by
+mode changes, and host replacement/reset/transport failure cancel pending work and grants.
+A handled failure never inserts clipboard text as a fallback. Scripted text, dropped paths
+and synthetic browser events keep their ordinary text-paste path.
+
+The samples use WRITE_AND_PASTE: writes and a granted follow-up read are allowed, without
+allowing unsolicited reads or remembering new permissions. Library views still default to
+DENY. A real Chromium paste verifies the event, custom binary follow-up and rejected password
+reuse. An isolated AppKit pasteboard verifies that user paste does not load lazy providers,
+that only the requested format is read, and that dropped paths remain ordinary text.
+Validation passes 1025 JVM tests, the fresh Release JS suite, 63 Native clipboard tests,
+nine native UI/application tests, the browser MIME verifier and the general browser verifier.
+The original clipboard oracle remains at 1070 cases / 4618 checkpoints; this increment adds
+host/session integration checks without changing generated fixtures.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

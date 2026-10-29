@@ -90,7 +90,7 @@ internal class TerminalApplication(
                     closed = { terminals.remove(terminal) }, release = terminal::close),
                 hostWidgets = appKitTerminalHosts(mapOf("shell" to terminal.session), controls = true,
                     clipboardPolicy = TerminalClipboardPolicy.WRITE_ONLY,
-                    mimeClipboardPolicy = TerminalMimeClipboardPolicy.WRITE_ONLY,
+                    mimeClipboardPolicy = TerminalMimeClipboardPolicy.WRITE_AND_PASTE,
                     notificationPolicy = { true },
                     onView = { _, view -> terminal.attached(view) }),
             ) { TerminalContent(terminal) }

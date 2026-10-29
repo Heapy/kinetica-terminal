@@ -589,7 +589,11 @@ public class AppKitTerminalView(
         val text = viewport.selectedText()
         if (text.isNotEmpty()) { NSPasteboard.generalPasteboard.clearContents(); NSPasteboard.generalPasteboard.setString(text, NSPasteboardTypeString) }
     }
-    private fun pasteClipboard() { NSPasteboard.generalPasteboard.stringForType(NSPasteboardTypeString)?.let { viewport.followOutput(); viewport.clearSelection(); session.paste(it) } }
+    private fun pasteClipboard() {
+        if (disposed) return
+        if (session.pasteClipboard()) { viewport.followOutput(); viewport.clearSelection(); return }
+        NSPasteboard.generalPasteboard.stringForType(NSPasteboardTypeString)?.let { viewport.followOutput(); viewport.clearSelection(); session.paste(it) }
+    }
     public fun scrollTo(offset: Int) {
         val previous = viewport.scrollOffset
         viewport.scrollTo(offset)
@@ -614,7 +618,7 @@ public class AppKitTerminalView(
         }
         autoenablesItems = false
         item("Copy", "copy:", viewport.selectedText().isNotEmpty())
-        item("Paste", "paste:", NSPasteboard.generalPasteboard.stringForType(NSPasteboardTypeString) != null)
+        item("Paste", "paste:", session.clipboardPasteEventsEnabled || NSPasteboard.generalPasteboard.stringForType(NSPasteboardTypeString) != null)
         item("Select All", "selectAll:")
         addItem(NSMenuItem.separatorItem())
         item("Clear Screen", "clearScreen:")

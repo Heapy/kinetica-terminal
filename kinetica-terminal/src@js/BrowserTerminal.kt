@@ -168,8 +168,12 @@ public class BrowserTerminalView(
         }
         listen(input, "paste") { event ->
             event.preventDefault(); event.stopPropagation()
-            val text = event.clipboardData?.getData("text/plain") as? String
-            if (text != null) { viewport.followOutput(); viewport.clearSelection(); session.paste(text) }
+            if (event.isTrusted == true && session.pasteClipboard()) {
+                viewport.followOutput(); viewport.clearSelection()
+            } else {
+                val text = event.clipboardData?.getData("text/plain") as? String
+                if (text != null) { viewport.followOutput(); viewport.clearSelection(); session.paste(text) }
+            }
         }
         listen(root, "copy") { event ->
             val text = viewport.selectedText()

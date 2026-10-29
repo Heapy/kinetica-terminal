@@ -31,7 +31,7 @@ fun main() {
     var fontSize = 14.0
     var fontFamily: String? = null
     var clipboardPolicy = TerminalClipboardPolicy.WRITE_ONLY
-    var mimeClipboardPolicy = TerminalMimeClipboardPolicy.WRITE_ONLY
+    var mimeClipboardPolicy = TerminalMimeClipboardPolicy.WRITE_AND_PASTE
     var notificationAllowed = true
     var surface: BrowserTerminalView? = null
     val app = BrowserKineticaApp(checkNotNull(document.querySelector("#app")),
@@ -93,6 +93,7 @@ fun main() {
         mimeClipboardPolicy = when (mode) {
             "deny" -> TerminalMimeClipboardPolicy.DENY
             "write" -> TerminalMimeClipboardPolicy.WRITE_ONLY
+            "paste" -> TerminalMimeClipboardPolicy.WRITE_AND_PASTE
             "allow" -> TerminalMimeClipboardPolicy.ALLOW
             else -> error("Unknown MIME clipboard policy")
         }

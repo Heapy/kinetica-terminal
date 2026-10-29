@@ -57,6 +57,7 @@ internal class TerminalKittyClipboardBinding(
         val status: KittyClipboardStatus? = null,
         val paste: Boolean = false,
         var pasteComplete: ((KittyClipboardStatus) -> Unit)? = null,
+        val pasteValid: () -> Boolean = { true },
     )
     private val queue = ArrayDeque<Pending>()
     private val grants = KittyClipboardGrants()
@@ -73,10 +74,10 @@ internal class TerminalKittyClipboardBinding(
     /** Trusted user gesture only. False admits nothing; retry when ready, just like [accept].
      * Completion reports DONE after delivery, or an error without sending an unsolicited error
      * packet. Reset/disposal cancels accepted gestures with EBUSY and revokes their grants. */
-    fun paste(location: TerminalClipboardLocation, complete: (KittyClipboardStatus) -> Unit): Boolean {
+    fun paste(location: TerminalClipboardLocation, valid: () -> Boolean = { true }, complete: (KittyClipboardStatus) -> Unit): Boolean {
         if (!hasHost || queue.size >= queueLimit) return false
         enqueue(Pending(KittyClipboardMetadata(KittyClipboardOperation.READ, location, "", "", "", ""),
-            terminator = 0, paste = true, pasteComplete = complete))
+            terminator = 0, paste = true, pasteComplete = complete, pasteValid = valid))
         return true
     }
 
@@ -197,6 +198,7 @@ internal class TerminalKittyClipboardBinding(
                     fun fail(result: KittyClipboardStatus) {
                         if (current() && !responded) { responded = true; release(result) }
                     }
+                    if (!pending.pasteValid()) { fail(KittyClipboardStatus.EBUSY); continue }
                     val password = generateKittyClipboardPassword(random)
                     if (password == null) { fail(KittyClipboardStatus.EIO); continue }
                     try {
@@ -204,7 +206,8 @@ internal class TerminalKittyClipboardBinding(
                         // The application's later request still goes through the host's policy.
                         host!!.read(pending.metadata.location, emptyList(), true) { result ->
                             if (current() && !responded) {
-                                if (result.status != KittyClipboardStatus.OK)
+                                if (!pending.pasteValid()) fail(KittyClipboardStatus.EBUSY)
+                                else if (result.status != KittyClipboardStatus.OK)
                                     fail(if (result.status in READ_ERRORS) result.status else KittyClipboardStatus.EIO)
                                 else {
                                     val packets = KittyClipboardReadSuccess(
