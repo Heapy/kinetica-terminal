@@ -47,6 +47,26 @@ previously observed history pins are compared against the declared retirement po
 common tests check strict line/byte-limit eviction, recycling, disposal and reset of both screens.
 These tests prove anchor mechanics, not APC execution, margin clipping integration or rendering.
 
+The [session execution corpus](graphics-execution-manifest.json) is generated with
+`python3 scripts/generate-terminal-graphics-execution.py /path/to/ghostty`. Its 196 cases
+and 2017 checkpoints replay complete APC bytes and ordinary terminal operations through
+`TerminalSession`, both whole and bytewise. The reference helper receives exactly the same
+writes, geometry changes and storage limits. The comparator checks every selected image's
+decoded bytes, exact PTY replies, placement fields/resolved geometry/layers, cursor, pending
+wrap, screen/history and text/wide-cell rows. Placement iteration is compared as an unordered
+multiset; probe IDs are checked against the complete Kinetica image count.
+
+This corpus reuses the storage, small-image geometry and anchor inputs, recording fresh
+original-library snapshots for the integrated path. It adds deferred transmit-and-display,
+ID/number/implicit lookup, placement replacement, internal IDs, virtual and relative placements,
+parent selection/cycles/depth/saturated offsets, cascade deletion, eviction, all static deletion
+selectors, screen switches, reset, erasure, full/margin scrolling, IL/DL and render holds.
+The manifest hashes all reused input generators. The previously declared explicit-history-clear
+policy case remains in the anchor corpus; this execution corpus does not normalize snapshots.
+Static `d=f/F` behavior is covered, but animation execution and Unicode-placeholder rendering
+are still pending. PNG decode has its separate libpng corpus; the original C helper does not
+install a PNG callback. No file/shared-memory input or platform renderer runs in these tests.
+
 `scenarios.json` is the input specification. The C helper in
 `scripts/terminal-ghostty-oracle.c` runs the original `libghostty-vt` through its
 public API. After every write/resize/key batch it exports logical cells, wraps, cursor,

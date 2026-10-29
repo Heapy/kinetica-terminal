@@ -188,10 +188,25 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     // Transport budget checkpoints: ordinary text is checked every small byte slice, while
     // potentially expensive control operations are followed by an immediate checkpoint.
     private var controlEpoch = 0
+    private val primaryGraphics = TerminalGraphicsState(this, ::damageAll)
+    private val alternateGraphics = TerminalGraphicsState(this, ::damageAll)
+    internal val graphicsState: TerminalGraphicsState get() = if (alternateScreen) alternateGraphics else primaryGraphics
+    // Keep recognition disabled until a graphics-capable host explicitly enables storage.
+    private val graphicsApc = TerminalGraphicsApc(1024 * 1024) { graphicsState.execute(it) }
+    internal val retainedGraphicsCommandBytes: Int get() = graphicsApc.retainedPayloadBytes
+    internal fun setGraphicsStorageLimit(bytes: Int) {
+        require(bytes >= 0)
+        graphicsApc.reset()
+        primaryGraphics.setLimit(bytes); alternateGraphics.setLimit(bytes)
+        flushDamage()
+    }
     private val parser = VtParser(object : VtParser.Handler {
         override fun print(code: Int) = this@TerminalSession.print(code)
         override fun execute(code: Int) { controlEpoch++; executeControl(code) }
         override fun escape(final: Int, intermediates: Int) { controlEpoch++; escapeSequence(final, intermediates) }
+        override fun apcStart() { if (graphicsState.storage.enabled) graphicsApc.start() else graphicsApc.reset() }
+        override fun apcPut(code: Int) = graphicsApc.feed(code)
+        override fun apcEnd(terminator: Int) { controlEpoch++; graphicsApc.end(terminator) }
         override fun csi(final: Int, command: VtParser) {
             controlEpoch++
             params.fill(0)
@@ -553,6 +568,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
 
     public fun reset() {
         clipboardBinding?.reset()
+        primaryGraphics.reset(); alternateGraphics.reset()
         previousCharacter = null
         savedModes.clear(); sideEffectModes.clear()
         modifyOtherKeysMode = 0
@@ -851,6 +867,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         }
     }
 
+    internal fun advanceGraphicsCursor(grid: TerminalGraphicsSize) {
+        val beforeScroll = if (cursorRow in top..bottom && cursorColumn in left..right) bottom - cursorRow else 0
+        val advance = graphicsCursorAdvance(grid, cursorColumn, columns, rows, beforeScroll)
+        repeat(advance.indexRows) { lineFeed() }
+        cursorColumn = advance.column
+        pendingWrap = false
+    }
+
     private fun softWrap() {
         val fullRow = cursorColumn == columns - 1
         if (fullRow) screen[cursorRow].wrapped = true
@@ -879,8 +903,13 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         else cursorRow = (cursorRow - 1).coerceAtLeast(if (cursorRow >= top) top else 0)
     }
 
-    private fun scrollUp(count: Int, retainHistory: Boolean = true) {
-        if (left != 0 || right != columns - 1) { scrollRectangle(count, down = false); return }
+    private fun scrollUp(count: Int, retainHistory: Boolean = true, adjustGraphics: Boolean = true) {
+        val fullScreen = top == 0 && bottom == rows - 1 && left == 0 && right == columns - 1
+        val restore = if (!adjustGraphics) ({})
+            else if (fullScreen && (alternateScreen || scrollback == 0 || limits.historyBytes == 0L))
+                graphicsState.scrollWithoutHistory(count.coerceAtMost(rows))
+            else graphicsState.scrollMargins(top, bottom, left, right, -count.coerceAtMost(bottom - top + 1))
+        if (left != 0 || right != columns - 1) { scrollRectangle(count, down = false); restore(); return }
         if (top != 0 || bottom != rows - 1 || alternateScreen) lineOrderEpoch++
         repeat(count.coerceAtMost(bottom - top + 1)) {
             val old = screen[top]
@@ -890,17 +919,23 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             for (y in top until bottom) screen[y] = screen[y + 1]
             screen[bottom] = (spare ?: TerminalLine(columns, colors, limits.hyperlinkBytesPerLine)).also { it.recycleEpoch++; it.clear(0, columns, -1, bg, 0); it.wrapped = false; it.wrapContinuation = false; it.promptMarker = TerminalPromptMarker.NONE }
         }
+        restore()
         damage(top, bottom)
     }
 
-    private fun scrollDown(count: Int) {
-        if (left != 0 || right != columns - 1) { scrollRectangle(count, down = true); return }
+    private fun scrollDown(count: Int, adjustGraphics: Boolean = true) {
+        // Ghostty's full-screen SD/RI uses IL's stable pin coordinates; margin scrolls adjust them.
+        val restore = if (!adjustGraphics) ({})
+            else if (top == 0 && bottom == rows - 1 && left == 0 && right == columns - 1) graphicsState.preservePositions()
+            else graphicsState.scrollMargins(top, bottom, left, right, count.coerceAtMost(bottom - top + 1))
+        if (left != 0 || right != columns - 1) { scrollRectangle(count, down = true); restore(); return }
         lineOrderEpoch++
         repeat(count.coerceAtMost(bottom - top + 1)) {
             val spare = screen[bottom]
             for (y in bottom downTo top + 1) screen[y] = screen[y - 1]
             screen[top] = spare.also { it.recycleEpoch++; it.clear(0, columns, -1, bg, 0); it.wrapped = false; it.wrapContinuation = false; it.promptMarker = TerminalPromptMarker.NONE }
         }
+        restore()
         damage(top, bottom)
     }
 
@@ -954,6 +989,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 2 -> {
                     if (!alternateScreen && screen.last().promptMarker != TerminalPromptMarker.NONE) scrollAndClear()
                     eraseRows(0, rows, selective); pendingWrap = false
+                    graphicsState.clearScreen()
                 }
                 3 -> { history.clear(); damageAll() }
                 22 -> if (parameterCount == 1) scrollAndClear()
@@ -975,8 +1011,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 resetCursorWrap(); damage(cursorRow)
             }
             'L', 'M' -> if (cursorRow in top..bottom && cursorColumn in left..right) {
+                val restoreGraphics = graphicsState.preservePositions()
                 val oldTop = top; top = cursorRow
-                if (final == 'L') scrollDown(p()) else scrollUp(p(), retainHistory = false)
+                if (final == 'L') scrollDown(p(), adjustGraphics = false) else scrollUp(p(), retainHistory = false, adjustGraphics = false)
+                restoreGraphics()
                 if (left == 0 && right == columns - 1) for (y in top..bottom) {
                     screen[y].wrapped = false; screen[y].wrapContinuation = false
                 }
@@ -1028,6 +1066,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         if (cursorRow < count) { cursorRow = 0; cursorColumn = 0 }
         else cursorRow -= count
         pendingWrap = false
+        graphicsState.clearScreen()
     }
 
     private fun eraseLine(mode: Int, selective: Boolean) {
@@ -1224,6 +1263,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         eraseRows(0, rows, protectionMode == PROTECTION_ISO)
         bg = penBackground
         if (resetWrap) pendingWrap = false
+        graphicsState.clearScreen()
     }
 
     private fun sgr() {

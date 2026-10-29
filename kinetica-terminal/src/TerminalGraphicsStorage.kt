@@ -91,6 +91,10 @@ internal class TerminalGraphicsStorage(
 
     fun abortTransfer() { loading = null }
 
+    fun removeUnused() {
+        images.values.filter { it.placementCount == 0 }.map { it.id }.forEach { remove(it) }
+    }
+
     fun remove(id: Long): Boolean {
         val image = images.remove(id) ?: return false
         totalBytes -= image.pixels.data.size

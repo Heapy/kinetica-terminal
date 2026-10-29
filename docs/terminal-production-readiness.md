@@ -78,9 +78,11 @@ The Ghostty feature-parity work remains in progress. Its requested scope is:
 
 Kitty graphics is now in progress. The shared parser has a byte-oriented APC lifecycle
 and an internal `G` command parser with fixed header storage, bounded Base64 capture,
-32-bit signed/unsigned fields and ownership-safe completion/reset. All eight command actions
-are parsed, including animation commands, but none are executed by `TerminalSession` yet.
-The terminal therefore still ignores image requests and does not claim graphics support.
+32-bit signed/unsigned fields and ownership-safe completion/reset. At that checkpoint all eight
+command actions were parsed, including animation commands, but the session still ignored image
+requests. The later session
+execution increment is described below; graphics remains disabled in application views until
+their image renderers are available.
 Tests adapted from the pinned Ghostty parser cover flags, malformed headers, duplicate keys,
 integer overflow, padding/tail bits, every input split, 150 KB data and resource release.
 This checkpoint passes 490 JVM tests, the freshly built JS suite and 11 focused Native tests;
@@ -141,6 +143,30 @@ This remains internal infrastructure: placement dispatch, margin integration and
 still outstanding. Validation passes all 515 JVM tests, the freshly built JS suite and 36 Native
 graphics tests. Both new generated artifacts reproduce byte-for-byte, and the 45 C-helper paths
 pass AddressSanitizer with the upstream library uninstrumented and leak detection disabled.
+
+The session execution increment connects bounded APC capture to screen-local image storage and
+placements. Direct base-image `q/t/T/p/d` commands now run through the real session, including
+deferred display after chunk completion, inherited quiet flags, ID/number lookup and exact
+responses. Placements support replacement, internal IDs, virtual records and relative parent
+chains with cycle/depth checks and saturating offsets. Parent deletion cascades through a
+reverse-edge index; uppercase deletion, replacement and eviction apply their distinct image
+lifetime rules. Static deletion selectors, ED2/22J, screen switches, reset, full/margin scrolling
+and IL/DL are connected to the engine's row operations. A single APC capture is limited to
+1 MiB, and each screen has at most 16,384 placements; existing image transfer/decode/storage
+limits still apply. Disabled storage does not capture payloads or answer capability queries.
+
+An original-library session corpus covers 196 scenarios and 2017 checkpoints. Both engines
+receive complete command bytes; tests compare replies, decoded image bytes, placement metadata,
+geometry, layer membership, cursor, history and text rows after each checkpoint. This exposed
+differences now covered explicitly: replacement reclaims orphan data, IL/DL keep grid positions,
+full-screen SD/RI retain positions, and no-history SU clamps origins to the first row. Separate
+tests cover placement/capture limits, both-screen cleanup, disabled recognition and damage
+publication during synchronized output. This increment does not yet draw images: hosts have an
+internal opt-in storage limit, left disabled in application views. Animation commands, Unicode
+placeholder rendering, external media, view snapshots/caches and platform pixels remain open.
+Validation passes all 521 JVM tests, the freshly built JS suite and all 42 Native graphics
+tests. The new fixtures and manifest reproduce byte-for-byte. All 196 C-helper scenarios pass
+AddressSanitizer with the original library uninstrumented and leak detection disabled.
 
 Graphics acceptance work:
 
