@@ -16,7 +16,7 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
 
 ## Reference and verification
 
-- [ ] Build the original 1.4 libghostty-vt with Zig 0.17 and adapt the C oracle to API changes.
+- [x] Build the original 1.4 libghostty-vt with Zig 0.17 and verify C oracle API compatibility.
 - [ ] Update Zig oracle helpers for the new language/library and upstream interfaces.
 - [ ] Regenerate all affected fixtures and provenance through `scripts/`, review behavioral
       differences, and preserve the existing scenario coverage.
@@ -24,6 +24,29 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
 - [ ] Update the primary pin only with the corresponding generated evidence and implementation.
 - [ ] Run shared JVM/JS checks, relevant Native tests and fresh browser rendering/input checks.
 - [ ] Complete the release-note/source audit for remaining emulation and input differences.
+
+The first release comparison builds the existing C graphics host against both libraries and
+runs all 244 current execution scenarios (2394 checkpoints). Twenty scenarios differ, covering
+reflow/anchor positions, saved cursor behavior and cancelled APC execution. Array ordering for
+placement maps and layer membership is normalized before comparison. This is a comparison of
+two original libraries, not a passing compatibility claim for Kinetica against 1.4.
+
+Reproduce with:
+
+```sh
+cd build/upstream/ghostty-1.4.0
+ZIG_GLOBAL_CACHE_DIR="$PWD/../zig-cache-0.17" ../zig-aarch64-macos-0.17.0/zig build -Demit-lib-vt=true -Doptimize=fast -Dsimd=false -Demit-xcframework=false
+cd ../../..
+python3 scripts/compare-terminal-graphics-release.py build/upstream/ghostty build/upstream/ghostty-1.4.0
+```
+
+The report at `build/reports/ghostty-1.4-graphics.json` contains exact changed checkpoints,
+input commands, both library hashes and the corpus/helper/generator hashes. The script requires
+the two exact revisions, clean tracked upstream sources and pinned libpng/zlib versions; it
+does not rewrite committed fixtures. The existing C host compiles and runs unchanged against
+the new library. Zig's own build fetch succeeded after a transient dependency TLS failure;
+avoid seeding its 0.17 cache with standalone `zig fetch` archives, which produced a nested
+package and a subsequent hash mismatch in this run. Dependency hashes were not changed.
 
 ## Confirmed terminal behavior to implement or reconcile
 
