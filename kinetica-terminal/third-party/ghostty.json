@@ -45,7 +45,8 @@
   ],
   "referenceSemantics": [
     "src/terminal/stream.zig",
-    "src/terminal/sgr.zig"
+    "src/terminal/sgr.zig",
+    "src/terminal/kitty/graphics_image.zig"
   ],
   "zig": "0.16.0"
 }

@@ -1,0 +1,492 @@
+{
+  "libpng": "1.6.59",
+  "zlib": "1.2.12",
+  "pngCases": 120,
+  "zlibCases": 23,
+  "invalidZlibCases": 341,
+  "pngHashes": {
+    "png_c0_d1_i0_9x7": {
+      "png": "ad0f060c1b4b720bfefd7579031cc363cca2e92e9aac32673061eb0078ea6b48",
+      "rgba": "4744417253c41221ad8450483b47172fa329876e00e95cda849e6211ed28d8ab"
+    },
+    "png_c0_d1_i0_1x1": {
+      "png": "0a9c43043f2765096e6501f1bb5b2bb19eb0f3832780d9617b7622630ab43de8",
+      "rgba": "e3820096cb82366b860b8a4e668453a7aaaf423af03bdf289fa308ea03a79332"
+    },
+    "png_c0_d1_i0_1x9": {
+      "png": "6f361ffb0a5ace2389395cd707bc78116a3641fc8d8082f858d3480272fba981",
+      "rgba": "fc921892b3f8c000e59b362a647c5d287686889a1e5fe104ec984df3b04bdaef"
+    },
+    "png_c0_d1_i0_9x1": {
+      "png": "316277d5faccc9b60d3c5604158f1ca4ee52681e9dcdf9f12868c4bcfbe0dcbd",
+      "rgba": "682d06d456aec2c693f38727efcde590eb93f4f6612ed5a3b91b9d5a65f844bc"
+    },
+    "png_c0_d1_i1_9x7": {
+      "png": "e18831733fbb56a7911fab701ed81d8ab5f04d59f44ff6e6512b58ef3baf18fd",
+      "rgba": "4744417253c41221ad8450483b47172fa329876e00e95cda849e6211ed28d8ab"
+    },
+    "png_c0_d1_i1_1x1": {
+      "png": "28d37c2079b58aecf3a76c250a7af5f85f01f5f71ccae65481243ca112d4e899",
+      "rgba": "e3820096cb82366b860b8a4e668453a7aaaf423af03bdf289fa308ea03a79332"
+    },
+    "png_c0_d1_i1_1x9": {
+      "png": "95db4294b892c776b265870e1915f5a3b5fb10dfb935193057b0fda23763d449",
+      "rgba": "fc921892b3f8c000e59b362a647c5d287686889a1e5fe104ec984df3b04bdaef"
+    },
+    "png_c0_d1_i1_9x1": {
+      "png": "926ef9acaed480ee4b8348a8956782d8e2c695754d7fb6c6c10b886a76634016",
+      "rgba": "682d06d456aec2c693f38727efcde590eb93f4f6612ed5a3b91b9d5a65f844bc"
+    },
+    "png_c0_d2_i0_9x7": {
+      "png": "16104f19f42ce74c948a5af52ab42b0ba5d006799af7e1e301b5381a192b8891",
+      "rgba": "4d2d385f760cc71fde40fb3d4700b8b608839ea3e8470ac086e15d7916f03045"
+    },
+    "png_c0_d2_i0_1x1": {
+      "png": "349292514b8a0cf342209209499d5a8ec377a051a3c1d53b4854480a280706b1",
+      "rgba": "e3820096cb82366b860b8a4e668453a7aaaf423af03bdf289fa308ea03a79332"
+    },
+    "png_c0_d2_i0_1x9": {
+      "png": "5f24a137eb79638165d76209a4acf642ab782ad506d9ee8acd6521faed25ecd6",
+      "rgba": "a60890322ac9989b96a58610acef881886aa002f269032c6109e9f0d59d174bc"
+    },
+    "png_c0_d2_i0_9x1": {
+      "png": "e3513c9360a03dee77f864f8cb661fd3c5f73c78128d5f04b8625e41381256b3",
+      "rgba": "5bb356ce1923c37852112ac2ab31f6d9edfcab65a7e0cbfcc6e6ff973c4cf0eb"
+    },
+    "png_c0_d2_i1_9x7": {
+      "png": "7bbf17059a0ce24b7e35333bb61bb4c2830b9049b112cbe533bac8cf49793d82",
+      "rgba": "4d2d385f760cc71fde40fb3d4700b8b608839ea3e8470ac086e15d7916f03045"
+    },
+    "png_c0_d2_i1_1x1": {
+      "png": "391b0219f6f13d44e630ec1f03e4d50f3a937dcc26c69f5b193a1e34364aca5f",
+      "rgba": "e3820096cb82366b860b8a4e668453a7aaaf423af03bdf289fa308ea03a79332"
+    },
+    "png_c0_d2_i1_1x9": {
+      "png": "179870ae4cc309986d54a8caeccdd7f42b021d5e736c6de02b429f6d731cad5c",
+      "rgba": "a60890322ac9989b96a58610acef881886aa002f269032c6109e9f0d59d174bc"
+    },
+    "png_c0_d2_i1_9x1": {
+      "png": "cf4c788d78e88bfe7bdb8a2c515426671e574c25743714a8677ea898eeebd925",
+      "rgba": "5bb356ce1923c37852112ac2ab31f6d9edfcab65a7e0cbfcc6e6ff973c4cf0eb"
+    },
+    "png_c0_d4_i0_9x7": {
+      "png": "ac0828cecfa57b6d2a0735bfce4e628370e1e7d615a54e125a1296d4f3bfa072",
+      "rgba": "32ca905675913e6765dd1e53323efa06fdfcaad864882b87339f53f34b6050ad"
+    },
+    "png_c0_d4_i0_1x1": {
+      "png": "607a6131acceb026ecae83dc35aa0659ea839afe11ca3fd7fa61e865b9155ac7",
+      "rgba": "e3820096cb82366b860b8a4e668453a7aaaf423af03bdf289fa308ea03a79332"
+    },
+    "png_c0_d4_i0_1x9": {
+      "png": "59a13ed44138f840591547ef49bdf99c4b4b5cbc78d44b947e4e1415cf994034",
+      "rgba": "9a0314456f2ebab45e9f816d0b300c479806ac52d21143d8d747967ae27e88be"
+    },
+    "png_c0_d4_i0_9x1": {
+      "png": "93380aa04dd84861deee4970ad229f71182cca605f3f92388332aa5e72cd3c4e",
+      "rgba": "ee989f0af0f0ca3b8fad1e4059501b63a353bc578cc0ac5109365f4e9efe2b82"
+    },
+    "png_c0_d4_i1_9x7": {
+      "png": "ce90d55689a7e92d09b1ca4de860b6a7e9eb0318b2a56b1cda820f953f9ae780",
+      "rgba": "32ca905675913e6765dd1e53323efa06fdfcaad864882b87339f53f34b6050ad"
+    },
+    "png_c0_d4_i1_1x1": {
+      "png": "d3ed9190855631bd2219545d4900a1bd574c0216af31dc216611d1e261b0bac9",
+      "rgba": "e3820096cb82366b860b8a4e668453a7aaaf423af03bdf289fa308ea03a79332"
+    },
+    "png_c0_d4_i1_1x9": {
+      "png": "cca5650099a58efaec2620edc51bcb92ecfe09e02f65805dc7ed829dcab18245",
+      "rgba": "9a0314456f2ebab45e9f816d0b300c479806ac52d21143d8d747967ae27e88be"
+    },
+    "png_c0_d4_i1_9x1": {
+      "png": "8f71f488a213d8c9bad031b1f4c3c30368dc65e0b1e19aadf9151f3aae2eb599",
+      "rgba": "ee989f0af0f0ca3b8fad1e4059501b63a353bc578cc0ac5109365f4e9efe2b82"
+    },
+    "png_c0_d8_i0_9x7": {
+      "png": "e36862d14f7e1193cb2129d04907f3dcbfa82901d8fad025bb0ba4502608af60",
+      "rgba": "a9a02ffe8ff283ac41c71411b531ab06790bed63302308bf21cfa12886129d13"
+    },
+    "png_c0_d8_i0_1x1": {
+      "png": "cf0181384219a47209623946119e5895136f086c2c327ea79877fa4e117744cb",
+      "rgba": "e3820096cb82366b860b8a4e668453a7aaaf423af03bdf289fa308ea03a79332"
+    },
+    "png_c0_d8_i0_1x9": {
+      "png": "f93dd2db56da9a5df7cd66877ab7468ddceab8f53dc70abc214e7955ec8bf2ed",
+      "rgba": "b6f2a17561b9d1e3cad29ed1e3d0612425fed4fd02d7501b2c23e3cc2982fbc0"
+    },
+    "png_c0_d8_i0_9x1": {
+      "png": "e3fa82d5ad0fda2ebe823aaf1ca1e0014c608d7fa0802be381879fddc2619d04",
+      "rgba": "4294f814a899630c63712a47048fd54ca72887d08270dacaab0e55118a2dfa9e"
+    },
+    "png_c0_d8_i1_9x7": {
+      "png": "10928d80fe0a2196c35e8065d039dc2f9b02bad785156a397518112300e11169",
+      "rgba": "a9a02ffe8ff283ac41c71411b531ab06790bed63302308bf21cfa12886129d13"
+    },
+    "png_c0_d8_i1_1x1": {
+      "png": "a91d4c8bb91038348ebd7c4b15489c3cb2de6c8d44ed7cfe34aae4b9d8a8e0bc",
+      "rgba": "e3820096cb82366b860b8a4e668453a7aaaf423af03bdf289fa308ea03a79332"
+    },
+    "png_c0_d8_i1_1x9": {
+      "png": "ccba2ab29308ba55af3d01d0be20ac36e00fca10c0a79e5ad44f4c901efe3143",
+      "rgba": "b6f2a17561b9d1e3cad29ed1e3d0612425fed4fd02d7501b2c23e3cc2982fbc0"
+    },
+    "png_c0_d8_i1_9x1": {
+      "png": "6d5183fd741f981c860fb171ccb7bf889e198f012fc2408b66996b46b9ce6e9b",
+      "rgba": "4294f814a899630c63712a47048fd54ca72887d08270dacaab0e55118a2dfa9e"
+    },
+    "png_c0_d16_i0_9x7": {
+      "png": "3fe11f9e71a9c842e22d28c42b87839939d61db3358d83f0756409637abf9f7e",
+      "rgba": "6917f5c62a8469c6c59c6cc89c5d0662fc5621dc626ee2658b3b4a6843e6c335"
+    },
+    "png_c0_d16_i0_1x1": {
+      "png": "72b8275f5dcdb348f5aa86e12d616513bf370ae703fc65c7856d2cf99947c4bb",
+      "rgba": "e3820096cb82366b860b8a4e668453a7aaaf423af03bdf289fa308ea03a79332"
+    },
+    "png_c0_d16_i0_1x9": {
+      "png": "6779484af35cb41be2d6e3c8a80cbdc3883512d08219c040378c941e25e0b011",
+      "rgba": "70a2fdbdb82361121a58ff2bd42e32f1ed618ce40605df4612fbb577074d8374"
+    },
+    "png_c0_d16_i0_9x1": {
+      "png": "5de4c7df3025e6744a4e1c470afac3bdc5a1ba84e7d74cc6e0558b195708e999",
+      "rgba": "8beb197a5df13ba3eaefa04f682e8ea27e9d971a286fa5a3c89ed43b459d0037"
+    },
+    "png_c0_d16_i1_9x7": {
+      "png": "6bad4a00c75f4d06567182fbc653218751329438ac7e32f971a344c3a9e03bfe",
+      "rgba": "6917f5c62a8469c6c59c6cc89c5d0662fc5621dc626ee2658b3b4a6843e6c335"
+    },
+    "png_c0_d16_i1_1x1": {
+      "png": "67d7aaac05e10b3362b5af616decacedf80fd83d0a8b13a1b729511042013d4a",
+      "rgba": "e3820096cb82366b860b8a4e668453a7aaaf423af03bdf289fa308ea03a79332"
+    },
+    "png_c0_d16_i1_1x9": {
+      "png": "360111fb094621d7e46499f9ee03f9feb2381efa4b59ac3831324cd1ed9db7a9",
+      "rgba": "70a2fdbdb82361121a58ff2bd42e32f1ed618ce40605df4612fbb577074d8374"
+    },
+    "png_c0_d16_i1_9x1": {
+      "png": "02134f1402c754c636fa9a63765be65dd4bedec6342ecf24efd1ab95b9379e51",
+      "rgba": "8beb197a5df13ba3eaefa04f682e8ea27e9d971a286fa5a3c89ed43b459d0037"
+    },
+    "png_c2_d8_i0_9x7": {
+      "png": "4305a91dd17c2294fb3ac489da4a439ca568a0fa110441e1b52289804c56afc4",
+      "rgba": "8eacd34e343b75081da803bf18df51d634959d9df95610fc2345c345ad2ca909"
+    },
+    "png_c2_d8_i0_1x1": {
+      "png": "c3a418ba731503fb98378cdf959e6831e183c1a6f4682bfb595ee51e7510dfb9",
+      "rgba": "7d4b54dfbcba3fe1d1fa3c25012b1fca1fb723eba5668c68e228850e8a493b02"
+    },
+    "png_c2_d8_i0_1x9": {
+      "png": "ca4fd8947a6b8fb6cc36e62830378a13fde1eb6cd0167a14e8a2beed89ba155e",
+      "rgba": "dcca8b5b7eac4acb29a7cf8f6a4c1c31aa0086248ef6d01548068237ca3ce5f3"
+    },
+    "png_c2_d8_i0_9x1": {
+      "png": "7bf5051e4346cab22e9224b91eb5a78647d06d5a47788e032c5267b7df1f3a43",
+      "rgba": "dddfb35ad8c4c0cd356b004f1c0aa42a3dfd72423c994b762e4598b204bae88b"
+    },
+    "png_c2_d8_i1_9x7": {
+      "png": "8244a6a69eabae9d6e63b00642f558513abe9b64e21ba31eb44625b0b21e1a73",
+      "rgba": "8eacd34e343b75081da803bf18df51d634959d9df95610fc2345c345ad2ca909"
+    },
+    "png_c2_d8_i1_1x1": {
+      "png": "6251ae78436a858863f7f41b7b15877e1085793e73dd79d57bee5213fd5c02fb",
+      "rgba": "7d4b54dfbcba3fe1d1fa3c25012b1fca1fb723eba5668c68e228850e8a493b02"
+    },
+    "png_c2_d8_i1_1x9": {
+      "png": "cae9ac39edf29a7a5d0816f139019cc475648359557fa2b3513a2f616e81868e",
+      "rgba": "dcca8b5b7eac4acb29a7cf8f6a4c1c31aa0086248ef6d01548068237ca3ce5f3"
+    },
+    "png_c2_d8_i1_9x1": {
+      "png": "4f321ee051975a891fc6c8e5404b8db0abfba239832fd7969e1f3e19dab2a7af",
+      "rgba": "dddfb35ad8c4c0cd356b004f1c0aa42a3dfd72423c994b762e4598b204bae88b"
+    },
+    "png_c2_d16_i0_9x7": {
+      "png": "9264399646a5dcf29f9d9a2e0d0bb0f50599c8b616f4c1b8b1f63a602e5b0f55",
+      "rgba": "d61558c09b0c6748d0a977d295c1cff3114c7dca0eb1c754cbfea087b0289345"
+    },
+    "png_c2_d16_i0_1x1": {
+      "png": "cdb4ba0d9b64651eea53b414301bbcf03e6de31699a509fc7fbdaf60ef497632",
+      "rgba": "03b722a15d4658be01f1eb9def5e8be124710cc0e88842f78107abfda3e23ea8"
+    },
+    "png_c2_d16_i0_1x9": {
+      "png": "b0e7dad7d0137a899272cb20e43c08e18c65007f2522bbbd408e9eeec0c5e405",
+      "rgba": "c4b5933a3db9e38652437b2effc72874ffcaf773b68d3fb3401285ffcff61b78"
+    },
+    "png_c2_d16_i0_9x1": {
+      "png": "d3af0e1d5b0b0b0ee63a0456bae66e5c168a26c4089c112944709e3e700c9c1e",
+      "rgba": "4f164cfdfebee7fde23d9fdbc1d730653e56dec5b79037a59d503c32b5c8d28d"
+    },
+    "png_c2_d16_i1_9x7": {
+      "png": "545735ae47251f9eab7e949f7243f280469d6f4b644ece0990bc7a0948c6d798",
+      "rgba": "d61558c09b0c6748d0a977d295c1cff3114c7dca0eb1c754cbfea087b0289345"
+    },
+    "png_c2_d16_i1_1x1": {
+      "png": "4cacf6d3d4b8ca95375f659569c35d683c7ae0a96b4899a4b463c15a0e600bd0",
+      "rgba": "03b722a15d4658be01f1eb9def5e8be124710cc0e88842f78107abfda3e23ea8"
+    },
+    "png_c2_d16_i1_1x9": {
+      "png": "08263ee09dc1d05c2ef7249c3cba56f2dd4297ef118148b79489a28613aa51ad",
+      "rgba": "c4b5933a3db9e38652437b2effc72874ffcaf773b68d3fb3401285ffcff61b78"
+    },
+    "png_c2_d16_i1_9x1": {
+      "png": "e1f94289ff8dd45cf65ab233c64e59c8cf7971b7871d4a424c9bea666cbe8ab7",
+      "rgba": "4f164cfdfebee7fde23d9fdbc1d730653e56dec5b79037a59d503c32b5c8d28d"
+    },
+    "png_c3_d1_i0_9x7": {
+      "png": "afd62f7d826d5ddbb6aaf8977b49bfd09c20934f30ee68f651797efa95104a23",
+      "rgba": "2118d4e9e0f6dfaa70a40f0e7a0449729dc75e3ca1b06eb8b1a8b43ec59b3629"
+    },
+    "png_c3_d1_i0_1x1": {
+      "png": "dfb5d47beefed39156168488e25e530e43884ea4f00ff4b0370bb3165002e09b",
+      "rgba": "7a7bf454c5f3cb1b9d9a20f81417f98d976fe3b3dd52c1b9968f02e89e7e8a2f"
+    },
+    "png_c3_d1_i0_1x9": {
+      "png": "978363e18a10b43207b76d10c4498fabdd53f957825a18833458bf233529a535",
+      "rgba": "287cacf61af4879b354a013e66c6293c91d62010ba06e968468ffdab403a838a"
+    },
+    "png_c3_d1_i0_9x1": {
+      "png": "f9c437c42a51a7ad2ac3e0bb7fec11a9ed4a76570f73247893254d9611c82f3b",
+      "rgba": "7828b8915dab7f6ab2ab9e20c14156c64b4e1e1afaaf93ed64f172108d0496b6"
+    },
+    "png_c3_d1_i1_9x7": {
+      "png": "08d6663ac9d77f8ba6dacf223934351fbabaef7d8be16bba5363996d12fd5b72",
+      "rgba": "2118d4e9e0f6dfaa70a40f0e7a0449729dc75e3ca1b06eb8b1a8b43ec59b3629"
+    },
+    "png_c3_d1_i1_1x1": {
+      "png": "999f1419d6e3c36dffec236073f7947e439f2b96245e1c81a71e8ba0a7257bb2",
+      "rgba": "7a7bf454c5f3cb1b9d9a20f81417f98d976fe3b3dd52c1b9968f02e89e7e8a2f"
+    },
+    "png_c3_d1_i1_1x9": {
+      "png": "6beb981ba72876ed7e600cbe32cf2fe0694060eccbd05597fb4fbc8a910455d2",
+      "rgba": "287cacf61af4879b354a013e66c6293c91d62010ba06e968468ffdab403a838a"
+    },
+    "png_c3_d1_i1_9x1": {
+      "png": "9de67fce807056aefe0dfdc8abaac59143036d6ac7a5c9fcfb8c46141047bd2e",
+      "rgba": "7828b8915dab7f6ab2ab9e20c14156c64b4e1e1afaaf93ed64f172108d0496b6"
+    },
+    "png_c3_d2_i0_9x7": {
+      "png": "464ccf35f5ce4096c3a342b23f087f81fd02f6718831a6e3909452bdd0153ca4",
+      "rgba": "6e52cff0e2dde1845fc1d60c8a9eac19bd4fcbeef2040853b6843d3163a0d887"
+    },
+    "png_c3_d2_i0_1x1": {
+      "png": "bb9824dd6a03f9ea3f45af22087d3dae769803a61d8ab9a08ede054c5732b809",
+      "rgba": "7a7bf454c5f3cb1b9d9a20f81417f98d976fe3b3dd52c1b9968f02e89e7e8a2f"
+    },
+    "png_c3_d2_i0_1x9": {
+      "png": "fadd3f7cd47929d9969f77654d46cfd962f06857a4891fb96b2d8236f1cf51ca",
+      "rgba": "653eb2d00b3ff5cadbcb96287aa37f0ddf852f2d656ff663c11ca2494f91c81a"
+    },
+    "png_c3_d2_i0_9x1": {
+      "png": "b998183ee71ba4bcff740461431b85c172392e21e8107e6a0ae821a5dbb04acc",
+      "rgba": "b01c42dd0337c04560638c36edc2832e7aa9f1b68fa3b6f0d5154f1404916d94"
+    },
+    "png_c3_d2_i1_9x7": {
+      "png": "23c271b7f16c8fab6f2c86266483f785324742ae9a56af3fa0d55275754d497b",
+      "rgba": "6e52cff0e2dde1845fc1d60c8a9eac19bd4fcbeef2040853b6843d3163a0d887"
+    },
+    "png_c3_d2_i1_1x1": {
+      "png": "16b01edf64553f7a3c07677fd422fd32036851a04e0b81292b16b49ab4075567",
+      "rgba": "7a7bf454c5f3cb1b9d9a20f81417f98d976fe3b3dd52c1b9968f02e89e7e8a2f"
+    },
+    "png_c3_d2_i1_1x9": {
+      "png": "b1e2b0f4b2be239290689ff75c8aed99ba30f5a513d68cc2d729093fae782bae",
+      "rgba": "653eb2d00b3ff5cadbcb96287aa37f0ddf852f2d656ff663c11ca2494f91c81a"
+    },
+    "png_c3_d2_i1_9x1": {
+      "png": "7f46d25627950f9acab83af5e928aefbda7982b468d8ef3093e60fa8784789f2",
+      "rgba": "b01c42dd0337c04560638c36edc2832e7aa9f1b68fa3b6f0d5154f1404916d94"
+    },
+    "png_c3_d4_i0_9x7": {
+      "png": "d59e9b22462ca243dd32a9a5d10d180f10930a3e9b73dc20f2a3aee4d40e54fc",
+      "rgba": "f9fd6f6ba0cd4999b8797d77e189accc98b59b2206afcf1649d016b21cfd99e1"
+    },
+    "png_c3_d4_i0_1x1": {
+      "png": "1abeca3e93205c144c9f6f55ab571da3b0b279f0a2a0a5b16be8cb21a12c6e12",
+      "rgba": "7a7bf454c5f3cb1b9d9a20f81417f98d976fe3b3dd52c1b9968f02e89e7e8a2f"
+    },
+    "png_c3_d4_i0_1x9": {
+      "png": "e7271991d3c3b125d5b806b4162398598b93d3933ff3b2ba84416629990609a0",
+      "rgba": "1bccf5af44859ef3af74f94234d1faaaaaaa66b771b016e2faa40ea9cf3f6ff3"
+    },
+    "png_c3_d4_i0_9x1": {
+      "png": "9824e0fc51de9f6c36ac0481cc5c0a71ffd7311f0c9d806471e065fbef4454c2",
+      "rgba": "2248549585ebd6aa612d27266cbacbe637c675a56c4a5c94b59da32f25450095"
+    },
+    "png_c3_d4_i1_9x7": {
+      "png": "bf912978ca83c1087ec4edb3abcdb252130d08bddfd2e2d3bb7381beea77e835",
+      "rgba": "f9fd6f6ba0cd4999b8797d77e189accc98b59b2206afcf1649d016b21cfd99e1"
+    },
+    "png_c3_d4_i1_1x1": {
+      "png": "eafdedaab10cad27468777fc13643b5d4951f5465e25613ffc62d14cdffcbb1e",
+      "rgba": "7a7bf454c5f3cb1b9d9a20f81417f98d976fe3b3dd52c1b9968f02e89e7e8a2f"
+    },
+    "png_c3_d4_i1_1x9": {
+      "png": "4d45850569b6f6bfeb187489cafc731ad11372afca64e301589230b4dc4f1d6d",
+      "rgba": "1bccf5af44859ef3af74f94234d1faaaaaaa66b771b016e2faa40ea9cf3f6ff3"
+    },
+    "png_c3_d4_i1_9x1": {
+      "png": "8f98f66dd36f62c1a9237fdb547e7beeee3e61d4c097a8c2dc027844466025a1",
+      "rgba": "2248549585ebd6aa612d27266cbacbe637c675a56c4a5c94b59da32f25450095"
+    },
+    "png_c3_d8_i0_9x7": {
+      "png": "632a047dcdc818a782b6b4db7f96183b5d6a82e6cf14cf8ac2f31d2d1e64e1e6",
+      "rgba": "f9fd6f6ba0cd4999b8797d77e189accc98b59b2206afcf1649d016b21cfd99e1"
+    },
+    "png_c3_d8_i0_1x1": {
+      "png": "b97d8cf78dc9280d15375a8bb179cbecd768ad4129f7e8bb86ee2e2a595fb217",
+      "rgba": "7a7bf454c5f3cb1b9d9a20f81417f98d976fe3b3dd52c1b9968f02e89e7e8a2f"
+    },
+    "png_c3_d8_i0_1x9": {
+      "png": "38e68fe4a104cb0f37fee8d043f10e41ddb8e8aa87bd4c4c08a32c840b28b7ef",
+      "rgba": "1bccf5af44859ef3af74f94234d1faaaaaaa66b771b016e2faa40ea9cf3f6ff3"
+    },
+    "png_c3_d8_i0_9x1": {
+      "png": "b173f62a9adaf4be6e1e1f35f7e1d2e4b96890a7f089c3a8c68a566907fe3cd3",
+      "rgba": "2248549585ebd6aa612d27266cbacbe637c675a56c4a5c94b59da32f25450095"
+    },
+    "png_c3_d8_i1_9x7": {
+      "png": "7a8ef038e4507279141030154d96c41045656626cfe5b8856e1ead3e074b2051",
+      "rgba": "f9fd6f6ba0cd4999b8797d77e189accc98b59b2206afcf1649d016b21cfd99e1"
+    },
+    "png_c3_d8_i1_1x1": {
+      "png": "e6095832dad354e808d74dbdc4d9d94dc021503be5ea3cc6fc59959257f132d3",
+      "rgba": "7a7bf454c5f3cb1b9d9a20f81417f98d976fe3b3dd52c1b9968f02e89e7e8a2f"
+    },
+    "png_c3_d8_i1_1x9": {
+      "png": "bc427922d38055e1aa8c875e5acb8d085fe015164d68d1f48c7433d31668c23b",
+      "rgba": "1bccf5af44859ef3af74f94234d1faaaaaaa66b771b016e2faa40ea9cf3f6ff3"
+    },
+    "png_c3_d8_i1_9x1": {
+      "png": "18aee8b16aa340a973f5c7d91dcc6e015d5789ec48e2fefd4b6c1ad0716617f0",
+      "rgba": "2248549585ebd6aa612d27266cbacbe637c675a56c4a5c94b59da32f25450095"
+    },
+    "png_c4_d8_i0_9x7": {
+      "png": "94f047fc37e174ac6d056ee22e5bd13654a631733452ab3fe932585164512194",
+      "rgba": "34ec64f9abb349eff63dfce635ad48fe81ba50975c272a809297f5f6df55341f"
+    },
+    "png_c4_d8_i0_1x1": {
+      "png": "f0c5e761eb259b99867ebac4754b1c4765d9273667404c586248fced8c3b1bb8",
+      "rgba": "de1b057d3d975f2dddd0056b75d5272293e4d8ff7284aad54390f6ea95440e37"
+    },
+    "png_c4_d8_i0_1x9": {
+      "png": "137efbcc554ee641a435d257f5e8a70447d01366f5c271b9860ce608977529b5",
+      "rgba": "d4e80cb2db8b08d8fb98413f0c604eff1d3536c6386e1608b30d687a53781caa"
+    },
+    "png_c4_d8_i0_9x1": {
+      "png": "468939ea84c1e4579e0642a184e0b03fe9253f91254ca959693753346c12ab0e",
+      "rgba": "fe67e284e269660670c110afaa8c59025d5fc15ffea2499f261c11126c919c4b"
+    },
+    "png_c4_d8_i1_9x7": {
+      "png": "a5ec325876bb3fc16e3507b4257884c860045a102488b1b32f5f3bf9b7cd92d5",
+      "rgba": "34ec64f9abb349eff63dfce635ad48fe81ba50975c272a809297f5f6df55341f"
+    },
+    "png_c4_d8_i1_1x1": {
+      "png": "4eea7f193251a65aea8b1e2dcb642b2816d17455ffb7018467ab4599a306d852",
+      "rgba": "de1b057d3d975f2dddd0056b75d5272293e4d8ff7284aad54390f6ea95440e37"
+    },
+    "png_c4_d8_i1_1x9": {
+      "png": "583480e3815faaa9d829550ba9285f63057afd69be49cdab046a8e0655169a97",
+      "rgba": "d4e80cb2db8b08d8fb98413f0c604eff1d3536c6386e1608b30d687a53781caa"
+    },
+    "png_c4_d8_i1_9x1": {
+      "png": "34042bde020cd439a0a054983fd780c848ec7be169ae522075f957567af760ff",
+      "rgba": "fe67e284e269660670c110afaa8c59025d5fc15ffea2499f261c11126c919c4b"
+    },
+    "png_c4_d16_i0_9x7": {
+      "png": "d5f36e69f68694f433afee2e7bfcf9441eceaaa6c685aebbe76963e4fb9abdb0",
+      "rgba": "ec5d54fdaeba5c74500f519807735ab6b6c3c7e8aa3806fccb74e957f2628c13"
+    },
+    "png_c4_d16_i0_1x1": {
+      "png": "569af66f105989112cb8e787657d0271032175eca782001d09153bd12dad58d8",
+      "rgba": "dfe4224c822504739c7efea90fd28bf76a31a68ecb99096166eab251f5535a17"
+    },
+    "png_c4_d16_i0_1x9": {
+      "png": "38eaa89a0be99aaa8b324f3cb1c2c0bd3b569bb3accf87c40298e8c562e9176b",
+      "rgba": "db71fb274094689fee93273b62a2bd8761e202c5be3ca34e567b089f754fbf44"
+    },
+    "png_c4_d16_i0_9x1": {
+      "png": "bfd3fb3ec6a1db65fd2c25fcb81380bad332c969abca28396b6183ad8489129e",
+      "rgba": "dda7a871b787e8219682456c4638474b0ccca18c3fa4e22922ac1e8c83204962"
+    },
+    "png_c4_d16_i1_9x7": {
+      "png": "e448d2131ee3760289dcb7ba7c5c7cd91bf3ff75d6665c5e6bd7ffb3895ed09d",
+      "rgba": "ec5d54fdaeba5c74500f519807735ab6b6c3c7e8aa3806fccb74e957f2628c13"
+    },
+    "png_c4_d16_i1_1x1": {
+      "png": "e22638e334e07e171f6ef9a7a76161eb5faf09108bcec1322f70ff93b577cdac",
+      "rgba": "dfe4224c822504739c7efea90fd28bf76a31a68ecb99096166eab251f5535a17"
+    },
+    "png_c4_d16_i1_1x9": {
+      "png": "956e34cd7e5570493b73cf0f7c13d2c5d1c79ce6138e4a44bae820943eacc6b3",
+      "rgba": "db71fb274094689fee93273b62a2bd8761e202c5be3ca34e567b089f754fbf44"
+    },
+    "png_c4_d16_i1_9x1": {
+      "png": "1eb953ef027d07522800d9e416e17e33097e809d7db5ccc7fb48ada2c92c572e",
+      "rgba": "dda7a871b787e8219682456c4638474b0ccca18c3fa4e22922ac1e8c83204962"
+    },
+    "png_c6_d8_i0_9x7": {
+      "png": "607fd95dee2c6a537709b8a495affba1981a74d415e803fc1b440cf2ef222fc4",
+      "rgba": "6f9a3a8d2db4f3ecd919db84051991282a712fd632833f9b76899f8cb0ee7eeb"
+    },
+    "png_c6_d8_i0_1x1": {
+      "png": "abfee592df6af10fb28c0628345101155ec20694b7b1beb6ec90db301a79f4dd",
+      "rgba": "ea23365bfc501705f0ac4e537fe8663876f0cc0ec8dc5da06b7c7e13172990c9"
+    },
+    "png_c6_d8_i0_1x9": {
+      "png": "63db1eb8356253eccc20f29e5f627ffeddfd6659e346da5487c0b3c3f644807f",
+      "rgba": "7dc7998c2d86d4c8a85f5ebe806956bbaf2dccc644ec461dab094e991670eaf1"
+    },
+    "png_c6_d8_i0_9x1": {
+      "png": "6f239d4708f349de40bc7963a6c8e04d877a6fc7d80e1461063da0e4c725b77f",
+      "rgba": "8d13c6249aef7ede627f9bc522ad98f1d23049009e9b2769187d9f8551d9b869"
+    },
+    "png_c6_d8_i1_9x7": {
+      "png": "d5f126a5a5e17b93040333fb573731d1f52bd88e5c39adec55876b07238bf2c0",
+      "rgba": "6f9a3a8d2db4f3ecd919db84051991282a712fd632833f9b76899f8cb0ee7eeb"
+    },
+    "png_c6_d8_i1_1x1": {
+      "png": "d17df0b15921a211dff837b39015ca6f46d44578559e0a4f22761f7f75ca1b4d",
+      "rgba": "ea23365bfc501705f0ac4e537fe8663876f0cc0ec8dc5da06b7c7e13172990c9"
+    },
+    "png_c6_d8_i1_1x9": {
+      "png": "a3a4d8f29ce7e6bc4be8f25765b518c1512fd8abfb35cc3fd9a91ca0d56a9323",
+      "rgba": "7dc7998c2d86d4c8a85f5ebe806956bbaf2dccc644ec461dab094e991670eaf1"
+    },
+    "png_c6_d8_i1_9x1": {
+      "png": "4cbda2a766ed723ff25861c8799b640c57b3664a1842f691452acba65766540b",
+      "rgba": "8d13c6249aef7ede627f9bc522ad98f1d23049009e9b2769187d9f8551d9b869"
+    },
+    "png_c6_d16_i0_9x7": {
+      "png": "a98319536c478574e35ef4a95c92037e0fb48c599227374d6250a1a5804eb4c1",
+      "rgba": "59bc861abbc64ac753472b40ee6a9fd2edc8a591438de0c5af63b0ddc1c516a0"
+    },
+    "png_c6_d16_i0_1x1": {
+      "png": "5057dc147a11f5c22467ca8be1c253a76c2864b2c52945da467c9c2eb9286b73",
+      "rgba": "03b722a15d4658be01f1eb9def5e8be124710cc0e88842f78107abfda3e23ea8"
+    },
+    "png_c6_d16_i0_1x9": {
+      "png": "0085247d1aa3ba4830551128da2ee720aa430e01fc87ef1188ec04ee02d0e091",
+      "rgba": "eeec1077d1a8fdba3367723ba6dcc0f809d76d8ac4dfb15491eab78194338540"
+    },
+    "png_c6_d16_i0_9x1": {
+      "png": "2b61358fab51b7849172f164144d8eda9201549c925b6856695895d5dabd6fc7",
+      "rgba": "26b0ded64cbee26d75db2357f347cba7d640e3971d925297e36d8dfcdaa5b766"
+    },
+    "png_c6_d16_i1_9x7": {
+      "png": "ff737510a39166fb43bb9117468406a1d89ff94b2042fb7e83a600ac72a31bc1",
+      "rgba": "59bc861abbc64ac753472b40ee6a9fd2edc8a591438de0c5af63b0ddc1c516a0"
+    },
+    "png_c6_d16_i1_1x1": {
+      "png": "17e9bc698e3af057c30a12d46c2251c092e4326ba99b8046fa572ba3ee183f18",
+      "rgba": "03b722a15d4658be01f1eb9def5e8be124710cc0e88842f78107abfda3e23ea8"
+    },
+    "png_c6_d16_i1_1x9": {
+      "png": "ec661e6bb2986f64d2829e649d8b680db328fe0d493d93be1e04ef3eb8d188bb",
+      "rgba": "eeec1077d1a8fdba3367723ba6dcc0f809d76d8ac4dfb15491eab78194338540"
+    },
+    "png_c6_d16_i1_9x1": {
+      "png": "02d2290a646a97c9e814c8ceab0a547970a8414d4911cb87123ad0b5d06db31e",
+      "rgba": "26b0ded64cbee26d75db2357f347cba7d640e3971d925297e36d8dfcdaa5b766"
+    }
+  },
+  "generatorSha256": "04f165a5c011c22de3e28b339c24e43e09d33b9bde6abf073232ba7c596e3b64",
+  "helperSha256": "75a8b82fc167b93c303ed7b08e585e08fbdc648ebd883069f46cd992fc7511dd",
+  "fixturesSha256": "269755ba7756c746999611dd71402305ab01e311dc73703eafa31f8c411ab41d"
+}

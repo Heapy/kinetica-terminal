@@ -1,5 +1,9 @@
 # Upstream terminal test corpus
 
+The [image decoder corpus](images/README.md) separately compares common PNG decoding
+with pinned libpng and validates zlib streams against pinned zlib. It does not yet
+cover original-libghostty image storage, placements or platform image rendering.
+
 Alacritty reference recordings and expected grids are pinned by commit and SHA-256
 in `alacritty/manifest.json`. `references.tar.gz` preserves the selected upstream
 files verbatim with deterministic archive metadata. The Apache-2.0 license is

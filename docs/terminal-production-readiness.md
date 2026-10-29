@@ -87,9 +87,24 @@ This checkpoint passes 490 JVM tests, the freshly built JS suite and 11 focused 
 the existing 279 libghostty VT scenarios remain green on JVM/JS. The new command-parser tests
 are adapted unit tests, not a new original-libghostty image-state comparison.
 
+The image decoder increment adds common RGB/RGBA, PNG and zlib decoding. PNG supports
+all standard color types and depths, transparency, all filters and Adam7, with CRC and
+Adler checks. Dimensions and per-buffer byte limits are checked before pixel allocations;
+PNG reads fragmented IDAT directly and reconstructs rows using bounded scratch memory.
+The default PNG image is decoded without color-profile conversion. Kitty animation,
+storage-wide memory accounting and platform image presentation remain separate work.
+Independent libpng/zlib fixtures cover 120 pixel cases, 23 valid compressed streams and
+341 rejected streams. The storage oracle exposed and fixed rejection of trailing zlib
+bytes; a dedicated decoder regression now covers that rule. The decoder checkpoint passes
+499 JVM tests from its isolated commit tree, the freshly built JS suite and 20 Native
+parser/decoder tests. Both generated image artifacts reproduce
+byte-for-byte. See `kinetica-terminal/test-upstream/images/README.md` for the pinned tools,
+limits and precise coverage. Neither parser nor decoder executes image commands in the
+session yet, and this is not an original-libghostty image-state oracle.
+
 Graphics acceptance work:
 
-- [ ] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
+- [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
 - [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
 - [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.
 - [ ] Unicode placeholders and animation frames/composition/timing.
