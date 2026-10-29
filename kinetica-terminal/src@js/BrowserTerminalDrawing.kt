@@ -9,6 +9,9 @@ internal abstract class BrowserTerminalDrawing {
     open val glyphCount: Int get() = 0
     open val rasterizations: Int get() = 0
     open val drawCalls: Int get() = 0
+    open val imageCacheBytes: Long get() = 0
+    open val imageTileCount: Int get() = 0
+    open val imageUploads: Long get() = 0
     abstract fun resize(width: Double, height: Double, ratio: Double, fontSize: Double, cellWidth: Double, cellHeight: Double, fontFamily: String? = null)
     abstract fun draw(viewport: TerminalViewport)
     abstract fun dispose()
@@ -39,6 +42,13 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
     private var size = 14.0; private var cellWidth = 0.0; private var cellHeight = 0.0
     private var family: String? = null
     private var clear = true
+    private var imagesVisible = false
+    private val imageFrame = TerminalGpuFrame()
+    private val imageCache = TerminalImageCache<dynamic>(64L * 1024 * 1024) { it.width = 0; it.height = 0 }
+    override val imageCacheBytes: Long get() = imageCache.bytes
+    override val imageTileCount: Int get() = imageCache.size
+    override var imageUploads: Long = 0
+        private set
     override fun resize(width: Double, height: Double, ratio: Double, fontSize: Double, cellWidth: Double, cellHeight: Double, fontFamily: String?) {
         if (this.width != width || this.height != height || this.ratio != ratio || size != fontSize || family != fontFamily) {
             family = fontFamily
@@ -51,6 +61,15 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
     }
     override fun draw(viewport: TerminalViewport) {
         val measurement = probe.begin(viewport, name)
+        val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, ratio, viewport.columns, viewport.rows) }
+        if (images.isNotEmpty()) {
+            if (!imagesVisible) viewport.markAll()
+            imagesVisible = true
+            drawImagesAndText(viewport, images)
+            measurement?.submitted(0)
+            return
+        }
+        if (imagesVisible) { imagesVisible = false; imageCache.clear(); clear = true }
         if (clear) {
             context.fillStyle = terminalCssColor(viewport.theme.background); context.fillRect(0, 0, width, height)
             viewport.markAll(); clear = false
@@ -70,7 +89,45 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         }, cellWidth, cellHeight)
         measurement?.submitted(0)
     }
-    override fun dispose() { canvas.width = 0; canvas.height = 0 }
+    private fun drawImagesAndText(viewport: TerminalViewport, images: List<TerminalImageQuad>) {
+        imageFrame.update(viewport, cellWidth, cellHeight)
+        context.fillStyle = terminalCssColor(viewport.theme.background); context.fillRect(0, 0, width, height)
+        context.textBaseline = "top"
+        imageCache.beginFrame()
+        fun layer(layer: TerminalGraphicsLayer) {
+            for (image in images) if (image.layer == layer) for (draw in image.tiles()) {
+                val bitmap = imageCache.get(draw.tile) {
+                    val result: dynamic = js("globalThis.document.createElement('canvas')")
+                    result.width = draw.tile.width; result.height = draw.tile.height
+                    val ctx = result.getContext("2d")
+                    val data = ctx.createImageData(draw.tile.width, draw.tile.height)
+                    data.data.set(unsignedBytes(image.image.pixels.tileBytes(draw.tile, premultiplied = false)))
+                    ctx.putImageData(data, 0, 0); imageUploads++
+                    result
+                }
+                val q = draw.quad
+                context.drawImage(bitmap, q.sourceX, q.sourceY, q.sourceWidth, q.sourceHeight, q.x, q.y, q.width, q.height)
+            }
+        }
+        fun fill(rect: TerminalRect) {
+            val left = round(rect.x * ratio) / ratio; val top = round(rect.y * ratio) / ratio
+            context.fillStyle = terminalCssColor(rect.color)
+            context.fillRect(left, top, round((rect.x + rect.width) * ratio) / ratio - left,
+                round((rect.y + rect.height) * ratio) / ratio - top)
+        }
+        layer(TerminalGraphicsLayer.BELOW_BACKGROUND)
+        for (row in imageFrame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground) fill(rect)
+        layer(TerminalGraphicsLayer.BELOW_TEXT)
+        for (row in imageFrame.rows) for (glyph in row.glyphs) {
+            context.font = browserFont(size, glyph.key.style, family); context.fillStyle = terminalCssColor(glyph.color)
+            context.fillText(glyph.key.text, glyph.x, glyph.y + 1)
+        }
+        for (row in imageFrame.rows) for (rect in row.decorations) fill(rect)
+        layer(TerminalGraphicsLayer.ABOVE_TEXT)
+        imageCache.endFrame()
+        clear = false
+    }
+    override fun dispose() { imageCache.clear(); canvas.width = 0; canvas.height = 0 }
 }
 
 /** WebGL2 owns presentation; a detached 2D canvas only rasterizes cache misses. */
@@ -83,6 +140,12 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     private val frame = TerminalGpuFrame()
     private val batches = TerminalGpuBatches()
     private val textures = mutableListOf<dynamic>()
+    private val imageCache = TerminalImageCache<dynamic>(64L * 1024 * 1024) { if (gl != null && !lost) gl.deleteTexture(it) }
+    private val imageInstance = TerminalInstances()
+    override val imageCacheBytes: Long get() = imageCache.bytes
+    override val imageTileCount: Int get() = imageCache.size
+    override var imageUploads: Long = 0
+        private set
     private var program: dynamic = null
     private var buffer: dynamic = null
     private var vao: dynamic = null
@@ -100,7 +163,7 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     override var drawCalls: Int = 0
         private set
     private val onLost: (dynamic) -> Unit = {
-        event -> event.preventDefault(); lost = true; gpuTimer?.contextLost(); gpuTimer = null
+        event -> event.preventDefault(); lost = true; imageCache.clear(); gpuTimer?.contextLost(); gpuTimer = null; invalidate()
     }
     private val onRestored: (dynamic) -> Unit = {
         if (!disposed) {
@@ -177,7 +240,8 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         measurement?.let { it.layout = it.checkpoint() }
         atlas.prepare(frame.keys, ::rasterize, ::resetTextures, ::upload)
         measurement?.let { it.atlas = it.checkpoint() }
-        batches.build(frame, atlas, ratio)
+        val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, ratio, viewport.columns, viewport.rows) }
+        batches.build(frame, atlas, ratio, transparentDefaultBackground = images.isNotEmpty())
         measurement?.let { it.batch = it.checkpoint() }
         val query = measurement?.let { gpuTimer?.begin(it.id) }
         gl.viewport(0, 0, canvas.width, canvas.height)
@@ -188,9 +252,14 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         gl.uniform2f(viewportUniform, (canvas.width as Number).toDouble() / ratio, (canvas.height as Number).toDouble() / ratio)
         gl.activeTexture(gl.TEXTURE0)
         drawCalls = 0
+        imageCache.beginFrame()
+        drawImages(images, TerminalGraphicsLayer.BELOW_BACKGROUND)
         submit(batches.backgrounds, false, 0)
+        drawImages(images, TerminalGraphicsLayer.BELOW_TEXT)
         for (page in batches.pages.indices) submit(batches.pages[page], true, page)
         submit(batches.decorations, false, 0)
+        drawImages(images, TerminalGraphicsLayer.ABOVE_TEXT)
+        imageCache.endFrame()
         gpuTimer?.end(query)
         measurement?.submitted(drawCalls)
     }
@@ -202,6 +271,37 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         gl.bufferData(gl.ARRAY_BUFFER, instances.data.asDynamic().subarray(0, instances.floatCount), gl.STREAM_DRAW)
         gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, instances.count)
         drawCalls++
+    }
+
+    private fun drawImages(images: List<TerminalImageQuad>, layer: TerminalGraphicsLayer) {
+        for (image in images) if (image.layer == layer) for (draw in image.tiles()) {
+            val tile = draw.tile
+            val texture = imageCache.get(tile) {
+                val texture = gl.createTexture()
+                try {
+                    gl.bindTexture(gl.TEXTURE_2D, texture)
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+                    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1)
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, tile.width, tile.height, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                        unsignedBytes(image.image.pixels.tileBytes(tile, premultiplied = true)))
+                    check((gl.getError() as Number).toInt() == 0) { "Unable to upload terminal image tile" }
+                    imageUploads++
+                    texture
+                } catch (error: Exception) { gl.deleteTexture(texture); throw error }
+            }
+            val q = draw.quad
+            imageInstance.clear()
+            imageInstance.add(q.x, q.y, q.width, q.height, 0xffffff,
+                (q.sourceX / tile.width).toFloat(), (q.sourceY / tile.height).toFloat(),
+                ((q.sourceX + q.sourceWidth) / tile.width).toFloat(), ((q.sourceY + q.sourceHeight) / tile.height).toFloat())
+            gl.bindTexture(gl.TEXTURE_2D, texture); gl.uniform1i(texturedUniform, 1)
+            gl.bufferData(gl.ARRAY_BUFFER, imageInstance.data.asDynamic().subarray(0, imageInstance.floatCount), gl.STREAM_DRAW)
+            gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, 1)
+            drawCalls++
+        }
     }
 
     private fun createTexture() {
@@ -239,6 +339,7 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     override fun dispose() {
         if (disposed) return
         disposed = true
+        imageCache.clear()
         gpuTimer?.dispose(); gpuTimer = null
         canvas.removeEventListener("webglcontextlost", onLost); canvas.removeEventListener("webglcontextrestored", onRestored)
         if (gl != null && !lost) {
@@ -263,7 +364,7 @@ void main() {
 }
 """
         private const val FRAGMENT = """#version 300 es
-precision mediump float;
+precision highp float;
 uniform sampler2D atlas;
 uniform bool textured;
 in vec2 uv;

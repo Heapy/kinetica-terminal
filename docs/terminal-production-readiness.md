@@ -81,8 +81,8 @@ and an internal `G` command parser with fixed header storage, bounded Base64 cap
 32-bit signed/unsigned fields and ownership-safe completion/reset. At that checkpoint all eight
 command actions were parsed, including animation commands, but the session still ignored image
 requests. The later session
-execution increment is described below; graphics remains disabled in application views until
-their image renderers are available.
+execution increment is described below; the subsequent browser increment enables static
+graphics in Canvas/WebGL views. Native views remain disabled until their renderers are available.
 Tests adapted from the pinned Ghostty parser cover flags, malformed headers, duplicate keys,
 integer overflow, padding/tail bits, every input split, 150 KB data and resource release.
 This checkpoint passes 490 JVM tests, the freshly built JS suite and 11 focused Native tests;
@@ -167,6 +167,25 @@ placeholder rendering, external media, view snapshots/caches and platform pixels
 Validation passes all 521 JVM tests, the freshly built JS suite and all 42 Native graphics
 tests. The new fixtures and manifest reproduce byte-for-byte. All 196 C-helper scenarios pass
 AddressSanitizer with the original library uninstrumented and leak detection disabled.
+
+The browser rendering increment adds immutable image-placement snapshots to viewport holds,
+viewport clipping before GPU float conversion, and a shared tiled-image representation. Canvas
+and WebGL now render all three image layers with non-default backgrounds kept opaque and block
+glyphs in the text layer. Cropped edge tiles prevent linear-filter color bleeding; one-pixel
+gutters keep scaled internal seams continuous. Browser views enable a configurable 64 MiB
+decoded budget per screen, while each renderer owns a separate 64 MiB tile LRU. Invisible
+tiles, replacement generations, lost contexts and view disposal release renderer resources.
+Session pixels survive view disposal and remain available for remounting.
+
+The pixel verifier exercises both Canvas and WebGL at device scale 2: backgrounds and block
+glyphs across all layers, RGBA blending, source cropping, chunked scaled images across tile
+boundaries, cache reuse/deletion, scrolling/history, alternate-screen isolation, synchronized
+replacement, WebGL recovery during a hold and actual canvas/texture disposal. It caught and
+fixed crop-edge filtering bleed in both backends. Validation passes 526 JVM tests, the freshly
+built JS suite, 68 selected Native graphics/GPU/block/presentation tests and the existing browser
+integration verifier. These are browser pixels and shared Native tests, not AppKit/Metal image
+presentation tests. Native rendering, animation, Unicode placeholders and external media remain
+open, so the overall graphics acceptance items below remain incomplete.
 
 Graphics acceptance work:
 

@@ -35,7 +35,7 @@ blocks and quadrant artwork join without seams. GPU and software painters snap r
 edges to physical pixels. Shaded blocks and blocks with combining marks still use the font.
 
 Both backends reuse packed instance arrays, with 12 floats per rectangle, and draw backgrounds,
-one glyph batch per atlas page, then cursor/decorations (at most six draw calls). They redraw the
+one glyph batch per atlas page, then cursor/decorations (at most six draw calls for text-only frames). They redraw the
 visible framebuffer and upload the visible instance batches each frame; partial GPU buffer
 uploads and scroll-only transforms are future optimizations. Only changed rows are rebuilt on
 the CPU. This is cell-based terminal rendering, not a general shaping/layout engine for editors.
@@ -50,6 +50,24 @@ For diagnostics, the browser host exposes `data-terminal-renderer`, `data-termin
 `data-terminal-rasterizations`, and `data-terminal-draw-calls`. The native view exposes
 `renderingBackend` and `renderingFailure`. Kadingirra/Babylon are not dependencies of these
 graphics backends; the JVM target currently remains a headless engine, not a desktop surface.
+
+Browser Canvas and WebGL views render static Kitty graphics from direct RGB/RGBA, PNG and
+zlib transmissions. Images follow source crops, placement scaling, three z layers, scrollback,
+relative placement anchors and screen switches. The lowest layer shows through default cell
+backgrounds; explicit backgrounds remain opaque. Synchronized output and resize holds retain
+the completed image generation together with the text frame, including during WebGL recovery.
+
+`BrowserTerminalView(graphicsStorageBytes = 64 * 1024 * 1024)` enables a 64 MiB decoded image
+budget per screen by default; pass zero to disable command capture and replies. This setting
+belongs to the session, so views sharing a session should use the same value. Each browser
+renderer separately owns a 64 MiB LRU cache of bounded image tiles with sampling gutters.
+Offscreen/deleted tiles and disposed views release their canvas/texture resources. The host
+still owns session image data after a view is disposed. Diagnostics expose
+`data-terminal-image-bytes`, `data-terminal-image-tiles` and cumulative
+`data-terminal-image-uploads`. AppKit/Metal image rendering, animation, Unicode placeholders
+and external file/shared-memory transmission are not implemented yet; native views keep
+graphics disabled. Run `node scripts/verify-terminal-graphics.mjs` against the built browser
+demo for actual Canvas/WebGL pixel, scroll, context-loss and resource-lifecycle checks.
 
 Pass an optional `renderObserver: TerminalRenderObserver` to `BrowserTerminalView` or
 `AppKitTerminalView` to measure rendering. `onFrameStarted` supplies the viewport actually

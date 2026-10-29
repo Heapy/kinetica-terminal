@@ -36,6 +36,7 @@ public interface TerminalPainter {
 internal interface TerminalGlyphPainter : TerminalPainter {
     fun beginRow(row: Int)
     fun glyph(value: String, x: Double, y: Double, columns: Int, color: Int, style: Int)
+    fun background(x: Double, y: Double, width: Double, height: Double, color: Int, default: Boolean) = fill(x, y, width, height, color)
 }
 
 /** Per-view damage, scrolling, and selection. Several surfaces may observe the same session. */
@@ -45,6 +46,8 @@ public class TerminalViewport(
     private val scheduler: TerminalScheduler? = null,
 ) {
     private var frozen: FrozenFrame? = null
+    internal fun graphicsFrame(): List<TerminalGraphicsFrameEntry> = if (disposed) emptyList() else frozen?.graphics
+        ?: session.graphicsState.captureFrame(scrollOffset, columns, rows, session.cellSize)
     public val theme: TerminalTheme get() = frozen?.theme ?: session.theme
     public val columns: Int get() = frozen?.lines?.first()?.columns ?: session.columns
     public val rows: Int get() = frozen?.lines?.size ?: session.rows
@@ -140,7 +143,8 @@ public class TerminalViewport(
             val index = lines.indexOfFirst { it === row }; if (index < 0) -1 else first + index
         })
         frozen = FrozenFrame(lines, first, session.theme, session.cursorColumn, session.cursorRow,
-            capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText)
+            capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText,
+            if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) else emptyList())
         blinkTimer?.dispose(); blinkTimer = null
     }
 
@@ -355,7 +359,9 @@ public class TerminalViewport(
                     line.style(x) == flags && line.foreground(x) == line.foreground(start) &&
                     line.background(x) == line.background(start) && line.underlineColor(x) == line.underlineColor(start) &&
                     selected(selection, index, x) == selected)
-                painter.fill(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background)
+                if (painter is TerminalGlyphPainter) painter.background(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background,
+                    line.rawBackground(start) == TerminalStyle.DEFAULT && flags and TerminalStyle.INVERSE == 0 && !selected && !(block && start == cursorX))
+                else painter.fill(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background)
                 if (flags and TerminalStyle.HIDDEN == 0) {
                     if (blockElement) painter.blockElement(line.codePoint(start), start * cellWidth, y * cellHeight,
                         (x - start) * cellWidth, cellHeight, foreground)
@@ -423,5 +429,6 @@ public class TerminalViewport(
     private data class ScrollAnchor(val row: TerminalLine, val recycle: Long)
     private data class FrozenFrame(val lines: Array<TerminalLine>, val firstLine: Int, val theme: TerminalTheme,
         val cursorColumn: Int, val cursorRow: Int, val cursorVisible: Boolean, val cursorStyle: TerminalCursorStyle,
-        val selection: TerminalSelection, var inheritedRange: TerminalSelectionRange?, var inheritedText: String?)
+        val selection: TerminalSelection, var inheritedRange: TerminalSelectionRange?, var inheritedText: String?,
+        val graphics: List<TerminalGraphicsFrameEntry>)
 }

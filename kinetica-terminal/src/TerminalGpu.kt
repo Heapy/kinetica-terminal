@@ -79,7 +79,7 @@ internal fun glyphBitmap(width: Int, height: Int, rgba: ByteArray, premultiplied
 }
 
 internal data class TerminalGlyph(val key: GlyphKey, val x: Double, val y: Double, val color: Int)
-internal data class TerminalRect(val x: Double, val y: Double, val width: Double, val height: Double, val color: Int)
+internal data class TerminalRect(val x: Double, val y: Double, val width: Double, val height: Double, val color: Int, val defaultBackground: Boolean = false)
 internal class TerminalDrawRow {
     val backgrounds = mutableListOf<TerminalRect>()
     val glyphs = mutableListOf<TerminalGlyph>()
@@ -113,15 +113,18 @@ internal class TerminalGpuFrame : TerminalGlyphPainter {
     override fun fill(x: Double, y: Double, width: Double, height: Double, color: Int) {
         appendRect(current.backgrounds, x, y, width, height, color)
     }
+    override fun background(x: Double, y: Double, width: Double, height: Double, color: Int, default: Boolean) {
+        appendRect(current.backgrounds, x, y, width, height, color, default)
+    }
     override fun decoration(x: Double, y: Double, width: Double, height: Double, color: Int) {
         appendRect(current.decorations, x, y, width, height, color)
     }
-    private fun appendRect(list: MutableList<TerminalRect>, x: Double, y: Double, width: Double, height: Double, color: Int) {
+    private fun appendRect(list: MutableList<TerminalRect>, x: Double, y: Double, width: Double, height: Double, color: Int, default: Boolean = false) {
         // Merge adjacent equal backgrounds after keeping glyph boundaries independent.
         val last = list.lastOrNull()
-        if (last != null && last.color == color && last.y == y && last.height == height && last.x + last.width == x) {
+        if (last != null && last.color == color && last.y == y && last.height == height && last.x + last.width == x && last.defaultBackground == default) {
             list[list.lastIndex] = last.copy(width = last.width + width)
-        } else list += TerminalRect(x, y, width, height, color)
+        } else list += TerminalRect(x, y, width, height, color, default)
     }
     override fun glyph(value: String, x: Double, y: Double, columns: Int, color: Int, style: Int) {
         if (value.isNotBlank()) current.glyphs += TerminalGlyph(GlyphKey(value, columns,
@@ -158,12 +161,12 @@ internal class TerminalGpuBatches {
     val backgrounds = TerminalInstances()
     val decorations = TerminalInstances()
     val pages = mutableListOf<TerminalInstances>()
-    fun build(frame: TerminalGpuFrame, atlas: TerminalGlyphAtlas, pixelRatio: Double = 1.0) {
+    fun build(frame: TerminalGpuFrame, atlas: TerminalGlyphAtlas, pixelRatio: Double = 1.0, transparentDefaultBackground: Boolean = false) {
         require(pixelRatio.isFinite() && pixelRatio > 0)
         backgrounds.clear(); decorations.clear(); pages.forEach { it.clear() }
         while (pages.size < atlas.pageCount) pages += TerminalInstances()
         for (row in frame.rows) {
-            for (rect in row.backgrounds) addRect(backgrounds, rect, pixelRatio)
+            for (rect in row.backgrounds) if (!transparentDefaultBackground || !rect.defaultBackground) addRect(backgrounds, rect, pixelRatio)
             for (rect in row.decorations) addRect(decorations, rect, pixelRatio)
             for (glyph in row.glyphs) {
                 val entry = atlas[glyph.key]

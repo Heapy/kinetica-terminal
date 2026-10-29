@@ -48,7 +48,8 @@ class TerminalBlockDrawingTest {
         try {
             frame.update(viewport, 8.0, 16.0)
             assertTrue(frame.keys.isEmpty(), "Blocks must bypass the font atlas")
-            fun colorAt(column: Int) = frame.rows.single().backgrounds.last { column * 8.0 >= it.x && column * 8.0 < it.x + it.width }.color
+            fun colorAt(column: Int) = (frame.rows.single().backgrounds + frame.rows.single().decorations)
+                .last { column * 8.0 >= it.x && column * 8.0 < it.x + it.width }.color
             assertEquals(0xc86432, colorAt(0))
             assertEquals(0x0a141e, colorAt(1)) // Inverse.
             assertEquals(0x643219, colorAt(2)) // Faint.

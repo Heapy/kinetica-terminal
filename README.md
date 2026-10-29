@@ -80,6 +80,7 @@ apps against a development checkout, bootstrap it above, then run:
 ./kotlin build -m browser-terminal -p js -v release
 # With the local HTTP server running:
 node scripts/verify-terminal.mjs
+node scripts/verify-terminal-graphics.mjs
 ```
 
 Version 0.1.0 of the terminal and the new 0.4.0 framework API are local development

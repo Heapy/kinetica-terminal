@@ -196,6 +196,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     internal val retainedGraphicsCommandBytes: Int get() = graphicsApc.retainedPayloadBytes
     internal fun setGraphicsStorageLimit(bytes: Int) {
         require(bytes >= 0)
+        if (primaryGraphics.storage.limit == bytes && alternateGraphics.storage.limit == bytes) return
         graphicsApc.reset()
         primaryGraphics.setLimit(bytes); alternateGraphics.setLimit(bytes)
         flushDamage()

@@ -14,6 +14,7 @@ public class BrowserTerminalView(
     clipboard: TerminalClipboard? = null,
     notificationPolicy: (TerminalNotification) -> Boolean = { false },
     notifications: TerminalNotificationDelivery? = null,
+    graphicsStorageBytes: Int = 64 * 1024 * 1024,
 ) {
     public val scrollOffset: Int get() = viewport.scrollOffset
     public fun jumpToPrompt(direction: Int): Boolean = viewport.jumpToPrompt(direction)
@@ -66,6 +67,7 @@ public class BrowserTerminalView(
     private val clipboardBinding = session.attachClipboard(clipboard ?: BrowserTerminalClipboard(), clipboardPolicy)
 
     init {
+        session.setGraphicsStorageLimit(graphicsStorageBytes)
         root.style.cssText = "position:relative;width:100%;height:100%;min-width:80px;min-height:40px;overflow:hidden;background:#1e1e1e;flex:1;user-select:none;touch-action:none;"
         root.style.cursor = session.pointerShape.cssName
         root.setAttribute("data-terminal", sessionId)
@@ -280,6 +282,9 @@ public class BrowserTerminalView(
                 root.setAttribute("data-terminal-glyphs", drawing.glyphCount.toString())
                 root.setAttribute("data-terminal-rasterizations", drawing.rasterizations.toString())
                 root.setAttribute("data-terminal-draw-calls", drawing.drawCalls.toString())
+                root.setAttribute("data-terminal-image-bytes", drawing.imageCacheBytes.toString())
+                root.setAttribute("data-terminal-image-tiles", drawing.imageTileCount.toString())
+                root.setAttribute("data-terminal-image-uploads", drawing.imageUploads.toString())
                 if (!composing) { input.style.left = "${viewport.cursorColumn * cellWidth}px"; input.style.top = "${viewport.cursorRow * cellHeight}px" }
                 if (accessibilityTimer == null) accessibilityTimer = window.setTimeout({
                     accessibilityTimer = null

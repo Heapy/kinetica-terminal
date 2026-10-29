@@ -7,7 +7,7 @@ internal fun isTerminalBlockElement(codePoint: Int): Boolean =
 internal fun TerminalPainter.blockElement(codePoint: Int, x: Double, y: Double,
     width: Double, height: Double, color: Int) {
     fun rectangle(left: Int, top: Int, right: Int, bottom: Int) {
-        fill(x + width * left / 8, y + height * top / 8,
+        decoration(x + width * left / 8, y + height * top / 8,
             width * (right - left) / 8, height * (bottom - top) / 8, color)
     }
     when (codePoint) {
