@@ -6,7 +6,8 @@
 package io.heapy.kinetica.terminal
 
 /** Incremental DEC/ECMA-48 state machine. Command storage is reused after dispatch. */
-internal class VtParser(private val handler: Handler) {
+internal class VtParser(private val handler: Handler, private val clipboardLimit: Int = TerminalClipboardBinding.MAX_BYTES) {
+    init { require(clipboardLimit > 0) }
     interface Handler {
         fun print(code: Int)
         fun execute(code: Int)
@@ -85,12 +86,14 @@ internal class VtParser(private val handler: Handler) {
                 if (!overflow) {
                     if (clipboardCapture) {
                         clipboardBytes += when { code < 0x80 -> 1; code < 0x800 -> 2; code < 0x10000 -> 3; else -> 4 }
-                        // Ghostty's allocating capture includes its trailing NUL, but not "52;".
-                        if (clipboardBytes >= TerminalClipboardBinding.MAX_BYTES) overflow = true
+                        // Ghostty's allocating capture includes its trailing NUL, not the OSC number.
+                        if (clipboardBytes >= clipboardLimit) overflow = true
                     } else if (payload.length + (if (code > 0xffff) 2 else 1) > STRING_LIMIT) overflow = true
                     if (!overflow) {
                         payload.append(codePointString(code))
-                        if (stringKind == OSC && payload.length == 3 && payload.toString() == "52;") clipboardCapture = true
+                        if (stringKind == OSC &&
+                            (payload.length == 3 && payload.toString() == "52;" ||
+                                payload.length == 5 && payload.toString() == "5522;")) clipboardCapture = true
                     }
                 }
             }

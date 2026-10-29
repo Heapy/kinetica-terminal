@@ -41,7 +41,8 @@ public interface TerminalClipboard {
 internal class TerminalClipboardBinding(
     private val clipboard: TerminalClipboard,
     private val policy: TerminalClipboardPolicy,
-    private val reply: (String) -> Unit,
+    private val ready: () -> Unit = {},
+    private val reply: (String, () -> Unit) -> Unit,
 ) : TerminalDisposable {
     private data class Pending(val request: TerminalClipboardRequest, val terminator: String)
     private val queue = ArrayDeque<Pending>()
@@ -50,6 +51,7 @@ internal class TerminalClipboardBinding(
     private var active = false
     private var draining = false
     private var disposed = false
+    val pendingRequests: Int get() = queue.size
 
     fun accept(payload: String, terminator: Int) {
         if (disposed) return
@@ -87,14 +89,20 @@ internal class TerminalClipboardBinding(
                 fun finish(data: ByteArray? = null) {
                     if (!current()) return
                     completed = true
-                    queue.removeFirst()
-                    bytes -= pending.request.data?.size ?: 0
-                    active = false
+                    var delivered = false
+                    fun release() {
+                        if (delivered || disposed || generation != epoch) return
+                        delivered = true
+                        queue.removeFirst()
+                        bytes -= pending.request.data?.size ?: 0
+                        active = false
+                        drain()
+                        ready()
+                    }
                     if (pending.request.data == null) {
                         val content = if (data != null && data.size <= MAX_BYTES) Base64.Default.encode(data) else ""
-                        reply("\u001b]52;${pending.request.location.selector};$content${pending.terminator}")
-                    }
-                    drain()
+                        reply("\u001b]52;${pending.request.location.selector};$content${pending.terminator}", ::release)
+                    } else release()
                 }
                 try {
                     policy.authorize(pending.request) { allowed ->

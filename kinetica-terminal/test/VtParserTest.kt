@@ -5,6 +5,19 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class VtParserTest {
+    @Test fun clipboardCaptureCountsUtf8BytesExcludesPrefixAndRecoversAfterOverflow() {
+        for (prefix in listOf("52;", "5522;")) {
+            val capture = Capture()
+            val parser = VtParser(capture, clipboardLimit = 8)
+            val input = "\u001b]${prefix}éééa\u0007" +
+                "\u001b]${prefix}éééab\u001b\\TAIL" +
+                "\u001b]${prefix}é\u0018X" + "\u001b]2;ordinary\u0007"
+            input.forEach { parser.accept(it.code) }
+            assertEquals(listOf(prefix + "éééa", "2;ordinary"), capture.strings.map { it.second })
+            assertEquals("TAILX", capture.printed.toString())
+        }
+    }
+
     private class Capture : VtParser.Handler {
         val printed = StringBuilder()
         val controls = mutableListOf<Int>()

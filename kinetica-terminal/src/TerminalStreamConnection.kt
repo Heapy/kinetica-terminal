@@ -57,6 +57,7 @@ public class TerminalStreamConnection internal constructor(
     private var endingOutput = false
     private var inputSubscription: TerminalDisposable? = null
     private var resizeSubscription: TerminalDisposable? = null
+    private var outputReadySubscription: TerminalDisposable? = null
     public var disposed: Boolean = false
         private set
     public var outputFinished: Boolean = false
@@ -67,7 +68,7 @@ public class TerminalStreamConnection internal constructor(
         private set
     public val queuedOutputBytes: Int get() = output.size
     public val pendingInputBytes: Int get() = input.size
-    public val outputPausedForInput: Boolean get() = input.remaining < TERMINAL_REPLY_RESERVE
+    public val outputPausedForInput: Boolean get() = input.remaining < TERMINAL_REPLY_RESERVE || session.outputPaused
 
     init {
         inputSubscription = session.onInput { text ->
@@ -79,6 +80,7 @@ public class TerminalStreamConnection internal constructor(
         resizeSubscription = session.onResize { columns, rows ->
             if (!disposed) guarded { transport.resize(columns, rows) }
         }
+        outputReadySubscription = session.onOutputReady { if (!disposed) requestWork(0) }
         guarded { transport.resize(session.columns, session.rows) }
     }
 
@@ -161,7 +163,7 @@ public class TerminalStreamConnection internal constructor(
             fail(error)
         } finally {
             running = false
-            if (!disposed && (input.size > 0 || output.size > 0 || endingOutput && !outputFinished))
+            if (!disposed && (input.size > 0 || !session.outputPaused && (output.size > 0 || endingOutput && !outputFinished)))
                 requestWork(if (blocked && (outputPausedForInput || output.size == 0)) 8 else 0)
         }
     }
@@ -172,9 +174,11 @@ public class TerminalStreamConnection internal constructor(
         val task = scheduled; scheduled = null
         inputSubscription?.dispose(); inputSubscription = null
         resizeSubscription?.dispose(); resizeSubscription = null
+        outputReadySubscription?.dispose(); outputReadySubscription = null
         task?.dispose()
         output.clear()
         try { input.clear() } finally {
+            session.cancelClipboardOperations()
             if (!outputFinished) session.finishProgramStatuses()
         }
     }

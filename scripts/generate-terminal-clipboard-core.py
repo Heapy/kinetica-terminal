@@ -141,6 +141,7 @@ def cases():
         dispatch("remember_"+str(len(result)),[read("text/plain",credentials),read("text/plain",credentials),read(".",credentials),
             "type=write"+credentials,write_data("data"),"type=wdata","type=write"+credentials,"type=wdata",
             dict(reset=True),read("text/plain",credentials)],remember=True)
+    dispatch("reset_during_write",["type=write:id=before",write_data("retained"),dict(reset=True),"type=wdata",read()])
     return result
 
 
@@ -190,7 +191,7 @@ pub fn build(b: *std.Build) void {
     digest = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
     manifest = dict(commit=SHA,zig=subprocess.check_output([str(zig),"version"],text=True).strip(),
         cases=len(corpus),snapshots=sum(len(c.get("snapshots",[None])) for c in corpus),
-        scope="Original clipboard modules and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No mounted host or secure entropy coverage.",
+        scope="Original clipboard modules and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No platform clipboard or secure entropy coverage.",
         helperSha256=digest(helper),generatorSha256=digest(Path(__file__)),fixtureSha256=digest(fixture),
         sources={p:digest(upstream/p) for p in ["src/terminal/kitty/clipboard_command.zig","src/terminal/kitty/clipboard_write.zig","src/terminal/kitty/clipboard_response.zig","src/terminal/kitty/clipboard_grants.zig","src/terminal/osc/parsers/kitty_clipboard_protocol.zig","src/terminal/stream_terminal.zig","src/simd/base64.zig"]})
     write_generated(ROOT/"kinetica-terminal/test-upstream/ghostty/clipboard-core-manifest.json",json.dumps(manifest,indent=2)+'\n')

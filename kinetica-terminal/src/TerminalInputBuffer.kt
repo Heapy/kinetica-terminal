@@ -112,6 +112,6 @@ internal class TerminalInputBuffer(private val capacity: Int = 1024 * 1024) {
 // response, plus the other commands in one read slice. TerminalBackpressureTest pins this
 // against all implemented query families; new response-generating protocols must extend it.
 internal const val TERMINAL_REPLY_RESERVE: Int = 64 * 1024
-// Base64 of the maximum clipboard read, plus OSC 52 header and ST. Allocated only on demand.
-internal const val TERMINAL_CLIPBOARD_REPLY_BYTES: Int = ((TerminalClipboardBinding.MAX_BYTES + 2) / 3) * 4 + 9
+// Complete OSC 52 or OSC 5522 response, including all DATA headers. Allocated only on demand.
+internal const val TERMINAL_CLIPBOARD_REPLY_BYTES: Int = 16 * 1024 * 1024
 internal const val TERMINAL_READ_SLICE: Int = 64

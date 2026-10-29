@@ -21,9 +21,17 @@ public sealed class TerminalInputData {
     public class ProtocolReply internal constructor(
         private val bytes: ByteArray,
         complete: ((Boolean) -> Unit)? = null,
+        allowUntracked: Boolean = false,
     ) : TerminalInputData() {
-        private val delivery = complete?.let(::Delivery)
+        private val delivery = complete?.let { Delivery(it, allowUntracked) }
         override fun toByteArray(): ByteArray = bytes.copyOf()
+        /**
+         * Register a custom transport during its onInput callback. Invoke the returned function
+         * on the session thread with true only after every byte is accepted by that transport,
+         * or false on rejection/closure. Duplicate completion is ignored. Merely observing or
+         * copying a reply does not acknowledge it. Built-in adapters register automatically.
+         */
+        public fun trackDelivery(): (Boolean) -> Unit = delivery?.register() ?: {}
         override fun enqueueTo(buffer: TerminalInputBuffer): Boolean {
             val receipt = delivery?.register()
             val accepted = buffer.tryAddProtocolReply(bytes, receipt)
@@ -33,7 +41,7 @@ public sealed class TerminalInputData {
         internal fun dispatchFinished(success: Boolean) { delivery?.seal(success) }
 
         /** Observers do not acknowledge delivery; every accepting transport must drain its copy. */
-        private class Delivery(private val complete: (Boolean) -> Unit) {
+        private class Delivery(private val complete: (Boolean) -> Unit, private val allowUntracked: Boolean) {
             private var registered = 0
             private var pending = 0
             private var sealed = false
@@ -55,7 +63,7 @@ public sealed class TerminalInputData {
 
             fun seal(success: Boolean) {
                 sealed = true
-                if (!success || registered == 0) failed = true
+                if (!success || registered == 0 && !allowUntracked) failed = true
                 finish()
             }
 

@@ -166,7 +166,7 @@ Call `receive(ByteArray)` with UTF-8 output. It copies accepted bytes into a fix
 ring and returns immediately; it does **not** acknowledge them. A false return admits no prefix.
 Retry that range later, or close a producer that exceeded its credit window. By default each
 direction has a 1 MiB queue, configured by `TerminalStreamLimits`. Clipboard replies have an
-additional lazy reserve for one maximum-size encoded response (see OSC 52 below). The server must limit total
+additional lazy 16 MiB reserve for one complete clipboard response (see OSC 52/5522 below). The server must limit total
 unacknowledged output to the output capacity, including packets still in transit, and pause its
 PTY until credits arrive. Checking the browser WebSocket's `bufferedAmount` or peer input credits
 before accepting a write bounds the other direction. Browser WebSocket buffering itself is
@@ -409,7 +409,7 @@ DEC line drawing/alignment, title and hyperlink OSC, status/cursor reports, appl
 paste, focus reporting, synchronized output, cursor shapes/blinking, DECRQSS cursor-style,
 SGR and vertical-margin queries,
 and X10/UTF-8/SGR/urxvt/SGR-pixel mouse encoding. Unknown OSC/DCS payloads are consumed
-without printing, with bounded parser storage. OSC clipboard commands are not executed.
+without printing, with bounded parser storage. Clipboard access requires an explicitly attached host and authorization policy.
 DECSCA and ISO SPA/EPA protect cells; selective ED/EL and ordinary erasure follow
 Ghostty's distinction between DEC and ISO protection. Protection survives save/restore
 and reflow. Named differences from Alacritty are recorded in the upstream test adapter.
@@ -623,6 +623,36 @@ write data can wait for authorization or I/O; excess requests are dropped atomic
 over 8 MiB receive an empty response. Reset cancels uncompleted requests; replacing/disposing a host
 invalidates its pending callbacks. Effects already submitted to the OS cannot be undone. Ordinary
 copy/paste gestures retain their existing behavior independently of OSC 52 policy.
+
+OSC 5522 supports MIME reads, available-type listings, chunked writes, aliases, clearing,
+status replies and remembered password grants. Supply a `TerminalMimeClipboard` implementation
+through `session.attachMimeClipboard(backend, policy)`. `TerminalMimeClipboardPolicy.DENY`
+is the default; `WRITE_ONLY`, `ALLOW` or a custom asynchronous policy can authorize operations.
+Requests expose the untrusted application name, direction, MIME types and grant state, never
+the password itself. A host must commit all write representations atomically, and report
+unsupported destinations or I/O errors explicitly. No host returns EPERM for reads and ENOSYS
+for writes. The built-in AppKit/browser clipboard adapters currently provide OSC 52 text I/O;
+MIME platform adapters and secure mode-5522 paste events are still pending.
+
+Use `TerminalStreamConnection`, `BrowserTerminalConnection` or `MacOsPty` when attaching an
+asynchronous MIME host. These adapters retain input while authorization, clipboard I/O or reply
+delivery waits. Custom feeders can call `writeAvailable(bytes, offset, length)`, retain the
+unconsumed suffix and schedule a retry from `onOutputReady`. The synchronous `write` methods
+reject continuation while `outputPaused` is true. A custom input transport must call
+`ProtocolReply.trackDelivery()` during `onInput`, then complete that receipt with `true` after
+accepting all response bytes, or `false` on rejection/closure. Built-in adapters do this automatically.
+Once OSC 5522 is active, clipboard operations
+are ordered across OSC 52 and OSC 5522; ordinary output continues until another clipboard command
+needs the host. At most one such complete packet is retained outside the parser.
+
+OSC 5522 captures less than 8 MiB per packet, excluding the OSC prefix, matching Ghostty's
+allocating parser. Writes have a 64 MiB decoded transaction budget. Reads serve at most four
+requested types, with an 8 MiB aggregate data budget and a 16 MiB encoded-response budget.
+The complete response is admitted atomically, so keyboard input and other replies cannot split
+its DATA/DONE sequence. Delivery acknowledgements prevent multiple large responses from filling
+the same reserve. Replacing a host cancels its waiting responses; bytes already submitted to a
+transport finish in order. RIS clears grants and pending host requests but preserves an unfinished
+write assembly, as in Ghostty 1.4. Detaching a host or closing its transport discards that assembly.
 
 OSC 9 and `OSC 777;notify;title;body` emit `onNotification` events. Recognized ConEmu
 commands are kept separate from notification text. OSC 9;4 emits `onProgress` reports for

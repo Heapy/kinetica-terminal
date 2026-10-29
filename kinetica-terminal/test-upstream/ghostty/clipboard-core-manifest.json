@@ -1,12 +1,12 @@
 {
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
   "zig": "0.17.0",
-  "cases": 718,
-  "snapshots": 4262,
-  "scope": "Original clipboard modules and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No mounted host or secure entropy coverage.",
+  "cases": 719,
+  "snapshots": 4267,
+  "scope": "Original clipboard modules and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No platform clipboard or secure entropy coverage.",
   "helperSha256": "a28263290605aae1fd77a26f6a746403bea0b801fdbc74e65c4cc827399d19a3",
-  "generatorSha256": "b71edeed6dbd523d47f8395bd0b1c182ce9ca4a56345fc9bcb1ec4f367a090bd",
-  "fixtureSha256": "960cab50f0710231987c0056425e20b5f42965b6930e4a5b2616dd4dd9f56ec0",
+  "generatorSha256": "fcabb25945233cfe16c6b60d3246ac22d7bb258f775ac13d1125da21d864ea8e",
+  "fixtureSha256": "2c2e7959bbb6909c22d96d26c9d2075a98f4ebd2c77323b153f2f01bfe120471",
   "sources": {
     "src/terminal/kitty/clipboard_command.zig": "6ebc69284fbee9227b6addcbc80d352caf2ee913c269c7f3d7ffde3394fa7b2a",
     "src/terminal/kitty/clipboard_write.zig": "28a00649cde9a57334bf9510904f78ecbf51719f16dfef4401311a41770d046b",

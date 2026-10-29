@@ -318,6 +318,22 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private val progressObservers = mutableListOf<(TerminalProgressReport) -> Unit>()
     private val programStatusRegistry = TerminalProgramStatusRegistry()
     private var clipboardBinding: TerminalClipboardBinding? = null
+    private var clipboardOwner: Any? = null
+    private var kittyClipboardBinding: TerminalKittyClipboardBinding? = null
+    private data class PendingClipboard(val kitty: Boolean, val payload: String, val terminator: Int)
+    private var pendingClipboard: PendingClipboard? = null
+    private val outputReadyObservers = mutableListOf<() -> Unit>()
+    private val clipboardReplies = TerminalClipboardReplies({ bytes, required, done -> emitProtocolReply(bytes, done, !required) },
+        { cancelClipboardOperations() }, ::resumeClipboardOutput)
+
+    /** A complete clipboard command or reply is waiting for host/transport capacity. */
+    public val outputPaused: Boolean get() = pendingClipboard != null || kittyClipboardBinding != null && clipboardReplies.busy
+
+    /** Schedule another [writeAvailable] attempt; callbacks must not reenter the current write. */
+    public fun onOutputReady(observer: () -> Unit): TerminalDisposable {
+        outputReadyObservers.add(observer)
+        return TerminalDisposable { outputReadyObservers.remove(observer) }
+    }
     private val resizeObservers = mutableListOf<(Int, Int) -> Unit>()
     private val sizeRefreshObservers = mutableListOf<() -> Unit>()
     private val renderHoldObservers = mutableListOf<(Boolean) -> Unit>()
@@ -433,25 +449,95 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
      * pending authorization and read callbacks. No host means no clipboard access or replies.
      */
     public fun attachClipboard(clipboard: TerminalClipboard, policy: TerminalClipboardPolicy = TerminalClipboardPolicy.DENY): TerminalDisposable {
+        if (pendingClipboard?.kitty == false) pendingClipboard = null
         clipboardBinding?.dispose()
-        val binding = TerminalClipboardBinding(clipboard, policy) { reply ->
-            emitInput(TerminalInputData.ProtocolReply(reply.encodeToByteArray()))
+        clipboardOwner?.let(clipboardReplies::cancel)
+        val owner = Any()
+        clipboardOwner = owner
+        val binding = TerminalClipboardBinding(clipboard, policy, ::resumeClipboardOutput) { reply, complete ->
+            // Preserve the legacy onInput-only host contract, while bounded transports acknowledge delivery.
+            clipboardReplies.offer(owner, sequenceOf(reply), complete, requireTransport = false)
         }
         clipboardBinding = binding
         return TerminalDisposable {
+            if (clipboardBinding === binding) {
+                if (pendingClipboard?.kitty == false) pendingClipboard = null
+                clipboardBinding = null; clipboardOwner = null
+            }
             binding.dispose()
-            if (clipboardBinding === binding) clipboardBinding = null
+            clipboardReplies.cancel(owner)
         }
+    }
+
+    /**
+     * Attach an OSC 5522 MIME host with explicit authorization (denied by default).
+     * Use a bounded stream/PTY adapter or [writeAvailable] for asynchronous host operations.
+     * Replacing or disposing this host cancels pending clipboard operations and remembered grants.
+     * This enables read/write commands; mode 5522 paste events require a separate secure paste host.
+     */
+    public fun attachMimeClipboard(clipboard: TerminalMimeClipboard, policy: TerminalMimeClipboardPolicy = TerminalMimeClipboardPolicy.DENY): TerminalDisposable {
+        cancelClipboardOperations()
+        kittyClipboardBinding?.dispose()
+        val binding = newKittyClipboardBinding(TerminalMimeClipboardHost(clipboard, policy))
+        kittyClipboardBinding = binding
+        return TerminalDisposable {
+            if (kittyClipboardBinding === binding) {
+                cancelClipboardOperations(); kittyClipboardBinding = null
+            }
+            binding.dispose()
+        }
+    }
+
+    private fun newKittyClipboardBinding(host: KittyClipboardHost?): TerminalKittyClipboardBinding {
+        val owner = Any()
+        return TerminalKittyClipboardBinding(host, { packets, done -> clipboardReplies.offer(owner, packets, done) }, ::resumeClipboardOutput)
+    }
+
+    private val clipboardOperationPending: Boolean get() =
+        (clipboardBinding?.pendingRequests ?: 0) > 0 || (kittyClipboardBinding?.pendingRequests ?: 0) > 0
+
+    private fun acceptClipboard(payload: String, terminator: Int, kitty: Boolean) {
+        if (!kitty && clipboardBinding == null) return
+        if (kitty && kittyClipboardBinding == null) kittyClipboardBinding = newKittyClipboardBinding(null)
+        check(pendingClipboard == null) { "Clipboard output is paused; retry the unconsumed suffix with writeAvailable" }
+        // Preserve operation order across protocols, including asynchronous permission dialogs.
+        // Ordinary output may continue until the next clipboard command needs the same host.
+        if (kittyClipboardBinding != null && clipboardOperationPending)
+            pendingClipboard = PendingClipboard(kitty, payload, terminator)
+        else if (kitty) {
+            if (kittyClipboardBinding!!.accept(payload, terminator) == false)
+                pendingClipboard = PendingClipboard(true, payload, terminator)
+        } else clipboardBinding?.accept(payload, terminator)
+    }
+
+    private fun resumeClipboardOutput() {
+        val pending = pendingClipboard
+        if (pending != null) {
+            if (clipboardOperationPending) return
+            // Clear before retry: synchronous completion may call readiness again.
+            pendingClipboard = null
+            acceptClipboard(pending.payload, pending.terminator, pending.kitty)
+        }
+        if (!outputPaused) outputReadyObservers.toList().forEach { it() }
+    }
+
+    internal fun cancelClipboardOperations(preserveWrite: Boolean = false) {
+        pendingClipboard = null
+        clipboardReplies.cancel()
+        clipboardBinding?.reset()
+        kittyClipboardBinding?.reset(preserveWrite)
     }
 
     public fun sendInput(text: String) = emitInput(TerminalInputData.Text(text))
     internal fun sendProtocolBytes(bytes: ByteArray) = emitInput(TerminalInputData.Bytes(bytes))
     /** Success means every attached bounded transport accepted all bytes, not merely queued them. */
     internal fun sendProtocolReply(bytes: ByteArray, complete: (Boolean) -> Unit) =
-        emitInput(TerminalInputData.ProtocolReply(bytes) { result ->
+        emitProtocolReply(bytes, complete, allowUntracked = false)
+    private fun emitProtocolReply(bytes: ByteArray, complete: (Boolean) -> Unit, allowUntracked: Boolean) =
+        emitInput(TerminalInputData.ProtocolReply(bytes, { result ->
             replyCompletions.addLast(complete to result)
             drainReplyCompletions()
-        })
+        }, allowUntracked))
     private fun drainReplyCompletions() {
         if (completingReplies) return
         completingReplies = true
@@ -588,9 +674,11 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         damageAll(); flushDamage()
     }
 
+    /** Synchronous feed. For asynchronous clipboard hosts use [writeAvailable] or the bounded adapters. */
     public fun write(text: String) {
         damage(cursorRow)
         for (char in text) {
+            check(!outputPaused) { "Clipboard output is paused; use writeAvailable or a bounded transport" }
             val high = highSurrogate
             highSurrogate = null
             if (high != null) {
@@ -612,6 +700,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         writeBytes(bytes, offset, length, null)
     }
 
+    /** Consume a UTF-8 prefix; retain and retry its suffix after [onOutputReady] when paused. */
+    public fun writeAvailable(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset): Int =
+        writeBytes(bytes, offset, length) { !outputPaused }
+
     /** Returns consumed bytes; decoder/parser state and the unconsumed suffix remain resumable. */
     internal fun writeAvailable(bytes: ByteArray, offset: Int, length: Int, canContinue: () -> Boolean): Int =
         writeBytes(bytes, offset, length, canContinue)
@@ -622,8 +714,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         var epoch = controlEpoch
         var nextCheckpoint = 0
         for (i in offset until offset + length) {
+            if (canContinue == null) check(!outputPaused) { "Clipboard output is paused; use writeAvailable or a bounded transport" }
             if (canContinue != null && (consumed == nextCheckpoint || epoch != controlEpoch)) {
-                if (!canContinue()) break
+                if (outputPaused || !canContinue()) break
                 nextCheckpoint = consumed + TERMINAL_READ_SLICE
                 epoch = controlEpoch
             }
@@ -736,7 +829,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     public fun reset() {
         statusLineSelected = false; checksumFlags = defaultChecksumFlags
         colors.resetPalette()
-        clipboardBinding?.reset()
+        cancelClipboardOperations(preserveWrite = true)
         primaryGraphics.reset(); alternateGraphics.reset()
         previousCharacter = null
         savedModes.clear(); sideEffectModes.clear()
@@ -1663,7 +1756,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 workingDirectoryUri = uri
                 workingDirectoryObservers.toList().forEach { it(uri) }
             }
-            "52" -> clipboardBinding?.accept(payload, terminator)
+            "52" -> acceptClipboard(payload, terminator, kitty = false)
+            "5522" -> acceptClipboard(payload, terminator, kitty = true)
             "7501" -> programStatusRegistry.accept(payload, terminator, ::sendInput)
             "9", "777" -> parseTerminalEffect(command.toInt(), payload,
                 { notification -> notificationObservers.toList().forEach { it(notification) } }, ::reportProgress)

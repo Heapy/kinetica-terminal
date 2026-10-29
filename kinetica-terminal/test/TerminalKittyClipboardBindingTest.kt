@@ -55,7 +55,7 @@ class TerminalKittyClipboardBindingTest {
             for ((index, value) in events.withIndex()) {
                 replies.clear(); host.accesses.clear(); host.writes.clear()
                 val event = value.jsonObject
-                if (event["reset"]?.jsonPrimitive?.boolean == true) binding.reset()
+                if (event["reset"]?.jsonPrimitive?.boolean == true) binding.reset(preserveWrite = true)
                 event["body"]?.jsonPrimitive?.content?.let { body ->
                     assertTrue(binding.accept(body, if (event["terminator"]?.jsonPrimitive?.content == "bel") 7 else 0))
                 }

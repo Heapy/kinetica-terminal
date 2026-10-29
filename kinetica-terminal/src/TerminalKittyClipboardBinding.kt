@@ -32,8 +32,7 @@ internal interface KittyClipboardHost {
 /**
  * Bounded dispatcher. A false accept must pause parsing and retry the same packet after
  * readiness; it has no effects. The reply sink must consume packets in order and acknowledge
- * the whole response before another queued operation may access the host. Not yet mounted by
- * TerminalSession: transport acknowledgements are required before enabling this dispatcher.
+ * the whole response before another queued operation may access the host.
  */
 internal class TerminalKittyClipboardBinding(
     private val host: KittyClipboardHost?,
@@ -254,8 +253,9 @@ internal class TerminalKittyClipboardBinding(
             contents = served.map { KittyClipboardContent(it.mime, it.data.copyOf()) }, terminator = pending.terminator).packets()
     }
 
-    fun reset() {
-        generation++; transaction = null; queue.clear(); retained = 0; active = false; grants.clear()
+    fun reset(preserveWrite: Boolean = false) {
+        generation++; if (!preserveWrite) transaction = null
+        queue.clear(); retained = 0; active = false; grants.clear()
         if (!disposed) ready()
     }
     override fun dispose() { disposed = true; reset() }

@@ -585,12 +585,12 @@ reply sizes are checked before emitting OK. Duplicate callbacks are ignored. Bin
 or disposal cancels pending work, including an unfinished write transaction; this is an
 embedding lifecycle operation, not an assertion that Ghostty's RIS aborts write assembly.
 
-The corpus now contains 718 cases / 4262 checkpoints, including 42 original TerminalStream
+The third-increment corpus contained 718 cases / 4262 checkpoints, including 42 original TerminalStream
 dispatch scenarios that compare host access metadata, committed MIME contents and wire replies.
 Separate tests cover asynchronous permissions, delivery acknowledgements, queue limits,
 cancellation, host/transport failures and exact reply-size boundaries. Validation passes
 985 JVM tests, fresh Release JS tests and 13 Native Kitty clipboard tests. Fixtures and
-manifest reproduce byte-for-byte. The dispatcher is still internal and unmounted: session
+manifest reproduce byte-for-byte. At that stage the dispatcher was internal and unmounted: session
 routing with parser backpressure, transport delivery acknowledgements, secure paste events
 and native/browser MIME adapters remain necessary for end-to-end OSC 5522 support.
 
@@ -608,9 +608,37 @@ of an undelivered tail. Initial large-PTY runs hit wall-clock deadlines; the fre
 Native run passes with the original deadlines and unchanged transport logic. Diagnostic
 failure messages retain the delivery phase, pending byte count and terminal output.
 
-These receipts provide the delivery primitive for OSC 5522. The packet-sequence writer,
-parser pause/retry integration and mounted MIME host are still pending; the dispatcher is
-not enabled by adding receipts alone.
+Those receipts provided the delivery primitive for OSC 5522; the following session increment
+connects them to the dispatcher.
+
+OSC 5522 read/write commands now route through `TerminalSession.attachMimeClipboard` and the
+public asynchronous MIME host/policy API. Access defaults to denial. OSC capture follows the
+original 8 MiB allocating-parser limit, including UTF-8 byte accounting and cancellation.
+The session retains at most one complete command while an earlier clipboard operation waits.
+Operations are ordered across OSC 52 and OSC 5522, including async write-to-read transitions.
+Stream/PTY adapters pause and resume without dropping the remaining bytes; the public
+`writeAvailable`/`onOutputReady` pair exposes the same contract for custom feeders.
+Custom input transports register public `ProtocolReply.trackDelivery()` receipts during
+`onInput`; the common integration test exercises this entirely through public APIs.
+
+Read responses are assembled within the checked 16 MiB wire budget and submitted atomically;
+keyboard input cannot appear between their DATA and DONE packets. The two protocols share
+delivery ordering. At most one response per live binding can wait, plus a detached response
+already submitted to a transport. Replacing a host drops its waiting replies and commands
+without transferring stale writes to the replacement. Closing a transport cancels outstanding
+host callbacks. RIS clears grants/requests while preserving unfinished write assembly, verified
+against a new original-Ghostty dispatch fixture. Detachment discards the assembly.
+
+The corpus now has 719 cases / 4267 checkpoints. Session tests replay the dispatch fixtures
+through the public host API and bounded transport, both byte-by-byte and in whole packets;
+the custom four-byte write-budget fixture remains covered at the binding layer. Platform
+MIME clipboard adapters, secure password generation and mode-5522 paste events remain open.
+
+Validation passes 1006 JVM tests, fresh Release JS tests, 11 Native MIME integration tests
+and 67 Native parser/clipboard/transport/PTY regressions. A separate real PTY writes 1 MiB of
+binary MIME data, creates an alias and reads it back; the child checks every response byte,
+including the available-types listing and DATA chunk framing. The 719-case corpus and its
+manifest reproduce byte-for-byte.
 
 Graphics acceptance work:
 

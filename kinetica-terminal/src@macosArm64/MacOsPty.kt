@@ -44,7 +44,7 @@ public class MacOsPty(
     private val resizeSubscription: TerminalDisposable
     public val pendingInputBytes: Int get() = pending.size
     public val bufferedOutputBytes: Int get() = outputSize - outputOffset
-    public val outputPausedForInput: Boolean get() = pending.remaining < TERMINAL_REPLY_RESERVE
+    public val outputPausedForInput: Boolean get() = pending.remaining < TERMINAL_REPLY_RESERVE || session.outputPaused
     public var rejectedInputCount: Long = 0
         private set
     /** Raw bytes received from the PTY before parsing, including an unread buffered tail. */
@@ -162,6 +162,7 @@ public class MacOsPty(
     private fun finish() {
         if (ended || disposed) return
         ended = true
+        session.cancelClipboardOperations()
         outputOffset = 0; outputSize = 0
         session.finishInput()
         timer?.invalidate(); timer = null
@@ -195,6 +196,7 @@ public class MacOsPty(
         check(NSThread.isMainThread) { "Dispose MacOsPty on the main thread" }
         if (disposed) return
         disposed = true; timer?.invalidate(); timer = null
+        session.cancelClipboardOperations()
         inputSubscription.dispose(); resizeSubscription.dispose()
         outputOffset = 0; outputSize = 0
         if (fd >= 0) { close(fd); fd = -1 }
