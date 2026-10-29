@@ -29,6 +29,8 @@ internal class TerminalGraphicsCommand(
     val moveCursor: Boolean get() = unsigned('C') != 1L
     val virtual: Boolean get() = unsigned('U') != 0L
     val deleteAction: Char get() = unsigned('d', 'a'.code.toLong()).toInt().toChar()
+    /** Keep transmission/display metadata without retaining the first payload chunk. */
+    fun withoutData(): TerminalGraphicsCommand = TerminalGraphicsCommand(action, values, present, ByteArray(0))
 }
 
 private fun graphicsKeyIndex(key: Int): Int = when (key) {

@@ -4,6 +4,20 @@ Pinned source: `4da7523faba68ccb4042ea20585817098a51c015` from
 <https://github.com/ghostty-org/ghostty>. The MIT license is in
 `../../third-party/GHOSTTY-LICENSE`.
 
+The separate [graphics component corpus](graphics-manifest.json) is generated with
+`python3 scripts/generate-terminal-graphics-fixtures.py /path/to/ghostty`. Its 15 cases
+and 120 checkpoints compare base-image transfers, query isolation, chunk/quiet inheritance,
+IDs/numbers, replacement, storage removal, eviction and limit/reset behavior. The C helper's
+`G limit ids...` command enables storage and selects image IDs to probe through the original
+public API. Every ID allocated or explicitly used by these scenarios is in the probe list;
+this is not general image enumeration (the public API exposes lookup and placement iteration).
+It snapshots decoded RGB/RGBA bytes without retaining borrowed handles across mutations.
+The common test adapter feeds headers/payloads whole and bytewise and translates removal
+events into storage operations. It does not prove placement-aware delete dispatch, animation,
+screen lifecycle, session execution or rendering. PNG uses a separate libpng decoder corpus;
+this original-library helper has no PNG callback yet. The graphics manifest pins the library,
+helper/generator, input compressor and generated fixtures independently of the text VT corpus.
+
 `scenarios.json` is the input specification. The C helper in
 `scripts/terminal-ghostty-oracle.c` runs the original `libghostty-vt` through its
 public API. After every write/resize/key batch it exports logical cells, wraps, cursor,

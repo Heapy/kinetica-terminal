@@ -4,6 +4,7 @@
  * W hex-bytes; R cols rows [cell-width cell-height]; K keypad-key mods;
  * E key mods consumed action unshifted utf8-hex; T color-scheme (1 dark, 2 light);
  * M action button mods column row (stateless mouse encoding, unit cells);
+ * G image-storage-limit probe-image-ids... (decimal, at most 256 IDs);
  * S (snapshot); U (width ranges).
  * stdout: one JSON snapshot per S. Every API failure exits nonzero.
  */
@@ -23,6 +24,9 @@ static bool clipboard_enabled;
 static bool effects_enabled;
 static bool pwd_enabled;
 static bool semantic_enabled;
+static bool graphics_enabled;
+static uint32_t graphics_ids[256];
+static size_t graphics_ids_len;
 static struct { unsigned char bytes[4096]; size_t len; } pwd_events[512];
 static size_t pwd_events_len;
 static void pwd_changed(GhosttyTerminal terminal, void *userdata) {
@@ -151,6 +155,35 @@ static GhosttyColorRgb rgb(unsigned value) {
     return (GhosttyColorRgb){.r = value >> 16, .g = value >> 8, .b = value};
 }
 static unsigned packed(GhosttyColorRgb value) { return value.r << 16 | value.g << 8 | value.b; }
+static void snapshot_graphics(GhosttyTerminal terminal) {
+    GhosttyKittyGraphics graphics = NULL;
+    GhosttyResult result = ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_KITTY_GRAPHICS, &graphics);
+    if (result != GHOSTTY_SUCCESS && result != GHOSTTY_NO_VALUE) check(result);
+    fputs(",\"kittyImages\":[", stdout);
+    bool prior = false;
+    for (size_t i = 0; graphics && i < graphics_ids_len; i++) {
+        GhosttyKittyGraphicsImage image = ghostty_kitty_graphics_image(graphics, graphics_ids[i]);
+        if (!image) continue;
+        uint32_t id, number, width, height;
+        GhosttyKittyImageFormat format;
+        const uint8_t *bytes = NULL;
+        size_t length;
+        check(ghostty_kitty_graphics_image_get(image, GHOSTTY_KITTY_IMAGE_DATA_ID, &id));
+        check(ghostty_kitty_graphics_image_get(image, GHOSTTY_KITTY_IMAGE_DATA_NUMBER, &number));
+        check(ghostty_kitty_graphics_image_get(image, GHOSTTY_KITTY_IMAGE_DATA_WIDTH, &width));
+        check(ghostty_kitty_graphics_image_get(image, GHOSTTY_KITTY_IMAGE_DATA_HEIGHT, &height));
+        check(ghostty_kitty_graphics_image_get(image, GHOSTTY_KITTY_IMAGE_DATA_FORMAT, &format));
+        check(ghostty_kitty_graphics_image_get(image, GHOSTTY_KITTY_IMAGE_DATA_DATA_PTR, &bytes));
+        check(ghostty_kitty_graphics_image_get(image, GHOSTTY_KITTY_IMAGE_DATA_DATA_LEN, &length));
+        if (!bytes || length > 1024 * 1024) exit(2);
+        printf("%s[%u,%u,%u,%u,%d,\"", prior ? "," : "", id, number, width, height,
+            format == GHOSTTY_KITTY_IMAGE_FORMAT_RGB ? 24 : format == GHOSTTY_KITTY_IMAGE_FORMAT_RGBA ? 32 : -1);
+        for (size_t j = 0; j < length; j++) printf("%02x", bytes[j]);
+        fputs("\"]", stdout);
+        prior = true;
+    }
+    putchar(']');
+}
 static void snapshot(GhosttyTerminal terminal) {
     uint16_t cols, rows, x, y;
     size_t history;
@@ -169,6 +202,7 @@ static void snapshot(GhosttyTerminal terminal) {
     printf("{\"columns\":%u,\"rows\":%u,\"cursor\":[%u,%u],\"pendingWrap\":%s,\"visible\":%s,\"alternate\":%s,\"history\":%zu,\"title\":",
         cols, rows, x, y, pending ? "true" : "false", visible ? "true" : "false", active ? "true" : "false", history);
     json_bytes((const unsigned char *)title.ptr, title.len);
+    if (graphics_enabled) snapshot_graphics(terminal);
     if (semantic_enabled) {
         bool at_prompt;
         check(ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_CURSOR_AT_PROMPT, &at_prompt));
@@ -472,10 +506,26 @@ int main(void) {
             effects_enabled = false; effects_len = 0;
             pwd_enabled = false; pwd_events_len = 0;
             semantic_enabled = false;
+            graphics_enabled = false; graphics_ids_len = 0;
             for (size_t i = 0; i < clipboard_events_len; i++) free(clipboard_events[i].data);
             clipboard_events_len = 0;
             for (size_t i = 0; i < 3; i++) { free(clipboard_values[i].data); clipboard_values[i].data = NULL; clipboard_values[i].len = 0; }
         } else if (!terminal) return 2;
+        else if (line[0] == 'G') {
+            char *end, *next = line + 1;
+            uint64_t limit = strtoull(next, &end, 10);
+            if (end == next || limit > 1024 * 1024 * 1024) return 2;
+            next = end;
+            graphics_ids_len = 0;
+            while (*(next += strspn(next, " \t\r\n"))) {
+                unsigned long long id = strtoull(next, &end, 10);
+                if (end == next || id == 0 || id > UINT32_MAX || graphics_ids_len == 256) return 2;
+                graphics_ids[graphics_ids_len++] = (uint32_t)id;
+                next = end;
+            }
+            graphics_enabled = true;
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_KITTY_IMAGE_STORAGE_LIMIT, &limit));
+        }
         else if (line[0] == 'H') semantic_enabled = true;
         else if (line[0] == 'P') {
             pwd_enabled = true;

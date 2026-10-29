@@ -102,6 +102,21 @@ byte-for-byte. See `kinetica-terminal/test-upstream/images/README.md` for the pi
 limits and precise coverage. Neither parser nor decoder executes image commands in the
 session yet, and this is not an original-libghostty image-state oracle.
 
+The base-image storage increment adds an internal per-screen component for query validation,
+t/T transmission metadata, chunk assembly, image IDs/numbers, inherited quiet flags,
+replacement-at-first-chunk, bounded storage and priority/age eviction. It returns display
+metadata to the future placement executor; it does not claim to execute a=T end to end.
+Image content generations remain distinct across replacement, reset and independent stores.
+The new original-libghostty graphics corpus covers 15 scenarios and 120 checkpoints of exact
+replies and decoded RGB/RGBA bytes, including zlib, queries during pending transfers, ID
+allocation, replacement, image removal, limit changes and reset. These are component-level
+transfer/storage tests; deletion commands are translated to storage operations by the test
+adapter, so placement-aware delete dispatch, animation and session integration remain open.
+PNG transfer uses the shared decoder and its independent libpng corpus; the C oracle does
+not yet install a PNG host callback. Validation passes 505 JVM tests, the freshly built JS
+suite and all 26 Native graphics tests. The 15 new C-helper paths pass AddressSanitizer with
+the same uninstrumented-library/disabled-LeakSanitizer limits noted below.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

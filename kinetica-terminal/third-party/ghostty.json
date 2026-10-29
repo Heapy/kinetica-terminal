@@ -36,7 +36,9 @@
     "src/terminal/osc/parsers/semantic_prompt.zig",
     "src/os/string_encoding.zig",
     "src/terminal/apc.zig",
-    "src/terminal/kitty/graphics_command.zig"
+    "src/terminal/kitty/graphics_command.zig",
+    "src/terminal/kitty/graphics_exec.zig",
+    "src/terminal/kitty/graphics_storage.zig"
   ],
   "adaptedTests": [
     "src/terminal/Parser.zig",
