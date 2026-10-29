@@ -175,6 +175,7 @@ public class TerminalStreamConnection internal constructor(
         resizeSubscription?.dispose(); resizeSubscription = null
         output.clear(); input.clear()
         task?.dispose()
+        if (!outputFinished) session.finishProgramStatuses()
     }
 
     private companion object {

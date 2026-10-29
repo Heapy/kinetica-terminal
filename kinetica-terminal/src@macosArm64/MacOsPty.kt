@@ -198,5 +198,6 @@ public class MacOsPty(
             kinetica_pty_reap(child)
             dispatch_async(dispatch_get_main_queue()) { childReaped = true; notifyClosed() }
         }
+        if (!ended) session.finishProgramStatuses()
     }
 }

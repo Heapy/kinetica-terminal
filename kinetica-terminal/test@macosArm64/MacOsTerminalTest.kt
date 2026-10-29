@@ -10,6 +10,21 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsTerminalTest {
+    @Test fun programStatusIsRetiredOnRealPtyExitAndDisposal() {
+        for (abrupt in listOf(false,true)) {
+            val session = TerminalSession()
+            session.onProgramStatus {}
+            var exited = false
+            val command = "printf '\\033]7501;state=working\\033\\\\\\033]7501;state=done:id=finished\\033\\\\'; read answer"
+            val pty = MacOsPty(session,"/bin/sh",listOf("-c",command),onExit = { exited = true })
+            try {
+                await { session.programStatuses.size == 2 }
+                if (abrupt) pty.dispose()
+                else { session.sendInput("\r"); await { exited } }
+                assertEquals(listOf("finished"),session.programStatuses.map { it.id })
+            } finally { pty.dispose() }
+        }
+    }
     @Test fun appKitHostReleasesAbandonedRenderHoldOnItsRunLoop() {
         NSApplication.sharedApplication()
         val session = TerminalSession()

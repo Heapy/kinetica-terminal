@@ -289,6 +289,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private val workingDirectoryObservers = mutableListOf<(String?) -> Unit>()
     private val semanticPromptObservers = mutableListOf<(TerminalSemanticPrompt) -> Unit>()
     private val progressObservers = mutableListOf<(TerminalProgressReport) -> Unit>()
+    private val programStatusRegistry = TerminalProgramStatusRegistry()
     private var clipboardBinding: TerminalClipboardBinding? = null
     private val resizeObservers = mutableListOf<(Int, Int) -> Unit>()
     private val renderHoldObservers = mutableListOf<(Boolean) -> Unit>()
@@ -374,6 +375,22 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun reportProgress(report: TerminalProgressReport) { progressObservers.toList().forEach { it(report) } }
+
+    /** Oldest-updated first, at most 256 records. An absent id addresses the root. */
+    public val programStatuses: List<TerminalProgramStatus> get() = programStatusRegistry.snapshot
+
+    /** Resolve the nearest ancestor's app when a record does not specify its own. */
+    public fun programStatusApp(id: String? = null): String? = programStatusRegistry.app(id)
+
+    /**
+     * Enable OSC 7501 while a host observes it. Events follow state updates, including during
+     * render holds. Reports are ignored and support queries unanswered without a listener.
+     * Disposing the last listener clears retained records. Call on the session thread.
+     */
+    public fun onProgramStatus(observer: (TerminalProgramStatusChange) -> Unit): TerminalDisposable =
+        programStatusRegistry.observe(observer)
+
+    internal fun finishProgramStatuses() { programStatusRegistry.finish() }
 
     /**
      * Attach the one host responsible for OSC 52. Replacing or disposing a binding cancels
@@ -580,12 +597,13 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         }
     }
 
-    /** Flush an incomplete character at transport EOF. */
+    /** Flush an incomplete character/render hold and retire running program statuses at EOF. */
     public fun finishInput() {
         if (utfNeeded > 0 || highSurrogate != null) {
             utfNeeded = 0; highSurrogate = null; accept(0xfffd); damage(cursorRow); flushDamage()
         }
         flushSynchronizedOutput()
+        finishProgramStatuses()
     }
 
     /** Reflow primary text and history; full-screen alternate applications retain their physical grid. */
@@ -687,6 +705,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         tabs = BooleanArray(columns) { it > 0 && it % 8 == 0 }
         damageAll(); flushSynchronizedOutput(); flushDamage()
         reportProgress(TerminalProgressReport(TerminalProgressState.REMOVE))
+        programStatusRegistry.reset()
     }
 
     /** DECSTR changes the active pen and selected modes without moving or clearing the screen. */
@@ -1497,6 +1516,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 workingDirectoryObservers.toList().forEach { it(uri) }
             }
             "52" -> clipboardBinding?.accept(payload, terminator)
+            "7501" -> programStatusRegistry.accept(payload, terminator, ::sendInput)
             "9", "777" -> parseTerminalEffect(command.toInt(), payload,
                 { notification -> notificationObservers.toList().forEach { it(notification) } }, ::reportProgress)
             "22" -> TerminalPointerShape.parse(payload)?.let { shape ->
@@ -1515,6 +1535,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
 
     private fun applySemanticPrompt(command: TerminalSemanticPrompt) {
         val action = command.action
+        if (action == TerminalPromptAction.NEW_PROMPT) finishProgramStatuses()
         if (action == TerminalPromptAction.FRESH_LINE || action == TerminalPromptAction.NEW_PROMPT || action == TerminalPromptAction.NEW_COMMAND) {
             val initialColumn = if (cursorColumn < left) 0 else left
             if (cursorColumn != initialColumn) { carriageReturn(); lineFeed() }

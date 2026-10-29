@@ -97,7 +97,10 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 - [x] Visibility mode 2033, its mode query, `CSI ?998n` and `CSI ?999;1/2n` reports, connected
       to browser and AppKit host visibility. Eleven original-library scenarios / 92 states
       cover parser/mode/reset behavior; host tests cover hiding, attachment and native occlusion.
-- [ ] OSC 7501 program status parsing, support query, state/observer integration and bounds.
+- [x] OSC 7501 program status parsing, support query, state/observer integration and bounds.
+      Support is enabled by a host observer, matching libghostty's optional effect handler;
+      views do not automatically show statuses. The bounded registry also implements record
+      replacement, app inheritance, subtree clearing and prompt/transport lifecycle cleanup.
 - [ ] OSC 5522 clipboard transactions, host authorization, MIME data, aliases, cancellation,
       bounded buffering and protocol replies. Existing OSC 52 support does not cover it.
 - [x] Reconcile origin-relative CHA/VPA/HPR/VPR, CUB/BS margin behavior and the changed reflow scenarios.

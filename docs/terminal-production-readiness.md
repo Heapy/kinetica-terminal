@@ -379,6 +379,26 @@ and real software/Metal window hiding, hidden ancestors, full occlusion, detach/
 disposal. Both browser verifiers pass; visibility coverage uses real CSS and DOM changes plus
 a synthetic document-visibility event, not an actual background-tab transition.
 
+OSC 7501 now exposes validated program-status reports and record snapshots through
+`onProgramStatus`. Installing a host observer enables support-query replies; without one,
+reports and queries are ignored, matching libghostty's optional effect handler. Views do
+not automatically present statuses or send desktop notifications. Parsing follows original
+byte limits, duplicate-field semantics, ID validation, Base64 and safe UTF-8 checks. Reply
+contents are fixed capabilities and never echo report data.
+
+The registry implements complete replacement, nearest-ancestor app resolution, subtree
+clearing and a 256-record least-recently-updated cap. Records are independent of screens and
+render holds. RIS clears them; DECSTR preserves them. New shell prompts, drained EOF and
+abrupt transport disposal discard working/blocked states while retaining idle/done/error.
+Disposing an already finished transport does not clear a later program's records.
+
+The original-library oracle covers 260 cases / 290 checkpoints, replayed whole and bytewise;
+fixtures and provenance reproduce byte-for-byte. Registry semantics are separately tested
+against the [protocol specification](https://www.superlogical.com/rex/docs/build/program-status),
+not a copied oracle registry. Validation passes all 631 JVM tests, fresh Release JS tests,
+22 Native parser/registry/transport/backpressure tests and 8 macOS host/PTY tests, including
+real process exit and disposal. The fresh browser integration verifier also passes.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

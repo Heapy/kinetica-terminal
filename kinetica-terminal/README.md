@@ -445,6 +445,24 @@ session thread. A shared session is visible if any attached host is visible. Unk
 headless visibility starts true; disposing the last host makes it false. RIS clears
 the subscription while retaining host visibility, and DECSTR preserves both.
 
+OSC 7501 reports program state (`idle`, `working`, `done`, `blocked`, `error`) and
+optional identity, app, progress, block kind, title and message. Register
+`onProgramStatus` to enable reports and support-query replies; without a listener,
+the protocol is not advertised and reports are dropped, matching libghostty's
+effect callback contract. The event includes the accepted report and a snapshot
+of `programStatuses`; lifecycle-only cleanup has a null report. The last listener's
+disposal releases all records. Views do not subscribe or present statuses automatically.
+
+The bounded registry retains up to 256 records, replacing each report's record
+completely and evicting the least recently updated record at capacity. `clear`
+removes a record and its descendants, or everything when no id is given.
+`programStatusApp(id)` resolves the nearest ancestor's app. OSC 133 A, transport
+EOF and abrupt transport disposal remove `working`/`blocked` records while retaining
+`idle`/`done`/`error`. RIS removes all records; DECSTR and screen switches preserve them.
+Custom transports call `finishInput()` at process EOF. Text and field limits follow
+the pinned Ghostty parser; decoded titles/messages are plain untrusted text, never
+markup or terminal input. Presentation and notification policy belong to the host.
+
 In-band resize mode 2048 reports committed rows, columns and physical pixel dimensions
 on enable and resize. `resize(columns, rows, TerminalCellSize(width, height))` supplies
 per-cell pixels after display scaling; AppKit/browser views supply this automatically.

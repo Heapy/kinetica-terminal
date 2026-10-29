@@ -1,0 +1,17 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
+  "cases": 260,
+  "snapshots": 290,
+  "scope": "Original parser, typed effect reports and support replies. Registry/lifecycle policies are verified separately against the protocol specification.",
+  "helperSha256": "106935fffda0cccef59cb656bc80c34c3c09b991791873d1a523533276f61c51",
+  "generatorSha256": "3401f20ac5aef389e98fc8d9ad0015a408aedd86ac199c49aac4cb47e2d205cd",
+  "fixtureSha256": "ca93b70e9f8acbbe8477dd101f2801f830e9e764ffb5880cf55053a8a83ed52e",
+  "sources": {
+    "src/terminal/osc/parsers/program_status.zig": "e127bf594febcef415f3e4c5004efc54f81a176df8d22451f5632d31fe328703",
+    "src/terminal/osc/kitty_metadata.zig": "281d879691ee19fb496977040b2eefa4d94a1f1a9de3de46d53c411a782065a7",
+    "src/terminal/osc/encoding.zig": "bf2c7c68ebea7eaae243d74e0f418df95c74d8fdeba2197305460c6192ba95d5",
+    "src/terminal/stream_terminal.zig": "1b58936b58f1b553e800fcd1390ed2c62f9ec600998c73ddabc71529131786fd",
+    "src/terminal/osc.zig": "87044bfbde4738eb134d5407d9674e74f5aaa6a8640d8da67f15a6e10e90e6a9"
+  }
+}

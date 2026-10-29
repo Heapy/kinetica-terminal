@@ -4,7 +4,7 @@ Pinned C reference: Ghostty 1.4.0, `83fb95624b0439ee660c2679b43b38c8b63769cd`, f
 <https://github.com/ghostty-org/ghostty>. The MIT license is in
 `../../third-party/GHOSTTY-LICENSE`.
 
-The separate Zig animation, Unicode-placeholder and visibility corpora use the same
+The separate Zig animation, Unicode-placeholder, visibility and program-status corpora use the same
 1.4.0 revision with Zig 0.17.0. Their manifests preserve source and generator hashes.
 
 The [visibility corpus](visibility-manifest.json) contains 11 scenarios / 92 checkpoints
@@ -15,6 +15,16 @@ original visibility flag and invokes the original reporting handler only when su
 mirroring `Termio.visibilityReport`; it does not inject query bytes into the parser.
 Kotlin replays each case whole and bytewise. Platform tests separately verify host events.
 Regenerate with `python3 scripts/generate-terminal-visibility.py /path/to/ghostty /path/to/zig`.
+
+The [program-status corpus](program-status-manifest.json) contains 260 scenarios /
+290 checkpoints from the original OSC 7501 parser, typed effect callback and reply
+encoder. It covers optional handler installation, both query terminators, reset,
+fragmentation/cancellation, all states/kinds, duplicate/unknown fields, limits,
+IDs and safe UTF-8/base64 decoding. Kotlin replays it whole and bytewise. No registry
+is copied into the oracle: record replacement, inheritance, eviction, subtree clear
+and process/prompt lifetime are separate tests against the
+[protocol specification](https://www.superlogical.com/rex/docs/build/program-status).
+Regenerate with `python3 scripts/generate-terminal-program-status.py /path/to/ghostty /path/to/zig`.
 
 The separate [graphics component corpus](graphics-manifest.json) is generated with
 `python3 scripts/generate-terminal-graphics-fixtures.py /path/to/ghostty`. Its 15 cases

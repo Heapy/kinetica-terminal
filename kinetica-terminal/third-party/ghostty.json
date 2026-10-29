@@ -47,7 +47,10 @@
     "src/terminal/kitty/graphics_animation.zig",
     "src/terminal/kitty/graphics_pixel.zig",
     "src/terminal/xt_checksum.zig",
-    "src/terminal/device_status.zig"
+    "src/terminal/device_status.zig",
+    "src/terminal/osc/parsers/program_status.zig",
+    "src/terminal/osc/kitty_metadata.zig",
+    "src/terminal/osc/encoding.zig"
   ],
   "adaptedTests": [
     "src/terminal/Parser.zig",

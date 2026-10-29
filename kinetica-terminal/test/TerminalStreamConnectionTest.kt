@@ -3,6 +3,36 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalStreamConnectionTest {
+    @Test fun programStatusFollowsDrainedEofAndAbruptDisposal() {
+        for (ending in listOf("eof","dispose","failure")) {
+            val session = TerminalSession(); val transport = Transport(); val loop = Loop()
+            session.onProgramStatus {}
+            var failures = 0
+            val connection = connection(session,transport,loop,failure = { failures++ })
+            val reports = "\u001b]7501;state=working\u001b\\\u001b]7501;state=done:id=finished\u001b\\"
+            assertTrue(connection.receive(reports.encodeToByteArray()))
+            if (ending != "eof") {
+                loop.drain()
+                assertEquals(2,session.programStatuses.size)
+                if (ending == "failure") {
+                    transport.accept = -1
+                    session.sendInput("x"); loop.drain()
+                    assertEquals(1,failures)
+                } else connection.dispose()
+            } else {
+                connection.finishOutput()
+                loop.drain()
+                assertTrue(connection.outputFinished)
+            }
+            assertEquals(listOf("finished"),session.programStatuses.map { it.id })
+            if (ending == "eof") {
+                session.write("\u001b]7501;state=working:id=next\u001b\\")
+                connection.dispose()
+                assertEquals(listOf("finished","next"),session.programStatuses.map { it.id },"Disposing a finished transport must not retire a later program")
+            }
+            connection.dispose()
+        }
+    }
     @Test fun delayedLargeClipboardReplyIsAtomicWhenNormalInputCapacityIsFull() {
         val session = TerminalSession(); val transport = Transport(); val loop = Loop()
         transport.accept = 0
