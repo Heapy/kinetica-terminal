@@ -241,6 +241,14 @@ This is a component checkpoint: session dispatch/replies, chunk identity, evicti
 render snapshots and host timer integration still need to consume this core. Animation therefore
 remains unchecked below; the current session still rejects standalone animation commands.
 
+Render frames now carry a separate immutable image-content snapshot rather than a storage
+entry. Texture identity follows the immutable pixel buffer, independently of transfer identity,
+so returning to an unchanged animation frame can reuse its texture while editing a frame
+cannot alter already captured pixels. The animation/snapshot regression covers selection,
+editing and root promotion. All 534 JVM tests, the fresh Release JS suite and 58 Native graphics
+tests pass, including actual AppKit/Metal pixels. The fresh Canvas/WebGL verifier also passes
+image pixels, held frames, tile reuse and cleanup. Session animation and host timers remain open.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

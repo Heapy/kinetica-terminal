@@ -75,7 +75,7 @@ class TerminalGraphicsUnicodeTest {
     @Test fun roundedZeroSpansSamplePremultipliedTexelBoundariesAndClampEdges() {
         val pixels = TerminalGraphicsPixels(2,1,32,byteArrayOf(200.toByte(),0,0,255.toByte(),0,100,0,0))
         val image = TerminalGraphicsStoredImage(1,0,pixels,false,false,0)
-        val quad = TerminalImageQuad(image,TerminalGraphicsLayer.BELOW_TEXT,0.0,0.0,10.0,10.0,1.0,0.0,0.0,1.0)
+        val quad = TerminalImageQuad(image.renderContent,TerminalGraphicsLayer.BELOW_TEXT,0.0,0.0,10.0,10.0,1.0,0.0,0.0,1.0)
         val draw = quad.tiles().single()
         assertEquals(10.0,draw.quad.width); assertEquals(1.0,draw.quad.sourceWidth)
         assertContentEquals(byteArrayOf(100,0,0,128.toByte()),pixels.tileBytes(draw.tile,true))

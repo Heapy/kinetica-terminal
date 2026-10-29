@@ -13,6 +13,7 @@ internal class TerminalGraphicsStoredImage(
 ) {
     // Object identity is a unique content generation even across stores, resets and ID reuse.
     val generation: Any = Any()
+    val renderContent = TerminalGraphicsImageContent(id, pixels)
     internal var placementCount: Int = 0
 }
 

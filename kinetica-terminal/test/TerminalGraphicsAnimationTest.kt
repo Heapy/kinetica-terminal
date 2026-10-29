@@ -90,6 +90,28 @@ class TerminalGraphicsAnimationTest {
         assertFailsWith<IllegalArgumentException> { animation.tick(-1,true) }
     }
 
+    @Test fun renderSnapshotsKeepOldPixelsAndCacheKeysAcrossFrameSelectionAndEdits() {
+        val root = TerminalGraphicsPixels(1,1,32,byteArrayOf(10,20,30,-1))
+        val animation = TerminalGraphicsAnimation(root)
+        fun snapshot() = TerminalImageQuad(TerminalGraphicsImageContent(1,animation.currentPixels),
+            TerminalGraphicsLayer.BELOW_TEXT,0.0,0.0,8.0,16.0,0.0,0.0,1.0,1.0).tiles().single()
+        val first = snapshot()
+        animation.load(parse("a=f"),TerminalGraphicsPixels(1,1,32,byteArrayOf(40,50,60,-1))) { true }
+        animation.control(parse("a=a,c=2"))
+        val second = snapshot()
+        assertNotEquals(first.tile.key,second.tile.key)
+        animation.control(parse("a=a,c=1"))
+        assertEquals(first.tile.key,snapshot().tile.key,"Revisiting an unchanged frame should reuse its texture")
+        animation.load(parse("a=f,r=1"),TerminalGraphicsPixels(1,1,32,byteArrayOf(70,80,90,-1))) { true }
+        val edited = snapshot()
+        assertNotEquals(first.tile.key,edited.tile.key)
+        assertContentEquals(byteArrayOf(10,20,30,-1),first.quad.image.pixels.tileBytes(first.tile,true))
+        assertContentEquals(byteArrayOf(40,50,60,-1),second.quad.image.pixels.tileBytes(second.tile,true))
+        assertContentEquals(byteArrayOf(70,80,90,-1),edited.quad.image.pixels.tileBytes(edited.tile,true))
+        animation.delete(1,false)
+        assertEquals(second.tile.key,snapshot().tile.key,"Root promotion retains immutable frame content")
+    }
+
     private fun parse(wire: String): TerminalGraphicsCommand {
         val parser = TerminalGraphicsCommandParser(1024 * 1024)
         parser.feed(wire.encodeToByteArray())

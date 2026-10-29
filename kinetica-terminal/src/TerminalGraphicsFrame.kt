@@ -1,8 +1,16 @@
 package io.heapy.kinetica.terminal
 
+/** Only immutable pixel content crosses into a completed render frame. Storage/animation state
+ * must never be consulted again by a renderer, including during synchronized-output holds. */
+internal data class TerminalGraphicsImageContent(val id: Long, val pixels: TerminalGraphicsPixels) {
+    // Frame selection can return to the same immutable buffer and reuse its cached texture.
+    // This is independent of the image-generation counter used for transfer identity checks.
+    val generation: Any get() = pixels
+}
+
 /** Immutable placement snapshot; decoded pixels are owned by their immutable content generation. */
 internal data class TerminalGraphicsFrameEntry(
-    val image: TerminalGraphicsStoredImage,
+    val image: TerminalGraphicsImageContent,
     val geometry: TerminalGraphicsGeometry,
     val column: Int,
     val row: Long,
@@ -29,7 +37,7 @@ internal fun TerminalGraphicsState.captureFrame(scrollOffset: Int, columns: Int,
             virtualOrigins[target.key] = TerminalPosition(minOf(old?.x ?: run.x, run.x), minOf(old?.y ?: (y - scrollOffset), y - scrollOffset), false)
             val geometry = run.geometry(target.image.pixels, target.geometry, cell) ?: continue
             if (geometry.pixels.width == 0L || geometry.pixels.height == 0L) continue
-            result += TerminalGraphicsFrameEntry(target.image, geometry, run.x, y.toLong(), -1, TerminalGraphicsLayer.BELOW_TEXT)
+            result += TerminalGraphicsFrameEntry(target.image.renderContent, geometry, run.x, y.toLong(), -1, TerminalGraphicsLayer.BELOW_TEXT)
         }
     }
     for (placement in placements) {
@@ -41,14 +49,14 @@ internal fun TerminalGraphicsState.captureFrame(scrollOffset: Int, columns: Int,
         if (geometry.source.width == 0L || geometry.source.height == 0L || geometry.pixels.width == 0L || geometry.pixels.height == 0L ||
             geometry.grid.width == 0L || geometry.grid.height == 0L || row >= rows || row + geometry.grid.height <= 0 ||
             origin.x >= columns || origin.x.toLong() + geometry.grid.width <= 0) continue
-        result += TerminalGraphicsFrameEntry(image, geometry, origin.x, row, placement.geometry.z, placement.geometry.layer)
+        result += TerminalGraphicsFrameEntry(image.renderContent, geometry, origin.x, row, placement.geometry.z, placement.geometry.layer)
     }
     return result.sortedWith(compareBy({ it.z }, { it.image.id }))
 }
 
 /** Clip before converting to GPU floats, including extreme relative offsets and uint32 sizes. */
 internal data class TerminalImageQuad(
-    val image: TerminalGraphicsStoredImage,
+    val image: TerminalGraphicsImageContent,
     val layer: TerminalGraphicsLayer,
     val x: Double, val y: Double, val width: Double, val height: Double,
     val sourceX: Double, val sourceY: Double, val sourceWidth: Double, val sourceHeight: Double,

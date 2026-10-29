@@ -51,7 +51,7 @@ class TerminalGraphicsFrameTest {
     @Test fun tilesKeepSamplingGuttersAndConvertOnlyTheirPixels() {
         val pixels = TerminalGraphicsPixels(6, 1, 32, ByteArray(24) { if (it % 4 == 3) 128.toByte() else 100 })
         val image = TerminalGraphicsStoredImage(1, 0, pixels, false, false, 0)
-        val quad = TerminalImageQuad(image, TerminalGraphicsLayer.ABOVE_TEXT, 0.0, 0.0, 9.0, 1.0, 0.0, 0.0, 6.0, 1.0)
+        val quad = TerminalImageQuad(image.renderContent, TerminalGraphicsLayer.ABOVE_TEXT, 0.0, 0.0, 9.0, 1.0, 0.0, 0.0, 6.0, 1.0)
         val tiles = quad.tiles(4)
         assertEquals(listOf(3, 4, 3), tiles.map { it.tile.width })
         assertEquals(listOf(0.0, 3.0, 6.0), tiles.map { it.quad.x })
