@@ -1041,6 +1041,19 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun dispatchCsi(final: Char, prefix: Int, intermediates: Int) {
+        if (final == 'W') {
+            // CTC and DECST8C change the shared tab stops without consuming pending wrap.
+            if (intermediates == 0) when (prefix) {
+                0 -> if (parameterCount <= 1) when (params[0]) {
+                    0 -> tabs[cursorColumn] = true
+                    2 -> tabs[cursorColumn] = false
+                    5 -> tabs.fill(false)
+                }
+                '?'.code -> if (parameterCount == 1 && params[0] == 5)
+                    for (column in tabs.indices) tabs[column] = column > 0 && column % 8 == 0
+            }
+            return
+        }
         if (prefix == 0 && final == 'y') {
             if (intermediates == '*'.code && parameterCount <= 6) reportChecksum()
             else if (intermediates == '#'.code && parameterCount <= 1 && checksumReporting)

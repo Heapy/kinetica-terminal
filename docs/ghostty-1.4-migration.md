@@ -115,6 +115,9 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 - [x] Extend coverage for parameterless TBC and pending wrap with DECAWM disabled. Tab
       movement/clearing preserves pending wrap; TBC rejects extra parameters. CSI parameter
       counting follows the original parser, which does not append an empty trailing slot.
+- [x] CTC (`CSI W`, `CSI 0/2/5 W`) and DECST8C (`CSI ?5W`) set/clear/reset shared tab stops,
+      preserving pending wrap. Original-library cases cover malformed parameters, margins,
+      screen switches, reset and resize, replayed whole and bytewise.
 - [x] G0–G3 charset designation (ASCII/British/DEC), SI/SO/LS2/LS3 and SS2/SS3, including
       combining-character consumption, unknown designation handling, width before mapping,
       saved cursors, screen switches and DECSTR/RIS. GR invocation is retained but does not

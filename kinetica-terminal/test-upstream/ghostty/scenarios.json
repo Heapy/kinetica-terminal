@@ -138659,5 +138659,2228 @@
         "write": "\u001b[?47l"
       }
     ]
+  },
+  {
+    "name": "tab_control_set_omitted_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_set_omitted_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_set_omitted_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_set_omitted_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_set_zero_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[0W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_set_zero_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[0W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_set_zero_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[0W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_set_zero_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[0W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_clear_current_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[2W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_clear_current_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[2W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_clear_current_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[2W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_clear_current_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[2W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_clear_all_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[5W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_clear_all_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[5W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_clear_all_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[5W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_clear_all_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[5W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_reset_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[?5W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_reset_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[?5W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_reset_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[?5W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_reset_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[?5W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_one_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[1W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_one_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[1W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_one_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[1W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_one_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[1W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_three_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[3W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_three_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[3W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_three_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[3W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_three_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[3W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_four_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[4W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_four_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[4W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_four_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[4W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_invalid_four_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[4W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_saturated_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[999999W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_saturated_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[999999W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_saturated_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[999999W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_saturated_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[999999W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_set_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[0;2W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_set_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[0;2W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_set_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[0;2W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_set_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[0;2W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_clear_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[5;0W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_clear_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[5;0W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_clear_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[5;0W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_clear_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[5;0W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_reset_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[?5;0W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_reset_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[?5;0W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_reset_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[?5;0W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_extra_reset_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[?5;0W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_trailing_set_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[0;W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_trailing_set_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[0;W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_trailing_set_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[0;W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_trailing_set_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[0;W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_trailing_reset_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[?5;W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_trailing_reset_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[?5;W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_trailing_reset_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[?5;W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_trailing_reset_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[?5;W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_empty_set_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[;W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_empty_set_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[;W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_empty_set_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[;W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_empty_set_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[;W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_two_empty_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[;;W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_two_empty_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[;;W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_two_empty_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[;;W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_two_empty_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[;;W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_colon_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[2:0W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_colon_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[2:0W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_colon_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[2:0W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_colon_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[2:0W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_omitted_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[?W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_omitted_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[?W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_omitted_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[?W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_omitted_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[?W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_zero_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[?0W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_zero_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[?0W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_zero_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[?0W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_zero_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[?0W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_clear_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[?2W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_clear_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[?2W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_clear_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[?2W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_clear_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[?2W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_other_prefix_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[>5W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_other_prefix_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[>5W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_other_prefix_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[>5W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_other_prefix_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[>5W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_intermediate_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[5 W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_intermediate_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[5 W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_intermediate_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[5 W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_intermediate_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[5 W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_intermediate_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[?5 W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_intermediate_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[?5 W"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_intermediate_wrap_true",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "123456789"
+      },
+      {
+        "write": "\u001b[?5 W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_private_intermediate_wrap_false",
+    "columns": 9,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7l123456789"
+      },
+      {
+        "write": "\u001b[?5 W"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\r\tY"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_margins",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[?69h\u001b[5;20s\u001b[?6h\u001b[1;3H"
+      },
+      {
+        "write": "\u001b[W"
+      },
+      {
+        "write": "\u001b[1;1H\tA"
+      },
+      {
+        "write": "\u001b[?5W"
+      },
+      {
+        "write": "\u001b[1;1H\tB"
+      },
+      {
+        "write": "\u001b[?6l\u001b[?69l\r\tC"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_screens",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[5W\u001b[5G\u001b[W"
+      },
+      {
+        "write": "\u001b[?1049h\tA"
+      },
+      {
+        "write": "\u001b[?5W"
+      },
+      {
+        "write": "\u001b[?1049l\r\tB"
+      },
+      {
+        "write": "\u001b[?1049h\u001b[5W"
+      },
+      {
+        "write": "\u001b[?1049l\r\tC"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_resets",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[5W\u001b[5G\u001b[W"
+      },
+      {
+        "write": "\u001b[!p\r\tA"
+      },
+      {
+        "write": "\u001bc\tB"
+      },
+      {
+        "write": "\u001b[5W\u001b[?5W\r\tC"
+      }
+    ]
+  },
+  {
+    "name": "tab_control_resize",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[5W\u001b[5G\u001b[W"
+      },
+      {
+        "resize": [
+          24,
+          4
+        ]
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "resize": [
+          32,
+          4
+        ]
+      },
+      {
+        "write": "\r\tB"
+      },
+      {
+        "write": "\u001b[5W\u001b[?5W\r\u001b[3I"
+      },
+      {
+        "write": "\u001b[2Z"
+      }
+    ]
   }
 ]

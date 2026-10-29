@@ -176,6 +176,12 @@ generator never reads Kinetica's results. Both whole-write and bytewise replay
 must agree with each intermediate upstream snapshot. `manifest.json` records
 source revision, helper/library hashes and snapshot hashes.
 
+The cursor-tabulation-control increment adds 96 scenarios / 483 checkpoints for CTC
+(`CSI W`, `CSI 0/2/5 W`) and DECST8C (`CSI ?5W`). Default/custom tab stops, malformed
+parameters and headers, trailing empty parameters, pending wrap with DECAWM on/off,
+margins, screen switches, DECSTR/RIS and resize are compared with the original library.
+The main corpus now contains 776 scenarios / 4130 checkpoints.
+
 The tab/pending-wrap increment adds 59 scenarios / 342 checkpoints, bringing this corpus
 to 461 scenarios / 2615 checkpoints. It covers omitted/explicit/malformed tab-clear parameters,
 default/custom stops, HT/CHT/CBT pending-wrap preservation with DECAWM on/off, and narrow,

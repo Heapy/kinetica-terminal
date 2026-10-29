@@ -750,6 +750,14 @@ Live Vim, Neovim and tmux tests pass in isolated shells (Neovim uses the existin
 `build/manual-release/nvim-macos-arm64/bin/nvim` through KINETICA_NVIM). Generated table,
 fixtures and manifest reproduce byte-for-byte against the unmodified 1.4.0 sources.
 
+CTC (`CSI W`, `CSI 0/2/5 W`) now sets or clears shared tab stops, and DECST8C
+(`CSI ?5W`) restores the default eight-column interval. Both valid and rejected commands
+preserve pending wrap. Another 96 original-library scenarios / 483 checkpoints cover
+default/custom stops, malformed headers, trailing empty parameters, DECAWM on/off,
+margins, alternate screens, DECSTR/RIS and resize. Each is replayed whole and bytewise.
+All 1128 JVM tests and the fresh Release JS suite pass; the main oracle corpus and manifest
+reproduce byte-for-byte. The main corpus contains 776 scenarios / 4130 checkpoints.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than
