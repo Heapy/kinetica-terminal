@@ -140,7 +140,8 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     private val frame = TerminalGpuFrame()
     private val batches = TerminalGpuBatches()
     private val textures = mutableListOf<dynamic>()
-    private val imageCache = TerminalImageCache<dynamic>(64L * 1024 * 1024) { if (gl != null && !lost) gl.deleteTexture(it) }
+    private val imageCache = TerminalImageCache<dynamic>(64L * 1024 * 1024,
+        drain = { if (!lost) gl.finish() }) { if (gl != null && !lost) gl.deleteTexture(it) }
     private val imageInstance = TerminalInstances()
     override val imageCacheBytes: Long get() = imageCache.bytes
     override val imageTileCount: Int get() = imageCache.size
@@ -163,7 +164,7 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     override var drawCalls: Int = 0
         private set
     private val onLost: (dynamic) -> Unit = {
-        event -> event.preventDefault(); lost = true; imageCache.clear(); gpuTimer?.contextLost(); gpuTimer = null; invalidate()
+        event -> event.preventDefault(); lost = true; imageCache.clear(); imageCache.completed(); gpuTimer?.contextLost(); gpuTimer = null; invalidate()
     }
     private val onRestored: (dynamic) -> Unit = {
         if (!disposed) {
@@ -260,6 +261,8 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         submit(batches.decorations, false, 0)
         drawImages(images, TerminalGraphicsLayer.ABOVE_TEXT)
         imageCache.endFrame()
+        // No future image draw needs these resources. Complete queued sampling before release.
+        if (images.isEmpty() && imageCache.bytes > 0) { gl.finish(); imageCache.completed() }
         gpuTimer?.end(query)
         measurement?.submitted(drawCalls)
     }
@@ -340,6 +343,8 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         if (disposed) return
         disposed = true
         imageCache.clear()
+        if (gl != null && !lost && imageCache.bytes > 0) gl.finish()
+        imageCache.completed()
         gpuTimer?.dispose(); gpuTimer = null
         canvas.removeEventListener("webglcontextlost", onLost); canvas.removeEventListener("webglcontextrestored", onRestored)
         if (gl != null && !lost) {

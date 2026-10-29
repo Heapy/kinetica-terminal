@@ -9,7 +9,7 @@ import platform.CoreGraphics.*
 
 /** Core Graphics images own copied CFData; no image outlives a temporary pinned Kotlin array. */
 internal class AppKitTerminalImages {
-    private val cache = TerminalImageCache<CGImageRef>(64L * 1024 * 1024, ::CGImageRelease)
+    private val cache = TerminalImageCache<CGImageRef>(64L * 1024 * 1024, release = ::CGImageRelease)
     val bytes: Long get() = cache.bytes
     val tileCount: Int get() = cache.size
     var uploads: Int = 0

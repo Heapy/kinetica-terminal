@@ -28,6 +28,7 @@ try {
         const draw = gl.drawArraysInstanced.bind(gl);
         gl.drawArraysInstanced = (...args) => {
           draw(...args);
+          if (globalThis.graphicsDeferReadback && --globalThis.graphicsDrawsUntilReadback !== 0) return;
           const pixels = new Uint8Array(gl.drawingBufferWidth * 4);
           gl.readPixels(0, gl.drawingBufferHeight - 1 - graphicsSampleRow, gl.drawingBufferWidth, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
           globalThis.graphicsPixels = [...pixels];
@@ -227,6 +228,77 @@ try {
     await write("\x1b[5;1Hx");
     await expectPixel(red, "rounded edge source span repeats the last texel");
     await page.evaluate(() => graphicsSampleRow = 2);
+    if (renderer === "gpu") {
+      await reset();
+      // One source image, twenty distinct overlapping crop tiles. All fit in decoded storage,
+      // but their GPU representations exceed 64 MiB in a single frame. Do not read pixels per
+      // draw here: that would implicitly synchronize the GPU and hide retained-resource bugs.
+      await page.evaluate(() => {
+        const gl = graphicsCanvas.getContext("webgl2");
+        const allocate = gl.texImage2D.bind(gl), remove = gl.deleteTexture.bind(gl);
+        const draw = gl.drawArraysInstanced.bind(gl), finish = gl.finish.bind(gl);
+        const resources = new Map();
+        globalThis.graphicsBudget = { peak: 0, drains: 0 };
+        globalThis.graphicsDeferReadback = true;
+        globalThis.graphicsDrawsUntilReadback = 20;
+        gl.texImage2D = (...args) => {
+          allocate(...args);
+          resources.set(gl.getParameter(gl.TEXTURE_BINDING_2D), { bytes: args[3] * args[4] * 4, pending: false, deleted: false });
+          graphicsBudget.peak = Math.max(graphicsBudget.peak, [...resources.values()].reduce((sum, value) => sum + value.bytes, 0));
+        };
+        gl.drawArraysInstanced = (...args) => {
+          const resource = resources.get(gl.getParameter(gl.TEXTURE_BINDING_2D));
+          if (resource) resource.pending = true;
+          draw(...args);
+        };
+        gl.deleteTexture = texture => {
+          const resource = resources.get(texture);
+          if (resource?.pending) resource.deleted = true;
+          else resources.delete(texture);
+          remove(texture);
+        };
+        gl.finish = () => {
+          finish(); graphicsBudget.drains++;
+          for (const [texture, resource] of resources) {
+            resource.pending = false;
+            if (resource.deleted) resources.delete(texture);
+          }
+        };
+        globalThis.restoreGraphicsBudgetHooks = () => {
+          gl.texImage2D = allocate; gl.deleteTexture = remove;
+          gl.drawArraysInstanced = draw; gl.finish = finish;
+          globalThis.graphicsDeferReadback = false;
+        };
+      });
+      const data = Buffer.alloc(1022 * 1022 * 3);
+      for (let i = 0; i < data.length; i += 3) data.set(red.slice(0, 3), i);
+      const encoded = data.toString("base64");
+      let scene = "";
+      for (let offset = 0; offset < encoded.length; offset += 4096) {
+        const first = offset === 0 ? "a=t,q=2,i=90,f=24,s=1022,v=1022," : "";
+        scene += apc(`${first}m=${offset + 4096 < encoded.length ? 1 : 0};${encoded.slice(offset, offset + 4096)}`);
+      }
+      for (let i = 0; i < 20; i++) scene += `\x1b[1;${i * 3 + 1}H` + apc(`a=p,q=2,i=90,p=${i + 1},x=${i},w=${1022 - i},c=2,r=1,C=1`);
+      await write(scene);
+      assert.equal(await page.evaluate(() => graphicsDrawsUntilReadback), 0);
+      const budget = await page.evaluate(() => graphicsBudget);
+      assert.ok(budget.drains > 0, "Oversized frame must retire GPU commands before reusing budget");
+      assert.ok(budget.peak <= 64 * 1024 * 1024, `All live and command-retained tiles: ${budget.peak}`);
+      console.log(`GPU image budget: peak ${budget.peak} bytes including unfinished commands, ${budget.drains} completion barriers`);
+      // Renderer origins retain fractional font metrics; protocol cell widths are integers.
+      // Count the twenty separate solid stripes instead of accumulating rounded cell widths.
+      const pixels = await page.evaluate(() => graphicsPixels);
+      const spans = []; let span = 0;
+      for (let x = 0; x < pixels.length; x += 4) {
+        if (red.every((value, channel) => pixels[x + channel] === value)) span++;
+        else if (span) { spans.push(span); span = 0; }
+      }
+      if (span) spans.push(span);
+      assert.equal(spans.length, 20, "Every crop survives the budget boundary");
+      assert.ok(spans.every(width => width >= cell[0]), "All stripes preserve their visible area");
+      await page.evaluate(() => restoreGraphicsBudgetHooks());
+      await reset();
+    }
     assert.equal(await page.locator("[data-terminal]").getAttribute("data-terminal-rendering-error"), null);
     assert.deepEqual(errors, []);
     await write("\x1b[H" + image(10, red.slice(0, 3)));

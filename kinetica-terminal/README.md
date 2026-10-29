@@ -62,8 +62,12 @@ enabling a 64 MiB decoded image budget per screen by default; pass zero to disab
 belongs to the session, so views sharing a session should use the same value. Each browser
 renderer separately owns a 64 MiB LRU cache of bounded image tiles with sampling gutters.
 The native renderers use the same budget and tiling. Offscreen/deleted tiles and disposed views
-release their bitmap/texture cache entries. Submitted Metal commands retain their resources
-until completion; image draws copy their small instance data into command-owned storage.
+retire their bitmap/texture cache entries. WebGL/Metal include retired textures still used by
+unfinished commands in the 64 MiB budget. Budget pressure completes those commands before
+reclaiming pixels or allocating more tiles; Metal resumes with a load-preserving render pass.
+Ordinary Metal frames remain asynchronous. Image draws copy their small instance data into
+command-owned storage. The budget counts RGBA tile payloads, not driver allocation overhead,
+glyph atlases or decoded session storage.
 The host
 still owns session image data after a view is disposed. Diagnostics expose
 `data-terminal-image-bytes`, `data-terminal-image-tiles` and cumulative
@@ -124,7 +128,9 @@ commands, rasterizing/uploading atlas misses, batching, and submitting draw comm
 painters interleave layout and drawing, so report their whole CPU cost as submission.
 `onGpuTime` reports asynchronous GPU execution duration, or null when unavailable. WebGL uses
 at most eight timer queries, expires stalled queries after five seconds, discards disjoint or
-lost-context results, and cancels polling on disposal. No synchronous GPU wait/readback is used.
+lost-context results, and cancels polling on disposal. Timing queries do not force synchronous
+GPU waits or readback. Image-budget pressure may wait independently; Metal duration includes
+all completed batches of a split frame.
 These diagnostics are disabled by default. Observers run on the UI thread and must be short,
 read-only and nonthrowing; IDs are local to a mounted surface.
 

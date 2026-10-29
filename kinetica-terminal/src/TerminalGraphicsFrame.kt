@@ -168,10 +168,13 @@ internal fun TerminalGraphicsPixels.tileBytes(tile: TerminalImageTile, premultip
     return bytes
 }
 
-/** Byte-bounded LRU ownership, pruned to the visible frame and released by the owning renderer. */
-internal class TerminalImageCache<T>(private val limit: Long, private val release: (T) -> Unit) {
-    private data class Entry<T>(val value: T, val bytes: Long)
+/** Bounds resident and command-retained pixel bytes together. GPU owners supply a blocking
+ * drain for budget pressure and call [completed] after all outstanding commands finish.
+ * Pruning/clear retire pending resources; neither may free GPU-visible pixels prematurely. */
+internal class TerminalImageCache<T>(private val limit: Long, private val drain: (() -> Unit)? = null, private val release: (T) -> Unit) {
+    private data class Entry<T>(val value: T, val bytes: Long, var pending: Boolean)
     private val entries = linkedMapOf<TerminalImageTileKey, Entry<T>>()
+    private val retired = mutableListOf<Entry<T>>()
     private val used = mutableSetOf<TerminalImageTileKey>()
     var bytes: Long = 0
         private set
@@ -181,15 +184,27 @@ internal class TerminalImageCache<T>(private val limit: Long, private val releas
     fun get(tile: TerminalImageTile, create: () -> T): T {
         val key = tile.key
         used += key
-        entries.remove(key)?.let { entries[key] = it; return it.value }
+        entries.remove(key)?.let { entries[key] = it; it.pending = drain != null; return it.value }
         val cost = tile.width.toLong() * tile.height * 4
         require(cost <= limit) { "Image tile exceeds the renderer cache budget" }
-        while (bytes + cost > limit) remove(entries.keys.first())
+        while (bytes + cost > limit) {
+            val oldest = entries.entries.firstOrNull()
+            if (oldest != null && !oldest.value.pending) remove(oldest.key)
+            else {
+                checkNotNull(drain) { "Pending image resources need a GPU completion barrier" }.invoke()
+                completed()
+            }
+        }
         val value = create()
-        entries[key] = Entry(value, cost); bytes += cost
+        entries[key] = Entry(value, cost, drain != null); bytes += cost
         return value
     }
     fun endFrame() { entries.keys.filter { it !in used }.forEach(::remove); used.clear() }
-    private fun remove(key: TerminalImageTileKey) { entries.remove(key)?.let { bytes -= it.bytes; release(it.value) } }
+    private fun remove(key: TerminalImageTileKey) { entries.remove(key)?.let { if (it.pending) retired += it else release(it) } }
+    private fun release(entry: Entry<T>) { release(entry.value); bytes -= entry.bytes }
+    fun completed() {
+        entries.values.forEach { it.pending = false }
+        retired.forEach(::release); retired.clear()
+    }
     fun clear() { entries.keys.toList().forEach(::remove); used.clear() }
 }

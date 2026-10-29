@@ -11,6 +11,37 @@ import kotlin.math.ceil
 import kotlin.test.*
 
 class NativeGraphicsRenderingTest {
+    @Test fun metalBudgetSplitsPreserveAllLayersAndPixelsAcrossRepeatedFrames() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession(20, 6)
+        session.resize(20, 6, TerminalCellSize(8, 16))
+        session.setGraphicsStorageLimit(1024)
+        val viewport = TerminalViewport(session, {})
+        val reference = MetalTerminalDrawing {}
+        val bounded = MetalTerminalDrawing(imageBudget = 8) {}
+        try {
+            for (renderer in listOf(reference, bounded)) renderer.resize(160.0, 96.0, 1.0, 14.0, 8.0, 16.0)
+            session.write("\u001b[?25l\u001b[H\u001b[44mX\u001b[0m")
+            repeat(12) { index ->
+                val layer = when (index % 3) { 0 -> Int.MIN_VALUE; 1 -> -1; else -> 0 }
+                session.write("\u001b[${index / 6 + 1};${index % 6 * 3 + 1}H" +
+                    image(index + 1, listOf(index * 20, 200 - index * 10, 60), ",z=$layer"))
+            }
+            repeat(3) {
+                viewport.markAll(); val expected = reference.snapshot(viewport)
+                viewport.markAll(); val actual = bounded.snapshot(viewport)
+                assertContentEquals(expected, actual, "Budget boundaries must load, not clear, previous passes")
+                assertTrue(bounded.imageCacheBytes <= 8)
+            }
+            assertTrue(bounded.imageBudgetDrains >= 15, "Each frame must exceed the two-tile budget")
+            assertTrue(bounded.imageUploads >= 36, "All image generations are rendered on every bounded frame")
+            assertEquals(0, reference.imageBudgetDrains, "Ordinary frames stay asynchronous")
+            session.write(apc("a=d,d=A,q=2"))
+            bounded.snapshot(viewport)
+            assertEquals(0L, bounded.imageCacheBytes)
+        } finally { reference.dispose(); bounded.dispose(); viewport.dispose() }
+    }
+
     private interface Surface {
         val session: TerminalSession
         val width: Int

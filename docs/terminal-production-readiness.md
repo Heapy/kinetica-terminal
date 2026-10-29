@@ -739,8 +739,33 @@ Graphics acceptance work:
 - [x] Animation frames/composition/timing.
 - [ ] Explicit host policy for file, temporary-file and shared-memory transmission media.
 - [ ] Browser Canvas/WebGL and AppKit/Metal images, cache disposal, context recovery and render holds.
-- [ ] Audit frame-wide resource bounds across distinct crop tiles: an LRU cache limit alone does not bound textures retained by already queued draw commands.
+- [x] Bound WebGL/Metal RGBA tile payloads across distinct crops and unfinished commands, including resources retired from the LRU.
+- [ ] Complete the decoded/transient-buffer and software-renderer backing-resource audit; tile payload accounting excludes driver overhead and glyph atlases.
 - [ ] Original-libghostty image/placement oracle and real platform pixel/resource regressions.
+
+WebGL and Metal now charge both resident tiles and retired tiles referenced by unfinished
+commands to the same 64 MiB budget. Cache eviction cannot reclaim a pending texture. Under
+pressure, WebGL completes queued commands; Metal commits and completes the current bounded
+batch, then resumes with `MTLLoadActionLoad` on the same target. No placement is omitted or
+rescaled to fit the cache. Ordinary Metal frames remain asynchronous, and measured GPU duration
+includes all batches. Completed native evictions mark pixels purgeable so Kotlin wrapper
+collection is not required before the driver may reclaim their backing data. Context loss,
+disposal and no-image frames also retire their resources through the completion boundary.
+
+The completion/discard semantics follow [OpenGL finish](https://registry.khronos.org/OpenGL/specs/es/1.1/es_full_spec_1.1.pdf)
+and [Metal resource purgeability](https://developer.apple.com/documentation/metal/mtlresource/setpurgeablestate(_:)).
+This bounds application-accounted RGBA tile payloads, not process RSS or driver allocation
+overhead; decoded generations, software surfaces and glyph atlases require separate accounting.
+
+Validation passes 1027 JVM tests and the fresh Release JS suite. Shared tests retain simulated
+GPU references through eviction/disposal and reject allocations before a failed completion
+barrier. Six native graphics tests include pixel equality between an ordinary Metal renderer
+and a two-tile budget across all layers and repeated frames; 19 additional native tests cover
+cache state, Metal pixels, frame lifecycle and render observers. The browser graphics verifier
+renders twenty distinct crops from one image in a single frame exceeding 64 MiB, tracks deleted
+but unfinished resources, and samples pixels only after the final draw. All twenty visible
+stripes survive and the accounted peak stays within budget. Both the Canvas/WebGL graphics
+verifier and general browser verifier pass. No upstream fixtures changed in this host-resource fix.
 
 The OSC 133 increment adds 26 semantic/alignment oracle cases plus the original Alacritty
 DECALN recording, covering 173 new checkpoints. It compares row and cell markers, cursor

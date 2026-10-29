@@ -12,7 +12,8 @@ import platform.posix.memcpy
 import kotlin.math.ceil
 
 /** All mutable state is main-thread confined. One asynchronous frame owns the reusable buffers. */
-internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = TerminalRenderProbe(null), private val invalidate: () -> Unit) {
+internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = TerminalRenderProbe(null),
+    imageBudget: Long = 64L * 1024 * 1024, private val invalidate: () -> Unit) {
     private val device = checkNotNull(MTLCreateSystemDefaultDevice()) { "Metal is unavailable" }
     private val queue = checkNotNull(device.newCommandQueue())
     val layer = CAMetalLayer().apply {
@@ -52,7 +53,12 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     private val frame = TerminalGpuFrame()
     private val batches = TerminalGpuBatches()
     private val textures = mutableListOf<MTLTextureProtocol>()
-    private val imageCache = TerminalImageCache<MTLTextureProtocol>(64L * 1024 * 1024) { }
+    private var drainImages: (() -> Unit)? = null
+    private val imageCache = TerminalImageCache<MTLTextureProtocol>(imageBudget,
+        drain = { checkNotNull(drainImages).invoke() }) { it.setPurgeableState(MTLPurgeableStateEmpty) }
+    var imageBudgetDrains: Int = 0
+        private set
+    private var drainedGpuMillis: Double? = 0.0
     private val imageInstance = TerminalInstances()
     val imageCacheBytes: Long get() = imageCache.bytes
     val imageTileCount: Int get() = imageCache.size
@@ -114,8 +120,8 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         val drawable = layer.nextDrawable() ?: return
         measurement?.let { it.acquire = it.checkpoint() }
         val images = prepare(viewport, measurement)
-        val command = checkNotNull(queue.commandBuffer())
-        encode(command, drawable.texture as MTLTextureProtocol, viewport.theme.background, images)
+        val command = encode(drawable.texture as MTLTextureProtocol, viewport.theme.background, images)
+        val priorGpuMillis = drainedGpuMillis
         if (!transactional) command.presentDrawable(drawable as MTLDrawableProtocol)
         if (measurement != null) {
             drawable.addPresentedHandler { presented ->
@@ -128,10 +134,11 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         busy = true
         command.addCompletedHandler { completed ->
             val message = completed?.error?.localizedDescription
-            val gpuTime = if (measurement != null && message == null && completed != null && completed.GPUStartTime > 0.0)
-                ((completed.GPUEndTime - completed.GPUStartTime) * 1000).takeIf { it >= 0.0 && it.isFinite() } else null
+            val gpuTime = if (measurement != null && message == null && completed != null && priorGpuMillis != null)
+                gpuMillis(completed)?.plus(priorGpuMillis) else null
             NSOperationQueue.mainQueue.addOperationWithBlock {
                 busy = false
+                imageCache.completed()
                 if (!disposed) {
                     if (message != null) failure = "Terminal Metal frame failed: $message"
                     if (pending || failure != null) { pending = false; invalidate() }
@@ -168,7 +175,9 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         return images
     }
 
-    private fun encode(command: MTLCommandBufferProtocol, target: MTLTextureProtocol, background: Int, images: List<TerminalImageQuad>) {
+    private fun encode(target: MTLTextureProtocol, background: Int, images: List<TerminalImageQuad>): MTLCommandBufferProtocol {
+        drainedGpuMillis = 0.0
+        var command = checkNotNull(queue.commandBuffer())
         val pass = MTLRenderPassDescriptor()
         pass.colorAttachments.objectAtIndexedSubscript(0u).apply {
             texture = target
@@ -176,25 +185,46 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
             clearColor = MTLClearColorMake((background shr 16 and 255) / 255.0,
                 (background shr 8 and 255) / 255.0, (background and 255) / 255.0, 1.0)
         }
-        val encoder = checkNotNull(command.renderCommandEncoderWithDescriptor(pass))
-        encoder.setRenderPipelineState(pipeline)
         // drawableSize is rounded to whole pixels; using the unrounded view bounds
         // here would scale every glyph again when the window has a fractional size.
         val viewport = floatArrayOf((target.width.toDouble() / scale).toFloat(), (target.height.toDouble() / scale).toFloat())
-        viewport.usePinned { encoder.setVertexBytes(it.addressOf(0), 8u, 1u) }
+        fun beginEncoder(): MTLRenderCommandEncoderProtocol = checkNotNull(command.renderCommandEncoderWithDescriptor(pass)).also { encoder ->
+            encoder.setRenderPipelineState(pipeline)
+            viewport.usePinned { encoder.setVertexBytes(it.addressOf(0), 8u, 1u) }
+        }
+        var encoder = beginEncoder()
+        // A command buffer retains every sampled tile, even after LRU eviction. Finish the
+        // current bounded batch before freeing its pixels; subsequent passes load the target.
+        drainImages = {
+            encoder.endEncoding(); command.commit(); command.waitUntilCompleted()
+            check(command.error == null) { command.error?.localizedDescription.orEmpty() }
+            val elapsed = gpuMillis(command)
+            drainedGpuMillis = drainedGpuMillis?.let { before -> elapsed?.let { before + it } }
+            imageBudgetDrains++
+            command = checkNotNull(queue.commandBuffer())
+            pass.colorAttachments.objectAtIndexedSubscript(0u).loadAction = MTLLoadActionLoad
+            encoder = beginEncoder()
+        }
         drawCalls = 0
         imageCache.beginFrame()
-        drawImages(encoder, images, TerminalGraphicsLayer.BELOW_BACKGROUND)
-        submit(encoder, batches.backgrounds, false, 0, 0)
-        drawImages(encoder, images, TerminalGraphicsLayer.BELOW_TEXT)
-        for (page in batches.pages.indices) submit(encoder, batches.pages[page], true, page, page + 1)
-        submit(encoder, batches.decorations, false, 0, batches.pages.size + 1)
-        drawImages(encoder, images, TerminalGraphicsLayer.ABOVE_TEXT)
-        imageCache.endFrame()
-        encoder.endEncoding()
+        try {
+            drawImages({ encoder }, images, TerminalGraphicsLayer.BELOW_BACKGROUND)
+            submit(encoder, batches.backgrounds, false, 0, 0)
+            drawImages({ encoder }, images, TerminalGraphicsLayer.BELOW_TEXT)
+            for (page in batches.pages.indices) submit(encoder, batches.pages[page], true, page, page + 1)
+            submit(encoder, batches.decorations, false, 0, batches.pages.size + 1)
+            drawImages({ encoder }, images, TerminalGraphicsLayer.ABOVE_TEXT)
+            imageCache.endFrame()
+            encoder.endEncoding()
+            return command
+        } finally { drainImages = null }
     }
 
-    private fun drawImages(encoder: MTLRenderCommandEncoderProtocol, images: List<TerminalImageQuad>, layer: TerminalGraphicsLayer) {
+    private fun gpuMillis(command: MTLCommandBufferProtocol): Double? =
+        if (command.GPUStartTime > 0.0) ((command.GPUEndTime - command.GPUStartTime) * 1000).takeIf { it >= 0.0 && it.isFinite() }
+        else null
+
+    private fun drawImages(currentEncoder: () -> MTLRenderCommandEncoderProtocol, images: List<TerminalImageQuad>, layer: TerminalGraphicsLayer) {
         for (image in images) if (image.layer == layer) for (draw in image.tiles()) {
             val tile = draw.tile
             val texture = imageCache.get(tile) {
@@ -209,6 +239,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
                 imageUploads++
                 texture
             }
+            val encoder = currentEncoder()
             val q = draw.quad
             imageInstance.clear()
             imageInstance.add(q.x, q.y, q.width, q.height, 0xffffff,
@@ -285,7 +316,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         return glyphBitmap(width, height, bytes, premultiplied = true)
     }
 
-    /** Readback for native pixel tests only; interactive presentation never waits or reads back. */
+    /** Readback for native pixel tests only; normal presentation only waits under image-budget pressure. */
     internal fun snapshot(viewport: TerminalViewport): ByteArray {
         check(!busy && !disposed)
         val images = prepare(viewport)
@@ -294,8 +325,8 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
             pixelWidth.toULong(), pixelHeight.toULong(), false)
         descriptor.storageMode = MTLStorageModeShared; descriptor.usage = MTLTextureUsageRenderTarget
         val target = checkNotNull(device.newTextureWithDescriptor(descriptor))
-        val command = checkNotNull(queue.commandBuffer())
-        encode(command, target, viewport.theme.background, images); command.commit(); command.waitUntilCompleted()
+        val command = encode(target, viewport.theme.background, images)
+        command.commit(); command.waitUntilCompleted(); imageCache.completed()
         check(command.error == null) { command.error?.localizedDescription.orEmpty() }
         val result = ByteArray(pixelWidth * pixelHeight * 4)
         result.usePinned { target.getBytes(it.addressOf(0), (pixelWidth * 4).toULong(),
@@ -307,6 +338,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         if (disposed) return
         disposed = true; pending = false
         layer.removeFromSuperlayer(); imageCache.clear(); textures.clear(); buffers.clear(); atlas.clear(); attributes.clear()
+        if (!busy) imageCache.completed()
         // Submitted command buffers retain their resources until completion.
     }
 

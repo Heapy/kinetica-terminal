@@ -87,4 +87,50 @@ class TerminalGraphicsFrameTest {
         session.write("AQID\u001b\\")
         assertEquals(1, session.graphicsState.storage.imageCount)
     }
+
+    @Test fun gpuCacheCountsRetiredAndCurrentCommandResourcesBeforeAllocating() {
+        val live = mutableSetOf<Int>()
+        val queued = mutableSetOf<Int>()
+        var drains = 0
+        val cache = TerminalImageCache<Int>(8, drain = { drains++; queued.clear() }) {
+            assertFalse(it in queued, "Cannot release a texture referenced by unfinished commands")
+            assertTrue(live.remove(it))
+        }
+        fun draw(id: Int) {
+            val tile = TerminalImageTile(TerminalImageTileKey(id, 0, 0), 0, 0, 1, 1)
+            queued += cache.get(tile) {
+                assertTrue(live.add(id)); assertTrue(live.size <= 2, "Includes retired and current-frame textures")
+                id
+            }
+        }
+        cache.beginFrame(); draw(1); draw(2); draw(1)
+        assertEquals(0, drains)
+        draw(3) // All residents are referenced by the current command batch.
+        assertEquals(1, drains); assertEquals(setOf(1, 3), live)
+        cache.endFrame(); cache.beginFrame(); draw(4); cache.endFrame()
+        assertEquals(1, cache.size)
+        assertEquals(8L, cache.bytes, "Retired texture 3 remains charged until completion")
+        cache.beginFrame(); draw(5)
+        assertEquals(2, drains); assertEquals(setOf(4, 5), live)
+        cache.clear()
+        assertEquals(4L, cache.bytes, "An unsubmitted deletion cannot discard pending texture 5")
+        queued.clear(); cache.completed()
+        assertEquals(0L, cache.bytes); assertTrue(live.isEmpty())
+    }
+
+    @Test fun gpuCacheDoesNotAllocateWhenCompletionFailsAndCachedHitsBecomePendingAgain() {
+        var completed = false
+        val released = mutableListOf<Int>()
+        val cache = TerminalImageCache<Int>(4, drain = { check(completed) }) { released += it }
+        fun tile(id: Int) = TerminalImageTile(TerminalImageTileKey(id, 0, 0), 0, 0, 1, 1)
+        cache.beginFrame(); cache.get(tile(1)) { 1 }; cache.completed()
+        cache.get(tile(1)) { fail("Reuse completed tile") }
+        assertFailsWith<IllegalStateException> { cache.get(tile(2)) { fail("Must not allocate before GPU completes") } }
+        assertEquals(4L, cache.bytes); assertTrue(released.isEmpty())
+        completed = true
+        cache.get(tile(2)) { 2 }
+        assertEquals(listOf(1), released)
+        cache.clear(); assertEquals(listOf(1), released)
+        cache.completed(); assertEquals(listOf(1, 2), released)
+    }
 }
