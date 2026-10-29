@@ -375,3 +375,19 @@ stored terminal colors and OSC replies. Ten cases / 49 checkpoints cover palette
 colors, SGR cells, query/save/restore, screens, resets, history/erasure and synchronized state.
 The original renderer state is updated immediately; retaining a displayed frame is host policy
 and is tested separately with actual CPU/GPU pixels and viewport snapshots.
+
+DECCOLM adds 19 focused scenarios / 70 checkpoints and six archived Alacritty recordings
+replayed unchanged through original Ghostty. Alacritty's fixed-grid DECCOLM erasure differs
+from Ghostty's mode-40 gate and actual 80/132-column resize, so those six recordings use the
+complete Ghostty result, including dimensions, instead of Alacritty cells. Archive paths and
+hashes remain in `scenarios.json`; original Alacritty fixtures are unchanged.
+
+The focused cases cover disabled commands, repeated widths, margins/origin, backgrounds,
+protection, tab stops, save/restore, DECSTR/RIS, all alternate-screen modes, explicit resize,
+history and DECAWM-controlled reflow. The full corpus is 680 scenarios / 3647 checkpoints.
+For `deccolm_holds`, the explicit `paired-resize` policy compares our paired host notifications
+with original callbacks plus an end notification when the original mode-2026 bit is cleared.
+The original `Terminal.resize` invoked internally by DECCOLM clears that bit without emitting
+`render_hold(false)`; raw original snapshots retain this discrepancy. All other state is
+compared directly. Headless mode 40 has no geometry side effect, as in libghostty-vt; separate
+browser/native tests exercise Ghostty's host-side refresh behavior and actual PTY dimensions.

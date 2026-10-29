@@ -3,6 +3,29 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalStreamConnectionTest {
+    @Test fun deccolmPublishesGeometryToTheTransportAndRefreshesTheHostOnMode40() {
+        val session = TerminalSession(90, 24)
+        val transport = Transport(); val loop = Loop()
+        val connection = connection(session, transport, loop)
+        var refreshes = 0
+        val host = session.onSizeRefreshRequested { refreshes++; session.resize(90, 24) }
+        try {
+            assertTrue(connection.receive("\u001b[?3h".encodeToByteArray())); loop.drain()
+            assertEquals(listOf(90 to 24), transport.sizes, "Disabled DECCOLM is ignored")
+            assertTrue(connection.receive("\u001b[?40;3h".encodeToByteArray())); loop.drain()
+            assertEquals(132 to 24, transport.sizes.last())
+            assertTrue(connection.receive("\u001b[?3l".encodeToByteArray())); loop.drain()
+            assertEquals(80 to 24, transport.sizes.last())
+            session.write("\u001b[?2026h\u001b[?40l")
+            assertEquals(90 to 24, transport.sizes.last())
+            assertFalse(session.synchronizedOutput)
+            assertEquals(2, refreshes)
+            host.dispose()
+            session.write("\u001b[?40h")
+            assertEquals(2, refreshes)
+        } finally { host.dispose(); connection.dispose() }
+    }
+
     @Test fun programStatusFollowsDrainedEofAndAbruptDisposal() {
         for (ending in listOf("eof","dispose","failure")) {
             val session = TerminalSession(); val transport = Transport(); val loop = Loop()

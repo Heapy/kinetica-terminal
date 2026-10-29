@@ -317,6 +317,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private val programStatusRegistry = TerminalProgramStatusRegistry()
     private var clipboardBinding: TerminalClipboardBinding? = null
     private val resizeObservers = mutableListOf<(Int, Int) -> Unit>()
+    private val sizeRefreshObservers = mutableListOf<() -> Unit>()
     private val renderHoldObservers = mutableListOf<(Boolean) -> Unit>()
 
     init {
@@ -359,6 +360,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         val listener: (Int, Int) -> Unit = { columns, rows -> observer(columns, rows) }
         resizeObservers += listener
         return TerminalDisposable { resizeObservers.remove(listener) }
+    }
+
+    /** DEC 40 requests the attached host's current grid, even when its dimensions are unchanged.
+     * Headless sessions retain their geometry until explicitly resized, like libghostty-vt. */
+    public fun onSizeRefreshRequested(observer: () -> Unit): TerminalDisposable {
+        val listener: () -> Unit = { observer() }
+        sizeRefreshObservers += listener
+        return TerminalDisposable { sizeRefreshObservers.remove(listener) }
     }
 
     /** Observe application pointer changes; hosts apply platform/hover overrides separately. */
@@ -631,7 +640,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         finishProgramStatuses()
     }
 
-    /** Reflow primary text and history; full-screen alternate applications retain their physical grid. */
+    /** Reflow primary text/history when DECAWM is enabled; alternate screens retain physical rows. */
     public fun resize(columns: Int, rows: Int, cellSize: TerminalCellSize = this.cellSize ?: TerminalCellSize(0, 0)) {
         validateSize(columns, rows)
         flushSynchronizedOutput()
@@ -647,7 +656,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         fun resized(old: Array<TerminalLine>, cursor: SavedCursor, saved: SavedCursor, primary: Boolean): TerminalResizeResult {
             val result = resizeTerminal(old, if (primary) (0 until history.size).map { history[it] } else emptyList(),
                 cursor.position(), saved.takeIf { it.valid }?.position(), columns, rows,
-                if (primary) scrollback else 0, limits.historyBytes, reflow = primary)
+                if (primary) scrollback else 0, limits.historyBytes, reflow = primary && wrap)
             val state = if (primary) primarySemantic else alternateSemantic
             if (primary && state.content != TerminalSemanticContent.OUTPUT && promptRedraw != TerminalPromptRedraw.NONE) {
                 val lines = result.history + result.screen
@@ -688,9 +697,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             result.screen
         }
         cursorRow = active.cursor.y; cursorColumn = active.cursor.x; pendingWrap = active.cursor.pendingWrap
+        if (columns != this.columns) tabs = BooleanArray(columns) { it > 0 && it % 8 == 0 }
         this.columns = columns; this.rows = rows
         top = 0; bottom = rows - 1; left = 0; right = columns - 1
-        tabs = BooleanArray(columns) { if (it < tabs.size) tabs[it] else it % 8 == 0 }
         damageAll(); flushDamage()
         resizeObservers.toList().forEach { it(columns, rows) }
         if (inBandResizeReporting) reportSize()
@@ -1357,13 +1366,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             when (number) { 2 -> keyboardDisabled = enabled; 4 -> insertMode = enabled; 12 -> sendReceiveMode = enabled; 20 -> newlineMode = enabled }
             return
         }
-        if (number in listOf(3, 4, 8, 9, 47, 1000, 1002, 1003, 1005, 1006, 1015, 1016, 1039, 1047, 1048, 1049)) sideEffectModes[number] = enabled
+        if (number in listOf(3, 4, 8, 9, 40, 47, 1000, 1002, 1003, 1005, 1006, 1015, 1016, 1039, 1047, 1048, 1049)) sideEffectModes[number] = enabled
         when (number) {
             1 -> applicationCursor = enabled
             3 -> {
-                top = 0; bottom = rows - 1; left = 0; right = columns - 1; cursorColumn = 0; cursorRow = 0; pendingWrap = false
-                for (line in screen) { line.clear(0, columns, -1, -1, 0); line.wrapped = false; line.wrapContinuation = false }
-                damageAll()
+                if (sideEffectModes[40] != true) { sideEffectModes[3] = false; return }
+                resize(if (enabled) 132 else 80, rows)
+                eraseScreen()
+                position(1, 1)
             }
             5 -> { if (reverseColors != enabled) { reverseColors = enabled; damageAll() } }
             6 -> { origin = enabled; position(1, 1) }
@@ -1371,6 +1381,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             7 -> wrap = enabled
             12 -> cursorBlink = enabled
             25 -> cursorVisible = enabled
+            40 -> sizeRefreshObservers.toList().forEach { it() }
             45 -> reverseWrap = enabled
             66 -> applicationKeypad = enabled
             67 -> backarrowKeyMode = enabled
@@ -1435,7 +1446,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun privateModeState(number: Int): Boolean? = when (number) {
-        3, 4, 8, 9, 47, 1000, 1002, 1003, 1005, 1015, 1016, 1039, 1047, 1048, 1049 -> sideEffectModes[number] ?: false
+        3, 4, 8, 9, 40, 47, 1000, 1002, 1003, 1005, 1015, 1016, 1039, 1047, 1048, 1049 -> sideEffectModes[number] ?: false
         1 -> applicationCursor
         5 -> reverseColors
         6 -> origin

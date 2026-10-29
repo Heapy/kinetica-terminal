@@ -59,6 +59,9 @@ public class BrowserTerminalView(
         TerminalDisposable { window.clearTimeout(timer) }
     })
     private val resizeObserver: dynamic = newResizeObserver { resize() }
+    private val sizeRefreshObservation = session.onSizeRefreshRequested { resize(force = true) }
+    private var measuredColumns = 0
+    private var measuredRows = 0
     private var intersecting = false
     private var graphicsVisible = false
     private val visibilityBinding = session.attachVisibility(false)
@@ -252,7 +255,7 @@ public class BrowserTerminalView(
         root.setAttribute("data-terminal-renderer", drawing.name)
     }
 
-    private fun resize() {
+    private fun resize(force: Boolean = false) {
         if (disposed) return
         updateVisibility()
         val width = (root.clientWidth as Number).toDouble()
@@ -271,7 +274,12 @@ public class BrowserTerminalView(
         val columns = floor(width / cellWidth).toInt().coerceIn(1, 4096)
         val rows = floor(height / cellHeight).toInt().coerceIn(1, 4096)
         val cellSize = TerminalCellSize((cellWidth * ratio).toInt().coerceAtLeast(1), (cellHeight * ratio).toInt().coerceAtLeast(1))
-        if (columns != session.columns || rows != session.rows || cellSize != session.cellSize) session.resize(columns, rows, cellSize)
+        // Painting also measures the canvas. Only an actual host geometry change may
+        // replace a protocol-selected DECCOLM grid; mode 40 explicitly forces a refresh.
+        if (force || columns != measuredColumns || rows != measuredRows || cellSize != session.cellSize) {
+            measuredColumns = columns; measuredRows = rows
+            session.resize(columns, rows, cellSize)
+        }
     }
 
     private fun updateVisibility() {
@@ -422,6 +430,7 @@ public class BrowserTerminalView(
     public fun dispose() {
         if (disposed) return
         disposed = true; mouseReporter.reset(); cancelMouse(); viewport.dispose(); resizeObserver.disconnect()
+        sizeRefreshObservation.dispose()
         visibilityBinding.dispose()
         intersectionObserver.disconnect(); visibilityObserver.disconnect()
         pointerObservation.dispose()

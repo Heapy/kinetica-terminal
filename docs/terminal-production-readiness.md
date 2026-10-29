@@ -528,8 +528,24 @@ JS tests, 698 Native oracle/color/presentation/selection/Metal tests, five nativ
 tests (software plus Metal at 1×/1.25×/2×), and the Canvas/WebGL browser verifier. These checks
 cover explicit RGB, default-color glyphs/backgrounds, cursor/selection, images and held frames.
 
-The remaining mode-table work is DECCOLM and its gate (3/40), and clipboard paste events (5522).
-Their behavior and host integration remain required for full compatibility.
+DECCOLM now honors the mode-40 gate and selects 80/132 columns before clearing the active
+display with the current background/protection rules. Without the gate it leaves the screen
+unchanged and reports mode 3 reset. Resizing resets tab stops when width changes and respects
+DECAWM for primary/history reflow. Browser/AppKit refresh their physical grid on mode-40
+set/reset; ordinary browser painting no longer overwrites the protocol-selected width.
+Existing resize observers propagate dimensions to stream transports and real native PTYs.
+
+Nineteen focused original-library cases add 70 checkpoints, plus six unchanged Alacritty
+recordings whose DECCOLM behavior differs from Ghostty. Their complete Ghostty results replace
+the Alacritty expectations in the replay adapter; the original fixtures are retained. Raw
+Ghostty snapshots also preserve its missing end-hold callback on internal DECCOLM resize.
+The explicitly named `paired-resize` test policy reconciles that callback with original mode
+state because Kinetica's host contract releases held frames with paired notifications.
+
+The 680-case / 3647-checkpoint corpus reproduces byte-for-byte. Validation passes 972 JVM tests,
+fresh Release JS tests, all 680 Native oracle cases, 28 Native AppKit/PTY/transport/size/frame
+tests, and the Canvas/WebGL browser verifier, including host resizing and mode-40 restoration.
+Clipboard paste events (5522) remain open, along with the broader acceptance work below.
 
 Graphics acceptance work:
 

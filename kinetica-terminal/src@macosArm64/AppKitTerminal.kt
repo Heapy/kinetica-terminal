@@ -82,6 +82,9 @@ public class AppKitTerminalView(
     private val resizeHoldObservation = session.onRenderHold { held ->
         if (!held && ready && !disposed) applyPendingGridSize()
     }
+    private val sizeRefreshObservation = session.onSizeRefreshRequested {
+        if (ready && !disposed) measure(force = true)
+    }
     private var gpu: MetalTerminalDrawing? = null
     // Keep the custom Metal display delegate off NSView itself. Overriding displayLayer:
     // on the view also intercepts AppKit's software backing-layer display and skips drawRect.
@@ -222,21 +225,21 @@ public class AppKitTerminalView(
         if (ready && !disposed) { viewport.markAll(); setNeedsDisplay(true) }
     }
 
-    private fun measure() {
+    private fun measure(force: Boolean = false) {
         cellWidth = NSAttributedString.create(string = "M", attributes = mapOf(NSFontAttributeName to font)).size().useContents { width }
         cellHeight = ceil(font.ascender - font.descender + font.leading + 2.0)
         bounds.useContents {
             if (size.width > 0 && size.height > 0) {
                 pendingGridSize = floor(size.width / cellWidth).toInt().coerceIn(1, 4096) to
                     floor(size.height / cellHeight).toInt().coerceIn(1, 4096)
-                if (!session.synchronizedOutput) applyPendingGridSize()
+                if (force || !session.synchronizedOutput) applyPendingGridSize(force)
             }
         }
         viewport.markAll()
         setNeedsDisplay(true)
     }
 
-    private fun applyPendingGridSize() {
+    private fun applyPendingGridSize(force: Boolean = false) {
         val (columns, rows) = pendingGridSize ?: return
         pendingGridSize = null
         // Pixel-only changes must not end an application's synchronized-output hold.
@@ -245,8 +248,8 @@ public class AppKitTerminalView(
         val scale = window?.backingScaleFactor ?: 1.0
         val cellSize = TerminalCellSize((cellWidth * scale).toInt().coerceAtLeast(1), (cellHeight * scale).toInt().coerceAtLeast(1))
         val gridChanged = columns != session.columns || rows != session.rows
-        if (gridChanged || cellSize != session.cellSize) {
-            if (liveResizing && gridChanged) viewport.resizeSession(columns, rows, cellSize)
+        if (force || gridChanged || cellSize != session.cellSize) {
+            if (!force && liveResizing && gridChanged) viewport.resizeSession(columns, rows, cellSize)
             else session.resize(columns, rows, cellSize)
         }
     }
@@ -640,6 +643,7 @@ public class AppKitTerminalView(
         visibilityObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; visibilityObservation = null
         mouseTrackingArea?.let { removeTrackingArea(it) }; mouseTrackingArea = null
         resizeHoldObservation.dispose(); pendingGridSize = null
+        sizeRefreshObservation.dispose()
         pointerObservation.dispose()
         progressIndicator.dispose()
         notificationObservation.dispose(); notifications?.dispose(); notifications = null

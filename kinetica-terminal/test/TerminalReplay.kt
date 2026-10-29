@@ -15,6 +15,28 @@ internal data class ReplayFixture(
 internal fun checkReplay(fixture: ReplayFixture) {
     val bytes = Base64.decode(fixture.input)
     val expected = Json.parseToJsonElement(Base64.decode(fixture.expected).decodeToString()).jsonObject
+    // Alacritty clears for DECCOLM without changing its physical grid or honoring mode 40.
+    // Ghostty resizes when allowed and otherwise ignores it. Replay the exact same archived
+    // bytes against the original Ghostty, including its resulting dimensions and every cell.
+    val geometryPolicy = when (fixture.name) {
+        "deccolm_reset" -> ghostty_alacritty_deccolm_reset()
+        "vttest_cursor_movement_1" -> ghostty_alacritty_vttest_cursor_movement_1()
+        "vttest_origin_mode_1" -> ghostty_alacritty_vttest_origin_mode_1()
+        "vttest_origin_mode_2" -> ghostty_alacritty_vttest_origin_mode_2()
+        "vttest_insert" -> ghostty_alacritty_vttest_insert()
+        "vttest_scroll" -> ghostty_alacritty_vttest_scroll()
+        else -> null
+    }
+    if (geometryPolicy != null) {
+        val scenario = Json.parseToJsonElement(Base64.decode(geometryPolicy.scenario).decodeToString()).jsonObject
+        assertEquals(fixture.columns, scenario.getValue("columns").jsonPrimitive.int)
+        assertEquals(fixture.rows, scenario.getValue("rows").jsonPrimitive.int)
+        assertEquals(fixture.history, scenario.getValue("history").jsonPrimitive.int)
+        assertTrue(bytes.contentEquals(scenario.getValue("events").jsonArray.single().jsonObject
+            .getValue("write").jsonPrimitive.content.encodeToByteArray()))
+        checkGhostty(geometryPolicy)
+        return
+    }
     // EL at pending wrap moves subsequent output to different rows in these two emulators.
     // DECALN also differs: Ghostty preserves foreground/background while Alacritty resets them.
     // DEC special graphics preserves underscore in Ghostty, unlike these Alacritty save tests.

@@ -424,6 +424,17 @@ charset state, including pending single shift; screen switches copy the active c
 1049 exit restores its saved state. DECSTR/RIS restore default designations and invocation.
 Restoring an unset saved cursor selects the initial state and home position.
 
+DECCOLM (`CSI ? 3 h/l`) selects 132/80 columns only when DEC mode 40 is enabled.
+Otherwise it is ignored, including screen erasure. An accepted command resizes both
+screens, clears the active display with the current background/protection rules and homes
+the cursor. Width changes reset tab stops; primary history reflows only with DECAWM enabled.
+Mode queries/save/restore, DECSTR and RIS follow Ghostty. Geometry changes reach the attached
+transport/PTY through `onResize`. Browser/AppKit handle `onSizeRefreshRequested` for every
+mode-40 set/reset by restoring their measured grid; headless sessions retain their current
+dimensions. Subsequent host resizing can replace a DECCOLM width. Resizing also releases a
+synchronized frame with paired host notifications, including the notification omitted by
+libghostty-vt's internal DECCOLM resize path.
+
 DECSTR (`CSI ! p`) resets the active pen, margins, saved cursor, selected modes, cursor
 appearance, palette and checksum variant while retaining text, history, cursor position,
 tab stops, dynamic colors, hyperlinks, synchronized output and graphics. DECSASD (`CSI Ps $ }`)

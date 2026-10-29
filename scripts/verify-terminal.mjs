@@ -98,6 +98,29 @@ try {
   assert.equal(await page.locator("canvas").count(), 1);
   assert.equal(await page.locator("[data-terminal] *").count(), 5); // Includes the fixed progress overlay.
   const painted = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const verifyDeccolm = async () => {
+    const host = await page.evaluate(() => [kineticaTerminalDemo.columns(), kineticaTerminalDemo.rows()]);
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?40l\x1b[0m\x1b[2J\x1b[HKEEP\x1b[?3h"));
+    assert.equal(await page.evaluate(() => kineticaTerminalDemo.columns()), host[0]);
+    assert.match(await page.evaluate(() => kineticaTerminalDemo.screen()), /KEEP/);
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?40;3h"));
+    await painted();
+    assert.deepEqual(await page.evaluate(() => [kineticaTerminalDemo.columns(), kineticaTerminalDemo.rows()]), [132, host[1]]);
+    assert.doesNotMatch(await page.evaluate(() => kineticaTerminalDemo.screen()), /KEEP/);
+    const windowSize = page.viewportSize();
+    await page.setViewportSize({ ...windowSize, width: windowSize.width + 25 });
+    await page.waitForFunction(() => kineticaTerminalDemo.columns() !== 132);
+    await page.setViewportSize(windowSize);
+    await page.waitForFunction(columns => kineticaTerminalDemo.columns() === columns, host[0]);
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?3l"));
+    await painted();
+    assert.equal(await page.evaluate(() => kineticaTerminalDemo.columns()), 80);
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?2026h\x1b[?40lREFRESHED"));
+    await painted();
+    assert.deepEqual(await page.evaluate(() => [kineticaTerminalDemo.columns(), kineticaTerminalDemo.rows()]), host);
+    await page.waitForFunction(() => document.querySelector('[role="log"]').textContent.includes("REFRESHED"));
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[2J\x1b[H"));
+  };
   const verifyReverseColors = async pixel => {
     await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?25l\x1b[0m\x1b[2J\x1b[H\x1b]10;#112233;#445566;#778899\x07\x1b[?5h"));
     await painted();
@@ -215,6 +238,7 @@ try {
   await page.waitForFunction(() => terminalGpuPixel[0] === 30, null, { timeout: 2000 });
   await page.waitForFunction(() => terminalGpuPixel[0] === 238, null, { timeout: 2000 });
   await page.evaluate(() => kineticaTerminalDemo.fontSize(14));
+  await verifyDeccolm();
   await verifyReverseColors(() => page.evaluate(() => terminalGpuPixel));
   await page.evaluate(() => kineticaTerminalDemo.write("\u001b[2J\u001b[H\u001b[1;36mKinetica terminal\u001b[0m\r\nBrowser integration passed.\r\n世界 é 😀"));
   await painted();
@@ -245,6 +269,7 @@ try {
   await page.evaluate(() => kineticaTerminalDemo.write("\u001b[?2026l"));
   await painted();
   assert.deepEqual(await page.evaluate(() => [...document.querySelector("canvas").getContext("2d").getImageData(2, 2, 1, 1).data]), [13, 188, 121, 255]);
+  await verifyDeccolm();
   await verifyReverseColors(() => page.evaluate(() => [...document.querySelector("canvas").getContext("2d").getImageData(2, 2, 1, 1).data]));
   await page.evaluate(() => kineticaTerminalDemo.dispose());
   await page.addInitScript(() => {

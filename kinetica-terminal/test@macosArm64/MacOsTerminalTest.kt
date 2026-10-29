@@ -10,6 +10,35 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsTerminalTest {
+    @Test fun deccolmChangesTheRealPtyAndMode40RestoresTheMountedHostGrid() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession()
+        val surface = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE)
+        surface.setFrameSize(NSMakeSize(900.0, 480.0))
+        val hostSize = session.columns to session.rows
+        var exited = false
+        val command = "printf '\\033[?40;3hREADY132\\n'; read answer; stty size; read answer; printf '\\033[?3lREADY80\\n'; read answer; stty size; read answer"
+        val pty = MacOsPty(session, "/bin/sh", listOf("-c", command), onExit = { exited = true })
+        try {
+            await { screen(session).contains("READY132") }
+            assertEquals(132, session.columns)
+            session.sendInput("\r")
+            await { screen(session).contains("${hostSize.second} 132") }
+            session.sendInput("\r")
+            await { screen(session).contains("READY80") }
+            assertEquals(80, session.columns)
+            session.sendInput("\r")
+            await { screen(session).contains("${hostSize.second} 80") }
+            session.write("\u001b[?2026h\u001b[?40l")
+            assertFalse(session.synchronizedOutput)
+            assertEquals(hostSize, session.columns to session.rows)
+            session.sendInput("\r"); await { exited }
+        } finally { pty.dispose(); surface.dispose() }
+        session.resize(77, 20)
+        session.write("\u001b[?40h")
+        assertEquals(77, session.columns, "Disposed host must not handle refresh requests")
+    }
+
     @Test fun programStatusIsRetiredOnRealPtyExitAndDisposal() {
         for (abrupt in listOf(false,true)) {
             val session = TerminalSession()

@@ -16,6 +16,8 @@ internal fun checkGhostty(fixture: GhosttyFixture) {
             scenario.getValue("rows").jsonPrimitive.int, scenario.getValue("history").jsonPrimitive.int)
         val replies = StringBuilder()
         val holds = mutableListOf<Boolean>()
+        val pairedOracleHolds = mutableListOf<Boolean>()
+        var oracleHoldCount = 0
         val effects = mutableListOf<JsonElement>()
         val workingDirectories = mutableListOf<JsonElement>()
         session.onWorkingDirectory { workingDirectories.add(it?.let(::JsonPrimitive) ?: JsonNull) }
@@ -143,7 +145,20 @@ internal fun checkGhostty(fixture: GhosttyFixture) {
             val oracleReplies = oracle.getValue("replies").jsonPrimitive.content
             assertEquals(oracleReplies, replies.toString(), "$label replies")
             compare("modes", buildJsonArray { session.inspectedModes().forEach { add(it) } })
-            compare("holds", buildJsonArray { holds.forEach { add(it) } })
+            when (scenario["renderHoldPolicy"]?.jsonPrimitive?.content) {
+                null -> compare("holds", buildJsonArray { holds.forEach { add(it) } })
+                "paired-resize" -> {
+                    // Ghostty's DECCOLM calls Terminal.resize directly: it clears mode 2026
+                    // but omits the render_hold(false) effect. Our host API promises paired
+                    // notifications, so reconcile that missing effect with original mode state.
+                    val raw = oracle.getValue("holds").jsonArray.map { it.jsonPrimitive.boolean }
+                    pairedOracleHolds.addAll(raw.drop(oracleHoldCount)); oracleHoldCount = raw.size
+                    if (pairedOracleHolds.lastOrNull() == true && !oracle.getValue("modes").jsonArray[9].jsonPrimitive.boolean)
+                        pairedOracleHolds.add(false)
+                    assertEquals(pairedOracleHolds, holds, "$label paired resize holds")
+                }
+                else -> error("Unknown render hold policy")
+            }
             compare("cursorStyle", JsonPrimitive(session.cursorStyle.code))
             compare("colors", buildJsonArray { add(session.theme.foreground); add(session.theme.background); add(session.theme.cursor) })
             val palette = ghosttyDefaultPalette()

@@ -134,7 +134,11 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Only effective rendering defaults swap; explicit colors, palette entries, cursor/selection
       colors and OSC replies retain their identity. Viewport theme snapshots cover software,
       Canvas/WebGL, AppKit/Metal, composition/clearing and synchronized output.
-- [ ] Close additional mode-table gaps: DECCOLM/its gate (3/40) and clipboard paste-event mode 5522.
+- [x] DECCOLM and its gate (3/40), including 80/132-column geometry, current-background
+      erasure/protection, tabs, history/reflow, screens, resets and mode query/save/restore.
+      Browser/AppKit restore host geometry on mode-40 requests; transports and native PTYs
+      receive accepted size changes. Ordinary browser repainting preserves protocol geometry.
+- [ ] Close the clipboard paste-event mode 5522 gap.
       Validate their behavior and host integration before advertising mutable support.
 
 ## Graphics and external media
