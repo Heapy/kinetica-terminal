@@ -8,6 +8,8 @@ class TerminalBackpressureTest {
 
     @Test fun reservedSpaceCoversPendingPaletteAndAllOtherQueryFamilies() {
         val session = TerminalSession(4096, 1)
+        session.configureChecksumReporting(true)
+        session.resize(4096,1,TerminalCellSize(65535,65535))
         val output = StringBuilder()
         session.onInput { output.append(it.toByteArray().decodeToString()) }
         // The longest pending OSC finishes in the first byte of the next transport slice.
@@ -17,23 +19,28 @@ class TerminalBackpressureTest {
         val commands = listOf("\u001b[c", "\u001b[>c", "\u001b[=c", "\u001bZ", "\u001b[>q",
             "\u001b[5n", "\u001b[?6n", "\u001b[6n", "\u001b[?65535\$p",
             "\u001b[65535\$p", "\u001bP\$q q\u001b\\", "\u001bP\$qm\u001b\\", "\u001bP\$qr\u001b\\",
-            "\u001bP\$qx\u001b\\", "\u001b]10;?;?;?\u0007")
+            "\u001bP\$qx\u001b\\", "\u001b]10;?;?;?\u0007", "\u001b[19t",
+            "\u001b[*y", "\u001b[65535*y")
         for (command in commands) {
             val next = ("\u001b\\" + command.repeat(TERMINAL_READ_SLICE)).take(TERMINAL_READ_SLICE)
             session.reset()
-            session.write("\u001b[1;2;3;4:5;7;8;9;38:2::255:255:255;48:2::255:255:255m")
+            session.write("\u001b[1;2;3;4:5;5;7;8;9;38:2::255:255:255;48:2::255:255:255m")
             session.write(prefix); output.clear()
             session.write(next)
             assertTrue(output.startsWith(paletteReply))
+            if (command.endsWith("*y")) assertTrue(output.contains("!~"),"Checksum reporting must be enabled for the reserve check")
             assertTrue(output.length < TERMINAL_REPLY_RESERVE, "reply reserve for ${command.encodeToByteArray().toHexString()}")
         }
     }
 
     @Test fun pausedParsingDrainsAndResumesWithoutDuplicatingOrDroppingReplies() {
         val session = TerminalSession(80, 24)
+        session.configureChecksumReporting(true)
+        session.resize(80,24,TerminalCellSize(8,16))
         val queue = TerminalInputBuffer(TERMINAL_REPLY_RESERVE + 1024)
         session.onInput { assertTrue(queue.tryAdd(it), "the transport reserved space before parsing") }
-        val stream = (paletteRequest.repeat(12) + "\u001b[5n".repeat(1000) + "界😀END").encodeToByteArray()
+        val stream = (paletteRequest.repeat(12) + "\u001b[5n".repeat(1000) +
+            "\u001b[65535;0;1;1;1;1*y\u001b[19t".repeat(500) + "界😀END").encodeToByteArray()
         val received = StringBuilder()
         var offset = 0
         var pauses = 0
@@ -55,7 +62,8 @@ class TerminalBackpressureTest {
             queue.consume(count)
         }
         assertTrue(pauses > 100)
-        assertEquals(paletteReply.repeat(12) + "\u001b[0n".repeat(1000), received.toString())
+        assertEquals(paletteReply.repeat(12) + "\u001b[0n".repeat(1000) +
+            "\u001bP65535!~0000\u001b\\\u001b[9;24;80t".repeat(500), received.toString())
         assertEquals("界😀END", session.screenLine(0).text())
     }
 

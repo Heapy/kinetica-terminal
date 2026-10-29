@@ -86,12 +86,14 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       position. Palette overrides reset; dynamic colors, hyperlinks, tab stops, synchronized
       output, graphics and unfinished image/frame transfers remain intact. Fifteen original-
       library scenarios cover 49 states, with another graphics execution scenario for transfers.
-- [ ] Connect DECSTR to status-display/checksum state as those currently absent protocols are
-      implemented, and cover reverse-wrap/keyboard-disable modes when adding their behavior.
+- [x] Connect DECSTR/RIS to status-display/checksum state and configured checksum defaults.
+- [ ] Cover reverse-wrap/keyboard-disable modes and their soft-reset behavior.
 - [x] RIS resets palette overrides in addition to its existing state reset.
 - [x] DECXCPR (`CSI ?6n`) responds with `CSI ?row;column;1R`, including origin/margin handling.
 - [x] `CSI 19 t` reports screen size in characters; the release dispatches `.csi_19_t`.
-- [ ] DECRQCRA/XTCHECKSUM requests and configured checksum variants.
+- [x] DECRQCRA/XTCHECKSUM requests and all 32 checksum variants, with explicit host opt-in
+      disabled by default, matching both libghostty and standalone Ghostty. DECSASD discards
+      printable status-line output while continuing to execute controls.
 - [ ] Visibility mode 2033, its mode query, `CSI ?998n` and `CSI ?999;1/2n` reports, connected
       to host visibility. View animation visibility alone does not implement this protocol.
 - [ ] OSC 7501 program status parsing, support query, state/observer integration and bounds.

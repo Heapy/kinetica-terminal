@@ -15,6 +15,7 @@ public object TerminalStyle {
     public const val UNDERCURL: Int = 256
     public const val DOTTED_UNDERLINE: Int = 512
     public const val DASHED_UNDERLINE: Int = 1024
+    public const val BLINK: Int = 2048
     public const val UNDERLINES: Int = UNDERLINE or DOUBLE_UNDERLINE or UNDERCURL or DOTTED_UNDERLINE or DASHED_UNDERLINE
 }
 

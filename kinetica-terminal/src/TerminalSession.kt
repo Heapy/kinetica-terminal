@@ -174,6 +174,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private var g1Graphics = false
     private var useG1 = false
     private var previousCharacter: Int? = null
+    private var statusLineSelected = false
+    private var checksumReporting = false
+    private var defaultChecksumFlags = 0
+    private var checksumFlags = 0
     private var left = 0
     private var right = columns - 1
     // One saved bit per supported DEC mode; repeated saves overwrite rather than stack.
@@ -408,6 +412,30 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
 
     private fun reportColorScheme() { sendInput("\u001b[?997;${colorScheme.report}n") }
 
+    /**
+     * Opt in to DECRQCRA screen readback. Disabled by default, as in Ghostty: a program can
+     * query individual cells to recover other programs' output. Also sets the current and
+     * reset-default XTCHECKSUM bits: 1 positive, 2 omit attributes, 4 keep blanks, 8 count
+     * undrawn cells, 16 full codepoints. The terminal program may override these until reset.
+     */
+    public fun configureChecksumReporting(enabled: Boolean, extension: Int = 0) {
+        require(extension in 0..31)
+        checksumReporting = enabled
+        defaultChecksumFlags = extension; checksumFlags = extension
+    }
+
+    private fun reportChecksum() {
+        if (!checksumReporting) return
+        fun coordinate(index: Int, default: Int, margin: Int, max: Int): Int =
+            ((if (index >= parameterCount || params[index] == 0) default else params[index]) + margin).coerceIn(1,max) - 1
+        val yMargin = if (origin) top else 0
+        val xMargin = if (origin) left else 0
+        val y1 = coordinate(2,1,yMargin,rows); val x1 = coordinate(3,1,xMargin,columns)
+        val y2 = coordinate(4,rows,yMargin,rows); val x2 = coordinate(5,columns,xMargin,columns)
+        val sum = terminalChecksum(screen,x1,y1,x2,y2,checksumFlags)
+        sendInput("\u001bP${if (parameterCount == 0) 0 else params[0]}!~${sum.toString(16).uppercase().padStart(4,'0')}\u001b\\")
+    }
+
     private fun reportSize(style: Int = 48) {
         val cell = cellSize ?: return
         val dimensions = when (style) {
@@ -590,6 +618,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     public fun reset() {
+        statusLineSelected = false; checksumFlags = defaultChecksumFlags
         colors.resetPalette()
         clipboardBinding?.reset()
         primaryGraphics.reset(); alternateGraphics.reset()
@@ -626,6 +655,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
 
     /** DECSTR changes the active pen and selected modes without moving or clearing the screen. */
     private fun softReset() {
+        statusLineSelected = false; checksumFlags = defaultChecksumFlags
         cursorVisible = true; insertMode = false; origin = false; wrap = true
         applicationCursor = false; applicationKeypad = false; leftRightMarginMode = false
         top = 0; bottom = rows - 1; left = 0; right = columns - 1
@@ -715,6 +745,16 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun dispatchCsi(final: Char, prefix: Int, intermediates: Int) {
+        if (prefix == 0 && final == 'y') {
+            if (intermediates == '*'.code && parameterCount <= 6) reportChecksum()
+            else if (intermediates == '#'.code && parameterCount <= 1 && checksumReporting)
+                checksumFlags = (if (parameterCount == 0) 0 else params[0]) and 31
+            return
+        }
+        if (prefix == 0 && final == '}' && intermediates == '$'.code && parameterCount == 1) {
+            if (params[0] in 0..1) statusLineSelected = params[0] == 1
+            return
+        }
         if (prefix == 0 && intermediates == '!'.code && final == 'p') {
             if (parameterCount == 0) softReset()
             return
@@ -793,6 +833,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun print(input: Int) {
+        if (statusLineSelected) return
         val rightLimit = if (cursorColumn > right) columns else right + 1
         val code = if ((if (useG1) g1Graphics else graphics) && input in 0x5f..0x7e)
             if (input == 0x5f) 32 else DEC_GRAPHICS[input - 0x60].code else input
@@ -1222,6 +1263,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             style and TerminalStyle.DASHED_UNDERLINE != 0 -> append(";4:5")
             style and TerminalStyle.UNDERLINE != 0 -> append(";4")
         }
+        if (style and TerminalStyle.BLINK != 0) append(";5")
         if (style and TerminalStyle.INVERSE != 0) append(";7")
         if (style and TerminalStyle.HIDDEN != 0) append(";8")
         if (style and TerminalStyle.STRIKE != 0) append(";9")
@@ -1325,6 +1367,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 1 -> style = style or TerminalStyle.BOLD
                 2 -> style = style or TerminalStyle.FAINT
                 3 -> style = style or TerminalStyle.ITALIC
+                5, 6 -> style = style or TerminalStyle.BLINK
                 4 -> {
                     val underline = if (subparameters) params[i + 1] else 1
                     val flag = when (underline) {
@@ -1345,6 +1388,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 22 -> style = style and (TerminalStyle.BOLD or TerminalStyle.FAINT).inv()
                 23 -> style = style and TerminalStyle.ITALIC.inv()
                 24 -> style = style and TerminalStyle.UNDERLINES.inv()
+                25 -> style = style and TerminalStyle.BLINK.inv()
                 27 -> style = style and TerminalStyle.INVERSE.inv()
                 28 -> style = style and TerminalStyle.HIDDEN.inv()
                 29 -> style = style and TerminalStyle.STRIKE.inv()

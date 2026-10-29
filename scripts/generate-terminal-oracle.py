@@ -82,7 +82,7 @@ def main():
     build.mkdir(parents=True, exist_ok=True)
     executable = build / "ghostty-oracle"
     library = upstream / "zig-out/lib"
-    subprocess.run(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-I", str(upstream / "include"),
+    subprocess.run(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-DKINETICA_GHOSTTY_CHECKSUM_ORACLE", "-I", str(upstream / "include"),
         str(ROOT / "scripts/terminal-ghostty-oracle.c"), "-L", str(library), "-lghostty-vt",
         "-Wl,-rpath," + str(library), "-o", str(executable)], check=True)
     cases = json.loads((ROOT / "kinetica-terminal/test-upstream/ghostty/scenarios.json").read_text())
@@ -144,6 +144,9 @@ def main():
                 commands.append("R " + " ".join(str(x) for x in event["resize"] + event.get("cellSize", [8, 16])))
             elif "colorScheme" in event:
                 commands.append(f"T {event['colorScheme']}")
+            elif "checksumReporting" in event:
+                enabled, extension = event["checksumReporting"]
+                commands.append(f"Q {int(enabled)} {extension}")
             elif "keys" in event:
                 for key in event["keys"]:
                     commands.append(f"K {key['upstream']} {key['modifiers']}")

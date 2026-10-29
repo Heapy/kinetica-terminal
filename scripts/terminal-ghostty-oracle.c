@@ -6,6 +6,7 @@
  * M action button mods column row (stateless mouse encoding, unit cells);
  * G image-storage-limit probe-image-ids... (decimal, at most 256 IDs);
  * J (include placement geometry and z-layer membership in graphics snapshots);
+ * Q checksum-report-enabled default-extension (explicit host configuration);
  * S (snapshot); U (width ranges).
  * stdout: one JSON snapshot per S. Every API failure exits nonzero.
  */
@@ -568,6 +569,16 @@ int main(void) {
             for (size_t i = 0; i < 3; i++) { free(clipboard_values[i].data); clipboard_values[i].data = NULL; clipboard_values[i].len = 0; }
         } else if (!terminal) return 2;
         else if (line[0] == 'J') placements_enabled = true;
+#ifdef KINETICA_GHOSTTY_CHECKSUM_ORACLE
+        else if (line[0] == 'Q') {
+            unsigned enabled, extension;
+            if (sscanf(line + 1, "%u %u", &enabled, &extension) != 2 || enabled > 1 || extension > 31) return 2;
+            bool report = enabled != 0;
+            uint8_t flags = (uint8_t)extension;
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_XT_CHECKSUM_REPORT, &report));
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_XT_CHECKSUM_EXTENSION, &flags));
+        }
+#endif
         else if (line[0] == 'G') {
             char *end, *next = line + 1;
             uint64_t limit = strtoull(next, &end, 10);

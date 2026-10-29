@@ -74252,5 +74252,1191 @@
         "write": "\u001b[19;0t\u001b[19:t\u001b[?19t\u001b[>19t\u001b[19$t"
       }
     ]
+  },
+  {
+    "name": "checksum_variant_0",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[0#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_1",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[1#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_2",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[2#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_3",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[3#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_4",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[4#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_5",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[5#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_6",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[6#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_7",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[7#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_8",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[8#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_9",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[9#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_10",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[10#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_11",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[11#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_12",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[12#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_13",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[13#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_14",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[14#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_15",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[15#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_16",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[16#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_17",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[17#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_18",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[18#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_19",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[19#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_20",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[20#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_21",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[21#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_22",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[22#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_23",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[23#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_24",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[24#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_25",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[25#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_26",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[26#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_27",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[27#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_28",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[28#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_29",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[29#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_30",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[30#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_variant_31",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": " A  B\u001b[2;1H\u001b[1;5;7;8;4:2m \u001b[0m\u001b[2m \u001b[3m \u001b[9m \u001b[0m\u001b[3;1H\u00e9\u00ff\u00a0\u754c\ud83d\ude00e\u0301\ud834\udd65\u001b[4;1H\u001b[1\"qX \u001b[0\"qY\u001b[5;1H\u001b(0qq\u001b(B"
+      },
+      {
+        "write": "\u001b[31#y\u001b[7*y\u001b[65535;99;2;1;2;12*y"
+      },
+      {
+        "write": "\u001b[8;0;3;1;3;16*y\u001b[9;0;4;1;4;16*y\u001b[10;0;1;10;1;16*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_rectangles_0_0",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": "abcdefghijklmnop\r\nABCDEFGHIJKLMNOP\r\n0123456789abcdef\r\nzyxwvutsrqponmlk"
+      },
+      {
+        "write": "\u001b[2;4r\u001b[?69h\u001b[3;12s"
+      },
+      {
+        "write": "\u001b[*y\u001b[1*y\u001b[2;0;0;0;0;0*y\u001b[3;1;2;3;4;6*y\u001b[4;2;4;8;2;3*y\u001b[5;0;65535;65535;65535;65535*y\u001b[6;0;1;1;65535;65535*y\u001b[65535;65535;3;7;3;7*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_rectangles_0_4",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          4
+        ]
+      },
+      {
+        "write": "abcdefghijklmnop\r\nABCDEFGHIJKLMNOP\r\n0123456789abcdef\r\nzyxwvutsrqponmlk"
+      },
+      {
+        "write": "\u001b[2;4r\u001b[?69h\u001b[3;12s"
+      },
+      {
+        "write": "\u001b[*y\u001b[1*y\u001b[2;0;0;0;0;0*y\u001b[3;1;2;3;4;6*y\u001b[4;2;4;8;2;3*y\u001b[5;0;65535;65535;65535;65535*y\u001b[6;0;1;1;65535;65535*y\u001b[65535;65535;3;7;3;7*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_rectangles_0_8",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          8
+        ]
+      },
+      {
+        "write": "abcdefghijklmnop\r\nABCDEFGHIJKLMNOP\r\n0123456789abcdef\r\nzyxwvutsrqponmlk"
+      },
+      {
+        "write": "\u001b[2;4r\u001b[?69h\u001b[3;12s"
+      },
+      {
+        "write": "\u001b[*y\u001b[1*y\u001b[2;0;0;0;0;0*y\u001b[3;1;2;3;4;6*y\u001b[4;2;4;8;2;3*y\u001b[5;0;65535;65535;65535;65535*y\u001b[6;0;1;1;65535;65535*y\u001b[65535;65535;3;7;3;7*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_rectangles_0_16",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          16
+        ]
+      },
+      {
+        "write": "abcdefghijklmnop\r\nABCDEFGHIJKLMNOP\r\n0123456789abcdef\r\nzyxwvutsrqponmlk"
+      },
+      {
+        "write": "\u001b[2;4r\u001b[?69h\u001b[3;12s"
+      },
+      {
+        "write": "\u001b[*y\u001b[1*y\u001b[2;0;0;0;0;0*y\u001b[3;1;2;3;4;6*y\u001b[4;2;4;8;2;3*y\u001b[5;0;65535;65535;65535;65535*y\u001b[6;0;1;1;65535;65535*y\u001b[65535;65535;3;7;3;7*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_rectangles_0_31",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          31
+        ]
+      },
+      {
+        "write": "abcdefghijklmnop\r\nABCDEFGHIJKLMNOP\r\n0123456789abcdef\r\nzyxwvutsrqponmlk"
+      },
+      {
+        "write": "\u001b[2;4r\u001b[?69h\u001b[3;12s"
+      },
+      {
+        "write": "\u001b[*y\u001b[1*y\u001b[2;0;0;0;0;0*y\u001b[3;1;2;3;4;6*y\u001b[4;2;4;8;2;3*y\u001b[5;0;65535;65535;65535;65535*y\u001b[6;0;1;1;65535;65535*y\u001b[65535;65535;3;7;3;7*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_rectangles_1_0",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": "abcdefghijklmnop\r\nABCDEFGHIJKLMNOP\r\n0123456789abcdef\r\nzyxwvutsrqponmlk"
+      },
+      {
+        "write": "\u001b[2;4r\u001b[?69h\u001b[3;12s\u001b[?6h"
+      },
+      {
+        "write": "\u001b[*y\u001b[1*y\u001b[2;0;0;0;0;0*y\u001b[3;1;2;3;4;6*y\u001b[4;2;4;8;2;3*y\u001b[5;0;65535;65535;65535;65535*y\u001b[6;0;1;1;65535;65535*y\u001b[65535;65535;3;7;3;7*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_rectangles_1_4",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          4
+        ]
+      },
+      {
+        "write": "abcdefghijklmnop\r\nABCDEFGHIJKLMNOP\r\n0123456789abcdef\r\nzyxwvutsrqponmlk"
+      },
+      {
+        "write": "\u001b[2;4r\u001b[?69h\u001b[3;12s\u001b[?6h"
+      },
+      {
+        "write": "\u001b[*y\u001b[1*y\u001b[2;0;0;0;0;0*y\u001b[3;1;2;3;4;6*y\u001b[4;2;4;8;2;3*y\u001b[5;0;65535;65535;65535;65535*y\u001b[6;0;1;1;65535;65535*y\u001b[65535;65535;3;7;3;7*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_rectangles_1_8",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          8
+        ]
+      },
+      {
+        "write": "abcdefghijklmnop\r\nABCDEFGHIJKLMNOP\r\n0123456789abcdef\r\nzyxwvutsrqponmlk"
+      },
+      {
+        "write": "\u001b[2;4r\u001b[?69h\u001b[3;12s\u001b[?6h"
+      },
+      {
+        "write": "\u001b[*y\u001b[1*y\u001b[2;0;0;0;0;0*y\u001b[3;1;2;3;4;6*y\u001b[4;2;4;8;2;3*y\u001b[5;0;65535;65535;65535;65535*y\u001b[6;0;1;1;65535;65535*y\u001b[65535;65535;3;7;3;7*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_rectangles_1_16",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          16
+        ]
+      },
+      {
+        "write": "abcdefghijklmnop\r\nABCDEFGHIJKLMNOP\r\n0123456789abcdef\r\nzyxwvutsrqponmlk"
+      },
+      {
+        "write": "\u001b[2;4r\u001b[?69h\u001b[3;12s\u001b[?6h"
+      },
+      {
+        "write": "\u001b[*y\u001b[1*y\u001b[2;0;0;0;0;0*y\u001b[3;1;2;3;4;6*y\u001b[4;2;4;8;2;3*y\u001b[5;0;65535;65535;65535;65535*y\u001b[6;0;1;1;65535;65535*y\u001b[65535;65535;3;7;3;7*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_rectangles_1_31",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          31
+        ]
+      },
+      {
+        "write": "abcdefghijklmnop\r\nABCDEFGHIJKLMNOP\r\n0123456789abcdef\r\nzyxwvutsrqponmlk"
+      },
+      {
+        "write": "\u001b[2;4r\u001b[?69h\u001b[3;12s\u001b[?6h"
+      },
+      {
+        "write": "\u001b[*y\u001b[1*y\u001b[2;0;0;0;0;0*y\u001b[3;1;2;3;4;6*y\u001b[4;2;4;8;2;3*y\u001b[5;0;65535;65535;65535;65535*y\u001b[6;0;1;1;65535;65535*y\u001b[65535;65535;3;7;3;7*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_policy_and_resets",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "hello\u001b[1#y\u001b[1*y"
+      },
+      {
+        "checksumReporting": [
+          true,
+          4
+        ]
+      },
+      {
+        "write": "\u001b[2*y"
+      },
+      {
+        "write": "\u001b[31#y\u001b[3*y"
+      },
+      {
+        "write": "\u001b[!p\u001b[4*y"
+      },
+      {
+        "checksumReporting": [
+          false,
+          1
+        ]
+      },
+      {
+        "write": "\u001b[0#y\u001b[5*y"
+      },
+      {
+        "checksumReporting": [
+          true,
+          1
+        ]
+      },
+      {
+        "write": "\u001b[6*y"
+      },
+      {
+        "write": "\u001bcA\u001b[7*y"
+      },
+      {
+        "write": "\u001b[0#y\u001b[8*y"
+      },
+      {
+        "write": "\u001b[!p\u001b[9*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_malformed_and_flags",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": "hello"
+      },
+      {
+        "write": "\u001b[1;2#y\u001b[1*y"
+      },
+      {
+        "write": "\u001b[#y\u001b[2*y"
+      },
+      {
+        "write": "\u001b[65535#y\u001b[3*y"
+      },
+      {
+        "write": "\u001b[32#y\u001b[4*y"
+      },
+      {
+        "write": "\u001b[1;0;1;1;1;5;6*y\u001b[?1*y\u001b[1:y\u001b[1;2#y\u001b[1:2#y\u001b[1:2*y\u001b[5*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_screens_and_scrollback",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          23
+        ]
+      },
+      {
+        "write": "old1\r\nold2\r\nold3\r\nold4\r\nold5\r\nnow\u001b[1*y"
+      },
+      {
+        "write": "\u001b[?1049hNEW\u001b[2*y"
+      },
+      {
+        "write": "\u001b[?1049l\u001b[3*y"
+      },
+      {
+        "resize": [
+          8,
+          4
+        ]
+      },
+      {
+        "write": "\u001b[4*y"
+      },
+      {
+        "write": "\u001b[3J\u001b[5*y"
+      }
+    ]
+  },
+  {
+    "name": "checksum_wide_boundaries",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          4
+        ]
+      },
+      {
+        "write": "123456789012345\u754c\r\ne\u0301\ud834\udd65"
+      },
+      {
+        "write": "\u001b[1*y\u001b[2;0;2;1;2;1*y\u001b[3;0;2;2;2;2*y"
+      },
+      {
+        "write": "\u001b[20#y\u001b[4*y\u001b[5;0;2;2;2;2*y"
+      }
+    ]
+  },
+  {
+    "name": "status_display_selection",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "A\u001b[1$}hidden\u001b[3;4H\u001b[31msecret\u001b[6n"
+      },
+      {
+        "write": "\u001b[0$}B"
+      },
+      {
+        "write": "\u001b[1$}ignore\u001b[!pC"
+      },
+      {
+        "write": "\u001b[1$}ignore\u001bcD"
+      }
+    ]
+  },
+  {
+    "name": "status_display_invalid_forms",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[1$}hide\u001b[$}hide\u001b[2$}hide\u001b[0;0$}hide\u001b[?0$}hide"
+      },
+      {
+        "write": "\u001b[0$}A\u001b[2$}B\u001b[$}C"
+      }
+    ]
+  },
+  {
+    "name": "status_display_controls",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "hello\u001b[1$}x\r\n\t\u001b[2K\u001b[6n\u001b[2b"
+      },
+      {
+        "write": "\u001b[?1049hsecret\u001b[0$}ALT"
+      },
+      {
+        "write": "\u001b[?1049lMAIN"
+      }
+    ]
+  },
+  {
+    "name": "checksum_blink_attributes",
+    "columns": 16,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "checksumReporting": [
+          true,
+          0
+        ]
+      },
+      {
+        "write": "\u001b[1;4:3;5mA\u001bP$qm\u001b\\\u001b[1*y"
+      },
+      {
+        "write": "\u001b[25mB\u001b[6mC\u001bP$qm\u001b\\\u001b[2*y"
+      },
+      {
+        "write": "\u001b7\u001b[25mD\u001b8E\u001b[3*y"
+      },
+      {
+        "write": "\u001b[!pF\u001b[4*y"
+      }
+    ]
   }
 ]

@@ -345,6 +345,25 @@ and unsupported private forms. Four additional original-libghostty scenarios cov
 alternate screens, pending wrap, origin/margins, unknown host geometry, resizing and malformed
 queries (298 scenarios / 1829 states total). All 571 JVM tests and fresh Release JS tests pass.
 
+DECRQCRA/XTCHECKSUM now implement all 32 combinations of the original checksum flags,
+including DEC character mapping, full Unicode codepoints, combining suffixes, wide spacers,
+video attributes, blank trimming, undrawn cells, signed sums and origin-relative clipping.
+The host must explicitly enable screen readback with `configureChecksumReporting`; defaults
+match standalone Ghostty and libghostty (disabled, DEC-compatible variant). RIS/DECSTR restore
+the host's configured variant without changing the readback policy. Invalid host configuration
+is rejected before changing either setting. DECSASD discards printable status-line output
+while controls continue to execute; both resets select main output. Blink attributes are now
+retained for checksums, save/restore and DECRQSS, without changing the existing text renderer.
+
+Fifty original-library scenarios add 212 intermediate states, including every flag combination,
+policy transitions, malformed requests, screen/history changes and reset behavior (348 scenarios /
+2041 states total). All C corpora and manifests reproduce byte-for-byte. The C helper's optional
+checksum API branch still permits compilation against the earlier reference headers for release
+comparisons. Transport tests cover checksum/size replies after a maximum palette reply and
+exact pause/resume through bounded input queues; the existing reply reserve remains sufficient.
+Validation passes all 622 JVM tests, fresh Release JS tests, all 348 Native oracle scenarios and
+6 additional Native checksum-policy/backpressure tests.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

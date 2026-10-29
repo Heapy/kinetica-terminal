@@ -361,6 +361,21 @@ DECSCA and ISO SPA/EPA protect cells; selective ED/EL and ordinary erasure follo
 Ghostty's distinction between DEC and ISO protection. Protection survives save/restore
 and reflow. Named differences from Alacritty are recorded in the upstream test adapter.
 
+DECSTR (`CSI ! p`) resets the active pen, margins, saved cursor, selected modes, cursor
+appearance, palette and checksum variant while retaining text, history, cursor position,
+tab stops, dynamic colors, hyperlinks, synchronized output and graphics. DECSASD (`CSI Ps $ }`)
+accepts main/status-line selection; like Ghostty, printable output directed to the unimplemented
+status line is discarded, while controls still execute. RIS and DECSTR select the main display.
+
+DECRQCRA (`CSI Pi;Pg;Pt;Pl;Pb;Pr * y`) and XTCHECKSUM (`CSI Ps # y`) require explicit host
+opt-in: `session.configureChecksumReporting(true, extension = 0)`. They are disabled by default,
+as in Ghostty, because per-cell queries can read other programs' screen output. `extension`
+sets both the current variant and the value restored by RIS/DECSTR; accepted bits are 1
+(positive sum), 2 (omit attributes), 4 (keep blanks), 8 (include undrawn cells), and 16 (full
+codepoints). Combinations 0–31 are valid; for example, 23 matches xterm's
+`no-negate,no-attributes,no-trim,full`. Terminal commands cannot enable this host policy.
+SGR blink state is retained for checksums and DECRQSS; text blinking remains unrendered.
+
 Device identification supports DA1/DA2/DA3 (`CSI c`, `CSI > c`, `CSI = c`), legacy
 DECID (`ESC Z`), and XTVERSION (`CSI > q`). The conservative profile reports
 `CSI ? 1;2 c` (VT100 with advanced video), `CSI > 0;0;0 c`, a zero unit ID, and
