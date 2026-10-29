@@ -12,6 +12,8 @@ class TerminalGraphicsAnimationTest {
             var animation: TerminalGraphicsAnimation? = null
             var placed = false
             var previous: Any? = null
+            var idleMutation: Any? = null
+            var idlePlaced = false
             for ((step, value) in case.getValue("events").jsonArray.withIndex()) {
                 val event = value.jsonObject
                 event["text"]?.jsonPrimitive?.content?.let { text ->
@@ -37,7 +39,16 @@ class TerminalGraphicsAnimationTest {
                 }
                 val current = assertNotNull(animation)
                 val delay = event["tick"]?.jsonPrimitive?.long?.let {
-                    if (mode == 0) current.tick(it, placed) else session.advanceGraphicsAnimations(it)
+                    if (mode == 0) {
+                        // The original oracle ticks storage, which skips an unchanged idle image.
+                        // Reproduce that scheduling gate around the isolated animation core.
+                        if (idleMutation === current.mutation && idlePlaced == placed) null else {
+                            val next = current.tick(it, placed)
+                            idleMutation = if (next == null) current.mutation else null
+                            idlePlaced = placed
+                            next
+                        }
+                    } else session.advanceGraphicsAnimations(it)
                 }
                 val actual = buildJsonObject {
                     put("pixels", buildJsonArray { for (n in 1..current.frameCount) add(current.frame(n.toLong())!!.data.toHexString()) })
@@ -97,6 +108,30 @@ class TerminalGraphicsAnimationTest {
         assertEquals(5L,animation.tick(Long.MAX_VALUE-5,true))
         assertNull(animation.tick(Long.MAX_VALUE,true))
         assertFailsWith<IllegalArgumentException> { animation.tick(-1,true) }
+    }
+
+    @Test fun parkedAnimationWakesOnStorageAndPlacementChanges() {
+        val session = TerminalSession(10,6).also { it.setGraphicsStorageLimit(100) }
+        fun command(header: String) = session.write("\u001b_G$header\u001b\\")
+        command("a=T,i=1,q=2,f=32,s=1,v=1,C=1;AQID/w==")
+        command("a=f,i=1,q=2,f=32,s=1,v=1,z=10;BAUG/w==")
+        command("a=a,i=1,r=1,z=5,s=2")
+        val animation = assertNotNull(session.graphicsState.storage.image(1)).animation
+        assertEquals(5L,session.advanceGraphicsAnimations(0))
+        assertEquals(10L,session.advanceGraphicsAnimations(5))
+        assertNull(session.advanceGraphicsAnimations(15))
+        assertNull(session.advanceGraphicsAnimations(1),"An idle tick must not re-anchor a parked frame")
+        assertEquals(5L,animation.shownAt)
+        command("a=t,i=2,q=2,f=32,s=1,v=1;BwgJ/w==")
+        assertEquals(10L,session.advanceGraphicsAnimations(1),"Changes to another image wake the storage clock")
+        command("a=d,d=i,i=1,q=2")
+        assertNull(session.advanceGraphicsAnimations(20))
+        command("a=p,i=1,q=2,C=1")
+        assertEquals(10L,session.advanceGraphicsAnimations(0),"A new placement wakes an unplaced image")
+        assertNull(session.advanceGraphicsAnimations(10))
+        command("a=f,i=1,q=2,f=32,s=1,v=1,z=20;CgsM/w==")
+        assertEquals(20L,session.advanceGraphicsAnimations(10),"A new frame resumes loading-state playback")
+        assertEquals(2,animation.currentIndex)
     }
 
     @Test fun renderSnapshotsKeepOldPixelsAndCacheKeysAcrossFrameSelectionAndEdits() {

@@ -308,8 +308,13 @@ The implementation follows the release's blank-pin/saved-cursor reflow, APC canc
 history placement cleanup, RIS palette reset, empty OSC 22, widening-grapheme spacer attributes,
 origin-relative movement, left-margin CUB/BS and prompt-aware ED2 behavior. Validation passes
 547 JVM tests, fresh Release JS tests, 279 Native oracle tests, 103 selected Native graphics/
-GPU/presentation/pointer tests and both browser verifiers. The separate Zig animation and
-placeholder corpora retain their old pin until migrated. New 1.4 protocols, animation
+GPU/presentation/pointer tests and both browser verifiers.
+
+The Zig animation and placeholder corpora now also use 1.4: all 400 animation scenarios and
+390 placeholder scenarios remain covered, with original RenderState visibility checks.
+The storage clock matches the release's idle-generation gate and resumes after image or
+placement mutations. This increment passes 548 JVM tests, fresh Release JS tests, 74 Native
+graphics/animation tests and both Canvas/WebGL graphics verifiers. New 1.4 protocols, animation
 transmission-identity changes and remaining work are tracked in the
 [1.4 migration checklist](ghostty-1.4-migration.md); this checkpoint does not claim full 1.4 parity.
 

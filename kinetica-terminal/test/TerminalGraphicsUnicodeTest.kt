@@ -32,6 +32,7 @@ class TerminalGraphicsUnicodeTest {
                                     else session.graphicsState.placements.filter { it.key.image == run.image && it.virtual }
                                         .minWithOrNull(compareBy({ !it.key.external },{ it.key.id }))
                                 val geometry = if (image != null && target != null) run.geometry(image.pixels,target.geometry,session.cellSize) else null
+                                put("visible", geometry != null && geometry.pixels.width > 0 && geometry.pixels.height > 0)
                                 put("err", when {
                                     image == null -> JsonPrimitive("NoImage")
                                     target == null -> JsonPrimitive("PlacementMissingPlacement")

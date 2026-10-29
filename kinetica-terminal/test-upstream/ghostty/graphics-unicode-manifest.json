@@ -1,11 +1,16 @@
 {
-  "commit": "4da7523faba68ccb4042ea20585817098a51c015",
-  "zig": "0.16.0",
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
   "cases": 390,
   "snapshots": 403,
-  "sourceSha256": "8e1bb778abad3cf7ae09434e4ed64748c1dbc69a7671c713e4e3ae5cf0590ed7",
-  "helperSha256": "6fdbf56fb7e900ad42f6eebbce9ccb4737d5b9a226b146692d06ece66b502509",
-  "generatorSha256": "5f05616566a1f490488815faad25aa2a5b8561eb6e41e95f336ee7c3725dc70a",
-  "fixtureSha256": "345915463cf06177cdeb5e3145126d30cce346bbf39cb69811f2326c1acd528d",
-  "diacriticsSha256": "de011bff4b6bce10cb53705072a4939049b3e8a1fc5e7ad43892f745916c9162"
+  "sourceSha256": "360b03cdd44dda018f2869b3cfbfe61567b258a3e604d04823ff7ad7e0770149",
+  "sources": {
+    "src/terminal/render.zig": "813c385b4282728d26c37f2a3ddf3c988909f0b437f5dab3ba4b3a0542d4d9c0",
+    "src/terminal/kitty/graphics_storage.zig": "1c1f3b5cfdbdc26e65fbd42576cc85b18bede7919ec2004e264732cf11afdeb9",
+    "src/terminal/kitty/graphics_render.zig": "9f639fd8e4015601b10125af56086c979f26c7e7324f4028b948cf3d1c9fdfe0"
+  },
+  "helperSha256": "3af8c2fe069417ce1bf0c5f44cbe80aa94c952628ea8cbdc6ff98a80504b4df9",
+  "generatorSha256": "b3e94d1220ab464a51cad6fdd184e900df6d521addf9938d85977c1c72028eda",
+  "fixtureSha256": "f553f146638a91c0f42fcf55c1bf2739504dfbebbf57cccfb52a63e8fbae59b6",
+  "diacriticsSha256": "b979d00b96ea2a2c7798bca496249ff6e1a726209eaacdac75349d1cf571fd39"
 }

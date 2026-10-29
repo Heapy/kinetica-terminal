@@ -11,7 +11,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
-SHA = "4da7523faba68ccb4042ea20585817098a51c015"
+SHA = "83fb95624b0439ee660c2679b43b38c8b63769cd"
 
 def cases():
     result=[]
@@ -69,17 +69,17 @@ def main():
     build=ROOT/'build/terminal-animation-oracle'; build.mkdir(parents=True,exist_ok=True)
     corpus=cases(); (build/'cases.json').write_text(json.dumps(corpus,ensure_ascii=True))
     helper=ROOT/'scripts/terminal-ghostty-animation-oracle.zig'; shutil.copyfile(helper,build/'main.zig')
-    (build/'build.zig.zon').write_text('.{ .name = .zig_vt_stream, .version = "0.0.0", .fingerprint = 0x34c1f71303690b3f, .minimum_zig_version = "0.16.0", .dependencies = .{ .ghostty = .{ .path = '+json.dumps(os.path.relpath(upstream,build))+' } }, .paths = .{""} }')
+    (build/'build.zig.zon').write_text('.{ .name = .zig_vt_stream, .version = "0.0.0", .fingerprint = 0x34c1f71303690b3f, .minimum_zig_version = "0.17.0", .dependencies = .{ .ghostty = .{ .path = '+json.dumps(os.path.relpath(upstream,build))+' } }, .paths = .{""} }')
     (build/'build.zig').write_text('''const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const dep = b.dependency("ghostty", .{ .target = target, .optimize = .ReleaseSafe, .simd = false, .@"emit-lib-vt" = true, .@"emit-xcframework" = false });
-    const root = b.createModule(.{ .root_source_file = b.path("main.zig"), .target = target, .optimize = .ReleaseSafe, .link_libc = true });
+    const dep = b.dependency("ghostty", .{ .target = target, .optimize = .safe, .simd = false, .@"emit-lib-vt" = true, .@"emit-xcframework" = false });
+    const root = b.createModule(.{ .root_source_file = b.path("main.zig"), .target = target, .optimize = .safe, .link_libc = true });
     root.addImport("ghostty-vt", dep.module("ghostty-vt"));
     b.installArtifact(b.addExecutable(.{ .name = "animation-oracle", .root_module = root }));
 }
 ''')
-    env=os.environ | {'ZIG_GLOBAL_CACHE_DIR':os.environ.get('ZIG_GLOBAL_CACHE_DIR',str(ROOT/'build/upstream/zig-cache'))}
+    env=os.environ | {'ZIG_GLOBAL_CACHE_DIR':os.environ.get('ZIG_GLOBAL_CACHE_DIR',str(ROOT/'build/upstream/zig-cache-0.17'))}
     subprocess.run([str(zig),'build'],cwd=build,check=True,env=env)
     output=subprocess.run([str(build/'zig-out/bin/animation-oracle')],capture_output=True,text=True)
     if output.returncode: print(output.stderr,file=sys.stderr)

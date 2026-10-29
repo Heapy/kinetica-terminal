@@ -39,7 +39,7 @@ pub fn main(init: std.process.Init) !void {
                 try gaps.append(alloc,if (animation) |a| a.gapAt(@intCast(i)) else 0);
             }
             try snapshots.append(alloc,.{
-                .pixels = pixels.items, .gaps = gaps.items, .format = @intFromEnum(image.format), .initialized = animation != null,
+                .pixels = pixels.items, .gaps = gaps.items, .format = @backingInt(image.format), .initialized = animation != null,
                 .current = if (animation) |a| a.current_index else 0, .state = if (animation) |a| @tagName(a.state) else "stopped",
                 .loops = if (animation) |a| a.current_loop else 0, .maxLoops = if (animation) |a| a.max_loops else 0,
                 .shownAt = if (animation) |a| a.frame_shown_at_ms else null, .bytes = image.storageSize(),

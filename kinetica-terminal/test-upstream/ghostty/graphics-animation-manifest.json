@@ -1,16 +1,16 @@
 {
-  "commit": "4da7523faba68ccb4042ea20585817098a51c015",
-  "zig": "0.16.0",
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
   "cases": 400,
   "snapshots": 2030,
-  "helperSha256": "36180a26bddc989eff8deef577fc0c7a14876517062eb4b073e02dc5f437a87d",
-  "generatorSha256": "007f08260d316743aaf0ce511e7bb3a8971cf9ecf48387fca604f4b51d04581b",
-  "fixtureSha256": "3aab850424eb5dd910c82f7ff889ae0b3e7c7d9dffcd16f831f4c6f136df8aec",
+  "helperSha256": "f4eb24f5f77bce01c5e9142bf7a0f261000bc542b3590f05f1b4ac4d806e55e0",
+  "generatorSha256": "f63dddfefc7e10dd018c9a75171cccf5bc17552bd1599b56ed8adbfd28224f99",
+  "fixtureSha256": "374e971187b66a4f814ba2a6201cb79f250fd997621f0d81e4c4ceac93f1ba5c",
   "sources": {
-    "src/terminal/kitty/graphics_animation.zig": "d798431b96e977009cc46b5d43b67b7f623a7b1ec62bf8bfe00c80ac4304cecf",
-    "src/terminal/kitty/graphics_pixel.zig": "14fe775bcd8e7c313d24d69564eb3cfbfce74bec3ee11a8c7d52915802b20294",
-    "src/terminal/kitty/graphics_exec.zig": "617587c5edd81699029ae726436abf01a2852ed06598fea8ad4456a1bb99e8e2",
-    "src/terminal/kitty/graphics_storage.zig": "a2c29c02531f00b939485a9e45eeb8198d55648f116282c31e37bed84677328d",
+    "src/terminal/kitty/graphics_animation.zig": "fbbf8491612beaa370a3a2612df00d7e8942f9fbd3cbe17cf35dda8927ef18d6",
+    "src/terminal/kitty/graphics_pixel.zig": "7cf451615c3a90629f1d1e1d41d258c510190292bfacfdd9c4ce23cb96ca051d",
+    "src/terminal/kitty/graphics_exec.zig": "aade2763619e40f5783584d4899b1505f8e73f79347a74691622ba5c1972446a",
+    "src/terminal/kitty/graphics_storage.zig": "1c1f3b5cfdbdc26e65fbd42576cc85b18bede7919ec2004e264732cf11afdeb9",
     "pkg/wuffs/src/swizzle.zig": "a70d5a0b43a733e60d60a0ead5236ac6981c2dfd0103072dfdef0df21c91365b"
   }
 }

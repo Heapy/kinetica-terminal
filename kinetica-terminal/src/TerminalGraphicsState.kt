@@ -121,6 +121,7 @@ internal class TerminalGraphicsState(
         entries.remove(key)?.let { release(it) }
         entries[key] = TerminalGraphicsPlacement(key, image, geometry, anchor, parent, command.signed('H'), command.signed('V'))
         image.placementCount++
+        storage.placementChanged()
         parent?.let { children.getOrPut(it) { mutableSetOf() }.add(key) }
         mutated()
         if (anchor != null && command.moveCursor) terminal.advanceGraphicsCursor(geometry.resolve(image.pixels.width, image.pixels.height, terminal.cellSize).grid)
@@ -145,6 +146,7 @@ internal class TerminalGraphicsState(
     private fun release(placement: TerminalGraphicsPlacement) {
         placement.anchor?.dispose()
         placement.image.placementCount--
+        storage.placementChanged()
         check(placement.image.placementCount >= 0)
         placement.parent?.let { key -> children[key]?.let { it.remove(placement.key); if (it.isEmpty()) children.remove(key) } }
     }

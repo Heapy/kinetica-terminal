@@ -1,10 +1,9 @@
 # Ghostty 1.4 reference migration
 
 The compatibility target now includes Ghostty 1.4.0, released on October 27, 2026.
-The main reference and all C-generated fixtures now use the release. The separate Zig animation
-and Unicode-placeholder corpora still use `4da7523faba68ccb4042ea20585817098a51c015`
-(September 30), explicitly recorded in their manifests and `retainedOracleReferences`.
-Do not relabel those retained fixtures as 1.4 results.
+The main reference, all C-generated fixtures, and both Zig animation and Unicode-placeholder
+corpora now use the release. The previous September 30 checkout remains available for
+historical comparisons; no oracle corpus retains its old pin.
 
 The official annotated tag `v1.4.0` resolves to
 `83fb95624b0439ee660c2679b43b38c8b63769cd`. A separate checkout at
@@ -19,8 +18,8 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
 ## Reference and verification
 
 - [x] Build the original 1.4 libghostty-vt with Zig 0.17 and verify C oracle API compatibility.
-- [ ] Update Zig oracle helpers for the new language/library and upstream interfaces.
-- [ ] Regenerate all affected fixtures and provenance through `scripts/`, review behavioral
+- [x] Update Zig oracle helpers for the new language/library and upstream interfaces.
+- [x] Regenerate all affected fixtures and provenance through `scripts/`, review behavioral
       differences, and preserve the existing scenario coverage.
 - [ ] Add regressions for newly supported behavior; passing the old corpus alone is insufficient.
 - [x] Update the primary C-reference pin with regenerated evidence and corresponding implementation.
@@ -64,7 +63,21 @@ colors, reset empty OSC 22 to text, preserve the current pen on a widening graph
 avoid adding origin margins twice, stop CUB/BS at the left margin, and find shell prompts above
 blank rows for ED2. Validation passes 547 JVM tests, fresh Release JS tests, all 279 Native C
 oracle tests, 103 additional Native graphics/GPU/presentation/pointer tests, and both browser
-verifiers. The new protocols and Zig helper migration below remain open.
+verifiers. The new protocols below remain open.
+
+The Zig oracles now build with Zig 0.17 against the same unmodified release. Animation retains
+400 cases / 2030 checkpoints, including all 65,536 alpha pairs. Five loading-state cases expose
+the release's storage-wide idle-generation gate: once playback parks, repeated ticks (including
+a restarted clock) leave it untouched until image or placement state changes. Storage now
+implements that gate; a focused regression also checks wakeups from another image, replacement
+placements and arriving frames.
+
+The placeholder oracle reads the original `RenderState` scanner's raw runs and resolved
+geometry, including hidden runs and their error diagnostics. It retains all 390 cases / 403
+checkpoints and 297 diacritics, adds the original render state's visibility flag, and records
+render/storage source hashes. Existing run and geometry values are unchanged. Both generators
+reproduce fixtures and provenance byte-for-byte. Validation passes all 548 JVM tests, fresh
+Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graphics verifiers.
 
 ## Confirmed terminal behavior to implement or reconcile
 
@@ -93,7 +106,7 @@ verifiers. The new protocols and Zig helper migration below remain open.
       release's pending image/frame state and continuation behavior against the old corpus.
 - [x] Reconcile erased-history placement cleanup and cancelled/aborted APC commands, including
       C1 abort/recovery, using whole-stream and bytewise oracle regressions.
-- [ ] Adapt placeholder/render-state oracles to the release's moved placement resolution.
+- [x] Adapt placeholder/render-state oracles to the release's moved placement resolution.
 - [ ] Native file, temporary-file and shared-memory readers with explicit host policy,
       offset/size handling, bounded allocations, safe file validation and deterministic cleanup.
       The common `attachGraphicsMedia` API is implemented; injected-reader tests do not prove

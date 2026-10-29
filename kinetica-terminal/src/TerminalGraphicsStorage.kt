@@ -81,6 +81,7 @@ internal class TerminalGraphicsStorage(
         private set
     var generation: Any = Any()
         private set
+    private var animationIdleGeneration: Any? = null
     val enabled: Boolean get() = limit != 0
     val imageCount: Int get() = images.size
     val loadingBytes: Int get() = loading?.data?.size ?: 0
@@ -88,6 +89,7 @@ internal class TerminalGraphicsStorage(
     val hasPendingTransfer: Boolean get() = loading != null
 
     fun image(id: Long): TerminalGraphicsStoredImage? = images[id]
+    fun placementChanged() { generation = Any() }
     fun imageByNumber(number: Long): TerminalGraphicsStoredImage? = images.values.filter { it.number == number }.maxByOrNull { it.age }
 
     fun setLimit(value: Int) {
@@ -332,11 +334,13 @@ internal class TerminalGraphicsStorage(
 
     fun animationTick(now: Long): Long? {
         require(now >= 0)
+        if (animationIdleGeneration === generation) return null
         var delay: Long? = null
         for (image in images.values) {
             val next = mutate(image) { image.animation.tick(now, image.placementCount > 0) }
             if (next != null) delay = delay?.let { minOf(it, next) } ?: next
         }
+        animationIdleGeneration = if (delay == null) generation else null
         return delay
     }
 }
