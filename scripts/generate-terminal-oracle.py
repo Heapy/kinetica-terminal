@@ -148,6 +148,8 @@ def main():
                 commands.append("R " + " ".join(str(x) for x in event["resize"] + event.get("cellSize", [8, 16])))
             elif "colorScheme" in event:
                 commands.append(f"T {event['colorScheme']}")
+            elif "titleReporting" in event:
+                commands.append(f"Y {int(event['titleReporting'])}")
             elif "checksumReporting" in event:
                 enabled, extension = event["checksumReporting"]
                 commands.append(f"Q {int(enabled)} {extension}")
@@ -170,7 +172,10 @@ def main():
             else:
                 raise ValueError(event)
             commands.append("S")
-        result = subprocess.run([str(executable)], input="\n".join(commands) + "\n", text=True, capture_output=True, check=True)
+        # The original title handler can truncate inside UTF-8. Display titles use replacement
+        # text; reply bytes are independently preserved as hex in each original snapshot.
+        result = subprocess.run([str(executable)], input="\n".join(commands) + "\n", text=True,
+                                encoding="utf-8", errors="replace", capture_output=True, check=True)
         snapshots = [json.loads(line) for line in result.stdout.splitlines()]
         assert len(snapshots) == len(case["events"])
         payload = json.dumps(snapshots, ensure_ascii=True, separators=(",", ":"))

@@ -485,6 +485,15 @@ and acknowledge `TerminalInputData.ProtocolReply` delivery. Untracked `onInput` 
 retain synchronous operation. Reset/transport closure cancels unsent blocks. Run
 `node scripts/verify-terminal-terminfo.mjs` to check the browser integration.
 
+`CSI 21 t` reports the current terminal title as `OSC l … ST` only after the host calls
+`configureTitleReporting(true)`. Reporting defaults to disabled, like Ghostty: it returns
+application-controlled title bytes to the foreground program's input. The policy survives
+RIS/DECSTR and screen switches; RIS clears the title itself. No window geometry is required.
+OSC 0/2 title capture accepts at most 2047 bytes and rejects invalid UTF-8 before changing
+state. The libghostty handler then retains the first 1024 bytes, even if the cut splits a
+character. `session.title` uses replacement text for display, while reports preserve those
+exact bytes. `node scripts/verify-terminal-title.mjs` checks actual browser transport replies.
+
 Color commands accept X11 names, `rgb:`/`rgbi:`, and 3/6/9/12-digit `#` forms, plus bare
 3/6-digit hex. Queries preserve BEL versus ST and report 16-bit channels. Chained requests,
 partial malformed lists, and resets follow the pinned Ghostty behavior. Colors are shared by

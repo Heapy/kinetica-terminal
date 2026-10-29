@@ -57,6 +57,8 @@ internal fun checkGhostty(fixture: GhosttyFixture) {
             } else if ("colorScheme" in event) {
                 session.configureColorScheme(if (event.getValue("colorScheme").jsonPrimitive.int == 1)
                     TerminalColorScheme.DARK else TerminalColorScheme.LIGHT)
+            } else if ("titleReporting" in event) {
+                session.configureTitleReporting(event.getValue("titleReporting").jsonPrimitive.boolean)
             } else if ("checksumReporting" in event) {
                 val config = event.getValue("checksumReporting").jsonArray
                 session.configureChecksumReporting(config[0].jsonPrimitive.boolean,config[1].jsonPrimitive.int)

@@ -11,6 +11,7 @@
  * O (include effective renderer default colors);
  * Q checksum-report-enabled default-extension (explicit host configuration);
  * X (record window resize requests without changing the host geometry);
+ * Y title-report-enabled (explicit host configuration);
  * S (snapshot); U (width ranges).
  * stdout: one JSON snapshot per S. Every API failure exits nonzero.
  */
@@ -674,6 +675,12 @@ int main(void) {
         }
         else if (line[0] == 'H') semantic_enabled = true;
 #ifdef KINETICA_GHOSTTY_WINDOW_ORACLE
+        else if (line[0] == 'Y') {
+            unsigned enabled;
+            if (sscanf(line + 1, "%u", &enabled) != 1 || enabled > 1) return 2;
+            bool report = enabled != 0;
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_TITLE_REPORT, &report));
+        }
         else if (line[0] == 'X') {
             window_resize_enabled = true;
             check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_RESIZE_WINDOW, (void *)resize_window));

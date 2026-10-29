@@ -786,6 +786,19 @@ six native size/visibility/effect regressions, nine UI/application tests, and bo
 dedicated window-resize and general browser verifiers. No installed application or user
 shell is replaced; native window and PTY checks use isolated test-owned resources.
 
+Title readback (`CSI 21 t`) now follows libghostty's explicit host option through
+`configureTitleReporting`, disabled by default and preserved across reset. OSC 0/2 titles
+are captured as at most 2047 raw bytes and validated as UTF-8 before changing state; the
+handler retains at most 1024 bytes. A cut inside a character is repaired for display but
+preserved exactly in protocol replies. This also fixes the previous acceptance of invalid
+UTF-8 titles and larger title payloads. The main oracle adds 44 cases / 152 checkpoints,
+for 843 cases / 4354 checkpoints, including malformed requests, policy changes, lifecycle,
+capture limits, invalid sequences, C0 filtering and multibyte cuts. Snapshot display titles
+use documented UTF-8 replacement; original reply hex is never reconstructed from that text.
+Validation passes 1201 JVM tests, fresh Release JS tests, 58 Native title/parser checks and
+the browser transport verifier. All affected text/graphics fixtures and manifests reproduce
+byte-for-byte. Title stacks (CSI 22/23 t) remain unimplemented in the original handlers too.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than

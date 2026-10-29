@@ -38,10 +38,13 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
     private var clipboardBytes = 0
     private var capabilityCapture = false
     private var capabilityBytes = 0
+    private var titleCapture = false
+    private var titleBytes = ByteArray(0)
+    private var titleLength = 0
 
-    // UTF-8 is decoded for printable text and supported string payloads. Escape/CSI/DCS
-    // headers and APC/SOS/PM follow the byte transition table instead.
-    val rawByteState: Boolean get() = state != GROUND && (state != STRING || stringKind == IGNORED || stringKind == APC)
+    // UTF-8 is decoded for printable text and most supported string payloads. Escape/CSI/DCS
+    // headers and APC/SOS/PM follow byte transitions; OSC titles keep bytes for strict validation.
+    val rawByteState: Boolean get() = state != GROUND && (state != STRING || stringKind == IGNORED || stringKind == APC || titleCapture)
 
     fun reset() {
         if (state == STRING && stringKind == APC) handler.apcEnd(-1)
@@ -61,7 +64,7 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
             state = ESCAPE; clear(); return
         }
         if (state == DCS_IGNORE && code >= 32) return
-        if (rawByteState && code in 0x80..0x9f) {
+        if (rawByteState && !titleCapture && code in 0x80..0x9f) {
             if (state == STRING && stringKind == APC) {
                 // All three introducers share one VT state. Re-entering that same
                 // state does not unhook/restart it in Ghostty's transition table.
@@ -86,7 +89,13 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
             if (stringKind == OSC && code == 7) { finishString(code); state = GROUND }
             else if (stringKind != IGNORED && (code >= 32 || stringKind == DCS)) {
                 if (!overflow) {
-                    if (clipboardCapture) {
+                    if (titleCapture) {
+                        // OSC title capture reserves its final byte for NUL. Validate the
+                        // original UTF-8 at termination, before the handler truncates it.
+                        if (titleLength == 2047) overflow = true
+                        else titleBytes[titleLength++] = code.toByte()
+                        return
+                    } else if (clipboardCapture) {
                         clipboardBytes += when { code < 0x80 -> 1; code < 0x800 -> 2; code < 0x10000 -> 3; else -> 4 }
                         // Ghostty's allocating capture includes its trailing NUL, not the OSC number.
                         if (clipboardBytes >= clipboardLimit) overflow = true
@@ -98,6 +107,11 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
                         // DCS preserves NUL bytes too; codePointString uses empty text for
                         // blank terminal cells, which must not turn a malformed key into Co.
                         if (code == 0) payload.append('\u0000') else payload.append(codePointString(code))
+                        if (stringKind == OSC && payload.length == 2 &&
+                            (payload.toString() == "0;" || payload.toString() == "2;")) {
+                            titleCapture = true
+                            if (titleBytes.isEmpty()) titleBytes = ByteArray(2047)
+                        }
                         if (stringKind == OSC &&
                             (payload.length == 3 && payload.toString() == "52;" ||
                                 payload.length == 5 && payload.toString() == "5522;")) clipboardCapture = true
@@ -200,6 +214,7 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
         if (clipboardCapture || capabilityCapture) payload = StringBuilder() else payload.clear()
         clipboardCapture = false; clipboardBytes = 0
         capabilityCapture = false; capabilityBytes = 0
+        titleCapture = false; titleLength = 0
     }
     private fun beginString(kind: Int) {
         state = STRING; stringKind = kind; clearPayload(); overflow = false
@@ -207,7 +222,12 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
     }
     private fun finishString(terminator: Int) {
         if (stringKind == APC) handler.apcEnd(terminator)
-        else if (!overflow && stringKind != IGNORED) handler.string(stringKind, payload.toString(), terminator)
+        else if (!overflow && stringKind != IGNORED) {
+            val text = if (titleCapture) try {
+                payload.toString() + titleBytes.decodeToString(0, titleLength, throwOnInvalidSequence = true)
+            } catch (_: CharacterCodingException) { null } else payload.toString()
+            if (text != null) handler.string(stringKind, text, terminator)
+        }
         clearPayload()
     }
 

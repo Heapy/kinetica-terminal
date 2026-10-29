@@ -85,6 +85,7 @@ fun main() {
     // Small deterministic controls used by the browser integration check.
     val api: dynamic = js("({})")
     api.windowResizeEnabled = { enabled: Boolean -> windowResizeAllowed = enabled }
+    api.titleReporting = { enabled: Boolean -> session.configureTitleReporting(enabled) }
     val resizeCheckbox = document.querySelector("#window-resize")?.asDynamic()
     resizeCheckbox?.onchange = { windowResizeAllowed = resizeCheckbox.checked == true }
     api.notificationsEnabled = { enabled: Boolean -> notificationAllowed = enabled }

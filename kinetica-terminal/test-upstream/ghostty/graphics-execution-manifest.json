@@ -6,13 +6,13 @@
   "snapshots": 2823,
   "generatorSha256": "7e734fbcd2883db765b65a4e18327f4b537689b9135766a48d46e374afa234bf",
   "inputGenerators": {
-    "generate-terminal-oracle.py": "b780fe72d3c7d900bed0cdead628899600a072ed5e046a92ebacf7b174a47ba4",
+    "generate-terminal-oracle.py": "122e259177060aedb144b285a0d8e7d8058e77578aae09e080728f8bc86d1d2d",
     "generate-terminal-graphics-fixtures.py": "ad79a4e0887bca03b4b3dfec37176c4c6d2332e4d7088ab9192f2c203498a00b",
     "generate-terminal-graphics-geometry.py": "19a57cea62a4659de577fb574c5f38a694db9781cd4040deeb4154b8532ad030",
     "generate-terminal-graphics-anchors.py": "7326283b72a1305f2c797bfffec7d5116f903fddc74812a8e9a678721c2eb2d7",
     "generate-terminal-image-fixtures.py": "04f165a5c011c22de3e28b339c24e43e09d33b9bde6abf073232ba7c596e3b64"
   },
-  "helperSha256": "cdd2cc826133e13367be54ee9e4ec4690893db7f54c62998deac48ee1402e879",
+  "helperSha256": "f1a9f1b1047a61831f131d2d7786bc1d9606148d89a0f28aaa865040d3f26068",
   "graphicsHelperSha256": "e3968652281fc723a4d3f2b70ff79276a844532497da6625ce48f19ac2b8a497",
   "librarySha256": "07c717c64ce04854d638f2b30e89d024238222d2fb311577e57e6a58c16b6311",
   "fixturesSha256": "60f43fcdcbcd1a30f4c59faba8891e6cf3af6f53c56f93e1de665c7db1fc418b"

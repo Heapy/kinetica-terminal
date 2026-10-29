@@ -40,6 +40,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         private set
     public var title: String = ""
         private set
+    private var titleBytes = ByteArray(0)
+    private var titleReporting = false
     /** Raw OSC 7 URI, or null after clearing/reset. Hosts must validate it before using a local path. */
     public var workingDirectoryUri: String? = null
         private set
@@ -700,6 +702,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         defaultChecksumFlags = extension; checksumFlags = extension
     }
 
+    /** Opt in to CSI 21 t title readback. Disabled by default, like Ghostty: application-set
+     * titles are returned to the foreground program's input. This host policy survives reset. */
+    public fun configureTitleReporting(enabled: Boolean) { titleReporting = enabled }
+
     private fun reportChecksum() {
         if (!checksumReporting) return
         fun coordinate(index: Int, default: Int, margin: Int, max: Int): Int =
@@ -934,7 +940,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         applicationKeypad = false; keypadNumericOverride = true; alternateScroll = true
         mouseTracking = 0; sgrMouse = false; mouseFormat = TerminalMouseFormat.X10
         mouseEpoch++; newlineMode = false; graphemeClustering = defaultGraphemeClustering
-        parser.reset(); utfNeeded = 0; highSurrogate = null; title = ""
+        parser.reset(); utfNeeded = 0; highSurrogate = null; title = ""; titleBytes = ByteArray(0)
         workingDirectoryUri = null
         saved = SavedCursor(); primaryCursor = SavedCursor(); alternateCursor = SavedCursor()
         primarySaved = SavedCursor(); alternateSaved = SavedCursor()
@@ -1469,6 +1475,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 16 -> reportSize(6)
                 18 -> reportSize(8)
                 19 -> reportSize(9)
+                21 -> if (titleReporting) sendProtocolBytes(byteArrayOf(27, 93, 108) + titleBytes + byteArrayOf(27, 92))
             }
         }
         // Tab movement/clearing preserves pending wrap, even after leaving the margin.
@@ -1844,7 +1851,13 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         }
         if (separator < 1) return
         when (command) {
-            "0", "2" -> title = payload
+            "0", "2" -> {
+                // libghostty's handler keeps at most 1024 bytes, even if that splits UTF-8.
+                // Hosts get repaired display text; title reports preserve the original bytes.
+                val bytes = payload.encodeToByteArray()
+                titleBytes = if (bytes.size <= 1024) bytes else bytes.copyOf(1024)
+                title = titleBytes.decodeToString()
+            }
             "133" -> parseSemanticPrompt(payload)?.let(::applySemanticPrompt)
             "7" -> {
                 // Ghostty's fixed OSC capture needs one byte for the terminating NUL.

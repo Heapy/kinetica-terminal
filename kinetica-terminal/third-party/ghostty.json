@@ -16,6 +16,7 @@
     "src/terminal/color.zig",
     "src/terminal/fraction.zig",
     "src/terminal/osc/parsers/color.zig",
+    "src/terminal/osc/parsers/change_window_title.zig",
     "src/terminal/stream_terminal.zig",
     "src/terminal/stream.zig",
     "src/terminal/dcs.zig",

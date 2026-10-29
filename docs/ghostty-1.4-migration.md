@@ -81,6 +81,11 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Confirmed terminal behavior to implement or reconcile
 
+- [x] Title report (`CSI 21 t`) with explicit `configureTitleReporting` host opt-in,
+      disabled by default and preserved across resets. Original-library cases also align
+      OSC 0/2 validation and limits: 2047 captured bytes, valid UTF-8, then a 1024-byte
+      retained title. Replies preserve a partial UTF-8 suffix; display text uses replacement.
+      CSI 22/23 t title stacks remain ignored, as in both upstream terminal handlers.
 - [x] XTWINOPS resize request (`CSI 8;rows;columns t`) core observer contract, with raw
       zero/omitted dimensions, unsigned 16-bit limits and no automatic terminal resize.
       Twenty-three original-library cases cover payloads, rejected headers, cancellation,

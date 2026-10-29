@@ -191,6 +191,17 @@ reset are covered; a separate case leaves the host callback absent. These prove 
 events and unchanged state, not platform window behavior. The callback API is enabled
 only in the 1.4 main oracle build, preserving the graphics helper's historical build mode.
 
+The title-report increment adds 44 scenarios / 152 checkpoints, bringing the main corpus
+to 843 scenarios / 4354 checkpoints. `titleReporting` events set the original C library's
+host option. The cases cover default denial/revocation, empty and changing titles, resets,
+screens, synchronized output, malformed queries, OSC 0/2 capture boundaries, invalid UTF-8,
+C0 filtering and truncation inside multibyte characters. Original libghostty validates the
+captured title before truncating it to 1024 bytes. The generator decodes snapshot display
+text with UTF-8 replacement so that an upstream cut inside a character remains representable
+in Kotlin; PTY reply hex preserves every original byte independently. No expected reply is
+re-encoded from the normalized display title. String-feed and byte-feed equivalence has a
+separate common regression; ordinary oracle replay remains whole-byte-buffer and bytewise.
+
 The tab/pending-wrap increment adds 59 scenarios / 342 checkpoints, bringing this corpus
 to 461 scenarios / 2615 checkpoints. It covers omitted/explicit/malformed tab-clear parameters,
 default/custom stops, HT/CHT/CBT pending-wrap preservation with DECAWM on/off, and narrow,
