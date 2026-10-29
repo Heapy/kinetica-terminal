@@ -81,10 +81,13 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Confirmed terminal behavior to implement or reconcile
 
-- [ ] DECSTR (`CSI ! p`): reset the selected modes, margins, pen/protection/charsets, saved
-      cursor, cursor appearance, modifyOtherKeys, status display and checksum variant while
-      retaining screen contents and cursor position. Match `Terminal.softReset` exactly:
-      it resets palette overrides but preserves dynamic colors and **does not reset tab stops**.
+- [x] DECSTR (`CSI ! p`): reset implemented modes, margins, pen/protection/charsets, saved
+      cursor, cursor appearance and modifyOtherKeys while retaining screen contents and cursor
+      position. Palette overrides reset; dynamic colors, hyperlinks, tab stops, synchronized
+      output, graphics and unfinished image/frame transfers remain intact. Fifteen original-
+      library scenarios cover 49 states, with another graphics execution scenario for transfers.
+- [ ] Connect DECSTR to status-display/checksum state as those currently absent protocols are
+      implemented, and cover reverse-wrap/keyboard-disable modes when adding their behavior.
 - [x] RIS resets palette overrides in addition to its existing state reset.
 - [ ] DECXCPR (`CSI ?6n`) responds with `CSI ?row;column;1R`, including origin/margin handling.
 - [ ] `CSI 19 t` reports screen size in characters; the release dispatches `.csi_19_t`.

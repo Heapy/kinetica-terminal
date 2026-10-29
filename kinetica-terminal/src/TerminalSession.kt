@@ -624,6 +624,23 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         reportProgress(TerminalProgressReport(TerminalProgressState.REMOVE))
     }
 
+    /** DECSTR changes the active pen and selected modes without moving or clearing the screen. */
+    private fun softReset() {
+        cursorVisible = true; insertMode = false; origin = false; wrap = true
+        applicationCursor = false; applicationKeypad = false; leftRightMarginMode = false
+        top = 0; bottom = rows - 1; left = 0; right = columns - 1
+        fg = -1; bg = -1; style = 0
+        setAttributes(-1, attributes?.hyperlink)
+        protectedCell = false; protectionMode = 0
+        graphics = false; g1Graphics = false; useG1 = false
+        // An unset Ghostty saved cursor restores home/defaults; leave the live cursor intact.
+        saved = SavedCursor(valid = true)
+        modifyOtherKeysMode = 0
+        cursorStyle = defaultCursorStyle; cursorBlink = defaultCursorBlink
+        colors.resetPalette()
+        damageAll()
+    }
+
     /** Copy a range with an exclusive end, expanding partial wide cells to whole glyphs. */
     public fun selectedText(startLine: Int, startColumn: Int, endLine: Int, endColumn: Int): String {
         require(startLine in 0 until lineCount && endLine in startLine until lineCount)
@@ -698,6 +715,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun dispatchCsi(final: Char, prefix: Int, intermediates: Int) {
+        if (prefix == 0 && intermediates == '!'.code && final == 'p') {
+            if (parameterCount == 0) softReset()
+            return
+        }
         if (prefix == '?'.code && intermediates == 0 && final in "sr") {
             for (i in 0 until parameterCount) {
                 val number = params[i]

@@ -123,6 +123,11 @@ def cases():
         apc("a=d,d=A"),image(1,"p=7"),apc("a=d,d=X,x=1"),apc("a=d,d=A")])
     def frame(fields='',data=b'\x14\x28\x3c\xff'):
         return apc('a=f,i=1,f=32,s=1,v=1'+(','+fields if fields else ''),data)
+    add('soft_reset_preserves_images_placements_and_chunks',[
+        image(1,'p=7'),frame(),frame('m=1',b'\x14'),write('\x1b[!p'),
+        apc('a=t',b'\x28\x3c\xff'),apc('a=a,i=1,c=3'),
+        apc('a=t,i=2,f=24,s=1,v=1,m=1',b'\x01'),write('\x1b[!p'),
+        apc('a=t',b'\x02\x03'),apc('a=p,i=2,C=1')])
     for quiet in (0,1,2):
         add(f'animation_replies_{quiet}',[image(1),frame(f'q={quiet},p=7'),frame(f'q={quiet},r=999,c=99'),
             frame(f'q={quiet},r=2,z=-1'),apc(f'a=a,i=1,c=2,q={quiet}'),

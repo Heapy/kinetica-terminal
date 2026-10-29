@@ -327,6 +327,18 @@ snapshot restoration is separate from APC chunk identity, which still checks pix
 The corpus reproduces byte-for-byte; all 550 JVM tests, fresh Release JS tests and 14 focused
 Native media/execution tests pass.
 
+DECSTR (`CSI ! p`) now resets the active pen/protection/charsets, saved cursor, margins,
+implemented resettable modes, modifyOtherKeys, cursor appearance and palette overrides.
+It preserves text/history, cursor position and pending wrap, dynamic colors, hyperlinks,
+custom tab stops, unrelated modes/Kitty keyboard flags, synchronized output and graphics
+(including unfinished image/frame loads). Parameterized or prefixed forms are ignored.
+Fifteen original-libghostty scenarios add 49 intermediate states; a graphics case checks
+preserved transfers, and host-default/presentation regressions cover configured cursor style
+and deferred repaint. Main oracle totals are 294 scenarios / 1809 states; graphics execution
+is 330 / 2823. Both corpora reproduce byte-for-byte. All 567 JVM tests, fresh Release JS tests, 294 Native
+oracle tests and 8 Native reset/graphics tests pass. Status-display,
+checksum and reverse-wrap/keyboard-disable behavior remain tracked in the migration checklist.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

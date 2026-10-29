@@ -2,9 +2,9 @@
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
   "zlib": "1.2.12",
   "libpng": "1.6.59",
-  "cases": 329,
-  "snapshots": 2813,
-  "generatorSha256": "a159180a8a77e0574b8b4ffe89d83d26f79b73a812c12d7db0d7f87aca1a00ef",
+  "cases": 330,
+  "snapshots": 2823,
+  "generatorSha256": "7e734fbcd2883db765b65a4e18327f4b537689b9135766a48d46e374afa234bf",
   "inputGenerators": {
     "generate-terminal-oracle.py": "46466924f9660dca668b1a6f7591725f275c56088499c63ae0f2d8bcbc3753b8",
     "generate-terminal-graphics-fixtures.py": "ad79a4e0887bca03b4b3dfec37176c4c6d2332e4d7088ab9192f2c203498a00b",
@@ -15,5 +15,5 @@
   "helperSha256": "6298640bac57842cec6ccb2613902582c1b2146d9a8af1b12e907a4d7bc8f954",
   "graphicsHelperSha256": "e3968652281fc723a4d3f2b70ff79276a844532497da6625ce48f19ac2b8a497",
   "librarySha256": "07c717c64ce04854d638f2b30e89d024238222d2fb311577e57e6a58c16b6311",
-  "fixturesSha256": "652fcfe0c8de18cd9bc7e6684d05230687514569c83cc5b2380fa3f028fd427b"
+  "fixturesSha256": "60f43fcdcbcd1a30f4c59faba8891e6cf3af6f53c56f93e1de665c7db1fc418b"
 }

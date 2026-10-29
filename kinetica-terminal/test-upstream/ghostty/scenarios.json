@@ -73879,5 +73879,272 @@
       "path": "alacritty_terminal/tests/ref/decaln_reset/alacritty.recording",
       "sha256": "b807deb690bbee7151c7fac10426c094bb0491e902f1d3a6b4f326878c2d6a23"
     }
+  },
+  {
+    "name": "soft_reset_modes",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "text\u001b[?1;66;69h\u001b[4h\u001b[?7;25l\u001b[2;3r\u001b[3;9s\u001b[?6h\u001b[2;2H"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "\u001b[6n\u001b[?1$p\u001b[?6$p\u001b[?7$p\u001b[?25$p\u001b[?66$p\u001b[?69$p\u001b[4$p"
+      },
+      {
+        "write": "\u001b[4;12HZ!"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_history_cursor",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "one\r\ntwo\r\nthree\r\nfour\r\nfive\r\nsix\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "\u001b[6nX"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_saved_cursor",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3;5H\u001b[1;31;44m\u001b7\u001b[2;2H"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "\u001b8Z"
+      },
+      {
+        "write": "\u001b[?1048h\u001b[3;3H\u001b[!p\u001b[?1048lQ"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_tabs",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[1;4H\u001bH\u001b[1;7H\u001bH\r"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "\tA\tB\r\tC"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_pen_and_hyperlink",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=kept;https://example.com\u001b\\\u001b[1;3;4:3;38:2::12:34:56;48:5:99;58:5:100mA"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "B\u001bP$qm\u001b\\\u001b]8;;\u001b\\C"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_charsets",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(0\u001b)0\u000eq"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "q\u000eq\u000fq"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_protection_iso",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bVA\u001bWB\u001bVC"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "D\r\u001b[2K"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_protection_dec",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[1\"qA\u001b[0\"qB\u001b[1\"qC"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "D\r\u001b[2K"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_preserved_modes",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[20h\u001b[?2004;1004;1006;1002;2027;2031h\u001b[?1007;1035l\u001b[>31u\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "\u001b[?u\u001b[20$p\u001b[?2004$p\u001b[?1004$p\u001b[?1006$p\u001b[?1002$p\u001b[?2027$p\u001b[?2031$p\u001b[?1007$p\u001b[?1035$p"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_palette_dynamic",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]4;1;#123456;200;#abcdef\u0007\u001b]10;#112233\u0007\u001b]11;#445566\u0007\u001b]12;#778899\u0007\u001b[31;48;5;200mA"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "B\u001b]4;1;?;200;?\u0007\u001b]10;?\u0007\u001b]11;?\u0007\u001b]12;?\u0007"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_cursor_defaults",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[6 q\u001b[?25l"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "\u001bP$q q\u001b\\\u001b[?12$p\u001b[?25$p"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_pending_wrap",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "Z"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_alternate_saved",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[2;4H\u001b[31m\u001b7\u001b[?47h\u001b[3;6H\u001b[32m\u001b7"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "\u001b8A\u001b[?47l\u001b8P"
+      },
+      {
+        "write": "\u001b[?47h\u001b8B"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_invalid_forms",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[1;31m\u001b[?25lA"
+      },
+      {
+        "write": "\u001b[0!pB\u001b[1!pC\u001b[;!pD\u001b[?!pE\u001b[ !pF"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "G"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_rep_and_mode_save",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1h\u001b[?1sA"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "\u001b[2b\u001b[?1r\u001b[?1$p"
+      }
+    ]
   }
 ]
