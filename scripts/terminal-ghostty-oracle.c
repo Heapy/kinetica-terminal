@@ -4,6 +4,8 @@
  * W hex-bytes; R cols rows [cell-width cell-height]; K keypad-key mods;
  * E key mods consumed action unshifted utf8-hex; T color-scheme (1 dark, 2 light);
  * M action button mods column row (stateless mouse encoding, unit cells);
+ * V width height cellWidth cellHeight track (configure persistent pixel encoder);
+ * L action button mods x y pressed (pixel coordinates, retained motion state);
  * G image-storage-limit probe-image-ids... (decimal, at most 256 IDs);
  * J (include placement geometry and z-layer membership in graphics snapshots);
  * Q checksum-report-enabled default-extension (explicit host configuration);
@@ -483,11 +485,7 @@ static void encode_keyboard(GhosttyTerminal terminal, const char *command) {
     reply(terminal, NULL, (const unsigned char *)bytes, length);
     ghostty_key_event_free(event); ghostty_key_encoder_free(encoder);
 }
-static void encode_mouse(GhosttyTerminal terminal, const char *command) {
-    int action, button, mods, x, y;
-    if (sscanf(command, "%d %d %d %d %d", &action, &button, &mods, &x, &y) != 5 ||
-        action < 0 || action > 2 || mods < 0 || mods > 7 || x < -4096 || x > 8192 || y < -4096 || y > 8192) exit(2);
-    static const GhosttyMouseAction actions[] = {GHOSTTY_MOUSE_ACTION_PRESS, GHOSTTY_MOUSE_ACTION_RELEASE, GHOSTTY_MOUSE_ACTION_MOTION};
+static GhosttyMouseButton mouse_button(int button) {
     GhosttyMouseButton identity;
     switch (button) {
         case 0: identity = GHOSTTY_MOUSE_BUTTON_LEFT; break;
@@ -502,6 +500,14 @@ static void encode_mouse(GhosttyTerminal terminal, const char *command) {
         case 129: identity = GHOSTTY_MOUSE_BUTTON_NINE; break;
         default: exit(2);
     }
+    return identity;
+}
+static void encode_mouse(GhosttyTerminal terminal, const char *command) {
+    int action, button, mods, x, y;
+    if (sscanf(command, "%d %d %d %d %d", &action, &button, &mods, &x, &y) != 5 ||
+        action < 0 || action > 2 || mods < 0 || mods > 7 || x < -4096 || x > 8192 || y < -4096 || y > 8192) exit(2);
+    static const GhosttyMouseAction actions[] = {GHOSTTY_MOUSE_ACTION_PRESS, GHOSTTY_MOUSE_ACTION_RELEASE, GHOSTTY_MOUSE_ACTION_MOTION};
+    GhosttyMouseButton identity = mouse_button(button);
     uint16_t columns, rows;
     check(ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_COLS, &columns));
     check(ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_ROWS, &rows));
@@ -524,6 +530,42 @@ static void encode_mouse(GhosttyTerminal terminal, const char *command) {
     reply(terminal, NULL, (const unsigned char *)bytes, length);
     ghostty_mouse_event_free(event); ghostty_mouse_encoder_free(encoder);
 }
+// Persistent encoder: configure once per batch so the original owns motion deduplication.
+static GhosttyMouseEncoder pixel_encoder = NULL;
+static void configure_pixel_mouse(GhosttyTerminal terminal, const char *command) {
+    unsigned width, height, cw, ch, track;
+    if (sscanf(command, "%u %u %u %u %u", &width, &height, &cw, &ch, &track) != 5 ||
+        !width || !height || !cw || !ch || width > 65536 || height > 65536 || track > 1) exit(2);
+    if (pixel_encoder) ghostty_mouse_encoder_free(pixel_encoder);
+    check(ghostty_mouse_encoder_new(NULL, &pixel_encoder));
+    ghostty_mouse_encoder_setopt_from_terminal(pixel_encoder, terminal);
+    GhosttyMouseEncoderSize size = {.size = sizeof(size), .screen_width = width,
+        .screen_height = height, .cell_width = cw, .cell_height = ch};
+    bool tracking = track != 0;
+    ghostty_mouse_encoder_setopt(pixel_encoder, GHOSTTY_MOUSE_ENCODER_OPT_SIZE, &size);
+    ghostty_mouse_encoder_setopt(pixel_encoder, GHOSTTY_MOUSE_ENCODER_OPT_TRACK_LAST_CELL, &tracking);
+}
+static void encode_pixel_mouse(GhosttyTerminal terminal, const char *command) {
+    int action, button, mods, pressed;
+    float x, y;
+    if (!pixel_encoder || sscanf(command, "%d %d %d %f %f %d", &action, &button, &mods, &x, &y, &pressed) != 6 ||
+        action < 0 || action > 2 || mods < 0 || mods > 7 || pressed < 0 || pressed > 1 ||
+        !(x >= -1000000 && x <= 1000000 && y >= -1000000 && y <= 1000000)) exit(2);
+    static const GhosttyMouseAction actions[] = {GHOSTTY_MOUSE_ACTION_PRESS, GHOSTTY_MOUSE_ACTION_RELEASE, GHOSTTY_MOUSE_ACTION_MOTION};
+    bool any_pressed = pressed != 0;
+    ghostty_mouse_encoder_setopt(pixel_encoder, GHOSTTY_MOUSE_ENCODER_OPT_ANY_BUTTON_PRESSED, &any_pressed);
+    GhosttyMouseEvent event;
+    check(ghostty_mouse_event_new(NULL, &event));
+    ghostty_mouse_event_set_action(event, actions[action]);
+    if (button == 3) ghostty_mouse_event_clear_button(event); else ghostty_mouse_event_set_button(event, mouse_button(button));
+    ghostty_mouse_event_set_mods(event, (mods & 1 ? GHOSTTY_MODS_SHIFT : 0) |
+        (mods & 2 ? GHOSTTY_MODS_ALT : 0) | (mods & 4 ? GHOSTTY_MODS_CTRL : 0));
+    ghostty_mouse_event_set_position(event, (GhosttyMousePosition){x, y});
+    char bytes[128]; size_t length;
+    check(ghostty_mouse_encoder_encode(pixel_encoder, event, bytes, sizeof(bytes), &length));
+    reply(terminal, NULL, (const unsigned char *)bytes, length);
+    ghostty_mouse_event_free(event);
+}
 int main(void) {
     GhosttyTerminal terminal = NULL;
     char *line = NULL; size_t capacity = 0; ssize_t length;
@@ -540,6 +582,7 @@ int main(void) {
         } else if (line[0] == 'N') {
             unsigned cols, rows; size_t history;
             if (sscanf(line + 1, "%u %u %zu", &cols, &rows, &history) != 3 || cols > 4096 || rows > 4096) return 2;
+            if (pixel_encoder) { ghostty_mouse_encoder_free(pixel_encoder); pixel_encoder = NULL; }
             if (terminal) ghostty_terminal_free(terminal);
             check(ghostty_terminal_new(NULL, &terminal, cols, rows));
             check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_SCROLLBACK_MAX_LINES, &history));
@@ -657,10 +700,13 @@ int main(void) {
             has_size = true; cell_width = width; cell_height = height;
         } else if (line[0] == 'K') encode_key(terminal, line + 1);
         else if (line[0] == 'E') encode_keyboard(terminal, line + 1);
+        else if (line[0] == 'V') configure_pixel_mouse(terminal, line + 1);
+        else if (line[0] == 'L') encode_pixel_mouse(terminal, line + 1);
         else if (line[0] == 'M') encode_mouse(terminal, line + 1);
         else if (line[0] == 'S') snapshot(terminal);
         else return 2;
     }
+    if (pixel_encoder) ghostty_mouse_encoder_free(pixel_encoder);
     if (terminal) ghostty_terminal_free(terminal);
     for (size_t i = 0; i < clipboard_events_len; i++) free(clipboard_events[i].data);
     for (size_t i = 0; i < 3; i++) free(clipboard_values[i].data);

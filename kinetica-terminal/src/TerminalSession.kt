@@ -109,6 +109,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         private set
     public var sgrMouse: Boolean = false
         private set
+    /** Active wire format; format mode bits remain independently queryable. */
+    public var mouseFormat: TerminalMouseFormat = TerminalMouseFormat.X10
+        private set
     /** Mode 1007: translate wheel scrolling to cursor keys on the alternate screen. */
     public var alternateScroll: Boolean = true
         private set
@@ -709,7 +712,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         inBandResizeReporting = false
         leftRightMarginMode = false; left = 0; right = columns - 1
         applicationKeypad = false; keypadNumericOverride = true; alternateScroll = true
-        mouseTracking = 0; sgrMouse = false; mouseEpoch++; newlineMode = false; graphemeClustering = defaultGraphemeClustering
+        mouseTracking = 0; sgrMouse = false; mouseFormat = TerminalMouseFormat.X10
+        mouseEpoch++; newlineMode = false; graphemeClustering = defaultGraphemeClustering
         parser.reset(); utfNeeded = 0; highSurrogate = null; title = ""
         workingDirectoryUri = null
         saved = SavedCursor(); primaryCursor = SavedCursor(); alternateCursor = SavedCursor()
@@ -1340,7 +1344,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             when (number) { 2 -> keyboardDisabled = enabled; 4 -> insertMode = enabled; 20 -> newlineMode = enabled }
             return
         }
-        if (number in listOf(3, 9, 47, 1000, 1002, 1003, 1047, 1048, 1049)) sideEffectModes[number] = enabled
+        if (number in listOf(3, 9, 47, 1000, 1002, 1003, 1005, 1006, 1015, 1016, 1047, 1048, 1049)) sideEffectModes[number] = enabled
         when (number) {
             1 -> applicationCursor = enabled
             3 -> {
@@ -1362,7 +1366,16 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             1048 -> if (enabled) saved = saveCursor() else restoreCursor(saved)
             9, 1000, 1002, 1003 -> { mouseTracking = if (enabled) number else 0; mouseEpoch++ }
             1004 -> focusReporting = enabled
-            1006 -> { sgrMouse = enabled; mouseEpoch++ }
+            1005, 1006, 1015, 1016 -> {
+                if (number == 1006) sgrMouse = enabled
+                mouseFormat = if (!enabled) TerminalMouseFormat.X10 else when (number) {
+                    1005 -> TerminalMouseFormat.UTF8
+                    1006 -> TerminalMouseFormat.SGR
+                    1015 -> TerminalMouseFormat.URXVT
+                    else -> TerminalMouseFormat.SGR_PIXELS
+                }
+                mouseEpoch++
+            }
             1007 -> alternateScroll = enabled
             2004 -> bracketedPaste = enabled
             2026 -> setSynchronizedOutput(enabled)
@@ -1407,7 +1420,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun privateModeState(number: Int): Boolean? = when (number) {
-        3, 9, 47, 1000, 1002, 1003, 1047, 1048, 1049 -> sideEffectModes[number] ?: false
+        3, 9, 47, 1000, 1002, 1003, 1005, 1015, 1016, 1047, 1048, 1049 -> sideEffectModes[number] ?: false
         1 -> applicationCursor
         6 -> origin
         7 -> wrap

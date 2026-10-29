@@ -252,6 +252,18 @@ motion deduplication, canceled gestures and native/DOM event mapping are host-po
 not expectations manufactured from Kinetica output. The C helper's eight matrices also pass
 AddressSanitizer against the pinned original library.
 
+The 1.4 format extension adds 51 scenarios / 264 checkpoints for modes 1005/1015/1016,
+all five wire formats, four tracking modes, button/modifier mappings, UTF-8 encoding
+thresholds, format precedence, queries, private save/restore, DECSTR/RIS and screen changes.
+`V` configures a persistent original encoder with explicit pixel geometry and optional
+last-cell tracking; `L` supplies f32 pixel events and held-button state without resetting it.
+The replay uses `sendMousePixels` or a per-batch surface reporter accordingly. Boundary and
+fractional-coordinate batches compare unclamped pixel releases, outside dragging/hover,
+inclusive viewport edges, f32 rounding and repeated subcell motion. Tracked batches use valid
+press/release lifecycles; Shift selection and orphan-release suppression remain host policies.
+Separate JVM/JS/Native tests cover non-finite/extreme-coordinate recovery, geometry changes,
+cancellation, and physical pixel mapping through real browser/AppKit events.
+
 The [live TUI recordings](../tui/README.md) preserve
 producer output and resizes from zsh, Vim, Neovim, less and tmux; their expected states
 and replies also come entirely from this oracle. Recordings contain no expected

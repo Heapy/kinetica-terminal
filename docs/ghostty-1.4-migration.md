@@ -120,8 +120,13 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Ctrl+Backspace in legacy encoding; other modifier combinations and Kitty retain their
       own encodings. DECSTR preserves 67; RIS resets it. OSC 105 resets unsupported special
       colors in Ghostty and has no palette/dynamic-color effect; original fixtures verify this.
-- [ ] Close additional mode-table gaps: ANSI SRM (12), DEC 4/5/8/40, mouse formats
-      1005/1015/1016, Alt-key policies 1036/1039 and clipboard paste-event mode 5522.
+- [x] Mouse formats UTF-8 (1005), urxvt (1015) and SGR pixels (1016), including
+      independent requested mode bits, last-command format selection and reset/save lifecycle.
+      Browser/AppKit supply physical pixels with DPR/backing scale; pixel motion retains
+      subcell events and outside drag/release coordinates. Persistent original-encoder
+      comparisons cover cell deduplication, rounding and UTF-8 coordinate boundaries.
+- [ ] Close additional mode-table gaps: ANSI SRM (12), DEC 4/5/8/40,
+      Alt-key policies 1036/1039 and clipboard paste-event mode 5522.
       Validate their behavior and host integration before advertising mutable support.
 
 ## Graphics and external media

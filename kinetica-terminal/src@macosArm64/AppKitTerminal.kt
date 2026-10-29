@@ -505,7 +505,7 @@ public class AppKitTerminalView(
         if (event.modifierFlags and NSEventModifierFlagCommand != 0uL) {
             viewport.hyperlinkAt(x, y)?.let { link -> if (openLink(link)) { selecting = false; return } }
         }
-        selecting = !mouse(event, x, y, 0)
+        selecting = !mouse(event, 0)
         if (selecting) viewport.beginSelection(x, y, when (event.clickCount.toInt()) {
             0, 1 -> TerminalSelectionMode.CHARACTER
             2 -> TerminalSelectionMode.WORD
@@ -515,24 +515,23 @@ public class AppKitTerminalView(
     override fun mouseDragged(event: NSEvent) {
         if (disposed) return
         val (x, y) = cell(event)
-        if (selecting) viewport.extendSelection(x, y) else mouse(event, x, y, 0, motion = true)
+        if (selecting) viewport.extendSelection(x, y) else mouse(event, 0, motion = true)
     }
     override fun mouseUp(event: NSEvent) {
         if (disposed) return
         val (x, y) = cell(event)
-        if (selecting) viewport.endSelection(x, y) else mouse(event, x, y, 0, release = true)
+        if (selecting) viewport.endSelection(x, y) else mouse(event, 0, release = true)
         selecting = false
     }
     override fun rightMouseDown(event: NSEvent) {
-        val (x, y) = cell(event)
-        if (!mouse(event, x, y, 2)) super.rightMouseDown(event)
+        if (!mouse(event, 2)) super.rightMouseDown(event)
     }
-    override fun rightMouseUp(event: NSEvent) { val (x, y) = cell(event); mouse(event, x, y, 2, release = true) }
-    override fun rightMouseDragged(event: NSEvent) { val (x, y) = cell(event); mouse(event, x, y, 2, motion = true) }
-    override fun otherMouseDown(event: NSEvent) { nativeMouseButton(event)?.let { val (x, y) = cell(event); mouse(event, x, y, it) } }
-    override fun otherMouseUp(event: NSEvent) { nativeMouseButton(event)?.let { val (x, y) = cell(event); mouse(event, x, y, it, release = true) } }
-    override fun otherMouseDragged(event: NSEvent) { nativeMouseButton(event)?.let { val (x, y) = cell(event); mouse(event, x, y, it, motion = true) } }
-    override fun mouseMoved(event: NSEvent) { val (x, y) = cell(event); if (!selecting) mouse(event, x, y, 3, motion = true) }
+    override fun rightMouseUp(event: NSEvent) { mouse(event, 2, release = true) }
+    override fun rightMouseDragged(event: NSEvent) { mouse(event, 2, motion = true) }
+    override fun otherMouseDown(event: NSEvent) { nativeMouseButton(event)?.let { mouse(event, it) } }
+    override fun otherMouseUp(event: NSEvent) { nativeMouseButton(event)?.let { mouse(event, it, release = true) } }
+    override fun otherMouseDragged(event: NSEvent) { nativeMouseButton(event)?.let { mouse(event, it, motion = true) } }
+    override fun mouseMoved(event: NSEvent) { if (!selecting) mouse(event, 3, motion = true) }
     override fun scrollWheel(event: NSEvent) {
         if (disposed) return
         val resetPhases = NSEventPhaseMayBegin or NSEventPhaseBegan or NSEventPhaseCancelled
@@ -547,7 +546,6 @@ public class AppKitTerminalView(
             verticalScroll.reset(); horizontalScroll.reset()
             return
         }
-        val (x, y) = cell(event)
         if (!reporting && event.scrollingDeltaY != 0.0) onScrollActivity?.invoke()
         val tick = if (reporting) 1.0 else 3.0
         // With no inertial tail, direct trackpad gestures need more travel per
@@ -557,18 +555,27 @@ public class AppKitTerminalView(
         val dx = horizontalScroll.consume(event.scrollingDeltaX, event.hasPreciseScrollingDeltas, cellWidth, tick)
         if (dy != 0) {
             val button = if (dy > 0) 64 else 65
-            if (mouse(event, x, y, button)) repeat((kotlin.math.abs(dy) - 1).coerceAtMost(63)) { mouse(event, x, y, button) }
+            if (mouse(event, button)) repeat((kotlin.math.abs(dy) - 1).coerceAtMost(63)) { mouse(event, button) }
             else if (!session.sendAlternateScroll(dy, shift = shift)) viewport.scroll(dy)
         }
-        if (dx != 0) repeat(kotlin.math.abs(dx).coerceAtMost(64)) { mouse(event, x, y, if (dx > 0) 66 else 67) }
+        if (dx != 0) repeat(kotlin.math.abs(dx).coerceAtMost(64)) { mouse(event, if (dx > 0) 66 else 67) }
     }
     private fun cell(event: NSEvent): Pair<Int, Int> = convertPoint(event.locationInWindow, fromView = null).useContents {
         floor(x / cellWidth).toInt() to floor(y / cellHeight).toInt()
     }
-    private fun mouse(event: NSEvent, x: Int, y: Int, button: Int, release: Boolean = false, motion: Boolean = false): Boolean =
-        !disposed && viewport.scrollOffset == 0 && mouseReporter.send(x, y, button, release, motion,
-            event.modifierFlags and NSEventModifierFlagShift != 0uL, event.modifierFlags and NSEventModifierFlagOption != 0uL,
-            event.modifierFlags and NSEventModifierFlagControl != 0uL)
+    private fun mouse(event: NSEvent, button: Int, release: Boolean = false, motion: Boolean = false): Boolean {
+        if (disposed || viewport.scrollOffset != 0) return false
+        val scale = window?.backingScaleFactor ?: 1.0
+        val geometry = bounds.useContents {
+            if (size.width <= 0 || size.height <= 0) return false
+            TerminalMouseGeometry(size.width * scale, size.height * scale, cellWidth * scale, cellHeight * scale)
+        }
+        return convertPoint(event.locationInWindow, fromView = null).useContents {
+            mouseReporter.sendPixels(x * scale, y * scale, geometry, button, release, motion,
+                event.modifierFlags and NSEventModifierFlagShift != 0uL, event.modifierFlags and NSEventModifierFlagOption != 0uL,
+                event.modifierFlags and NSEventModifierFlagControl != 0uL)
+        }
+    }
     private fun copySelection() {
         val text = viewport.selectedText()
         if (text.isNotEmpty()) { NSPasteboard.generalPasteboard.clearContents(); NSPasteboard.generalPasteboard.setString(text, NSPasteboardTypeString) }

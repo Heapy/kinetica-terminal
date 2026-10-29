@@ -53,6 +53,24 @@ internal fun checkGhostty(fixture: GhosttyFixture) {
             } else if ("checksumReporting" in event) {
                 val config = event.getValue("checksumReporting").jsonArray
                 session.configureChecksumReporting(config[0].jsonPrimitive.boolean,config[1].jsonPrimitive.int)
+            } else if ("mousePixels" in event) {
+                val batch = event.getValue("mousePixels").jsonObject
+                val size = batch.getValue("geometry").jsonArray.map { it.jsonPrimitive.double }
+                val geometry = TerminalMouseGeometry(size[0], size[1], size[2], size[3])
+                val reporter = if (batch.getValue("track").jsonPrimitive.boolean) TerminalMouseReporter(session) else null
+                for (item in batch.getValue("events").jsonArray) {
+                    val mouse = item.jsonObject
+                    fun number(key: String) = mouse.getValue(key).jsonPrimitive.int
+                    val x = mouse.getValue("x").jsonPrimitive.double
+                    val y = mouse.getValue("y").jsonPrimitive.double
+                    if (reporter != null) reporter.sendPixels(x, y, geometry, number("button"),
+                        release = number("action") == 1, motion = number("action") == 2,
+                        alt = number("modifiers") and 2 != 0, control = number("modifiers") and 4 != 0)
+                    else session.sendMousePixels(x, y, geometry, number("button"),
+                        release = number("action") == 1, motion = number("action") == 2,
+                        alt = number("modifiers") and 2 != 0, control = number("modifiers") and 4 != 0,
+                        anyButtonPressed = number("pressed") != 0)
+                }
             } else if ("mouse" in event) {
                 for (item in event.getValue("mouse").jsonArray) {
                     val mouse = item.jsonObject

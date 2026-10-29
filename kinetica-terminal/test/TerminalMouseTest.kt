@@ -72,4 +72,67 @@ class TerminalMouseTest {
         mouse.cancel(); mouse.cancel()
         assertEquals(listOf("\u001b[<1;3;4M", "\u001b[<1;3;4m"), output)
     }
+    @Test fun pixelReportsPreserveSubcellMotionOutsideReleaseAndCancellation() {
+        val session = TerminalSession(8, 3)
+        val mouse = TerminalMouseReporter(session)
+        val geometry = TerminalMouseGeometry(64.0, 48.0, 8.0, 16.0)
+        val output = mutableListOf<String>()
+        session.onInput { output.add(it.toByteArray().decodeToString()) }
+        session.write("\u001b[?1003h\u001b[?1016h")
+        assertTrue(session.sendMouse(1, 1, 0))
+        assertTrue(output.isEmpty(), "Cell API cannot invent pixel coordinates")
+        assertFalse(mouse.sendPixels(1.0, 1.0, geometry, 0, shift = true))
+        assertFalse(mouse.sendPixels(1.0, 1.0, geometry, 0, release = true))
+        mouse.sendPixels(1.0, 1.0, geometry, 0)
+        mouse.sendPixels(1.5, 1.5, geometry, 0, motion = true)
+        mouse.sendPixels(1.5, 1.5, geometry, 0, motion = true)
+        mouse.sendPixels(-0.5, 49.5, geometry, 0, motion = true)
+        mouse.sendPixels(-0.5, 49.5, geometry, 0, release = true, shift = true)
+        assertEquals(listOf("\u001b[<0;1;1M", "\u001b[<32;2;2M", "\u001b[<32;2;2M",
+            "\u001b[<32;-1;50M", "\u001b[<0;-1;50m"), output)
+        output.clear()
+        mouse.sendPixels(2.5, 3.5, geometry, 2)
+        mouse.cancel(); mouse.cancel()
+        assertEquals(listOf("\u001b[<2;3;4M", "\u001b[<2;3;4m"), output)
+    }
+
+    @Test fun geometryAndFormatChangesInvalidateCellDeduplication() {
+        val session = TerminalSession(8, 3)
+        val mouse = TerminalMouseReporter(session)
+        val geometry = TerminalMouseGeometry(64.0, 48.0, 8.0, 16.0)
+        val output = mutableListOf<String>()
+        session.onInput { output.add(it.toByteArray().decodeToString()) }
+        session.write("\u001b[?1003h\u001b[?1006h")
+        mouse.sendPixels(1.0, 1.0, geometry, 3, motion = true)
+        mouse.sendPixels(1.5, 1.0, geometry, 3, motion = true)
+        mouse.sendPixels(1.5, 1.0, geometry.copy(width = 65.0), 3, motion = true)
+        assertEquals(listOf("\u001b[<35;1;1M", "\u001b[<35;1;1M"), output)
+        session.write("\u001b[?1016h")
+        mouse.sendPixels(1.5, 1.0, geometry, 3, motion = true)
+        session.write("\u001b[?1006h")
+        mouse.sendPixels(1.5, 1.0, geometry, 3, motion = true)
+        assertEquals(listOf("\u001b[<35;2;1M", "\u001b[<35;1;1M"), output.takeLast(2))
+    }
+
+    @Test fun invalidCoordinatesDoNotEmitOrBreakAnOwnedGesture() {
+        val session = TerminalSession(8, 3)
+        val mouse = TerminalMouseReporter(session)
+        val geometry = TerminalMouseGeometry(64.0, 48.0, 8.0, 16.0)
+        val output = mutableListOf<String>()
+        session.onInput { output.add(it.toByteArray().decodeToString()) }
+        session.write("\u001b[?1003h\u001b[?1016h")
+        mouse.sendPixels(1.0, 2.0, geometry, 0)
+        for (invalid in listOf(Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.MAX_VALUE)) {
+            assertFalse(mouse.sendPixels(invalid, 2.0, geometry, 0, release = true))
+            assertFalse(session.sendMousePixels(1.0, invalid, geometry, 0))
+        }
+        mouse.cancel()
+        assertEquals(listOf("\u001b[<0;1;2M", "\u001b[<0;1;2m"), output)
+        // Recovery policy for coordinates beyond the original encoder's i32 domain.
+        session.sendMousePixels(1e20, -1e20, geometry, 0, release = true)
+        assertEquals("\u001b[<0;2147483647;-2147483648m", output.last())
+        for (invalid in listOf(0.0, -1.0, Double.NaN, Double.POSITIVE_INFINITY))
+            assertFailsWith<IllegalArgumentException> { geometry.copy(cellWidth = invalid) }
+    }
+
 }

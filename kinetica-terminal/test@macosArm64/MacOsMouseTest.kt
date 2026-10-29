@@ -32,14 +32,9 @@ class MacOsMouseTest {
             // OtherMouse events to zero. Supply the physical middle identity through CGEvent.
             val cg = requireNotNull(event.CGEvent)
             CGEventSetIntegerValueField(cg, kCGMouseEventButtonNumber, 2)
-            // Converting an unposted synthetic event changes its window association. Adjust
-            // the CG screen location so the resulting NSEvent still has our intended point.
+            // Preserve the constructor's window-relative location. CGEventSetLocation
+            // invalidates that synthetic event's window association, even for a no-op.
             val intended = event.locationInWindow.useContents { this.x to this.y }
-            val converted = requireNotNull(NSEvent.eventWithCGEvent(cg))
-            val actual = converted.locationInWindow.useContents { this.x to this.y }
-            CGEventSetLocation(cg, CGEventGetLocation(cg).useContents {
-                CGPointMake(this.x + intended.first - actual.first, this.y + actual.second - intended.second)
-            })
             return requireNotNull(NSEvent.eventWithCGEvent(cg)).also {
                 assertEquals(2, it.buttonNumber.toInt())
                 assertEquals(intended, it.locationInWindow.useContents { this.x to this.y }, "Synthetic mouse location")
@@ -47,7 +42,16 @@ class MacOsMouseTest {
         }
         fun wheel(dy: Int, dx: Int) {
             val cg = requireNotNull(CGEventCreateScrollWheelEvent2(null, kCGScrollEventUnitLine, 2u, dy, dx, 0))
-            try { view.scrollWheel(requireNotNull(NSEvent.eventWithCGEvent(cg))) } finally { CFRelease(cg) }
+            try {
+                // An unposted CG wheel event has no window association. Give its NSEvent
+                // an explicit window-space point instead of inheriting the user's cursor.
+                val point = view.convertPoint(NSMakePoint(1.0, 1.0), toView = null)
+                val screenHeight = (NSScreen.screens.first() as NSScreen).frame.useContents { size.height }
+                CGEventSetLocation(cg, point.useContents { CGPointMake(x, screenHeight - y) })
+                val wheel = requireNotNull(NSEvent.eventWithCGEvent(cg))
+                assertEquals(point.useContents { x to y }, wheel.locationInWindow.useContents { x to y })
+                view.scrollWheel(wheel)
+            } finally { CFRelease(cg) }
         }
         try {
             view.updateTrackingAreas()
@@ -81,6 +85,43 @@ class MacOsMouseTest {
             view.mouseDown(event(NSEventTypeLeftMouseDown, 1, 1))
             view.mouseMoved(event(NSEventTypeMouseMoved, 1, 1)); wheel(1, 0)
             assertEquals(count, output.size)
+        } finally { subscription.dispose(); view.dispose(); window.close() }
+    }
+
+    @Test fun appKitPixelMouseUsesBackingScaleSubcellMotionAndOutsideRelease() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession()
+        val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE)
+        val window = NSWindow(NSMakeRect(0.0, 0.0, 640.0, 320.0), NSWindowStyleMaskTitled, NSBackingStoreBuffered, false)
+        window.setReleasedWhenClosed(false); window.contentView = view
+        val output = mutableListOf<String>()
+        val subscription = session.onInput { output.add(it.toByteArray().decodeToString()) }
+        val scale = window.backingScaleFactor
+        fun event(type: NSEventType, x: Double, y: Double, flags: ULong = 0u) = requireNotNull(
+            NSEvent.mouseEventWithType(type, view.convertPoint(NSMakePoint(x, y), toView = null),
+                flags, 0.0, window.windowNumber, null, 0, 1, 1.0f))
+        fun report(code: Int, x: Double, y: Double, release: Boolean = false): String {
+            fun pixel(value: Double): Int = (if (value < 0) ceil(value * scale - 0.5) else kotlin.math.floor(value * scale + 0.5)).toInt()
+            return "\u001b[<$code;${pixel(x)};${pixel(y)}${if (release) 'm' else 'M'}"
+        }
+        try {
+            session.write("\u001b[?1003h\u001b[?1016h")
+            view.mouseMoved(event(NSEventTypeMouseMoved, 1.0, 1.0))
+            view.mouseMoved(event(NSEventTypeMouseMoved, 1.5, 1.5))
+            view.mouseMoved(event(NSEventTypeMouseMoved, 1.5, 1.5))
+            view.mouseDown(event(NSEventTypeLeftMouseDown, 1.5, 1.5))
+            view.mouseDragged(event(NSEventTypeLeftMouseDragged, -0.5, 321.5))
+            view.mouseUp(event(NSEventTypeLeftMouseUp, -0.5, 321.5, NSEventModifierFlagShift))
+            assertEquals(listOf(report(35, 1.0, 1.0), report(35, 1.5, 1.5), report(35, 1.5, 1.5),
+                report(0, 1.5, 1.5), report(32, -0.5, 321.5), report(0, -0.5, 321.5, true)), output)
+            output.clear()
+            view.mouseDown(event(NSEventTypeLeftMouseDown, 2.0, 2.0, NSEventModifierFlagShift))
+            view.mouseUp(event(NSEventTypeLeftMouseUp, 2.0, 2.0))
+            assertTrue(output.isEmpty())
+            view.rightMouseDown(event(NSEventTypeRightMouseDown, 2.5, 3.5))
+            view.resignFirstResponder(); view.resignFirstResponder()
+            view.dispose()
+            assertEquals(listOf(report(2, 2.5, 3.5), report(2, 2.5, 3.5, true)), output)
         } finally { subscription.dispose(); view.dispose(); window.close() }
     }
 

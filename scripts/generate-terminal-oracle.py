@@ -155,6 +155,11 @@ def main():
                     text = key.get("text", "").encode().hex() or "-"
                     commands.append(f"E {key['upstream']} {key['modifiers']} {key.get('consumed', 0)} "
                                     f"{key['action']} {key.get('unshifted', 0)} {text}")
+            elif "mousePixels" in event:
+                batch = event["mousePixels"]
+                commands.append("V " + " ".join(map(str, batch["geometry"])) + f" {int(batch['track'])}")
+                for mouse in batch["events"]:
+                    commands.append("L " + " ".join(str(mouse[key]) for key in ("action", "button", "modifiers", "x", "y", "pressed")))
             elif "mouse" in event:
                 for mouse in event["mouse"]:
                     commands.append("M " + " ".join(str(mouse[key]) for key in ("action", "button", "modifiers", "column", "row")))

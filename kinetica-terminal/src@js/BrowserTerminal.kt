@@ -201,7 +201,7 @@ public class BrowserTerminalView(
             updateMouseButtons(event)
             val (x, y) = coordinates(event)
             if (selecting) viewport.extendSelection(x, y)
-            else if (previous == mouseButtons) mouse(event, x, y, pressedMouseButton(), motion = true)
+            else if (previous == mouseButtons) mouse(event, pressedMouseButton(), motion = true)
         }
         listen(root, "pointerup") { event ->
             if (activePointer != (event.pointerId as Number).toInt()) return@listen
@@ -219,12 +219,11 @@ public class BrowserTerminalView(
             val dx = (event.deltaX as Number).toDouble()
             if (dy != 0.0 || dx != 0.0) {
                 event.preventDefault(); event.stopPropagation()
-                val (x, y) = coordinates(event)
-                if (dy != 0.0 && !mouse(event, x, y, if (dy < 0) 64 else 65)) {
+                if (dy != 0.0 && !mouse(event, if (dy < 0) 64 else 65)) {
                     val lines = if (dy < 0) 3 else -3
                     if (!session.sendAlternateScroll(lines, shift = event.shiftKey == true)) viewport.scroll(lines)
                 }
-                if (dx != 0.0) mouse(event, x, y, if (dx < 0) 66 else 67)
+                if (dx != 0.0) mouse(event, if (dx < 0) 66 else 67)
             }
         }
         // Prevent surrounding Kinetica event handlers from treating terminal interaction as a
@@ -356,22 +355,30 @@ public class BrowserTerminalView(
         return floor(((event.clientX as Number).toDouble() - (rect.left as Number).toDouble()) / cellWidth).toInt() to
             floor(((event.clientY as Number).toDouble() - (rect.top as Number).toDouble()) / cellHeight).toInt()
     }
-    private fun mouse(event: dynamic, x: Int, y: Int, button: Int, release: Boolean = false, motion: Boolean = false): Boolean =
-        viewport.scrollOffset == 0 && mouseReporter.send(x, y, button, release, motion, event.shiftKey == true, event.altKey == true, event.ctrlKey == true)
+    private fun mouse(event: dynamic, button: Int, release: Boolean = false, motion: Boolean = false): Boolean {
+        if (viewport.scrollOffset != 0 || canvas.width <= 0 || canvas.height <= 0) return false
+        val rect = canvas.getBoundingClientRect()
+        val scale = (window.devicePixelRatio as Number).toDouble()
+        val geometry = TerminalMouseGeometry((canvas.width as Number).toDouble(), (canvas.height as Number).toDouble(),
+            cellWidth * scale, cellHeight * scale)
+        return mouseReporter.sendPixels(((event.clientX as Number).toDouble() - (rect.left as Number).toDouble()) * scale,
+            ((event.clientY as Number).toDouble() - (rect.top as Number).toDouble()) * scale, geometry,
+            button, release, motion, event.shiftKey == true, event.altKey == true, event.ctrlKey == true)
+    }
     private fun updateMouseButtons(event: dynamic) {
         val next = (event.buttons as Number).toInt() and 31
         val (x, y) = coordinates(event)
         for ((mask, button) in mouseButtonMasks) {
             if ((mouseButtons and mask) == (next and mask)) continue
             if (next and mask != 0) {
-                val reported = mouse(event, x, y, button)
+                val reported = mouse(event, button)
                 if (button == 0) {
                     selecting = !reported
                     if (selecting) viewport.beginSelection(x, y) else viewport.clearSelection()
                 }
             } else {
                 if (button == 0 && selecting) { viewport.endSelection(x, y); selecting = false }
-                else mouse(event, x, y, button, release = true)
+                else mouse(event, button, release = true)
             }
         }
         mouseButtons = next

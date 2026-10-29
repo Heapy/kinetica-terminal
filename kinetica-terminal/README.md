@@ -282,12 +282,23 @@ Shift+PageUp/PageDown, and accessibility text are available.
   immutable protocol bytes. `toByteArray()` returns a fresh wire representation. Never decode
   legacy mouse reports as text and re-encode them. The provided stream/PTY adapters admit each
   event atomically to their bounded queues, checking oversized text before allocating UTF-8.
-- Mouse modes 1000/1002/1003 and SGR mode 1006 support left/middle/right, back/forward,
-  vertical/horizontal wheel, modifiers, releases outside the viewport and cell motion suppression.
+- Mouse modes 1000/1002/1003 support X10, UTF-8 (1005), SGR (1006), urxvt (1015) and
+  SGR pixels (1016), with left/middle/right, back/forward, vertical/horizontal wheel, modifiers
+  and releases outside the viewport. Cell formats suppress repeated motion within one cell;
+  pixel mode retains every motion event, including subcell movement.
   Legacy reports preserve raw 8-bit coordinates through both transports; coordinates above 223
   cannot be represented in that format. Shift starts local selection; its release does not leak
   an application button release. Each view owns its motion/gesture state. The browser handles
   pointer capture and chorded buttons; AppKit registers and disposes its own tracking area.
+  Both views supply physical pixels, accounting for browser DPR or AppKit backing scale.
+  Custom hosts use `sendMousePixels` with `TerminalMouseGeometry`; the cell-only `sendMouse`
+  API emits no report in pixel mode because it cannot reconstruct a pointer position.
+  Pixel coordinates are zero-based, rounded with the original encoder's f32 precision and
+  retained outside the viewport for dragging/releases. Non-finite input is rejected; values
+  outside signed 32-bit pixel range saturate as a recovery policy (the original can trap).
+  The last enabled format wins; disabling any format selects X10. Requested mode bits remain
+  independently queryable/saveable. DECSTR preserves them; RIS clears them. `sgrMouse` describes
+  the requested 1006 bit; `mouseFormat` describes the active wire format.
 - Mode 2026 keeps parsing and replying while surfaces retain the frame captured at the exact
   start-of-hold escape sequence. Each view copies only its visible rows and freezes their palette,
   theme and cursor. Both hosts release abandoned holds after one second; repeated enable requests
@@ -379,7 +390,7 @@ OSC 4/104 palette set/query/reset and OSC 10/11/12/110/111/112 dynamic colors,
 DEC line drawing/alignment, title and hyperlink OSC, status/cursor reports, application cursor/keypad keys, function/navigation keys, bracketed
 paste, focus reporting, synchronized output, cursor shapes/blinking, DECRQSS cursor-style,
 SGR and vertical-margin queries,
-and legacy/SGR mouse encoding. Unknown OSC/DCS payloads are consumed
+and X10/UTF-8/SGR/urxvt/SGR-pixel mouse encoding. Unknown OSC/DCS payloads are consumed
 without printing, with bounded parser storage. OSC clipboard commands are not executed.
 DECSCA and ISO SPA/EPA protect cells; selective ED/EL and ordinary erasure follow
 Ghostty's distinction between DEC and ISO protection. Protection survives save/restore

@@ -480,8 +480,22 @@ The full 572-case / 3127-checkpoint oracle regenerates byte-for-byte. Validation
 JVM tests, fresh Release JS tests, 578 Native oracle/keyboard tests, three AppKit input tests,
 and the fresh browser integration verifier with real Backspace events.
 
+Mouse formats 1005 (UTF-8), 1015 (urxvt) and 1016 (SGR pixels) now work through the
+common encoder and both views. Physical pixels account for DPR/backing scale; pixel mode
+retains subcell motion and unclamped outside drag/release positions. Cell formats keep their
+motion suppression. Format requests have independent query/save bits, while the most recent
+command selects the wire format; disabling any format returns X10. Kotlin/JS explicitly
+roundtrips float bits so coordinates have the original encoder's f32 precision on every target.
+
+Fifty-one original scenarios add 264 checkpoints, including a persistent original encoder
+for motion deduplication, pixel rounding/boundaries, UTF-8 thresholds and format lifecycle.
+The full 623-case / 3391-checkpoint oracle regenerates byte-for-byte. Validation passes 910
+JVM tests, fresh Release JS tests, 630 Native oracle/common-mouse tests, four Native AppKit/
+PTY mouse tests, and the browser integration verifier at DPR 2. Native synthetic middle-button
+and wheel events now preserve explicit coordinates instead of inheriting the user's cursor.
+
 The source mode-table audit identifies additional open work: ANSI SRM, DEC 4/5/8/40,
-mouse formats 1005/1015/1016, Alt policies 1036/1039 and clipboard paste events (5522).
+Alt policies 1036/1039 and clipboard paste events (5522).
 Their behavior and host integration remain required before claiming full mode compatibility.
 
 Graphics acceptance work:

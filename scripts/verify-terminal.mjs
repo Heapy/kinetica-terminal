@@ -474,6 +474,31 @@ try {
   await page.locator("[data-terminal]").dispatchEvent("pointercancel", { pointerId: 1 });
   await page.mouse.up();
   assert.equal(Buffer.from(await readMouse()).toString(), "\x1b[<0;2;2M\x1b[<0;2;2m");
+  // Physical pixel mode must retain subcell motion and captured positions outside the canvas.
+  // This page runs at deviceScaleFactor=2, catching CSS-pixel/physical-pixel confusion.
+  await resetMouse("\x1b[?1003h\x1b[?1016h");
+  const ratio = await page.evaluate(() => devicePixelRatio);
+  const movePixel = (x, y) => page.mouse.move(geometry.left + x, geometry.top + y);
+  const pixelReport = (code, x, y, release = false) => {
+    const round = v => Math.sign(v) * Math.floor(Math.abs(Math.fround(v * ratio)) + 0.5);
+    return `\x1b[<${code};${round(x)};${round(y)}${release ? "m" : "M"}`;
+  };
+  await movePixel(1, 1); await readMouse();
+  await movePixel(1.5, 1.5); await movePixel(2, 2);
+  await page.mouse.down(); await movePixel(-0.5, -0.5); await page.mouse.up();
+  assert.equal(Buffer.from(await readMouse()).toString(),
+    pixelReport(35, 1.5, 1.5) + pixelReport(35, 2, 2) + pixelReport(0, 2, 2) +
+    pixelReport(32, -0.5, -0.5) + pixelReport(0, -0.5, -0.5, true));
+  await movePixel(2.5, 3.5); await readMouse(); await page.mouse.down();
+  await page.locator("[data-terminal]").dispatchEvent("pointercancel", { pointerId: 1 });
+  await page.mouse.up();
+  assert.equal(Buffer.from(await readMouse()).toString(), pixelReport(0, 2.5, 3.5) + pixelReport(0, 2.5, 3.5, true));
+  await resetMouse("\x1b[?1000h\x1b[?1005h");
+  await moveCell(95, 1); await page.mouse.down(); await page.mouse.up();
+  assert.deepEqual(await readMouse(), [...Buffer.from("\x1b[M \u0080\x22\x1b[M#\u0080\x22")]);
+  await resetMouse("\x1b[?1000h\x1b[?1015h");
+  await moveCell(2, 1); await page.mouse.down(); await page.mouse.up();
+  assert.equal(Buffer.from(await readMouse()).toString(), "\x1b[32;3;2M\x1b[35;3;2M");
   // Full-screen editors such as nano often do not enable mouse reporting. Wheel
   // input then uses cursor keys, with mode 1007 and Shift retaining local control.
   const wheel = (deltaY, shiftKey = false, deltaX = 0) => page.locator("[data-terminal]").evaluate((element, options) => {
@@ -502,5 +527,5 @@ try {
   assert.deepEqual(await readMouse(), []);
   await page.evaluate(() => kineticaTerminalDemo.dispose());
   assert.deepEqual(errors, []);
-  console.log("Browser terminal: WebGL/Canvas atomic frames, hold timeout, cursor shapes/blink, dynamic palette, glyph cache, context recovery, font resize, keypad/IME and Kitty input, OSC 52 clipboard, notification permissions/routing, progress states/timeout, binary mouse reports, alternate-screen wheel scrolling, pointer capture/chords, history, and disposal passed");
+  console.log("Browser terminal: WebGL/Canvas atomic frames, hold timeout, cursor shapes/blink, dynamic palette, glyph cache, context recovery, font resize, keypad/IME and Kitty input, OSC 52 clipboard, notification permissions/routing, progress states/timeout, binary/UTF-8/urxvt/pixel mouse reports, subcell Retina motion, alternate-screen wheel scrolling, pointer capture/chords, history, and disposal passed");
 } finally { await browser.close(); }
