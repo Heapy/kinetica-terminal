@@ -640,6 +640,24 @@ binary MIME data, creates an alias and reads it back; the child checks every res
 including the available-types listing and DATA chunk framing. The 719-case corpus and its
 manifest reproduce byte-for-byte.
 
+The AppKit surface now binds a native MIME clipboard adapter, with a separate default-deny
+policy exposed through the view and DSL host. The native application explicitly permits writes.
+Type mapping, metadata-only listings and copied-file representations follow the pinned
+Ghostty 1.4 macOS implementation: canonical plain text, shell-escaped file paths, and CRLF
+URI lists. Custom binary MIME formats map through UTType. All formats are prepared in one
+pasteboard item before publication; malformed text, conflicting native aliases and oversized
+writes leave the previous contents intact. Reads have an aggregate 8 MiB budget; native-format
+expansion has a 64 MiB write budget. A changed pasteboard owner invalidates a read with BUSY.
+AppKit's clear-then-publish API can leave an empty clipboard on a system publication failure;
+the adapter reports I/O failure and does not read old clipboard data for rollback.
+
+Ten new tests use unique pasteboards and cover native/custom byte round trips, file URLs,
+multiple items, lazy-provider access, limits, rejected writes, owner changes, unsupported
+locations, policy and view disposal. The existing 1 MiB binary PTY exchange also passes, as do
+nine DSL/native-application tests. The combined Native clipboard/parser/stream regression
+suite passes all 72 tests. Browser MIME access, secure password generation and
+mode-5522 paste events remain open.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

@@ -631,8 +631,21 @@ is the default; `WRITE_ONLY`, `ALLOW` or a custom asynchronous policy can author
 Requests expose the untrusted application name, direction, MIME types and grant state, never
 the password itself. A host must commit all write representations atomically, and report
 unsupported destinations or I/O errors explicitly. No host returns EPERM for reads and ENOSYS
-for writes. The built-in AppKit/browser clipboard adapters currently provide OSC 52 text I/O;
-MIME platform adapters and secure mode-5522 paste events are still pending.
+for writes. `AppKitTerminalView` and `appKitTerminalHosts` accept a separate
+`mimeClipboardPolicy`, defaulting to `DENY`; the native sample explicitly selects `WRITE_ONLY`.
+The view also accepts a custom `mimeClipboard` backend and detaches it on disposal.
+Browser MIME adapters and secure mode-5522 paste events are still pending.
+
+The AppKit MIME adapter maps types through Uniform Type Identifiers, including custom binary
+formats, and publishes all representations as one pasteboard item. Listings inspect only declared
+types without loading lazy providers. As in Ghostty 1.4, copied files are available as shell-escaped
+paths under `text/plain` and CRLF-separated URLs under `text/uri-list`; the latter specifically
+represents file copies. Primary/selection destinations are unsupported. Reads enforce an aggregate
+8 MiB limit, and writes enforce 64 MiB after expanding aliases to distinct native formats.
+Invalid UTF-8 plain text, conflicting representations of one native type, and oversized writes
+are rejected before changing the clipboard. AppKit requires clearing before publishing: a system
+publication failure can leave an empty clipboard and reports an I/O error. The adapter never reads
+the previous clipboard to implement rollback under a write-only policy.
 
 Use `TerminalStreamConnection`, `BrowserTerminalConnection` or `MacOsPty` when attaching an
 asynchronous MIME host. These adapters retain input while authorization, clipboard I/O or reply

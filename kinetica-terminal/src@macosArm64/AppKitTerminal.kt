@@ -24,6 +24,8 @@ public class AppKitTerminalView(
     notificationPolicy: (TerminalNotification) -> Boolean = { false },
     notifications: TerminalNotificationDelivery? = null,
     graphicsStorageBytes: Int = 64 * 1024 * 1024,
+    mimeClipboardPolicy: TerminalMimeClipboardPolicy = TerminalMimeClipboardPolicy.DENY,
+    mimeClipboard: TerminalMimeClipboard? = null,
 ) : NSView(NSMakeRect(0.0, 0.0, 800.0, 480.0)), NSTextInputClientProtocol {
     private var fontSize = 14.0
     private var fontFamily: String? = null
@@ -40,6 +42,7 @@ public class AppKitTerminalView(
     }
     private val notificationObservation = session.onNotification { if (!disposed && notificationPolicy(it)) notificationDelivery().show(it) }
     private val clipboardBinding = session.attachClipboard(clipboard ?: TerminalNativeClipboard(), clipboardPolicy)
+    private val mimeClipboardBinding = session.attachMimeClipboard(mimeClipboard ?: TerminalNativeMimeClipboard(), mimeClipboardPolicy)
     internal var pointerCursor: NSCursor = nativePointerCursor(session.pointerShape) ?: NSCursor.IBeamCursor
         private set
     private val pointerObservation = session.onPointerShape { shape ->
@@ -648,6 +651,7 @@ public class AppKitTerminalView(
         progressIndicator.dispose()
         notificationObservation.dispose(); notifications?.dispose(); notifications = null
         clipboardBinding.dispose()
+        mimeClipboardBinding.dispose()
         onViewportChanged = null; onScrollActivity = null
         viewport.dispose(); softwareImages.clear(); releaseGpu(); inputContext()?.discardMarkedText()
     } }
