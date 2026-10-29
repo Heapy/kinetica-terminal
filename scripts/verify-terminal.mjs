@@ -6,11 +6,57 @@ const page = await browser.newPage({ viewport: { width: 1100, height: 720 }, dev
 const errors = [];
 page.on("pageerror", error => errors.push(String(error)));
 try {
+  // Intercept desktop delivery so this test never posts notifications to the user's desktop.
+  await page.addInitScript(() => {
+    globalThis.notificationCalls = []; globalThis.notificationPermissionRequests = 0;
+    class TestNotification {
+      static permission = "default";
+      static requestPermission() { notificationPermissionRequests++; this.permission = "granted"; return Promise.resolve("granted"); }
+      constructor(title, options) { this.call = { title, ...options, closed: false }; notificationCalls.push(this.call); }
+      close() { this.call.closed = true; }
+    }
+    globalThis.Notification = TestNotification;
+  });
   const url = `${process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173"}/samples/browser-terminal/web/index.html`;
   await page.goto(`${url}?renderer=gpu`);
   await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 80);
   await page.waitForFunction(() => +document.querySelector("[data-terminal]")?.dataset.terminalGlyphs > 0);
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b]9;No permission yet\x07"));
+  assert.deepEqual(await page.evaluate(() => [notificationPermissionRequests, notificationCalls.length]), [0, 0]);
+  await page.locator("#notifications").click();
+  await page.waitForFunction(() => document.querySelector("#notifications").disabled);
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b]777;notify;Done;Task completed 世界\x07"));
+  assert.equal(await page.evaluate(() => notificationCalls.at(-1).body), "Task completed 世界");
+  assert.equal(await page.evaluate(() => notificationCalls.at(-1).title), "Done");
+  await page.evaluate(() => { kineticaTerminalDemo.notificationsEnabled(false); kineticaTerminalDemo.write("\x1b]9;Denied by host\x07"); });
+  assert.equal(await page.evaluate(() => notificationCalls.length), 1);
+  await page.evaluate(() => { kineticaTerminalDemo.notificationsEnabled(true); kineticaTerminalDemo.write("\x1b]9;Replacement\x07"); });
+  assert.equal(await page.evaluate(() => notificationCalls[0].closed), true);
+  const progress = page.locator("[data-terminal-progress]");
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?2026h\x1b]9;4;1;45\x07"));
+  assert.equal(await progress.isVisible(), true);
+  assert.equal(await progress.getAttribute("value"), "45");
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b]9;4;2\x07"));
+  assert.equal(await progress.getAttribute("data-state"), "error");
+  assert.equal(await progress.getAttribute("value"), null);
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b]9;4;4\x07"));
+  assert.equal(await progress.getAttribute("value"), "100");
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b]9;4;3\x07"));
+  assert.equal(await progress.getAttribute("value"), null);
+  await page.waitForFunction(() => document.querySelector("[data-terminal-progress]").hidden, null, { timeout: 20000 });
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b]9;4;1;20\x07\x1bc"));
+  assert.equal(await progress.isVisible(), false);
   assert.equal(await page.locator("[data-terminal]").getAttribute("data-terminal-renderer"), "webgl2");
+  const pointerStyle = () => page.locator("[data-terminal]").evaluate(element => getComputedStyle(element).cursor);
+  assert.equal(await pointerStyle(), "text");
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b]22;pointer\x07"));
+  assert.equal(await pointerStyle(), "pointer");
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?2026h\x1b]22;zoom-in\x1b\\"));
+  assert.equal(await pointerStyle(), "zoom-in");
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b]22;invalid\x07\x1b[?2026l"));
+  assert.equal(await pointerStyle(), "zoom-in");
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b]22;xterm\x07"));
+  assert.equal(await pointerStyle(), "text");
   const input = page.locator("textarea");
   await page.locator("canvas").click();
   await page.keyboard.type("help");
@@ -38,11 +84,19 @@ try {
   const dimensions = await page.evaluate(() => [kineticaTerminalDemo.columns(), kineticaTerminalDemo.rows()]);
   await page.setViewportSize({ width: 740, height: 480 });
   await page.waitForFunction(([columns, rows]) => kineticaTerminalDemo.columns() < columns && kineticaTerminalDemo.rows() < rows, dimensions);
+  const promptNavigation = await page.evaluate(() => {
+    for (let i = 0; i < 60; i++) kineticaTerminalDemo.write(`\x1b]133;A\x07command-${i}\r\n\x1b]133;C\x07output\r\n`);
+    const previous = kineticaTerminalDemo.jumpToPrompt(-1);
+    const offset = kineticaTerminalDemo.scrollOffset();
+    const next = kineticaTerminalDemo.jumpToPrompt(1);
+    return [previous, offset > 0, next, kineticaTerminalDemo.scrollOffset() < offset];
+  });
+  assert.deepEqual(promptNavigation, [true, true, true, true]);
   // Sustained output stays in the terminal surface and bounded history, not a growing DOM tree.
   await page.evaluate(() => kineticaTerminalDemo.write("line\r\n".repeat(12000)));
   assert.equal(await page.evaluate(() => kineticaTerminalDemo.history()), 10000);
   assert.equal(await page.locator("canvas").count(), 1);
-  assert.equal(await page.locator("[data-terminal] *").count(), 4);
+  assert.equal(await page.locator("[data-terminal] *").count(), 5); // Includes the fixed progress overlay.
   const painted = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   // Real GPU pixels, cache reuse, and bounded draw calls. Read while the drawing buffer is valid.
   await page.evaluate(() => {
@@ -75,6 +129,11 @@ try {
   assert.deepEqual(await page.evaluate(() => terminalGpuPixel), [18, 52, 86, 255]);
   assert.deepEqual(await page.evaluate(() => terminalGpuSecondRowPixel), [18, 52, 86, 255]);
   assert.equal(await page.locator("[data-terminal]").evaluate(element => getComputedStyle(element).backgroundColor), "rgb(101, 67, 33)");
+  await page.evaluate(() => kineticaTerminalDemo.write("\u001b]21;4=#abcdef;background=#345678\u001b\\"));
+  await painted();
+  assert.deepEqual(await page.evaluate(() => terminalGpuPixel), [171, 205, 239, 255]);
+  assert.deepEqual(await page.evaluate(() => terminalGpuSecondRowPixel), [171, 205, 239, 255]);
+  assert.equal(await page.locator("[data-terminal]").evaluate(element => getComputedStyle(element).backgroundColor), "rgb(52, 86, 120)");
   await page.evaluate(() => kineticaTerminalDemo.write("\u001b]104;4\u0007\u001b]111\u0007\u001b[0m\u001b[2J\u001b[HX界é😀"));
   await painted();
   // Font metrics invalidate the atlas; lost WebGL resources are rebuilt without losing the session.
@@ -137,7 +196,9 @@ try {
   await page.evaluate(() => kineticaTerminalDemo.write("\u001b[2J\u001b[H\u001b[1;36mKinetica terminal\u001b[0m\r\nBrowser integration passed.\r\n世界 é 😀"));
   await painted();
   await page.screenshot({ path: process.env.TERMINAL_SCREENSHOT ?? "/private/tmp/kinetica-terminal-browser.png" });
-  await page.evaluate(() => kineticaTerminalDemo.dispose());
+  const notificationsBeforeDispose = await page.evaluate(() => notificationCalls.length);
+  await page.evaluate(() => { kineticaTerminalDemo.dispose(); kineticaTerminalDemo.write("\x1b]9;Detached\x07\x1b]9;4;1;50\x07"); });
+  assert.equal(await page.evaluate(() => notificationCalls.length), notificationsBeforeDispose);
   assert.equal(await page.locator("#app > *").count(), 0);
   await page.waitForTimeout(650);
   assert.deepEqual(errors, []);
@@ -186,6 +247,40 @@ try {
     const event = new KeyboardEvent("keydown", { ...options, bubbles: true, cancelable: true });
     element.dispatchEvent(event); return event.defaultPrevented;
   }, { key, code, location: code.startsWith("Numpad") ? 3 : 0, ...modifiers });
+  // OSC 52 uses the actual browser clipboard, in this isolated browser context.
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const clipboardText = "clipboard 世界\n" + "large ".repeat(20000);
+  const clipboardEncoded = Buffer.from(clipboardText).toString("base64");
+  await page.evaluate(encoded => {
+    keypadBytes.length = 0;
+    kineticaTerminalDemo.clipboardPolicy("allow");
+    kineticaTerminalDemo.write(`\x1b]52;c;${encoded}\x07\x1b]52;c;?\x1b\\`);
+  }, clipboardEncoded);
+  const clipboardReply = `\x1b]52;c;${clipboardEncoded}\x1b\\`;
+  await page.waitForFunction(length => keypadBytes.length === length, Buffer.byteLength(clipboardReply));
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), clipboardText);
+  assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), clipboardReply);
+  await page.evaluate(() => {
+    keypadBytes.length = 0;
+    kineticaTerminalDemo.clipboardPolicy("deny");
+    kineticaTerminalDemo.write("\x1b]52;c;ZXZpbA==\x07\x1b]52;c;?\x07");
+  });
+  await page.waitForFunction(() => keypadBytes.length > 0);
+  assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), "\x1b]52;c;\x07");
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), clipboardText);
+  await page.evaluate(() => {
+    keypadBytes.length = 0;
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+      readText: () => Promise.reject(new DOMException("Denied", "NotAllowedError")),
+      writeText: () => Promise.reject(new DOMException("Denied", "NotAllowedError")),
+    } });
+    kineticaTerminalDemo.clipboardPolicy("allow");
+    kineticaTerminalDemo.write("\x1b]52;c;YQ==\x07\x1b]52;c;?\x07");
+  });
+  await page.waitForFunction(() => keypadBytes.length > 0);
+  assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), "\x1b]52;c;\x07");
+  await page.evaluate(() => { delete navigator.clipboard; });
+  await page.evaluate(() => { keypadBytes.length = 0; kineticaTerminalDemo.clipboardPolicy("write"); });
   // The previous renderer was disposed; the locator resolves the current textarea.
   await page.keyboard.type("2");
   await page.keyboard.press("NumpadEnter");
@@ -211,6 +306,73 @@ try {
   await page.waitForFunction(length => keypadBytes.length === length && kineticaTerminalDemo.transportState().pendingInputBytes === 0,
     Buffer.byteLength(expectedKeypad));
   assert.equal(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(keypadBytes))), expectedKeypad);
+  // Kitty negotiation and actual DOM press/repeat/release, including IME ownership.
+  await page.evaluate(() => { keypadBytes.length = 0; kineticaTerminalDemo.write("\u001b[>3u"); });
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Shift+Enter");
+  await page.keyboard.press("Control+Enter");
+  await page.keyboard.down("ArrowUp");
+  await page.keyboard.down("ArrowUp");
+  await page.keyboard.up("ArrowUp");
+  const expectedKitty = "\r\u001b[13;2u\u001b[13;5u\u001b[1;1:1A\u001b[1;1:2A\u001b[1;1:3A";
+  await page.waitForFunction(n => keypadBytes.length === n, Buffer.byteLength(expectedKitty));
+  assert.equal(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(keypadBytes))), expectedKitty);
+  await page.evaluate(() => { keypadBytes.length = 0; kineticaTerminalDemo.write("\u001b[=31u"); });
+  await page.keyboard.press("a");
+  await input.evaluate(element => {
+    element.dispatchEvent(new CompositionEvent("compositionstart"));
+    element.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", code: "Enter", isComposing: true }));
+    element.dispatchEvent(new CompositionEvent("compositionend", { data: "日本" }));
+    element.value = "日本";
+    element.dispatchEvent(new InputEvent("input", { data: "日本", inputType: "insertCompositionText" }));
+  });
+  const expectedKittyText = "\u001b[97;;97u\u001b[97;1:3u日本";
+  await page.waitForFunction(n => keypadBytes.length === n, Buffer.byteLength(expectedKittyText));
+  assert.equal(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(keypadBytes))), expectedKittyText);
+  assert.equal(await keyEvent("v", "KeyV", { metaKey: true }), false, "Local paste must remain available in Kitty mode");
+  await page.evaluate(() => { keypadBytes.length = 0; });
+  await page.keyboard.press("c");
+  assert.equal(await keyEvent("C", "KeyC", { ctrlKey: true, shiftKey: true }), true,
+    "Ctrl+Shift+C without a selection reaches the application");
+  const expectedShortcut = "\u001b[99;;99u\u001b[99;1:3u\u001b[99:67;6u";
+  await page.waitForFunction(n => keypadBytes.length === n, Buffer.byteLength(expectedShortcut));
+  assert.equal(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(keypadBytes))), expectedShortcut);
+  await page.evaluate(() => { kineticaTerminalDemo.write("\u001b[<u"); keypadBytes.length = 0; });
+  await page.evaluate(() => kineticaTerminalDemo.write("\u001b[>4;2m"));
+  await page.keyboard.press("Shift+Enter");
+  await page.keyboard.press("Control+c");
+  await page.keyboard.press("Shift+Tab");
+  const expectedModifyOther = "\u001b[27;2;13~\u001b[27;5;99~\u001b[27;2;9~";
+  await page.waitForFunction(n => keypadBytes.length === n, Buffer.byteLength(expectedModifyOther));
+  assert.equal(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(keypadBytes))), expectedModifyOther);
+  await page.evaluate(() => { kineticaTerminalDemo.write("\u001b[>4n"); keypadBytes.length = 0; });
+  await page.evaluate(() => {
+    kineticaTerminalDemo.write("\u001b[?996n\u001b[?2031h");
+    kineticaTerminalDemo.configureTheme(0xffffff);
+    kineticaTerminalDemo.write("\u001b]11;#000000\u0007\u001b[?996n\u001b[?2031l");
+    kineticaTerminalDemo.configureTheme(0x1e1e1e);
+  });
+  const expectedTheme = "\u001b[?997;1n\u001b[?997;2n\u001b[?997;2n";
+  await page.waitForFunction(n => keypadBytes.length === n, Buffer.byteLength(expectedTheme));
+  assert.equal(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(keypadBytes))), expectedTheme);
+  await page.evaluate(() => { keypadBytes.length = 0; });
+  const expectedSizeReport = size => page.evaluate(size => {
+    const context = document.createElement("canvas").getContext("2d");
+    context.font = `${size}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
+    const width = Math.floor(context.measureText("M").width * devicePixelRatio);
+    const height = Math.floor(Math.ceil(size * 1.3) * devicePixelRatio);
+    const columns = kineticaTerminalDemo.columns(), rows = kineticaTerminalDemo.rows();
+    return `\x1b[48;${rows};${columns};${rows * height};${columns * width}t`;
+  }, size);
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?2048h"));
+  let expectedSize = await expectedSizeReport(14);
+  await page.waitForFunction(n => keypadBytes.length === n, Buffer.byteLength(expectedSize));
+  assert.equal(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(keypadBytes.splice(0)))), expectedSize);
+  await page.evaluate(() => kineticaTerminalDemo.fontSize(18));
+  await page.waitForFunction(() => keypadBytes.length > 0);
+  expectedSize = await expectedSizeReport(18);
+  assert.equal(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(keypadBytes.splice(0)))), expectedSize);
+  await page.evaluate(() => { kineticaTerminalDemo.write("\x1b[?2048l"); kineticaTerminalDemo.fontSize(14); });
   // Mouse reports cross the same bounded stream as Unicode keyboard input. Real pointer
   // events cover capture, chorded buttons and the raw-byte coordinate boundary at column 95.
   await page.setViewportSize({ width: 1200, height: 720 });
@@ -234,6 +396,11 @@ try {
   await resetMouse("\x1b[?1000h");
   await moveCell(95, 1); await page.mouse.down(); await page.mouse.up();
   assert.deepEqual(await readMouse(), [27, 91, 77, 32, 128, 34, 27, 91, 77, 35, 128, 34]);
+  await resetMouse("\x1b[?9h");
+  await page.keyboard.down("Alt"); await page.keyboard.down("Control");
+  await moveCell(2, 1); await page.mouse.down(); await moveCell(3, 1); await page.mouse.up();
+  await page.keyboard.up("Control"); await page.keyboard.up("Alt");
+  assert.deepEqual(await readMouse(), [27, 91, 77, 32, 35, 34]);
   await resetMouse("\x1b[?1003h\x1b[?1006h\x1b[?1004h");
   await moveCell(1, 1); await moveCell(1, 1, 0.6);
   await page.mouse.down({ button: "right" }); await moveCell(2, 1); await page.mouse.up({ button: "right" });
@@ -287,5 +454,5 @@ try {
   assert.deepEqual(await readMouse(), []);
   await page.evaluate(() => kineticaTerminalDemo.dispose());
   assert.deepEqual(errors, []);
-  console.log("Browser terminal: WebGL/Canvas atomic frames, hold timeout, cursor shapes/blink, dynamic palette, glyph cache, context recovery, font resize, keypad/IME input, binary mouse reports, alternate-screen wheel scrolling, pointer capture/chords, history, and disposal passed");
+  console.log("Browser terminal: WebGL/Canvas atomic frames, hold timeout, cursor shapes/blink, dynamic palette, glyph cache, context recovery, font resize, keypad/IME and Kitty input, OSC 52 clipboard, notification permissions/routing, progress states/timeout, binary mouse reports, alternate-screen wheel scrolling, pointer capture/chords, history, and disposal passed");
 } finally { await browser.close(); }

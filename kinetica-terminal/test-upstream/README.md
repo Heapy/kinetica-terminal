@@ -36,6 +36,10 @@ the same upstream golden expectations.
   policy expectation. The adapter verifies identical input bytes, dimensions and history
   limit before using it; whole and chunked replays still compare every cell and wrap.
   The original Alacritty input and expected grid remain archived and unmodified.
+- `decaln_reset`: Ghostty preserves foreground/background colors during DECALN;
+  Alacritty resets them. The adapter uses the original Ghostty grid for this recording,
+  verifies identical archived input/dimensions/history, and compares every cell and wrap.
+  Neither the Alacritty source fixture nor Ghostty's generated expectations are rewritten.
 
 Passing this corpus includes the above documented policy comparison; it must not
 be described as byte-for-byte agreement with every Alacritty behavior.

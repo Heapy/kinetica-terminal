@@ -16,4 +16,10 @@ public sealed class TerminalInputData {
         override fun toByteArray(): ByteArray = bytes.copyOf()
         override fun enqueueTo(buffer: TerminalInputBuffer): Boolean = buffer.tryAdd(bytes)
     }
+
+    /** Bounded clipboard reply, admitted atomically using the adapters' extra protocol budget. */
+    public class ProtocolReply internal constructor(private val bytes: ByteArray) : TerminalInputData() {
+        override fun toByteArray(): ByteArray = bytes.copyOf()
+        override fun enqueueTo(buffer: TerminalInputBuffer): Boolean = buffer.tryAddProtocolReply(bytes)
+    }
 }

@@ -8,6 +8,8 @@ public enum class TerminalKeypadKey(internal val numeric: String, internal val a
     ENTER("\r", 'M'), EQUAL("=", 'X'), SEPARATOR(",", 'l'),
 }
 
+public enum class TerminalKeyAction { PRESS, REPEAT, RELEASE }
+
 public data class TerminalKey(
     val key: String,
     val control: Boolean = false,
@@ -15,12 +17,27 @@ public data class TerminalKey(
     val shift: Boolean = false,
     val meta: Boolean = false,
     val keypad: TerminalKeypadKey? = null,
+    val action: TerminalKeyAction = TerminalKeyAction.PRESS,
+    /** Text produced by the host layout. Null lets simple callers derive it from [key]. */
+    val text: String? = null,
+    val unshiftedCodepoint: Int? = null,
+    val baseCodepoint: Int? = null,
+    /** DOM-style physical identity, especially for left/right modifiers. */
+    val physicalCode: String? = null,
+    val capsLock: Boolean = false,
+    val numLock: Boolean = false,
+    /** Kitty modifier bits consumed while producing [text], e.g. Shift or macOS Option. */
+    val consumedModifiers: Int = 0,
 )
 
 /** Returns null for keys which should be handled by the platform's text/IME input system. */
 public fun TerminalSession.encodeKey(event: TerminalKey): String? {
-    if (event.meta) return null
-    val modifier = 1 + (if (event.shift) 1 else 0) + (if (event.alt) 2 else 0) + (if (event.control) 4 else 0)
+    if (kittyKeyboardFlags != 0) return encodeKittyKey(event, kittyKeyboardFlags)
+    if (event.action == TerminalKeyAction.RELEASE) return ""
+    if (modifyOtherKeysMode == 2) encodeModifyOtherKey(event)?.let { return it }
+    if (event.meta && modifyOtherKeysMode != 2) return null
+    val modifier = 1 + (if (event.shift) 1 else 0) + (if (event.alt) 2 else 0) +
+        (if (event.control) 4 else 0) + (if (event.meta) 8 else 0)
     val final = when (event.key) {
         "ArrowUp" -> "A"; "ArrowDown" -> "B"; "ArrowRight" -> "C"; "ArrowLeft" -> "D"
         "Home" -> "H"; "End" -> "F"; "Begin" -> "E"; else -> null
@@ -37,6 +54,8 @@ public fun TerminalSession.encodeKey(event: TerminalKey): String? {
     }
     if (number != null) return "\u001b[$number${if (modifier > 1) ";$modifier" else ""}~"
     if (event.key in listOf("F1", "F2", "F3", "F4")) {
+        // Modified F3 uses the tilde form to avoid colliding with cursor-position reports.
+        if (event.key == "F3" && modifier > 1) return "\u001b[13;$modifier~"
         val f = ('P'.code + event.key.last().digitToInt() - 1).toChar()
         return if (modifier > 1) "\u001b[1;$modifier$f" else "\u001bO$f"
     }
@@ -68,9 +87,13 @@ public fun TerminalSession.encodeKey(event: TerminalKey): String? {
         } else if (event.alt && event.key.length == 1) event.key else null
     }
     return value?.let { if (event.alt) "\u001b$it" else it }
+        ?: if (modifyOtherKeysMode == 2) event.text?.takeIf { it.isNotEmpty() } else null
 }
 
-public fun TerminalSession.sendKey(event: TerminalKey): Boolean = encodeKey(event)?.let { sendInput(it); true } ?: false
+public fun TerminalSession.sendKey(event: TerminalKey): Boolean = encodeKey(event)?.let {
+    if (it.isNotEmpty()) sendInput(it)
+    true
+} ?: false
 
 public fun TerminalSession.paste(text: String) {
     // Pasted escape bytes must not terminate bracketed paste and inject terminal commands.

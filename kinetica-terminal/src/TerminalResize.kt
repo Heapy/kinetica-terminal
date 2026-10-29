@@ -138,6 +138,7 @@ private class TerminalResizer(
         for ((y, source) in lines.withIndex()) {
             var length = columns
             if (!source.wrapped) while (length > 0 && source.isEmpty(length - 1)) length--
+            if (length == 0 && source.promptMarker != TerminalPromptMarker.NONE) length = 1
             val savedHere = saved?.takeIf { it.y == y }?.let {
                 if (it.x >= length) it.copy(x = minOf(it.x, next - 1 - x.coerceAtMost(next - 1))) else it
             }
@@ -149,11 +150,13 @@ private class TerminalResizer(
             }
             repeat(deferredRows) { nextLine() }
             deferredRows = 0
+            destination.promptMarker = source.promptMarker
             var sourceX = 0
             while (sourceX < length) {
                 if (x == next) {
                     destination.wrapped = true
                     nextLine(continuation = true)
+                    destination.promptMarker = source.promptMarker
                 }
                 // Map before copying, including a wide glyph that first needs a spacer head.
                 if (newCursor == null && cursor.y == y && cursor.x == sourceX) newCursor = outputPosition(cursor)

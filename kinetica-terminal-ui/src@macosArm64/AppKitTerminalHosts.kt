@@ -13,10 +13,13 @@ public fun appKitTerminalHosts(
     rendering: TerminalRendering = TerminalRendering.AUTO,
     renderObserver: TerminalRenderObserver? = null,
     controls: Boolean = false,
+    clipboardPolicy: TerminalClipboardPolicy = TerminalClipboardPolicy.DENY,
+    notificationPolicy: (TerminalNotification) -> Boolean = { false },
     onView: (String, AppKitTerminalView?) -> Unit = { _, _ -> },
 ): Map<String, HostWidgetFactory<NSView>> = mapOf(TERMINAL_HOST_TAG to HostWidgetFactory { node ->
     val id = node.props.getValue("session")
-    val terminal = AppKitTerminalView(sessions.getValue(id), id, optionAsMeta, rendering, renderObserver)
+    val terminal = AppKitTerminalView(sessions.getValue(id), id, optionAsMeta, rendering, renderObserver, clipboardPolicy,
+        notificationPolicy = notificationPolicy)
     val pane = if (controls) AppKitTerminalPane(terminal) else null
     onView(id, terminal)
     object : HostWidget<NSView> {

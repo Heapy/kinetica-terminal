@@ -100,7 +100,8 @@ Implement `TerminalByteTransport` for your WebSocket framing:
 Call `receive(ByteArray)` with UTF-8 output. It copies accepted bytes into a fixed-capacity
 ring and returns immediately; it does **not** acknowledge them. A false return admits no prefix.
 Retry that range later, or close a producer that exceeded its credit window. By default each
-direction has a 1 MiB queue, configured by `TerminalStreamLimits`. The server must limit total
+direction has a 1 MiB queue, configured by `TerminalStreamLimits`. Clipboard replies have an
+additional lazy reserve for one maximum-size encoded response (see OSC 52 below). The server must limit total
 unacknowledged output to the output capacity, including packets still in transit, and pause its
 PTY until credits arrive. Checking the browser WebSocket's `bufferedAmount` or peer input credits
 before accepting a write bounds the other direction. Browser WebSocket buffering itself is
@@ -172,15 +173,19 @@ partial UTF-8/escape state across turns; one processed portion publishes one dam
 Short PTY reads do not impose an additional syscall-count limit: a flooded macOS PTY can return
 roughly 1 KiB per read even with a 16 KiB destination. `receivedBytes` and `readOperations`
 expose transport throughput without recording terminal content.
-Pending input is limited to 1 MiB; callers must
-split larger pastes and allow the transport to drain. The queue uses one fixed-capacity byte ring,
+Ordinary pending input is limited to 1 MiB; callers must
+split larger pastes and allow the transport to drain. The queue uses one bounded byte ring,
 allocated lazily; tiny writes cannot accumulate separate queued objects. Overflow rejects the
 whole input without enqueuing a prefix and calls `onInputRejected` (a system beep by default).
 It does not throw from the UI event loop. Large strings are rejected before UTF-8 encoding; the
 encoding temporary is bounded to 3 MiB. Exit and disposal release the queue and unread output.
 The transport pauses parsing when fewer than 64 KiB are free for replies, enough for a complete
 maximum-size pending OSC palette query plus the remaining commands in a read slice. Draining
-input resumes that exact position; replies are neither dropped nor duplicated. The kernel PTY
+input resumes that exact position. OSC 52 replies can grow the ring by a separate bounded
+allowance of 11,184,821 bytes, enough for Base64 of an 8 MiB read plus its header and terminator.
+They remain atomic with existing input; output parsing pauses while ordinary capacity is exhausted.
+Exhausting the combined allowance rejects the entire new response through `onInputRejected`.
+The extra allocation is released when the ring drains. The kernel PTY
 then supplies output backpressure when the child is not reading input. This protects memory;
 a child that never resumes reading can of course remain stalled.
 `pendingInputBytes`, `bufferedOutputBytes`, `outputPausedForInput` and `rejectedInputCount`
@@ -258,8 +263,11 @@ Shift+PageUp/PageDown, and accessibility text are available.
 - Both screen buffers remain bounded by at most 1,000,000 cells each (axes at most 4096), with
   64 suffix codepoints per cell and the per-row link budget. View snapshots copy only visible
   rows. Resize can temporarily retain old and new storage together; limits are not a peak-memory
-  guarantee. The parser retains at most 4096 UTF-16 units per control string, 64 parameters and
+  guarantee. The parser retains at most 4096 UTF-16 units per ordinary control string, 64 parameters and
   four intermediate bytes. These independent limits also bound the current and saved pens.
+  OSC 52 has a separate UTF-8 byte limit: its capture after `52;`, including a trailing NUL,
+  must fit within 8 MiB, matching the pinned Ghostty. Completion/cancellation releases that
+  capture's large backing storage. Conversion to strings/bytes adds bounded temporary copies.
   A synchronized-output hold also retains the copied text of an existing selection, which
   can extend beyond the visible rows. Selection watches use space proportional to selected rows.
 - Pass `theme = TerminalTheme(...)` to `TerminalSession` to configure foreground, background,
@@ -327,6 +335,19 @@ Unsupported pointer, selection, Tektronix and special-color targets are consumed
 effects or replies. The archived X11 names and license can be regenerated offline with
 `python3 scripts/generate-terminal-x11-colors.py`; provenance is in `third-party/x11-rgb.json`.
 
+Kitty Color Protocol (`OSC 21`) sets, resets and queries palette entries, foreground,
+background and cursor colors. Replies combine queries in request order and retain BEL/ST,
+using 8-bit RGB channels. Unsupported special colors are ignored like the pinned libghostty.
+Requests exceeding its 2048-byte payload or 528-operation limit are rejected atomically.
+OSC 21 and the xterm color commands share state and configured reset defaults.
+
+OSC 22 controls the mouse pointer separately from the text cursor. All 34 W3C names and
+Ghostty's xterm/foot aliases are accepted; invalid names are ignored and RIS preserves the
+last requested shape. Browser views apply CSS cursor styles. AppKit uses Ghostty's native
+mapping (text, arrow, hands, axial resize, context menu, crosshair and not-allowed); unsupported
+native shapes preserve the previously displayed cursor. `pointerShape` and `onPointerShape`
+expose application requests to custom hosts, independently of hover overrides.
+
 Unicode widths and grapheme properties come from a pinned Unicode 18.0.0 snapshot,
 shared across targets. Mode 2027 handles combining text, ZWJ emoji, flags, skin-tone
 modifiers and VS15/VS16 width changes, including wrapping and reflow. Use
@@ -335,15 +356,121 @@ false, matching the reference library. Applications can set/reset/query the mode
 reset restores the configured default. Ambiguous characters are narrow, and each
 cell retains at most 64 suffix codepoints. See [Unicode data and policy](test-upstream/unicode/README.md).
 
+Kitty keyboard negotiation supports query, set/add/remove flags and bounded push/pop stacks,
+independent for the normal and alternate screens. All five progressive enhancements are encoded:
+disambiguation, press/repeat/release, alternate keys, all-key reporting and associated Unicode text.
+AppKit and browser views forward the event type and layout information while retaining IME ownership
+and local application shortcuts. `TerminalKey` also exposes these fields for custom hosts.
+Browsers without the Keyboard Layout Map API infer unshifted punctuation from previously observed
+keys, with a US-layout fallback; exact first-key alternate reporting depends on host layout data.
+The default remains legacy input until an application negotiates Kitty.
+
+Numeric `modifyOtherKeys` mode 2 (`CSI > 4 ; 2 m`) follows the pinned Ghostty encoder;
+Kitty takes precedence while its flags are active. AppKit and browser input support
+modified Enter/Tab and printable keys, without encoding IME commitments twice.
+
+The color-scheme query (`CSI ? 996 n`) and mode 2031 notifications use the host's
+configured theme classification, independently of OSC color overrides. `configureTheme`
+infers light/dark from the background by default; hosts may pass an explicit
+`TerminalColorScheme` or call `configureColorScheme`. Notifications are sent only
+while subscribed, including during synchronized output, and RIS clears the subscription.
+
+In-band resize mode 2048 reports committed rows, columns and physical pixel dimensions
+on enable and resize. `resize(columns, rows, TerminalCellSize(width, height))` supplies
+per-cell pixels after display scaling; AppKit/browser views supply this automatically.
+The same geometry answers `CSI 14/16/18 t`. Before the first resize no geometry is
+available to report. A resize without explicit cell size reuses the last size, or zero
+pixels if unknown. Repeated explicit resizes still report, and RIS resets the subscription.
+
+REP (`CSI Ps b`), scroll-and-clear (`CSI 22 J`) and DEC mode save/restore
+(`CSI ? Ps s` / `CSI ? Ps r`) are supported. Scroll-and-clear moves written rows into
+primary history, subject to its strict limits; alternate screens retain no history.
+X10 mouse mode 9 reports only left/middle/right presses, without modifiers, motion,
+releases or wheel events. The chosen legacy/SGR encoding remains independent of tracking.
+
+Horizontal margins (DECSLRM, mode 69) constrain scrolling and character/line editing.
+Origin mode applies both horizontal and vertical offsets. Margin reports, saved modes,
+wide characters, grapheme wrapping and resize follow the pinned Ghostty oracle.
+
+OSC 7 stores its raw payload in `workingDirectoryUri`; an empty report or reset clears it.
+`onWorkingDirectory` observes every accepted report, including repeated values, immediately
+even during synchronized output. Like libghostty, reset clears state without a report event.
+Payloads must fit in 2047 UTF-8 bytes. URI parsing is a host decision, not a parser side effect.
+`localWorkingDirectory(localHostname)` accepts `file` and `kitty-shell-cwd` URIs with an explicit
+`localhost` or matching machine authority. It decodes file paths as UTF-8, preserves literal
+Kitty paths, and rejects malformed escapes, NULs and remote authorities. The native sample
+uses existing local directories for new tabs/windows, falling back to the PTY's directory.
+
+OSC 133 supports `A/N/P/B/I/C/D/L` prompt, input, output and fresh-line transitions.
+`TerminalLine.promptMarker` identifies prompt/continuation rows, `semanticContent(column)`
+identifies individual cells, and the session exposes `cursorAtPrompt`, `cursorSemanticContent`
+and `hasSemanticPrompts`. Marks survive scrolling, editing, reflow and independent screens;
+soft wraps preserve input state while `I` ends input at an explicit line feed.
+`onSemanticPrompt` delivers accepted commands after applying state, even during render holds.
+Its bounded options expose command IDs, errors, exit codes, prompt kinds and click preferences;
+`commandLineBytes()` decodes `cmdline`/`cmdline_url` without executing anything. Invalid encodings
+return null. Click preferences are metadata for custom hosts; they do not synthesize mouse/key input.
+
+Like libghostty-vt, a new embedded session assumes no shell redraw support. `A/N;redraw=1`,
+`redraw=0` and `redraw=last` select full, disabled or current-line prompt clearing on primary
+screen resize. RIS restores Ghostty's terminal default (full redraw). Alternate grids are not
+cleared for prompt redraw. `TerminalViewport.jumpToPrompt(-1/+1)` and both view wrappers navigate
+relative to the viewport, skip continuations, and do nothing on alternate screens or frozen frames.
+The native sample exposes Previous/Next Prompt in its Shell menu; embedding apps can use the
+same API. These features require the shell to emit OSC 133; the library does not install shell scripts.
+
+OSC 52 supports Base64 clipboard writes, clearing and `?` reads, including optional padding,
+binary data at the engine boundary and BEL/ST-preserving replies. `attachClipboard(backend, policy)`
+binds one host to the session. Both view constructors and DSL host adapters accept `clipboardPolicy`;
+they deny access by default. `WRITE_ONLY` permits remote applications to copy text without reading
+the user's clipboard; `ALLOW` permits both. A custom `TerminalClipboardPolicy` can show a permission
+dialog and complete asynchronously on the session thread. The samples explicitly select `WRITE_ONLY`.
+
+The AppKit and browser backends support the standard text clipboard; primary/selection destinations
+return an empty read and ignore writes. Custom backends receive all three destinations and raw bytes.
+Native tests use an isolated pasteboard. Invalid UTF-8 writes leave text clipboards unchanged.
+Browsers additionally enforce their secure-context, permissions and user-activation requirements.
+Denied/failed reads reply empty; writes have no acknowledgement. With no attached host, requests
+have no effects or replies, matching libghostty's absent callbacks.
+
+Requests are serialized so a read sees preceding writes. Up to 16 requests and 8 MiB of decoded
+write data can wait for authorization or I/O; excess requests are dropped atomically. Read results
+over 8 MiB receive an empty response. Reset cancels uncompleted requests; replacing/disposing a host
+invalidates its pending callbacks. Effects already submitted to the OS cannot be undone. Ordinary
+copy/paste gestures retain their existing behavior independently of OSC 52 policy.
+
+OSC 9 and `OSC 777;notify;title;body` emit `onNotification` events. Recognized ConEmu
+commands are kept separate from notification text. OSC 9;4 emits `onProgress` reports for
+remove, determinate, error, indeterminate and paused states; missing percentages remain null,
+valid values clamp to 100, and RIS emits remove. These events are immediate during synchronized
+output. Parsing follows the pinned Ghostty's 2048-byte capture limit and malformed-command rules.
+
+Both surfaces display progress above the terminal grid: errors are red, pauses orange, and
+missing percentages animate (except pause, which displays 100%). Every report restarts a
+15-second timeout. Remove, reset and surface disposal clear the indicator and its timers.
+The overlay does not consume terminal rows or intercept pointer input.
+
+Desktop delivery requires an explicit `notificationPolicy` on a view or DSL host factory;
+the library default denies delivery. `requestNotificationPermission` is intended for a user
+action. Terminal output never opens an OS permission prompt. Samples expose an “Enable Terminal
+Notifications…” menu action on macOS and an “Enable notifications” browser button. Delivery also
+requires OS/browser authorization. macOS uses UserNotifications from a bundled `.app`; foreground
+presentation remains under the embedding application's notification-center delegate. Browser
+delivery uses the Notifications API and its secure-context restrictions.
+
+`TerminalNotificationDelivery` allows a custom host backend. Default backends replace previous
+surface notifications and clear them on focus/disposal. The macOS backend permits one pending
+OS operation and coalesces additional requests to the latest value; stale completions clean up
+only their own request identifiers. Notification tests intercept desktop delivery, validate real
+`UNMutableNotificationContent` fields and exercise permission/race handling without posting user
+notifications. AppKit progress pixels and browser progress state/expiry are checked separately.
+
 This is an initial VT implementation, not complete xterm conformance. Known limits:
 
 - No image protocols, ligatures or blinking text. Hyperlink activation and search controls
   are currently provided by the native host; browser hosts can use the shared search/link APIs.
-  DECRQSS supports cursor style, SGR attributes and vertical margins;
+  DECRQSS supports cursor style, SGR attributes and vertical/horizontal margins;
   its SGR report omits underline color, matching the pinned Ghostty reference.
-- Kitty keyboard, modifyOtherKeys, horizontal margins (mode 69), color-scheme notifications
-  (2031) and in-band resize (2048) are not implemented or advertised. Applications use the
-  legacy key encoder; Neovim's live tests cover that fallback.
 - Mouse input surfaces support clicks, dragging, wheel and all-motion tracking.
   Local selection supports character/word/line dragging and autoscroll; rectangular selection
   and configurable word separators are not implemented.
@@ -366,7 +493,12 @@ asynchronously for all owned PTYs to reap their children before AppKit terminate
 - The scrollbar overlays retained output while scrolling or navigating history, then hides
   after one idle second. It stays hidden when there is no history; ordinary terminal output
   does not reveal it. Its visibility never changes the grid width. Precise trackpad deltas accumulate into whole rows;
-  TUIs continue to receive wheel reports when mouse tracking is active.
+  TUIs continue to receive wheel reports when mouse tracking is active. On macOS, momentum
+  scrolls local history (including the Shift override), but is not converted into TUI mouse
+  reports or alternate-screen cursor keys: those protocols cannot cancel queued scrolling.
+  Direct vertical trackpad movement in those TUI modes uses a 2× multiplier, retaining
+  fractional movement and the per-event input limit. Ordinary wheels and local history
+  keep their existing speed.
 - Cmd+plus (or Cmd+=), Cmd+minus and Cmd+0 zoom/reset the current terminal. Cmd+comma opens
   Settings for the installed monospace font, size and theme; settings apply to every window
   and persist across launches. Window position and size are also saved.

@@ -10,7 +10,13 @@ public class BrowserTerminalView(
     private val sessionId: String = "terminal",
     private val rendering: TerminalRendering = TerminalRendering.AUTO,
     renderObserver: TerminalRenderObserver? = null,
+    clipboardPolicy: TerminalClipboardPolicy = TerminalClipboardPolicy.DENY,
+    clipboard: TerminalClipboard? = null,
+    notificationPolicy: (TerminalNotification) -> Boolean = { false },
+    notifications: TerminalNotificationDelivery? = null,
 ) {
+    public val scrollOffset: Int get() = viewport.scrollOffset
+    public fun jumpToPrompt(direction: Int): Boolean = viewport.jumpToPrompt(direction)
     private val document: dynamic = js("globalThis.document")
     private val window: dynamic = js("globalThis.window")
     public val view: Element = document.createElement("div").unsafeCast<Element>()
@@ -21,6 +27,7 @@ public class BrowserTerminalView(
     private val input: dynamic = document.createElement("textarea")
     private val accessible: dynamic = document.createElement("pre")
     private val composition: dynamic = document.createElement("div")
+    private val progressElement: dynamic = document.createElement("progress")
     private val measureContext: dynamic = document.createElement("canvas").getContext("2d")
     private var fontSize = 14.0
     private var fontFamily: String? = null
@@ -30,6 +37,14 @@ public class BrowserTerminalView(
     private var frame: Int? = null
     private var accessibilityTimer: Int? = null
     private var disposed = false
+    private var notifications = notifications
+    private fun notificationDelivery(): TerminalNotificationDelivery = notifications ?: BrowserTerminalNotifications().also { notifications = it }
+    public fun requestNotificationPermission(complete: (Boolean) -> Unit) {
+        if (disposed) complete(false) else notificationDelivery().requestPermission(complete)
+    }
+    private val notificationObservation = session.onNotification { if (!disposed && notificationPolicy(it)) notificationDelivery().show(it) }
+    private val pressedKeys = mutableSetOf<String>()
+    private val layoutKeys = mutableMapOf<String, Int>()
     private var composing = false
     private var suppressComposition: String? = null
     private var selecting = false
@@ -43,9 +58,16 @@ public class BrowserTerminalView(
         TerminalDisposable { window.clearTimeout(timer) }
     })
     private val resizeObserver: dynamic = newResizeObserver { resize() }
+    private val pointerObservation = session.onPointerShape { root.style.cursor = it.cssName }
+    private val progressPresentation = TerminalProgressPresentation(session, TerminalScheduler { delay, action ->
+        val timer = window.setTimeout({ action() }, delay)
+        TerminalDisposable { window.clearTimeout(timer) }
+    }, ::updateProgress)
+    private val clipboardBinding = session.attachClipboard(clipboard ?: BrowserTerminalClipboard(), clipboardPolicy)
 
     init {
         root.style.cssText = "position:relative;width:100%;height:100%;min-width:80px;min-height:40px;overflow:hidden;background:#1e1e1e;flex:1;user-select:none;touch-action:none;"
+        root.style.cursor = session.pointerShape.cssName
         root.setAttribute("data-terminal", sessionId)
         root.setAttribute("tabindex", "0")
         root.setAttribute("aria-label", "Terminal")
@@ -61,19 +83,46 @@ public class BrowserTerminalView(
         composition.style.cssText = "position:absolute;display:none;background:#1e1e1e;color:#d4d4d4;text-decoration:underline;white-space:pre;pointer-events:none;"
         composition.setAttribute("aria-hidden", "true")
         root.appendChild(canvas); root.appendChild(input); root.appendChild(accessible); root.appendChild(composition)
+        progressElement.max = 100
+        progressElement.style.cssText = "position:absolute;top:0;left:0;width:100%;height:4px;margin:0;border:0;pointer-events:none;z-index:2;"
+        progressElement.hidden = true
+        progressElement.setAttribute("data-terminal-progress", "")
+        root.appendChild(progressElement)
+        // Chromium can provide the actual layout before the first shifted key is pressed.
+        // Other browsers use observed unshifted keys and the fallback in key().
+        val browserKeyboard = window.navigator.keyboard
+        if (browserKeyboard != null && browserKeyboard.getLayoutMap != null) {
+            browserKeyboard.getLayoutMap().then { layout: dynamic ->
+                if (!disposed) layout.forEach { value: String, code: String ->
+                    value.lowercase().terminalCodepoints().singleOrNull()?.let { layoutKeys[code] = it }
+                }
+            }.catch { _: dynamic -> Unit }
+        }
         listen(input, "keydown") { event ->
             event.stopPropagation()
             if (event.isComposing == true || composing || event.keyCode == 229) return@listen
             val key = key(event)
-            if ((key.meta || key.control && key.shift) && key.key.lowercase() == "c") {
-                val text = viewport.selectedText()
-                if (text.isNotEmpty()) { copy(text); event.preventDefault() }
+            val clipboardShortcut = key.meta || key.control && key.shift
+            if (clipboardShortcut && key.key.lowercase() == "v") return@listen
+            val selection = if (clipboardShortcut && key.key.lowercase() == "c") viewport.selectedText() else ""
+            if (selection.isNotEmpty()) {
+                copy(selection); event.preventDefault()
             } else if (key.shift && key.key == "PageUp") {
                 viewport.scroll(session.rows - 1); event.preventDefault()
             } else if (key.shift && key.key == "PageDown") {
                 viewport.scroll(1 - session.rows); event.preventDefault()
             } else if (session.sendKey(key)) {
+                pressedKeys.add((event.code as? String) ?: key.key)
                 viewport.followOutput(); viewport.clearSelection(); event.preventDefault()
+            } else {
+                pressedKeys.add((event.code as? String) ?: key.key)
+            }
+        }
+        listen(input, "keyup") { event ->
+            event.stopPropagation()
+            val identity = (event.code as? String) ?: event.key as String
+            if (pressedKeys.remove(identity) && !composing && event.isComposing != true) {
+                session.sendKey(key(event).copy(action = TerminalKeyAction.RELEASE))
             }
         }
         listen(input, "input") { event ->
@@ -87,7 +136,7 @@ public class BrowserTerminalView(
                 suppressComposition = null
             }
         }
-        listen(input, "compositionstart") { composing = true }
+        listen(input, "compositionstart") { composing = true; pressedKeys.clear() }
         listen(input, "compositionupdate") { event ->
             composition.textContent = (event.data as? String).orEmpty()
             composition.style.display = "block"; composition.style.font = font()
@@ -115,7 +164,7 @@ public class BrowserTerminalView(
         }
         // AppKit-like focus ownership for the whole widget, including its focusable host root.
         listen(root, "focus") { event -> if (event.target === root) input.focus(js("({preventScroll:true})")) }
-        listen(window, "blur") { cancelMouse(); focusChanged(false) }
+        listen(window, "blur") { pressedKeys.clear(); cancelMouse(); focusChanged(false) }
         listen(root, "pointerdown") { event ->
             val id = (event.pointerId as Number).toInt()
             if (activePointer != null && activePointer != id) return@listen
@@ -207,7 +256,8 @@ public class BrowserTerminalView(
         drawing.resize(width, height, ratio, fontSize, cellWidth, cellHeight, fontFamily)
         val columns = floor(width / cellWidth).toInt().coerceIn(1, 4096)
         val rows = floor(height / cellHeight).toInt().coerceIn(1, 4096)
-        if (columns != session.columns || rows != session.rows) session.resize(columns, rows)
+        val cellSize = TerminalCellSize((cellWidth * ratio).toInt().coerceAtLeast(1), (cellHeight * ratio).toInt().coerceAtLeast(1))
+        if (columns != session.columns || rows != session.rows || cellSize != session.cellSize) session.resize(columns, rows, cellSize)
     }
 
     private fun schedule() {
@@ -255,8 +305,17 @@ public class BrowserTerminalView(
         }
         // With NumLock off the center key is a navigation key, not the digit five.
         val logical = if (code == "Numpad5" && event.key == "Clear") "Begin" else event.key as String
+        val base = terminalPhysicalCodepoint(code)
+        val text = logical.takeIf { it.terminalCodepoints().size == 1 }.orEmpty()
+        val point = text.lowercase().terminalCodepoints().singleOrNull()
+        if (code != null && point != null && event.shiftKey != true && event.altKey != true) layoutKeys[code] = point
+        val unshifted = if (event.shiftKey == true) layoutKeys[code] ?: terminalUnshiftedCodepoint(point, base) else point
         return TerminalKey(logical, event.ctrlKey == true, event.altKey == true, event.shiftKey == true,
-            event.metaKey == true, keypad)
+            event.metaKey == true, keypad,
+            action = if (event.repeat == true) TerminalKeyAction.REPEAT else TerminalKeyAction.PRESS,
+            text = text, unshiftedCodepoint = unshifted, baseCodepoint = base, physicalCode = code,
+            capsLock = event.getModifierState("CapsLock") == true, numLock = event.getModifierState("NumLock") == true,
+            consumedModifiers = if (text.isNotEmpty() && event.shiftKey == true) 1 else 0)
     }
     private fun coordinates(event: dynamic): Pair<Int, Int> {
         val rect = canvas.getBoundingClientRect()
@@ -293,9 +352,24 @@ public class BrowserTerminalView(
     }
     private fun focusChanged(value: Boolean) {
         if (focused == value) return
+        if (!value) pressedKeys.clear()
         focused = value; viewport.setFocused(value); session.sendFocus(value)
+        if (value) notifications?.clear()
     }
     private fun copy(text: String) { window.navigator.clipboard?.writeText(text)?.catch { _: dynamic -> Unit } }
+    private fun updateProgress() {
+        val report = progressPresentation.report
+        progressElement.hidden = report == null
+        progressElement.setAttribute("aria-label", progressPresentation.label)
+        progressElement.setAttribute("data-state", report?.state?.name?.lowercase().orEmpty())
+        val percentage = progressPresentation.percentage
+        if (percentage == null) progressElement.removeAttribute("value") else progressElement.value = percentage
+        progressElement.style.accentColor = when (report?.state) {
+            TerminalProgressState.ERROR -> "#ef4444"
+            TerminalProgressState.PAUSE -> "#f59e0b"
+            else -> "#3b82f6"
+        }
+    }
     private fun listen(target: dynamic, name: String, passive: Boolean = true, action: (dynamic) -> Unit) {
         val options: dynamic = js("({})"); options.passive = passive
         // Only wheel needs an explicit passive option; other listeners may cancel native input.
@@ -306,6 +380,10 @@ public class BrowserTerminalView(
     public fun dispose() {
         if (disposed) return
         disposed = true; mouseReporter.reset(); cancelMouse(); viewport.dispose(); resizeObserver.disconnect()
+        pointerObservation.dispose()
+        progressPresentation.dispose()
+        notificationObservation.dispose(); notifications?.dispose(); notifications = null
+        clipboardBinding.dispose()
         frame?.let { window.cancelAnimationFrame(it) }; accessibilityTimer?.let { window.clearTimeout(it) }
         listeners.forEach { it() }; listeners.clear()
         drawing.dispose()

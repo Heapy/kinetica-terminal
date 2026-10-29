@@ -59,6 +59,82 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+The Ghostty feature-parity work remains in progress. Its requested scope is:
+
+- [x] Kitty keyboard negotiation and all five enhancements, common encoder and AppKit/browser input.
+- [x] xterm numeric modifyOtherKeys mode 2, matching the pinned Ghostty.
+- [x] Light/dark query (`CSI ? 996 n`) and theme notifications (2031).
+- [x] Kitty Color Protocol (`OSC 21`), including atomic request limits and query ordering.
+- [x] Horizontal margins (DECSLRM / 69).
+- [x] In-band resize (2048), physical cell geometry from AppKit/browser and CSI 14/16/18 t.
+- [x] REP, Kitty scroll-and-clear (`CSI 22 J`), XTSAVE/XTRESTORE (strict history limits documented).
+- [x] X10 mouse tracking (9).
+- [x] OSC 52 clipboard with host policy and platform integration.
+- [x] Desktop notifications (OSC 9/777) and ConEmu progress (OSC 9;4).
+- [x] OSC 7 working directory, report observers and local-directory inheritance on macOS.
+- [x] OSC 133 prompt/command metadata, redraw semantics and prompt navigation APIs/menu.
+- [ ] Kitty graphics, including platform rendering and resource limits.
+- [x] OSC 22 pointer shape with browser CSS and Ghostty-equivalent AppKit mappings.
+
+Graphics acceptance work:
+
+- [ ] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
+- [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
+- [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.
+- [ ] Unicode placeholders and animation frames/composition/timing.
+- [ ] Explicit host policy for file, temporary-file and shared-memory transmission media.
+- [ ] Browser Canvas/WebGL and AppKit/Metal images, cache disposal, context recovery and render holds.
+- [ ] Original-libghostty image/placement oracle and real platform pixel/resource regressions.
+
+The OSC 133 increment adds 26 semantic/alignment oracle cases plus the original Alacritty
+DECALN recording, covering 173 new checkpoints. It compares row and cell markers, cursor
+classification, input termination, screen transitions, margins, erasure and resize redraw.
+Separate common tests cover command metadata/decoding, observer disposal, prompt navigation
+and host Clear Screen. Native sample commands and the browser host exercise navigation;
+click options are exposed as metadata, without automatic click-to-cursor input synthesis.
+Validation passes 479 JVM tests, the freshly built JS suite, all 279 Native oracle scenarios,
+six Native common semantic tests and seven native application tests. The browser verifier
+passes prompt navigation alongside its existing rendering/input/lifecycle checks. All 282
+oracle artifacts reproduce byte-for-byte; 27 new scenario/helper paths pass AddressSanitizer
+with the uninstrumented upstream library and disabled LeakSanitizer noted below.
+Kitty graphics remains unimplemented.
+
+The OSC 7 increment passes 446 JVM tests and the freshly built JS suite. Native checks cover
+all 252 oracle scenarios, two common working-directory tests and seven application tests,
+including a real new shell inheriting a reported directory different from its parent's cwd.
+All 255 oracle artifacts reproduce byte-for-byte. The four new cases cover 28 checkpoints;
+their C-helper paths pass AddressSanitizer
+with the same instrumentation limits described below. URI validation rejects remote hosts,
+malformed escapes and NULs before the sample checks filesystem existence. OSC 133 and
+Kitty graphics remain unimplemented.
+
+The notification/progress increment passes 440 JVM tests, the freshly built JS suite and
+browser integration. All 248 original-libghostty oracle scenarios pass on Native, alongside
+eight focused common/native effect tests and six native application tests. AppKit checks
+progress colors/width in cached pixels, resize, pointer transparency and disposal. Browser
+checks cover permission actions, intercepted notification delivery, all progress states,
+the real 15-second expiry and detached observers. Native delivery tests inject the notification
+center, retain real UN content objects and check denial, flood coalescing and late completions;
+OS banner presentation itself is not asserted. Sample menu routing is tested without opening
+an OS prompt. All 251 oracle artifacts reproduce exactly; five effect-helper scenarios pass
+AddressSanitizer with the same instrumentation limits as the clipboard checkpoint below.
+
+The horizontal-margin and OSC 52 increment passes 431 JVM tests and the freshly built JS
+suite. Native validation passes 266 oracle/transport/backpressure/AppKit regressions plus
+nine clipboard unit/platform tests; the final clipboard oracle subset also passes after
+adding malformed multibyte selectors. The browser verifier exercises real clipboard write/read,
+host denial and rejected browser promises. A dedicated native PTY verifies a 2 MiB clipboard
+read byte-for-byte; AppKit clipboard tests use a private pasteboard. Both sample applications
+compile with explicit write-only clipboard policies. All 246 oracle artifacts reproduce
+byte-for-byte, and the clipboard C-helper cases pass AddressSanitizer (the upstream library
+is not instrumented; LeakSanitizer is disabled on this macOS runtime).
+This closes these two features, not notifications, command metadata, graphics or the broader gates.
+
+The Kitty increment adds 32 original-libghostty scenarios with 16,554 key events and
+screen-local stack transitions. The Neovim replay no longer filters Kitty replies.
+The encoder matrix covers all nonzero flags; native/DOM tests cover event routing and
+IME commitment. This does not close the remaining features or the broader acceptance gates.
+
 The imported Alacritty corpus contains 45 recordings, stored verbatim with source
 hashes. Generated common tests compare full and deterministically chunked streams.
 The original minimal engine passed 22/45 before fixes; that baseline also exposed
@@ -69,8 +145,8 @@ Ghostty-derived parser tests and fixes are being added with the MIT license and
 the source revision recorded. Existing WebGL2/Metal renderers and real macOS PTY
 are implemented, but their earlier tests do not prove the unchecked gates above.
 
-The pinned original `libghostty-vt` now generates 722 intermediate snapshots from
-143 scenarios. The common suite checks cells/styles/protection, wraps, cursor/pending wrap,
+The pinned original `libghostty-vt` now generates 1760 intermediate snapshots from
+279 scenarios. The common suite checks cells/styles/protection, wraps, cursor/pending wrap,
 selected modes, replies, title, screen selection and history at every checkpoint,
 both with whole writes and bytewise input. Its 32 resize scenarios cover primary
 reflow and alternate-grid cropping, saved/current cursors, wide spacers, one-column
@@ -184,9 +260,9 @@ Backpressure tests exercise the maximum implemented SGR reply alongside pending 
 replies. All four new C-helper scenarios pass AddressSanitizer (LeakSanitizer remains disabled).
 
 The input-only Neovim recording adds eight reference checkpoints. Original libghostty
-snapshots and transcripts are retained without modification. Its replay declares four
+snapshots and transcripts are retained without modification. Its replay declares three
 explicit capability differences: unsupported modes 69/2031/2048 answer DECRQM with status 0
-instead of Ghostty's status 2, and the unsupported Kitty keyboard query is unanswered.
+instead of Ghostty's status 2. Kitty keyboard replies are compared unchanged.
 Only those exact reply substitutions occur in the comparator; other replies and all cell,
 cursor, mode, palette, history and synchronization checks remain exact. A separate negative
 capability test ensures requests do not enable or advertise these extensions or change the

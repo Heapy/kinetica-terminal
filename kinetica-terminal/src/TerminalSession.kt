@@ -16,7 +16,8 @@ public enum class TerminalCursorStyle(internal val code: Int) { BAR(0), BLOCK(1)
 public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrollback: Int = 10_000,
     graphemeClustering: Boolean = false, theme: TerminalTheme = TerminalTheme(),
     cursorStyle: TerminalCursorStyle = TerminalCursorStyle.UNDERLINE, cursorBlink: Boolean = false,
-    public val limits: TerminalLimits = TerminalLimits()) {
+    public val limits: TerminalLimits = TerminalLimits(),
+    colorScheme: TerminalColorScheme = theme.inferredColorScheme()) {
     init {
         validateSize(columns, rows)
         require(scrollback in 0..100_000) { "Scrollback must be between 0 and 100000 lines" }
@@ -39,9 +40,31 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         private set
     public var title: String = ""
         private set
+    /** Raw OSC 7 URI, or null after clearing/reset. Hosts must validate it before using a local path. */
+    public var workingDirectoryUri: String? = null
+        private set
+    private val primarySemantic = TerminalSemanticState()
+    private val alternateSemantic = TerminalSemanticState()
+    private val semantic: TerminalSemanticState get() = if (alternateScreen) alternateSemantic else primarySemantic
+    public val cursorSemanticContent: TerminalSemanticContent get() = semantic.content
+    public val hasSemanticPrompts: Boolean get() = semantic.seen
+    public val promptClickMode: TerminalPromptClick? get() = semantic.click
+    // Like libghostty-vt, an embedded engine cannot assume shell redraw support until negotiated.
+    public var promptRedraw: TerminalPromptRedraw = TerminalPromptRedraw.NONE
+        private set
+    public val cursorAtPrompt: Boolean get() = !alternateScreen &&
+        (screen[cursorRow].promptMarker != TerminalPromptMarker.NONE || semantic.content != TerminalSemanticContent.OUTPUT)
     public var applicationCursor: Boolean = false
         private set
     public var applicationKeypad: Boolean = false
+        private set
+    private val primaryKeyboard = TerminalKeyboardStack()
+    private val alternateKeyboard = TerminalKeyboardStack()
+    private val keyboard: TerminalKeyboardStack get() = if (alternateScreen) alternateKeyboard else primaryKeyboard
+    /** Active screen's Kitty progressive enhancement flags. */
+    public val kittyKeyboardFlags: Int get() = keyboard.current
+    /** xterm numeric modifyOtherKeys mode, matching the pinned Ghostty's mode-2 support. */
+    public var modifyOtherKeysMode: Int = 0
         private set
     /** DEC mode 1035: force numeric encoding, matching Ghostty's default keypad policy. */
     public var keypadNumericOverride: Boolean = true
@@ -49,6 +72,20 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     public var bracketedPaste: Boolean = false
         private set
     public var focusReporting: Boolean = false
+        private set
+    public var colorSchemeReporting: Boolean = false
+        private set
+    public var pointerShape: TerminalPointerShape = TerminalPointerShape.TEXT
+        private set
+    public var inBandResizeReporting: Boolean = false
+        private set
+    public var leftRightMarginMode: Boolean = false
+        private set
+    /** Last committed host geometry; null until the first explicit resize. */
+    public var cellSize: TerminalCellSize? = null
+        private set
+    /** Host theme classification; OSC palette overrides do not change it. */
+    public var colorScheme: TerminalColorScheme = colorScheme
         private set
     public var mouseTracking: Int = 0
         private set
@@ -88,7 +125,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     public val historyStorageBytes: Long get() = history.storageBytes
     internal val cursorPendingWrap: Boolean get() = pendingWrap
     internal fun inspectedModes(): BooleanArray = booleanArrayOf(applicationCursor, origin, wrap,
-        insertMode, newlineMode, bracketedPaste, focusReporting, sgrMouse, graphemeClustering, synchronizedOutput, cursorBlink)
+        insertMode, newlineMode, bracketedPaste, focusReporting, sgrMouse, graphemeClustering, synchronizedOutput, cursorBlink, leftRightMarginMode)
 
     internal val colors = TerminalColors(theme)
     /** Effective theme, including OSC overrides; configured defaults are restored by OSC 110–112. */
@@ -125,10 +162,17 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private var graphics = false
     private var g1Graphics = false
     private var useG1 = false
+    private var previousCharacter: Int? = null
+    private var left = 0
+    private var right = columns - 1
+    // One saved bit per supported DEC mode; repeated saves overwrite rather than stack.
+    private val savedModes = mutableMapOf<Int, Boolean>()
+    private val sideEffectModes = mutableMapOf<Int, Boolean>()
     private var tabs = BooleanArray(columns) { it > 0 && it % 8 == 0 }
     private val params = IntArray(64)
     private val separators = BooleanArray(64)
     private var paramIndex = 0
+    private var parameterCount = 0
     private var privateCsi = false
     // Transport budget checkpoints: ordinary text is checked every small byte slice, while
     // potentially expensive control operations are followed by an immediate checkpoint.
@@ -143,6 +187,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             for (i in 0 until command.count) params[i] = command.parameters[i].coerceAtLeast(0)
             command.colon.copyInto(separators)
             paramIndex = (command.count - 1).coerceAtLeast(0)
+            parameterCount = command.count
             privateCsi = command.prefix == '?'.code
             dispatchCsi(final.toChar(), command.prefix, command.intermediates)
         }
@@ -163,6 +208,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 } else when (request) {
                     "\$qm" -> sendInput("\u001bP1\$r${sgrSettings()}m\u001b\\")
                     "\$qr" -> sendInput("\u001bP1\$r${top + 1};${bottom + 1}r\u001b\\")
+                    "\$qs" -> sendInput(if (leftRightMarginMode) "\u001bP1\$r${left + 1};${right + 1}s\u001b\\" else "\u001bP0\$r\u001b\\")
                     else -> sendInput("\u001bP0\$r\u001b\\")
                 }
             }
@@ -179,6 +225,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private var fullDamage = false
     private val observers = mutableListOf<(TerminalChange) -> Unit>()
     private val inputObservers = mutableListOf<(TerminalInputData) -> Unit>()
+    private val pointerObservers = mutableListOf<(TerminalPointerShape) -> Unit>()
+    private val notificationObservers = mutableListOf<(TerminalNotification) -> Unit>()
+    private val workingDirectoryObservers = mutableListOf<(String?) -> Unit>()
+    private val semanticPromptObservers = mutableListOf<(TerminalSemanticPrompt) -> Unit>()
+    private val progressObservers = mutableListOf<(TerminalProgressReport) -> Unit>()
+    private var clipboardBinding: TerminalClipboardBinding? = null
     private val resizeObservers = mutableListOf<(Int, Int) -> Unit>()
     private val renderHoldObservers = mutableListOf<(Boolean) -> Unit>()
 
@@ -224,6 +276,62 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         return TerminalDisposable { resizeObservers.remove(listener) }
     }
 
+    /** Observe application pointer changes; hosts apply platform/hover overrides separately. */
+    public fun onPointerShape(observer: (TerminalPointerShape) -> Unit): TerminalDisposable {
+        val listener: (TerminalPointerShape) -> Unit = { observer(it) }
+        pointerObservers += listener
+        return TerminalDisposable { pointerObservers.remove(listener) }
+    }
+
+    /**
+     * Observe accepted OSC 7 reports, including repeats and explicit clearing. Events are immediate
+     * during synchronized output. Reset clears [workingDirectoryUri] without emitting a report.
+     */
+    public fun onWorkingDirectory(observer: (String?) -> Unit): TerminalDisposable {
+        val listener: (String?) -> Unit = { observer(it) }
+        workingDirectoryObservers += listener
+        return TerminalDisposable { workingDirectoryObservers.remove(listener) }
+    }
+
+    /** Accepted OSC 133 commands, delivered after applying state, including during render holds. */
+    public fun onSemanticPrompt(observer: (TerminalSemanticPrompt) -> Unit): TerminalDisposable {
+        val listener: (TerminalSemanticPrompt) -> Unit = { observer(it) }
+        semanticPromptObservers += listener
+        return TerminalDisposable { semanticPromptObservers.remove(listener) }
+    }
+
+    /** Synchronous protocol events; the host controls permission and desktop delivery. */
+    public fun onNotification(observer: (TerminalNotification) -> Unit): TerminalDisposable {
+        val listener: (TerminalNotification) -> Unit = { observer(it) }
+        notificationObservers += listener
+        return TerminalDisposable { notificationObservers.remove(listener) }
+    }
+
+    /** Includes REMOVE on reset, even if no progress was previously reported. */
+    public fun onProgress(observer: (TerminalProgressReport) -> Unit): TerminalDisposable {
+        val listener: (TerminalProgressReport) -> Unit = { observer(it) }
+        progressObservers += listener
+        return TerminalDisposable { progressObservers.remove(listener) }
+    }
+
+    private fun reportProgress(report: TerminalProgressReport) { progressObservers.toList().forEach { it(report) } }
+
+    /**
+     * Attach the one host responsible for OSC 52. Replacing or disposing a binding cancels
+     * pending authorization and read callbacks. No host means no clipboard access or replies.
+     */
+    public fun attachClipboard(clipboard: TerminalClipboard, policy: TerminalClipboardPolicy = TerminalClipboardPolicy.DENY): TerminalDisposable {
+        clipboardBinding?.dispose()
+        val binding = TerminalClipboardBinding(clipboard, policy) { reply ->
+            emitInput(TerminalInputData.ProtocolReply(reply.encodeToByteArray()))
+        }
+        clipboardBinding = binding
+        return TerminalDisposable {
+            binding.dispose()
+            if (clipboardBinding === binding) clipboardBinding = null
+        }
+    }
+
     public fun sendInput(text: String) = emitInput(TerminalInputData.Text(text))
     internal fun sendProtocolBytes(bytes: ByteArray) = emitInput(TerminalInputData.Bytes(bytes))
     private fun emitInput(data: TerminalInputData) { inputObservers.toList().forEach { it(data) } }
@@ -237,9 +345,30 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     public fun screenLine(row: Int): TerminalLine = screen[row]
 
     /** Apply user-selected defaults without rewriting cell colors or resetting terminal modes. */
-    public fun configureTheme(theme: TerminalTheme) {
+    public fun configureTheme(theme: TerminalTheme, colorScheme: TerminalColorScheme = theme.inferredColorScheme()) {
         colors.configure(theme)
+        configureColorScheme(colorScheme)
         damageAll(); flushDamage()
+    }
+
+    /** Notify subscribed applications after a host theme/configuration change. */
+    public fun configureColorScheme(colorScheme: TerminalColorScheme) {
+        this.colorScheme = colorScheme
+        if (colorSchemeReporting) reportColorScheme()
+    }
+
+    private fun reportColorScheme() { sendInput("\u001b[?997;${colorScheme.report}n") }
+
+    private fun reportSize(style: Int = 48) {
+        val cell = cellSize ?: return
+        val dimensions = when (style) {
+            48 -> "$rows;$columns;${rows.toLong() * cell.height};${columns.toLong() * cell.width}"
+            4 -> "${rows.toLong() * cell.height};${columns.toLong() * cell.width}"
+            6 -> "${cell.height};${cell.width}"
+            8 -> "$rows;$columns"
+            else -> return
+        }
+        sendInput("\u001b[$style;${dimensions}t")
     }
 
     /** Clear retained primary history, including when a full-screen application is active. */
@@ -258,7 +387,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         val spare = screen.filterIndexed { index, _ -> index !in first..cursorRow }
         spare.forEach { row ->
             row.recycleEpoch++; row.clear(0, columns, -1, -1, 0)
-            row.wrapped = false; row.wrapContinuation = false
+            row.wrapped = false; row.wrapContinuation = false; row.promptMarker = TerminalPromptMarker.NONE
         }
         screen = Array(rows) { if (it < retained.size) retained[it] else spare[it - retained.size] }
         screen[0].wrapContinuation = false
@@ -347,10 +476,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     /** Reflow primary text and history; full-screen alternate applications retain their physical grid. */
-    public fun resize(columns: Int, rows: Int) {
+    public fun resize(columns: Int, rows: Int, cellSize: TerminalCellSize = this.cellSize ?: TerminalCellSize(0, 0)) {
         validateSize(columns, rows)
         flushSynchronizedOutput()
-        if (columns == this.columns && rows == this.rows) return
+        this.cellSize = cellSize
+        if (columns == this.columns && rows == this.rows) {
+            if (inBandResizeReporting) reportSize()
+            return
+        }
         selectionEpoch++
         fun SavedCursor.position() = TerminalPosition(x, y, wrap)
         fun SavedCursor.at(position: TerminalPosition?) = if (position == null) this else
@@ -359,6 +492,26 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             val result = resizeTerminal(old, if (primary) (0 until history.size).map { history[it] } else emptyList(),
                 cursor.position(), saved.takeIf { it.valid }?.position(), columns, rows,
                 if (primary) scrollback else 0, limits.historyBytes, reflow = primary)
+            val state = if (primary) primarySemantic else alternateSemantic
+            if (primary && state.content != TerminalSemanticContent.OUTPUT && promptRedraw != TerminalPromptRedraw.NONE) {
+                val lines = result.history + result.screen
+                val current = result.history.size + result.cursor.y
+                if (promptRedraw == TerminalPromptRedraw.LAST) lines[current].clear(0, columns, -1, -1, 0)
+                else {
+                    var start = current
+                    while (start >= 0 && lines[start].promptMarker == TerminalPromptMarker.NONE) start--
+                    if (start >= 0) {
+                        if (lines[start].promptMarker == TerminalPromptMarker.CONTINUATION) {
+                            val continuation = start
+                            while (start > 0 && lines[start].promptMarker == TerminalPromptMarker.CONTINUATION &&
+                                lines[start - 1].promptMarker != TerminalPromptMarker.NONE) start--
+                            // Match Ghostty's iterator when scrollback starts with an orphan continuation.
+                            if (start == 0 && lines[start].promptMarker == TerminalPromptMarker.CONTINUATION) start = continuation
+                        }
+                        for (y in start until lines.size) lines[y].clear(0, columns, -1, -1, 0)
+                    }
+                }
+            }
             if (primary) {
                 scrolledLines += (result.history.size - history.size).coerceAtLeast(0)
                 history.clear()
@@ -380,13 +533,20 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         }
         cursorRow = active.cursor.y; cursorColumn = active.cursor.x; pendingWrap = active.cursor.pendingWrap
         this.columns = columns; this.rows = rows
-        top = 0; bottom = rows - 1
+        top = 0; bottom = rows - 1; left = 0; right = columns - 1
         tabs = BooleanArray(columns) { if (it < tabs.size) tabs[it] else it % 8 == 0 }
         damageAll(); flushDamage()
         resizeObservers.toList().forEach { it(columns, rows) }
+        if (inBandResizeReporting) reportSize()
     }
 
     public fun reset() {
+        clipboardBinding?.reset()
+        previousCharacter = null
+        savedModes.clear(); sideEffectModes.clear()
+        modifyOtherKeysMode = 0
+        primaryKeyboard.reset(); alternateKeyboard.reset()
+        primarySemantic.reset(); alternateSemantic.reset(); promptRedraw = TerminalPromptRedraw.ALL
         selectionEpoch++; screenEpoch++
         history.clear(); primary = null; alternate = null; alternateScreen = false
         screen = Array(rows) { TerminalLine(columns, colors, limits.hyperlinkBytesPerLine) }
@@ -396,13 +556,18 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         protectedCell = false; protectionMode = 0; primaryProtectionMode = 0; alternateProtectionMode = 0
         origin = false; wrap = true; pendingWrap = false; insertMode = false; graphics = false; g1Graphics = false; useG1 = false
         applicationCursor = false; bracketedPaste = false; focusReporting = false
+        colorSchemeReporting = false
+        inBandResizeReporting = false
+        leftRightMarginMode = false; left = 0; right = columns - 1
         applicationKeypad = false; keypadNumericOverride = true; alternateScroll = true
         mouseTracking = 0; sgrMouse = false; mouseEpoch++; newlineMode = false; graphemeClustering = defaultGraphemeClustering
         parser.reset(); utfNeeded = 0; highSurrogate = null; title = ""
+        workingDirectoryUri = null
         saved = SavedCursor(); primaryCursor = SavedCursor(); alternateCursor = SavedCursor()
         primarySaved = SavedCursor(); alternateSaved = SavedCursor()
         tabs = BooleanArray(columns) { it > 0 && it % 8 == 0 }
         damageAll(); flushSynchronizedOutput(); flushDamage()
+        reportProgress(TerminalProgressReport(TerminalProgressState.REMOVE))
     }
 
     /** Copy a range with an exclusive end, expanding partial wide cells to whole glyphs. */
@@ -440,8 +605,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             7 -> bellCount++
             8 -> { cursorColumn = (cursorColumn - 1).coerceAtLeast(0); pendingWrap = false }
             9 -> { tab(1); pendingWrap = false }
-            10, 11, 12 -> { lineFeed(); if (newlineMode) cursorColumn = 0 }
-            13 -> { cursorColumn = 0; pendingWrap = false }
+            10, 11, 12 -> { lineFeed(); if (newlineMode) carriageReturn() }
+            13 -> carriageReturn()
             14 -> useG1 = true
             15 -> useG1 = false
         }
@@ -452,9 +617,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             '('.code -> graphics = final == '0'.code
             ')'.code -> g1Graphics = final == '0'.code
             '#'.code -> if (final == '8'.code) {
+                style = 0; setAttributes(-1, attributes?.hyperlink)
+                top = 0; bottom = rows - 1; left = 0; right = columns - 1; origin = false
+                cursorColumn = 0; cursorRow = 0; pendingWrap = false
                 for (line in screen) {
-                    line.wrapped = false
-                    for (x in 0 until columns) line.put(x, 'E'.code, 1, -1, -1, 0)
+                    line.wrapped = false; line.wrapContinuation = false; line.promptMarker = TerminalPromptMarker.NONE
+                    for (x in 0 until columns) line.put(x, 'E'.code, 1, fg, bg, 0)
                 }
                 damageAll()
             }
@@ -462,7 +630,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 '7' -> saved = saveCursor()
                 '8' -> restoreCursor(saved)
                 'D' -> lineFeed()
-                'E' -> { cursorColumn = 0; lineFeed() }
+                'E' -> { lineFeed(); carriageReturn() }
                 'M' -> reverseIndex()
                 'H' -> tabs[cursorColumn] = true
                 'V' -> { protectedCell = true; protectionMode = PROTECTION_ISO }
@@ -476,6 +644,32 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun dispatchCsi(final: Char, prefix: Int, intermediates: Int) {
+        if (prefix == '?'.code && intermediates == 0 && final in "sr") {
+            for (i in 0 until parameterCount) {
+                val number = params[i]
+                val current = privateModeState(number) ?: continue
+                if (final == 's') savedModes[number] = current
+                else mode(number, savedModes[number] ?: (number in listOf(7, 25, 1007, 1035)))
+            }
+            return
+        }
+        if (prefix == '>'.code && intermediates == 0 && final in "mn") {
+            if (final == 'n') modifyOtherKeysMode = 0
+            else if (parameterCount <= 2 && params[0] in listOf(0, 1, 2, 4)) {
+                modifyOtherKeysMode = if (params[0] == 4 && parameterCount == 2 && params[1] == 2) 2 else 0
+            }
+            return
+        }
+        if (final == 'u' && intermediates == 0 && prefix != 0) {
+            if ((0..paramIndex).any { separators[it] }) return
+            when (prefix.toChar()) {
+                '?' -> sendInput("\u001b[?$kittyKeyboardFlags" + "u")
+                '>' -> if (parameterCount != 1) keyboard.push(0) else if (params[0] <= 31) keyboard.push(params[0])
+                '<' -> keyboard.pop(if (parameterCount == 1) params[0] else 1)
+                '=' -> if (params[0] <= 31) keyboard.set(params[0], if (parameterCount < 2) 1 else params[1])
+            }
+            return
+        }
         if (final == 'q' && prefix == '>'.code && intermediates == 0) {
             sendInput("\u001bP>|Kinetica\u001b\\")
             return
@@ -524,6 +718,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun print(input: Int) {
+        val rightLimit = if (cursorColumn > right) columns else right + 1
         val code = if ((if (useG1) g1Graphics else graphics) && input in 0x5f..0x7e)
             if (input == 0x5f) 32 else DEC_GRAPHICS[input - 0x60].code else input
         if (code > 255 && graphemeClustering && cursorColumn > 0 && appendGrapheme(code)) return
@@ -537,35 +732,42 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             }
             damage(cursorRow); return
         }
-        if (pendingWrap || width == 2 && cursorColumn == columns - 1) {
-            if (wrap) {
-                if (!pendingWrap && width == 2) {
-                    eraseWideAt(screen[cursorRow], cursorColumn)
-                    screen[cursorRow].putSpacerHead(cursorColumn, fg, bg, style, attributes, protectedCell)
-                }
-                screen[cursorRow].wrapped = true; cursorColumn = 0; lineFeed()
-                screen[cursorRow].wrapContinuation = true
-            }
-            pendingWrap = false
+        previousCharacter = input
+        if (pendingWrap && wrap) softWrap()
+        pendingWrap = false
+        if (insertMode && cursorColumn + width < columns) insertCharacters(width)
+        if (width == 2 && rightLimit - left < 2) {
+            // Ghostty consumes a wide character as a styled blank when the
+            // scrolling region cannot hold its two cells, without wrapping first.
+            eraseWideAt(screen[cursorRow], cursorColumn)
+            screen[cursorRow].putBlank(cursorColumn, fg, bg, style, attributes, protectedCell, semantic.content)
+            damage(cursorRow)
+            if (cursorColumn == rightLimit - 1) pendingWrap = true else cursorColumn++
+            return
         }
-        if (width == 2 && columns < 2) return
-        if (width == 2 && cursorColumn == columns - 1) return
-        if (insertMode) insertCharacters(width)
+        if (width == 2 && cursorColumn == rightLimit - 1 && wrap) {
+            eraseWideAt(screen[cursorRow], cursorColumn)
+            if (rightLimit == columns) screen[cursorRow].putSpacerHead(cursorColumn, fg, bg, style, attributes, protectedCell, semantic.content)
+            else screen[cursorRow].putBlank(cursorColumn, fg, bg, style, attributes, protectedCell, semantic.content)
+            softWrap()
+        }
+        if (width == 2 && cursorColumn == rightLimit - 1) return
         val line = screen[cursorRow]
         eraseWideAt(line, cursorColumn)
         if (width == 2) eraseWideAt(line, cursorColumn + 1)
-        line.put(cursorColumn, code, width, fg, bg, style, attributes, protectedCell)
-        if (width == 2) line.put(cursorColumn + 1, 0, 0, fg, bg, style, attributes, protectedCell)
+        line.put(cursorColumn, code, width, fg, bg, style, attributes, protectedCell, semantic.content)
+        if (width == 2) line.put(cursorColumn + 1, 0, 0, fg, bg, style, attributes, protectedCell, semantic.content)
         damage(cursorRow)
         cursorColumn += width
-        if (cursorColumn >= columns) { cursorColumn = columns - 1; pendingWrap = true }
+        if (cursorColumn >= rightLimit) { cursorColumn = rightLimit - 1; pendingWrap = true }
     }
 
     private fun appendGrapheme(code: Int): Boolean {
+        val rightLimit = if (cursorColumn > right) columns else right + 1
         var line = screen[cursorRow]
         var x = when {
             wrap -> cursorColumn - if (pendingWrap) 0 else 1
-            cursorColumn == columns - 1 && line.hasText(cursorColumn) -> cursorColumn
+            cursorColumn == rightLimit - 1 && line.hasText(cursorColumn) -> cursorColumn
             else -> cursorColumn - 1
         }
         if (x >= 0 && line.width(x) == 0) x--
@@ -588,28 +790,28 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             -1 -> return true
             2 -> if (line.width(x) != 2) {
                 cursorColumn = x
-                if (x == columns - 1) {
+                if (x == rightLimit - 1) {
                     if (!wrap) return true
                     // A wrap can recycle the source row; retain the bounded cluster first.
                     val cluster = TerminalLine(1, colors, limits.hyperlinkBytesPerLine).also { it.copyCell(line, x, 0) }
-                    if (line.isCombined(x)) line.replaceWithSpacerHead(x)
-                    else line.putSpacerHead(x, fg, bg, style, attributes, protectedCell)
-                    line.wrapped = true; damage(cursorRow)
-                    cursorColumn = 0; lineFeed(); x = 0; line = screen[cursorRow]
-                    line.wrapContinuation = true
+                    if (line.isCombined(x)) line.replaceWithBlank(x, spacerHead = rightLimit == columns)
+                    else if (rightLimit == columns) line.putSpacerHead(x, fg, bg, style, attributes, protectedCell, semantic.content)
+                    else line.putBlank(x, fg, bg, style, attributes, protectedCell, semantic.content)
+                    damage(cursorRow)
+                    softWrap(); x = left; line = screen[cursorRow]
                     eraseWideAt(line, x)
-                    line.put(x, cluster.codePoint(0), 2, fg, bg, style, attributes, protectedCell)
+                    line.put(x, cluster.codePoint(0), 2, fg, bg, style, attributes, protectedCell, semantic.content)
                     line.copyGrapheme(cluster, 0, x)
                 } else line.setWidth(x, 2)
                 eraseWideAt(line, x + 1)
-                line.put(x + 1, 0, 0, fg, bg, style, attributes, protectedCell)
-                cursorColumn = minOf(x + 2, columns - 1)
-                pendingWrap = x + 2 >= columns
+                line.put(x + 1, 0, 0, fg, bg, style, attributes, protectedCell, semantic.content)
+                cursorColumn = minOf(x + 2, rightLimit - 1)
+                pendingWrap = x + 2 >= rightLimit
             }
             1 -> if (line.width(x) == 2) {
                 line.setWidth(x, 1)
                 line.setWidth(x + 1, 1)
-                pendingWrap = false; cursorColumn = minOf(x + 1, columns - 1)
+                pendingWrap = false; cursorColumn = minOf(x + 1, rightLimit - 1)
             }
         }
         line.combine(x, code)
@@ -626,57 +828,121 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
 
     private fun lineFeed() {
         pendingWrap = false
-        if (cursorRow == bottom) scrollUp(1) else cursorRow = (cursorRow + 1).coerceAtMost(rows - 1)
+        if (cursorRow == bottom) {
+            if (cursorColumn in left..right) scrollUp(1)
+        } else cursorRow = (cursorRow + 1).coerceAtMost(rows - 1)
+        if (semantic.content != TerminalSemanticContent.OUTPUT) {
+            if (semantic.clearEol) { semantic.content = TerminalSemanticContent.OUTPUT; semantic.clearEol = false }
+            else screen[cursorRow].promptMarker = TerminalPromptMarker.CONTINUATION
+        }
+    }
+
+    private fun softWrap() {
+        val fullRow = cursorColumn == columns - 1
+        if (fullRow) screen[cursorRow].wrapped = true
+        val content = semantic.content
+        val clearEol = semantic.clearEol
+        lineFeed(); cursorColumn = left
+        semantic.content = content; semantic.clearEol = clearEol
+        if (content == TerminalSemanticContent.PROMPT) screen[cursorRow].promptMarker = TerminalPromptMarker.CONTINUATION
+        if (fullRow) screen[cursorRow].wrapContinuation = true
+    }
+
+    private fun carriageReturn() {
+        cursorColumn = if (origin || cursorColumn >= left) left else 0
+        pendingWrap = false
+    }
+
+    private fun position(row: Int, column: Int) {
+        cursorRow = (row.coerceAtLeast(1) - 1 + if (origin) top else 0).coerceAtMost(if (origin) bottom else rows - 1)
+        cursorColumn = (column.coerceAtLeast(1) - 1 + if (origin) left else 0).coerceAtMost(if (origin) right else columns - 1)
+        pendingWrap = false
     }
 
     private fun reverseIndex() {
         pendingWrap = false
-        if (cursorRow == top) scrollDown(1) else cursorRow = (cursorRow - 1).coerceAtLeast(0)
+        if (cursorRow == top && cursorColumn in left..right) scrollDown(1)
+        else cursorRow = (cursorRow - 1).coerceAtLeast(if (cursorRow >= top) top else 0)
     }
 
-    private fun scrollUp(count: Int) {
+    private fun scrollUp(count: Int, retainHistory: Boolean = true) {
+        if (left != 0 || right != columns - 1) { scrollRectangle(count, down = false); return }
         if (top != 0 || bottom != rows - 1 || alternateScreen) lineOrderEpoch++
         repeat(count.coerceAtMost(bottom - top + 1)) {
             val old = screen[top]
-            val spare = if (top == 0 && bottom == rows - 1 && !alternateScreen) {
+            val spare = if (retainHistory && top == 0 && !alternateScreen) {
                 scrolledLines++; history.add(old)
             } else old
             for (y in top until bottom) screen[y] = screen[y + 1]
-            screen[bottom] = (spare ?: TerminalLine(columns, colors, limits.hyperlinkBytesPerLine)).also { it.recycleEpoch++; it.clear(0, columns, -1, bg, 0); it.wrapped = false; it.wrapContinuation = false }
+            screen[bottom] = (spare ?: TerminalLine(columns, colors, limits.hyperlinkBytesPerLine)).also { it.recycleEpoch++; it.clear(0, columns, -1, bg, 0); it.wrapped = false; it.wrapContinuation = false; it.promptMarker = TerminalPromptMarker.NONE }
         }
         damage(top, bottom)
     }
 
     private fun scrollDown(count: Int) {
+        if (left != 0 || right != columns - 1) { scrollRectangle(count, down = true); return }
         lineOrderEpoch++
         repeat(count.coerceAtMost(bottom - top + 1)) {
             val spare = screen[bottom]
             for (y in bottom downTo top + 1) screen[y] = screen[y - 1]
-            screen[top] = spare.also { it.recycleEpoch++; it.clear(0, columns, -1, bg, 0); it.wrapped = false; it.wrapContinuation = false }
+            screen[top] = spare.also { it.recycleEpoch++; it.clear(0, columns, -1, bg, 0); it.wrapped = false; it.wrapContinuation = false; it.promptMarker = TerminalPromptMarker.NONE }
         }
         damage(top, bottom)
+    }
+
+    private fun scrollRectangle(count: Int, down: Boolean) {
+        val n = count.coerceAtMost(bottom - top + 1)
+        lineOrderEpoch++
+        for (y in top..bottom) {
+            splitCellBoundary(y, left, keepAttributes = true); splitCellBoundary(y, right + 1, keepAttributes = true)
+            if ((right == columns - 1 || left < 2) && screen[y].isSpacerHead(columns - 1)) screen[y].replaceWithBlank(columns - 1)
+        }
+        val order = if (down) bottom downTo top else top..bottom
+        for (y in order) {
+            val source = y + if (down) -n else n
+            if (source in top..bottom) for (x in left..right) screen[y].copyCell(screen[source], x, x)
+            else screen[y].clear(left, right + 1, -1, bg, 0)
+        }
+        damage(top, bottom)
+    }
+
+    private fun splitCellBoundary(row: Int, column: Int, keepAttributes: Boolean = false) {
+        val line = screen[row]
+        if (column in 1 until columns && line.width(column - 1) == 2) {
+            if (keepAttributes) { line.replaceWithBlank(column - 1); line.replaceWithBlank(column) }
+            else line.clear(column - 1, column + 1, -1, bg, 0)
+            damage(row)
+        }
     }
 
     private fun csi(final: Char) {
         fun p(i: Int = 0, default: Int = 1): Int = if (i > paramIndex || params[i] == 0) default else params[i]
         val minY = if (origin) top else 0
-        val maxY = if (origin) bottom else rows - 1
+        val minX = if (origin) left else 0
+        val upLimit = if (cursorRow >= top) top else 0
+        val downLimit = if (cursorRow <= bottom) bottom else rows - 1
         val selective = privateCsi || protectionMode == PROTECTION_ISO
         when (final) {
-            'A' -> cursorRow = (cursorRow - p()).coerceAtLeast(minY)
-            'B', 'e' -> cursorRow = (cursorRow + p()).coerceAtMost(maxY)
-            'C', 'a' -> cursorColumn = (cursorColumn + p()).coerceAtMost(columns - 1)
+            'A' -> cursorRow = (cursorRow - p()).coerceAtLeast(upLimit)
+            'B' -> cursorRow = (cursorRow + p()).coerceAtMost(downLimit)
+            'e' -> position(cursorRow + 1 + p(), cursorColumn + 1)
+            'C' -> cursorColumn = (cursorColumn + p()).coerceAtMost(if (cursorColumn <= right) right else columns - 1)
+            'a' -> position(cursorRow + 1, cursorColumn + 1 + p())
             'D' -> cursorColumn = (cursorColumn - p()).coerceAtLeast(0)
-            'E' -> { cursorRow = (cursorRow + p()).coerceAtMost(maxY); cursorColumn = 0 }
-            'F' -> { cursorRow = (cursorRow - p()).coerceAtLeast(minY); cursorColumn = 0 }
-            'G', '`' -> cursorColumn = (p() - 1).coerceIn(0, columns - 1)
-            'd' -> cursorRow = (p() - 1 + minY).coerceIn(minY, maxY)
-            'H', 'f' -> { cursorRow = (p() - 1 + minY).coerceIn(minY, maxY); cursorColumn = (p(1) - 1).coerceIn(0, columns - 1) }
+            'E' -> { cursorRow = (cursorRow + p()).coerceAtMost(downLimit); carriageReturn() }
+            'F' -> { cursorRow = (cursorRow - p()).coerceAtLeast(upLimit); carriageReturn() }
+            'G', '`' -> position(cursorRow + 1, p())
+            'd' -> position(p(), cursorColumn + 1)
+            'H', 'f' -> position(p(), p(1))
             'J' -> when (params[0]) {
                 0 -> { eraseLine(0, selective); eraseRows(cursorRow + 1, rows, selective) }
                 1 -> { eraseRows(0, cursorRow, selective); eraseLine(1, selective) }
-                2 -> { eraseRows(0, rows, selective); pendingWrap = false }
+                2 -> {
+                    if (!alternateScreen && screen.last().promptMarker != TerminalPromptMarker.NONE) scrollAndClear()
+                    eraseRows(0, rows, selective); pendingWrap = false
+                }
                 3 -> { history.clear(); damageAll() }
+                22 -> if (parameterCount == 1) scrollAndClear()
             }
             'K' -> eraseLine(params[0], selective)
             'X' -> {
@@ -685,46 +951,69 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 resetCursorWrap()
             }
             '@' -> insertCharacters(p())
-            'P' -> {
-                val n = p().coerceAtMost(columns - cursorColumn)
+            'P' -> if (cursorColumn in left..right) {
+                val n = p().coerceAtMost(right + 1 - cursorColumn)
                 val line = screen[cursorRow]
-                for (x in cursorColumn until columns - n) line.copyCell(line, x + n, x)
-                line.clear(columns - n, columns, -1, bg, 0); line.repairWideCells(); damage(cursorRow)
+                splitCellBoundary(cursorRow, cursorColumn); splitCellBoundary(cursorRow, cursorColumn + n)
+                splitCellBoundary(cursorRow, right + 1)
+                for (x in cursorColumn until right + 1 - n) line.copyCell(line, x + n, x)
+                line.clear(right + 1 - n, right + 1, -1, bg, 0)
+                resetCursorWrap(); damage(cursorRow)
             }
-            'L', 'M' -> if (cursorRow in top..bottom) {
+            'L', 'M' -> if (cursorRow in top..bottom && cursorColumn in left..right) {
                 val oldTop = top; top = cursorRow
-                if (final == 'L') scrollDown(p()) else {
-                    // Deleting lines never adds to scrollback, even at the top margin.
-                    repeat(p().coerceAtMost(bottom - top + 1)) {
-                        val spare = screen[top]
-                        for (y in top until bottom) screen[y] = screen[y + 1]
-                        screen[bottom] = spare.also { it.clear(0, columns, -1, bg, 0); it.wrapped = false; it.wrapContinuation = false }
-                    }
-                    damage(top, bottom)
+                if (final == 'L') scrollDown(p()) else scrollUp(p(), retainHistory = false)
+                if (left == 0 && right == columns - 1) for (y in top..bottom) {
+                    screen[y].wrapped = false; screen[y].wrapContinuation = false
                 }
                 top = oldTop
+                cursorColumn = left; pendingWrap = false
             }
             'S' -> scrollUp(p())
             'T' -> scrollDown(p())
-            'r' -> if (!privateCsi) {
-                val first = p() - 1; val last = p(1, rows) - 1
+            'b' -> if (parameterCount <= 1) previousCharacter?.let { code -> repeat(p()) { print(code) } }
+            'r' -> if (!privateCsi && parameterCount <= 2) {
+                val first = p() - 1; val last = p(1, rows).coerceAtMost(rows) - 1
                 if (first in 0 until rows && last in 0 until rows && first < last) {
-                    top = first; bottom = last; cursorRow = if (origin) top else 0; cursorColumn = 0
+                    top = first; bottom = last; position(1, 1)
                 }
             }
-            's' -> saved = saveCursor()
+            's' -> if (parameterCount == 0 && !leftRightMarginMode) saved = saveCursor()
+                else if (leftRightMarginMode && parameterCount <= 2) {
+                    val first = p() - 1; val last = p(1, columns).coerceAtMost(columns) - 1
+                    if (first < last) { left = first; right = last; position(1, 1) }
+                }
             'u' -> restoreCursor(saved)
             'm' -> sgr()
             'h', 'l' -> for (i in 0..paramIndex) mode(params[i], final == 'h')
             'g' -> if (params[0] == 3) tabs.fill(false) else if (params[0] == 0) tabs[cursorColumn] = false
             'I' -> tab(p())
-            'Z' -> repeat(p().coerceAtMost(columns)) { do { cursorColumn-- } while (cursorColumn > 0 && !tabs[cursorColumn]); cursorColumn = cursorColumn.coerceAtLeast(0) }
+            'Z' -> repeat(p().coerceAtMost(columns)) {
+                if (cursorColumn > minX) do { cursorColumn-- } while (cursorColumn > minX && !tabs[cursorColumn])
+            }
             'n' -> when (params[0]) {
                 5 -> sendInput("\u001b[0n")
-                6 -> sendInput("\u001b[${if (privateCsi) "?" else ""}${cursorRow - minY + 1};${cursorColumn + 1}R")
+                6 -> sendInput("\u001b[${if (privateCsi) "?" else ""}${(cursorRow - minY).coerceAtLeast(0) + 1};${(cursorColumn - minX).coerceAtLeast(0) + 1}R")
+                996 -> if (privateCsi && parameterCount == 1) reportColorScheme()
+            }
+            't' -> if (parameterCount == 1) when (params[0]) {
+                14 -> reportSize(4)
+                16 -> reportSize(6)
+                18 -> reportSize(8)
             }
         }
-        if (final !in "mhsncluJK") pendingWrap = false
+        if (final !in "mhsncluJKbtrLMSTP") pendingWrap = false
+    }
+
+    private fun scrollAndClear() {
+        val count = screen.indexOfLast { line -> (0 until columns).any { !line.isEmpty(it) } } + 1
+        val oldTop = top; val oldBottom = bottom; val oldBackground = bg; val oldLeft = left; val oldRight = right
+        top = 0; bottom = rows - 1; left = 0; right = columns - 1; bg = -1
+        scrollUp(count)
+        top = oldTop; bottom = oldBottom; bg = oldBackground; left = oldLeft; right = oldRight
+        if (cursorRow < count) { cursorRow = 0; cursorColumn = 0 }
+        else cursorRow -= count
+        pendingWrap = false
     }
 
     private fun eraseLine(mode: Int, selective: Boolean) {
@@ -740,7 +1029,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private fun eraseRows(first: Int, end: Int, selective: Boolean) {
         for (y in first until end) {
             eraseCells(y, 0, columns, selective)
-            if (!selective) { screen[y].wrapped = false; screen[y].wrapContinuation = false }
+            if (!selective) { screen[y].wrapped = false; screen[y].wrapContinuation = false; screen[y].promptMarker = TerminalPromptMarker.NONE }
         }
     }
 
@@ -768,16 +1057,19 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun insertCharacters(count: Int) {
-        val n = count.coerceAtMost(columns - cursorColumn)
+        pendingWrap = false
+        if (cursorColumn !in left..right) return
+        val n = count.coerceAtMost(right + 1 - cursorColumn)
         val line = screen[cursorRow]
-        for (x in columns - 1 downTo cursorColumn + n) line.copyCell(line, x - n, x)
+        splitCellBoundary(cursorRow, cursorColumn); splitCellBoundary(cursorRow, right + 1)
+        splitCellBoundary(cursorRow, right + 1 - n)
+        for (x in right downTo cursorColumn + n) line.copyCell(line, x - n, x)
         line.clear(cursorColumn, cursorColumn + n, -1, bg, 0); line.repairWideCells(); damage(cursorRow)
     }
 
     private fun tab(count: Int) {
         repeat(count.coerceAtMost(columns)) {
-            do { cursorColumn++ } while (cursorColumn < columns - 1 && !tabs[cursorColumn])
-            cursorColumn = cursorColumn.coerceAtMost(columns - 1)
+            if (cursorColumn < right) do { cursorColumn++ } while (cursorColumn < right && !tabs[cursorColumn])
         }
     }
 
@@ -786,14 +1078,16 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             when (number) { 4 -> insertMode = enabled; 20 -> newlineMode = enabled }
             return
         }
+        if (number in listOf(3, 9, 47, 1000, 1002, 1003, 1047, 1048, 1049)) sideEffectModes[number] = enabled
         when (number) {
             1 -> applicationCursor = enabled
             3 -> {
-                top = 0; bottom = rows - 1; cursorColumn = 0; cursorRow = 0; pendingWrap = false
+                top = 0; bottom = rows - 1; left = 0; right = columns - 1; cursorColumn = 0; cursorRow = 0; pendingWrap = false
                 for (line in screen) { line.clear(0, columns, -1, -1, 0); line.wrapped = false; line.wrapContinuation = false }
                 damageAll()
             }
-            6 -> { origin = enabled; cursorRow = if (enabled) top else 0; cursorColumn = 0; pendingWrap = false }
+            6 -> { origin = enabled; position(1, 1) }
+            69 -> { leftRightMarginMode = enabled; if (!enabled) { left = 0; right = columns - 1 } }
             7 -> wrap = enabled
             12 -> cursorBlink = enabled
             25 -> cursorVisible = enabled
@@ -801,13 +1095,15 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             1035 -> keypadNumericOverride = enabled
             47, 1047, 1049 -> switchScreen(number, enabled)
             1048 -> if (enabled) saved = saveCursor() else restoreCursor(saved)
-            1000, 1002, 1003 -> { mouseTracking = if (enabled) number else 0; mouseEpoch++ }
+            9, 1000, 1002, 1003 -> { mouseTracking = if (enabled) number else 0; mouseEpoch++ }
             1004 -> focusReporting = enabled
             1006 -> { sgrMouse = enabled; mouseEpoch++ }
             1007 -> alternateScroll = enabled
             2004 -> bracketedPaste = enabled
             2026 -> setSynchronizedOutput(enabled)
             2027 -> graphemeClustering = enabled
+            2031 -> colorSchemeReporting = enabled
+            2048 -> { inBandResizeReporting = enabled; if (enabled) reportSize() }
         }
     }
 
@@ -843,24 +1139,29 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         color(fg, false); color(bg, true)
     }
 
+    private fun privateModeState(number: Int): Boolean? = when (number) {
+        3, 9, 47, 1000, 1002, 1003, 1047, 1048, 1049 -> sideEffectModes[number] ?: false
+        1 -> applicationCursor
+        6 -> origin
+        7 -> wrap
+        12 -> cursorBlink
+        25 -> cursorVisible
+        66 -> applicationKeypad
+        69 -> leftRightMarginMode
+        1035 -> keypadNumericOverride
+        1004 -> focusReporting
+        1006 -> sgrMouse
+        1007 -> alternateScroll
+        2004 -> bracketedPaste
+        2026 -> synchronizedOutput
+        2027 -> graphemeClustering
+        2031 -> colorSchemeReporting
+        2048 -> inBandResizeReporting
+        else -> null
+    }
+
     private fun reportMode(number: Int, privateMode: Boolean) {
-        val enabled = if (privateMode) when (number) {
-            1 -> applicationCursor
-            6 -> origin
-            7 -> wrap
-            12 -> cursorBlink
-            25 -> cursorVisible
-            66 -> applicationKeypad
-            1035 -> keypadNumericOverride
-            1000, 1002, 1003 -> mouseTracking == number
-            1004 -> focusReporting
-            1006 -> sgrMouse
-            1007 -> alternateScroll
-            2004 -> bracketedPaste
-            2026 -> synchronizedOutput
-            2027 -> graphemeClustering
-            else -> null
-        } else when (number) {
+        val enabled = if (privateMode) privateModeState(number) else when (number) {
             4 -> insertMode
             20 -> newlineMode
             else -> null
@@ -892,6 +1193,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             }
             // The current cursor/pen is copied to the destination for 47/1047,
             // and on entry for 1049. Saved cursor slots belong to each screen.
+            if (mode != 1049 || enabled) {
+                (if (enabled) alternateSemantic else primarySemantic).copyCursor(semantic)
+            }
             alternateScreen = enabled
         }
         if (mode == 1049) {
@@ -988,6 +1292,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         val command = if (separator < 0) value else value.substring(0, separator)
         val payload = if (separator < 0) "" else value.substring(separator + 1)
         val operation = command.toIntOrNull()?.takeIf { it.toString() == command }
+        if (operation == 21) {
+            if (colors.kittyOperation(payload, terminator, ::sendInput)) damageAll()
+            return
+        }
         if (operation != null && (operation == 4 || operation == 104 || operation in 10..19 || operation in 110..112)) {
             if (colors.operation(operation, payload, terminator, ::sendInput)) damageAll()
             return
@@ -995,6 +1303,21 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         if (separator < 1) return
         when (command) {
             "0", "2" -> title = payload
+            "133" -> parseSemanticPrompt(payload)?.let(::applySemanticPrompt)
+            "7" -> {
+                // Ghostty's fixed OSC capture needs one byte for the terminating NUL.
+                if (payload.encodeToByteArray().size >= 2048) return
+                val uri = payload.takeIf { it.isNotEmpty() }
+                workingDirectoryUri = uri
+                workingDirectoryObservers.toList().forEach { it(uri) }
+            }
+            "52" -> clipboardBinding?.accept(payload, terminator)
+            "9", "777" -> parseTerminalEffect(command.toInt(), payload,
+                { notification -> notificationObservers.toList().forEach { it(notification) } }, ::reportProgress)
+            "22" -> TerminalPointerShape.parse(payload)?.let { shape ->
+                pointerShape = shape
+                pointerObservers.toList().forEach { it(shape) }
+            }
             "8" -> {
                 val split = payload.indexOf(';')
                 if (split < 0) return
@@ -1003,6 +1326,38 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 setAttributes(attributes?.underlineColor ?: -1, if (uri.isEmpty()) null else TerminalLink(TerminalHyperlink(id, uri)))
             }
         }
+    }
+
+    private fun applySemanticPrompt(command: TerminalSemanticPrompt) {
+        val action = command.action
+        if (action == TerminalPromptAction.FRESH_LINE || action == TerminalPromptAction.NEW_PROMPT || action == TerminalPromptAction.NEW_COMMAND) {
+            val initialColumn = if (cursorColumn < left) 0 else left
+            if (cursorColumn != initialColumn) { carriageReturn(); lineFeed() }
+        }
+        when (action) {
+            TerminalPromptAction.FRESH_LINE -> Unit
+            TerminalPromptAction.NEW_PROMPT, TerminalPromptAction.NEW_COMMAND, TerminalPromptAction.PROMPT -> {
+                semantic.seen = true; semantic.content = TerminalSemanticContent.PROMPT; semantic.clearEol = false
+                screen[cursorRow].promptMarker = when (command.promptKind) {
+                    TerminalPromptKind.CONTINUATION, TerminalPromptKind.SECONDARY -> TerminalPromptMarker.CONTINUATION
+                    else -> TerminalPromptMarker.PROMPT
+                }
+                if (action != TerminalPromptAction.PROMPT) {
+                    command.redraw?.let { promptRedraw = it }
+                    command.click?.let { semantic.click = it }
+                }
+            }
+            TerminalPromptAction.INPUT, TerminalPromptAction.INPUT_UNTIL_EOL -> {
+                semantic.content = TerminalSemanticContent.INPUT
+                semantic.clearEol = action == TerminalPromptAction.INPUT_UNTIL_EOL
+            }
+            TerminalPromptAction.OUTPUT, TerminalPromptAction.END_COMMAND -> {
+                semantic.content = TerminalSemanticContent.OUTPUT; semantic.clearEol = false
+                if (action == TerminalPromptAction.OUTPUT && cursorColumn == 0) screen[cursorRow].promptMarker = TerminalPromptMarker.NONE
+            }
+        }
+        damage(cursorRow)
+        semanticPromptObservers.toList().forEach { it(command) }
     }
 
     private fun saveCursor() = SavedCursor(cursorColumn, cursorRow, fg, bg, style, origin, pendingWrap, graphics, g1Graphics, useG1, attributes, protectedCell, valid = true)

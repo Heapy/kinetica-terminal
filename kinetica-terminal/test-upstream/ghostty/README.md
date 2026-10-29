@@ -10,8 +10,30 @@ public API. After every write/resize/key batch it exports logical cells, wraps, 
 pending wrap, screen selection, scrollback count, title, modes, effective colors,
 palette changes, and PTY replies. Both engines receive the same host color defaults;
 the generator records that configuration in the manifest. Stored golden snapshots come
-entirely from original libghostty. The Neovim replay has the explicit reply-policy exception
-described below; its reference transcript is also retained unchanged.
+entirely from original libghostty, including the unmodified Neovim capability replies.
+Scenarios with `clipboard: true` attach in-memory host clipboards to both engines. The original
+library decodes writes, calls its public clipboard callbacks and encodes read replies; snapshots
+retain every callback's location and binary data. Cases cover optional selectors, all destinations,
+strict alphabet/padding validation, noncanonical tail bits, binary/Unicode contents, BEL/ST, clearing,
+malformed/canceled requests, 150 KB payloads, alternate screens, synchronized output and reset.
+Host permission, asynchronous I/O, disposal and resource exhaustion have separate common/platform
+tests. The C helper's clipboard callback storage is test-only and never accesses the OS clipboard.
+Scenarios with `effects: true` install the original library's desktop-notification and progress
+callbacks. Ordered snapshots preserve titles, bodies, literal progress states and omitted
+percentages, including malformed ConEmu fallback, reserved commands, UTF-8 byte limits, split
+input, alternate screens, render holds and RIS removal. Progress expiry and desktop permission/
+delivery are host responsibilities, tested outside the oracle.
+Scenarios with `workingDirectory: true` query the original raw PWD value and record every
+PWD callback. They cover repeated reports, explicit clearing, reset without callback, screen
+switches, render holds, cancellation, raw URI preservation and the 2047-byte UTF-8 payload
+boundary. Local URI validation and new-tab directory inheritance are separate host tests.
+Scenarios with `semanticPrompts: true` read original per-cell semantic content, per-row prompt
+markers and cursor-at-prompt state. Cases cover every OSC 133 action, malformed commands, byte
+limits, continuation kinds, soft/hard breaks, wide/grapheme cells, protected erasure, rectangular
+margins, screen-local cursor state, saved cursors, reset and all redraw modes during resize.
+The C library initializes prompt redraw as disabled; OSC 133 can enable it, and RIS restores
+the underlying Terminal default of full redraw. Command option/decoding and viewport navigation
+tests are separate, since this C API does not export semantic-command callbacks.
 The device-attributes and XTVERSION callbacks also receive a shared, explicit host
 identity: primary `1;2` (VT100 with advanced video), secondary `0;0;0`, a zero unit
 ID, and the name `Kinetica`. This is configuration supplied to the original
@@ -100,18 +122,22 @@ and replies also come entirely from this oracle. Recordings contain no expected
 Kinetica screen. The replay checks their hashes and all retained intermediate
 states at resize/interaction boundaries.
 
-Neovim probes some extensions that Kinetica does not implement. Its `live_nvim` scenario
-declares `replyPolicy: kinetica-legacy-capabilities`: comparison changes only Ghostty's
-DECRQM replies for modes 69 (left/right margins), 2031 (color-scheme notifications) and
-2048 (in-band resize) from supported/reset (`2`) to unrecognized (`0`), and removes the
-Kitty keyboard query reply `CSI ? 0 u`. This is a documented capability difference, not
-Ghostty-equivalent behavior. `TerminalProtocolReportsTest` separately checks these exact
-negative answers, ignored enable requests, unchanged pen and legacy key input. The policy
-does not alter any cells, modes, other replies, producer bytes or archived golden data.
-When implementing one of these extensions, remove its exception and replace the negative
-capability test with encoder/host coverage before advertising support.
+Kitty keyboard cases use the original key encoder with the terminal's negotiated flags.
+`keyboard-matrix.json` expands into 16,554 input events over all 31 nonzero flag combinations,
+press/repeat/release, Shift/Alt/Ctrl/Super/lock modifiers, functional/keypad/modifier keys,
+non-Latin alternate keys, supplementary Unicode and text without physical identity.
+The matrix configures Option as Alt explicitly on the reference encoder. Negotiation snapshots
+cover separate screen stacks, set/add/remove, bounded overflow/underflow, invalid flags and RIS.
+The generator hashes the matrix source in the manifest. Platform tests separately exercise
+AppKit and DOM routing, IME ownership and local shortcuts; those are not libghostty API inputs.
 
-DECRQSS SGR and scrolling-margin replies are compared byte-for-byte without that exception.
+Neovim capability replies, including mode 69, Kitty keyboard and color-scheme queries,
+are compared unchanged. Horizontal-margin scenarios cover negotiation and saved modes,
+origin-relative positioning, reports, tabs, carriage return, wrap, index/reverse index,
+rectangular scrolling and editing, wide cells, graphemes, protected/styled/link cells,
+malformed commands, pending wrap, alternate screens and resize to a one-column grid.
+
+DECRQSS SGR and scrolling-margin replies are compared byte-for-byte.
 Cases cover every implemented underline style, all color encodings, palette identity,
 saved pens, screen switches, reset and resize. SGR formatting follows the pinned original
 [`Terminal.printAttributes`](https://github.com/ghostty-org/ghostty/blob/4da7523faba68ccb4042ea20585817098a51c015/src/terminal/Terminal.zig)
@@ -122,6 +148,40 @@ The normalized representation maps empty cells/tab markers to spaces and wide
 tails to empty strings. It preserves palette-vs-RGB values in the golden data;
 the comparator checks those typed values directly, every palette entry, and the
 effective foreground/background/cursor colors at each checkpoint. Automatic hyperlink
-IDs, semantic prompts and image metadata need separate coverage. Ghostty's
-page-granularity scrollback pruning differs from our
-strict line limit; scenarios used for exact history comparison stay below limits.
+IDs and image metadata need separate coverage. Semantic markers are compared in the explicitly
+enabled scenarios described above. Ghostty's
+page-granularity scrollback pruning differs from our strict line limit. The
+`scroll_clear_bounded`, `scroll_clear_no_history` and `scroll_clear_alternate` scenarios
+declare `historyPolicy: strict-limit`: the comparator caps retained history at the configured
+line limit (zero on alternate screens), removes only the excess oldest oracle rows, and
+compares all remaining cells, cursor state and replies exactly. Original snapshots retain
+the upstream rows unchanged. In particular, libghostty's scroll-and-clear can retain rows
+even with zero configured scrollback. Other scenarios compare the exact history count.
+
+The modifyOtherKeys matrices cover 3,249 events in numeric, application-cursor and
+application-keypad modes. Transition cases test enabling/disabling, malformed requests,
+Kitty precedence and RIS. Color-scheme cases configure the original library's callback;
+host changes use the original report encoder gated by mode 2031, mirroring Ghostty's
+host behavior. Cases cover both schemes, OSC overrides, repeated updates, alternate screens,
+synchronized output and RIS. The helper starts with a configured dark scheme.
+
+Size-report cases install the original library's geometry callback, initially unavailable.
+Resize events commit per-cell pixels (8×16 by default, or an explicit `cellSize` pair).
+Mode 2048 and CSI 14/16/18 t use these committed values. The cases cover enable/reset,
+repeated and pixel-only resizes, alternate screens, saved modes, synchronized output,
+unknown/zero geometry, malformed requests and multiplication beyond 32 bits. Native
+and browser tests verify physical pixels at display scale and actual font changes.
+
+REP cases include wide characters, combining text, graphemes, charset switches, insert mode,
+wrap boundaries and resets. Scroll-and-clear covers blank/colored/protected rows, cursor
+positions and margins. Saved-mode cases check repeated saves/restores, defaults, side effects
+and subscriptions. Two X10 matrices add 1,280 mouse events; transition cases distinguish
+independent mode bits from the active encoding policy, including saved/restored modes.
+
+Kitty color cases cover all 256 palette entries, configured foreground/background/cursor
+colors, mixed xterm/Kitty commands, set/query/reset ordering, unknown special colors,
+malformed entries, both terminators, 2048-byte payload and 528-operation boundaries,
+alternate screens, history and synchronized output. Host-specific defaults and actual GPU
+recoloring have separate tests. Pointer shape is captured through the original library's
+`GHOSTTY_TERMINAL_DATA_MOUSE_SHAPE` API at every checkpoint; OSC 22 cases cover all W3C
+names and aliases, malformed/canceled/incomplete commands, screen switches and RIS.

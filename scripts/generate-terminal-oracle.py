@@ -93,9 +93,23 @@ def main():
                                   for p in library.glob("libghostty-vt.*") if p.is_file()},
                 "colorConfiguration": {"colors": DEFAULT_COLORS, "palette": DEFAULT_PALETTE},
                 "deviceConfiguration": {"primary": [1, 2], "secondary": [0, 0, 0], "tertiary": 0, "xtversion": "Kinetica"},
+                "colorSchemeConfiguration": "dark",
                 "cursorConfiguration": {"style": "underline", "blink": False}, "snapshots": {}}
     for case in cases:
         input_license = ""
+        if any("keyboardMatrix" in event for event in case["events"]):
+            for event in case["events"]:
+                if "keyboardMatrix" in event:
+                    name = event.pop("keyboardMatrix")
+                    files = {"kitty": "keyboard-matrix.json", "modify-other": "modify-other-keys-matrix.json"}
+                    if name not in files:
+                        raise ValueError("Unknown keyboard matrix")
+                    matrix_bytes = (ROOT / "kinetica-terminal/test-upstream/ghostty" / files[name]).read_bytes()
+                    hash_key = "keyboardMatrixSha256" if name == "kitty" else "modifyOtherKeysMatrixSha256"
+                    manifest[hash_key] = hashlib.sha256(matrix_bytes).hexdigest()
+                    matrix = json.loads(matrix_bytes)
+                    event["keyboard"] = [dict(key, action=action, modifiers=mods) for key in matrix["keys"]
+                                         for action in matrix["actions"] for mods in matrix["modifiers"]] + matrix["additional"]
         if source := case.get("tuiRecording"):
             recorded = (ROOT / "kinetica-terminal/test-upstream/tui" / source["path"]).read_bytes()
             if hashlib.sha256(recorded).hexdigest() != source["sha256"]:
@@ -113,16 +127,31 @@ def main():
             input_license = f"// Input: Alacritty {recording['commit']} (Apache-2.0); see test-upstream/alacritty.\n"
         commands = [f"N {case['columns']} {case['rows']} {case['history']}",
                     "C " + " ".join(f"{c:06x}" for c in DEFAULT_COLORS + DEFAULT_PALETTE)]
+        if case.get("clipboard"):
+            commands.append("B")
+        if case.get("effects"):
+            commands.append("F")
+        if case.get("workingDirectory"):
+            commands.append("P")
+        if case.get("semanticPrompts"):
+            commands.append("H")
         for event in case["events"]:
             if "write" in event:
                 commands.append("W " + event["write"].encode().hex())
             elif "bytes" in event:
                 commands.append("W " + event["bytes"])
             elif "resize" in event:
-                commands.append("R " + " ".join(str(x) for x in event["resize"]))
+                commands.append("R " + " ".join(str(x) for x in event["resize"] + event.get("cellSize", [8, 16])))
+            elif "colorScheme" in event:
+                commands.append(f"T {event['colorScheme']}")
             elif "keys" in event:
                 for key in event["keys"]:
                     commands.append(f"K {key['upstream']} {key['modifiers']}")
+            elif "keyboard" in event:
+                for key in event["keyboard"]:
+                    text = key.get("text", "").encode().hex() or "-"
+                    commands.append(f"E {key['upstream']} {key['modifiers']} {key.get('consumed', 0)} "
+                                    f"{key['action']} {key.get('unshifted', 0)} {text}")
             elif "mouse" in event:
                 for mouse in event["mouse"]:
                     commands.append("M " + " ".join(str(mouse[key]) for key in ("action", "button", "modifiers", "column", "row")))

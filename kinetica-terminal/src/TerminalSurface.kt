@@ -1,5 +1,17 @@
 package io.heapy.kinetica.terminal
 
+public enum class TerminalColorScheme(internal val report: Int) { DARK(1), LIGHT(2) }
+
+/** Per-cell physical pixels, after display scaling; zero means unknown. */
+public data class TerminalCellSize(val width: Int, val height: Int) {
+    init { require(width >= 0 && height >= 0) }
+}
+
+/** Default host classification; embedders may pass an explicit scheme independently of RGB. */
+public fun TerminalTheme.inferredColorScheme(): TerminalColorScheme {
+    val luminance = (background shr 16) * 299 + (background shr 8 and 255) * 587 + (background and 255) * 114
+    return if (luminance >= 128_000) TerminalColorScheme.LIGHT else TerminalColorScheme.DARK
+}
 
 public data class TerminalTheme(
     val foreground: Int = 0xd4d4d4,
@@ -133,16 +145,16 @@ public class TerminalViewport(
     }
 
     /** Briefly retain the completed frame while the PTY responds to a live grid resize. */
-    internal fun resizeSession(columns: Int, rows: Int) {
+    internal fun resizeSession(columns: Int, rows: Int, cellSize: TerminalCellSize = session.cellSize ?: TerminalCellSize(0, 0)) {
         if (disposed || (columns == session.columns && rows == session.rows)) return
         check(!session.synchronizedOutput) { "Finish synchronized output before resizing the grid" }
-        if (scheduler == null) { session.resize(columns, rows); return }
+        if (scheduler == null) { session.resize(columns, rows, cellSize); return }
         if (!resizeHeld) { captureFrame(); resizeHeld = true }
         resizeQuietTimer?.dispose(); resizeQuietTimer = null
         // Repeated resize events cannot extend this deadline and freeze a silent program.
         if (resizeDeadline == null) resizeDeadline = scheduler.schedule(50) { releaseResizeFrame() }
         resizingSession = true
-        try { session.resize(columns, rows) } finally { resizingSession = false }
+        try { session.resize(columns, rows, cellSize) } finally { resizingSession = false }
     }
 
     private fun cancelResizeTimers() {
@@ -235,6 +247,28 @@ public class TerminalViewport(
     }
 
     public fun scrollTo(offset: Int) { scroll(offset.coerceIn(0, session.historySize) - scrollOffset) }
+
+    /** Move the viewport to a shell prompt: -1 for previous, +1 for next. Requires OSC 133 marks. */
+    public fun jumpToPrompt(direction: Int): Boolean {
+        require(direction == -1 || direction == 1)
+        if (disposed || frozen != null || session.alternateScreen) return false
+        val current = session.historySize - scrollOffset
+        var target = current + direction
+        if (direction > 0 && session.line(current).promptMarker != TerminalPromptMarker.NONE) {
+            while (target < session.lineCount && session.line(target).promptMarker == TerminalPromptMarker.CONTINUATION) target++
+        }
+        while (target in 0 until session.lineCount && session.line(target).promptMarker == TerminalPromptMarker.NONE) target += direction
+        if (target !in 0 until session.lineCount) return false
+        if (direction < 0 && session.line(target).promptMarker == TerminalPromptMarker.CONTINUATION) {
+            val continuation = target
+            while (target > 0 && session.line(target).promptMarker == TerminalPromptMarker.CONTINUATION &&
+                session.line(target - 1).promptMarker != TerminalPromptMarker.NONE) target--
+            if (target == 0 && session.line(target).promptMarker == TerminalPromptMarker.CONTINUATION) target = continuation
+        }
+        val before = scrollOffset
+        scrollTo(session.historySize - target)
+        return before != scrollOffset
+    }
 
     /** Reveal a search result in retained output. A held atomic frame stays untouched. */
     public fun selectMatch(match: TerminalSearchMatch): Boolean {

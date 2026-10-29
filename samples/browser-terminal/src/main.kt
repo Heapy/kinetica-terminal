@@ -30,8 +30,13 @@ fun main() {
     }
     var fontSize = 14.0
     var fontFamily: String? = null
+    var clipboardPolicy = TerminalClipboardPolicy.WRITE_ONLY
+    var notificationAllowed = true
+    var surface: BrowserTerminalView? = null
     val app = BrowserKineticaApp(checkNotNull(document.querySelector("#app")),
-        hostWidgets = browserTerminalHosts(mapOf("demo" to session), rendering, renderObserver),
+        hostWidgets = browserTerminalHosts(mapOf("demo" to session), rendering, renderObserver,
+            TerminalClipboardPolicy { request, done -> clipboardPolicy.authorize(request, done) },
+            notificationPolicy = { notificationAllowed }, onView = { _, view -> surface = view }),
     ) { terminal("demo", fontSize = fontSize, fontFamily = fontFamily,
         semantics = Semantics(label = "Kinetica terminal", testTag = "terminal", focusable = true)) }.also { it.render() }
     session.write("\u001b[1;36mKinetica — shared Kotlin terminal\u001b[0m\r\n")
@@ -65,6 +70,22 @@ fun main() {
     }
     // Small deterministic controls used by the browser integration check.
     val api: dynamic = js("({})")
+    api.notificationsEnabled = { enabled: Boolean -> notificationAllowed = enabled }
+    val notificationButton = document.querySelector("#notifications")?.asDynamic()
+    notificationButton?.onclick = {
+        surface?.requestNotificationPermission { granted ->
+            notificationButton.textContent = if (granted) "Notifications enabled" else "Notifications blocked"
+            notificationButton.disabled = granted
+        }
+    }
+    api.clipboardPolicy = { mode: String ->
+        clipboardPolicy = when (mode) {
+            "deny" -> TerminalClipboardPolicy.DENY
+            "write" -> TerminalClipboardPolicy.WRITE_ONLY
+            "allow" -> TerminalClipboardPolicy.ALLOW
+            else -> error("Unknown clipboard policy")
+        }
+    }
     api.setRenderObserver = { bridge: dynamic ->
         check(renderObserver != null) { "Load with profile=1 to enable renderer diagnostics" }
         renderBridge = bridge
@@ -95,9 +116,12 @@ fun main() {
     }
     api.sendInput = { text: String -> session.sendInput(text) }
     api.write = { text: String -> session.write(text) }
+    api.configureTheme = { background: Int -> session.configureTheme(TerminalTheme(background = background)) }
     api.screen = { (0 until session.rows).joinToString("\n") { session.screenLine(it).text() } }
     api.columns = { session.columns }; api.rows = { session.rows }; api.history = { session.historySize }
     api.historyStorageBytes = { session.historyStorageBytes.toDouble() }
+    api.jumpToPrompt = { direction: Int -> surface?.jumpToPrompt(direction) ?: false }
+    api.scrollOffset = { surface?.scrollOffset ?: 0 }
     api.historyByteLimit = { session.limits.historyBytes.toDouble() }
     api.reset = { session.reset(); command.clear() }
     api.synchronizedOutput = { session.synchronizedOutput }

@@ -1,0 +1,153 @@
+{
+  "actions": [
+    0,
+    1,
+    2
+  ],
+  "modifiers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    64,
+    128,
+    193
+  ],
+  "keys": [
+    {
+      "upstream": "A",
+      "key": "a",
+      "unshifted": 97,
+      "text": "a",
+      "base": 97
+    },
+    {
+      "upstream": "A",
+      "key": "A",
+      "unshifted": 97,
+      "text": "A",
+      "base": 97
+    },
+    {
+      "upstream": "A",
+      "key": "Ф",
+      "unshifted": 1092,
+      "text": "Ф",
+      "base": 97
+    },
+    {
+      "upstream": "SEMICOLON",
+      "key": ":",
+      "unshifted": 59,
+      "text": ":",
+      "base": 59
+    },
+    {
+      "upstream": "UNIDENTIFIED",
+      "key": "😀",
+      "unshifted": 128512,
+      "text": "😀"
+    },
+    {
+      "upstream": "ENTER",
+      "key": "Enter",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "TAB",
+      "key": "Tab",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "BACKSPACE",
+      "key": "Backspace",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "ESCAPE",
+      "key": "Escape",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "ARROW_UP",
+      "key": "ArrowUp",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "HOME",
+      "key": "Home",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "DELETE",
+      "key": "Delete",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "F1",
+      "key": "F1",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "F3",
+      "key": "F3",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "F12",
+      "key": "F12",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "NUMPAD_1",
+      "key": "1",
+      "unshifted": 0,
+      "text": "1",
+      "keypad": "ONE"
+    },
+    {
+      "upstream": "NUMPAD_ENTER",
+      "key": "Enter",
+      "unshifted": 0,
+      "text": "",
+      "keypad": "ENTER"
+    },
+    {
+      "upstream": "DIGIT_1",
+      "key": "!",
+      "unshifted": 49,
+      "base": 49,
+      "text": "!"
+    },
+    {
+      "upstream": "C",
+      "key": "c",
+      "unshifted": 99,
+      "base": 99,
+      "text": "c"
+    }
+  ],
+  "additional": []
+}

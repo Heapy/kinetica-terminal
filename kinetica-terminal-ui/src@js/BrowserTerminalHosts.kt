@@ -10,9 +10,14 @@ public fun browserTerminalHosts(
     sessions: Map<String, TerminalSession>,
     rendering: TerminalRendering = TerminalRendering.AUTO,
     renderObserver: TerminalRenderObserver? = null,
+    clipboardPolicy: TerminalClipboardPolicy = TerminalClipboardPolicy.DENY,
+    notificationPolicy: (TerminalNotification) -> Boolean = { false },
+    onView: (String, BrowserTerminalView?) -> Unit = { _, _ -> },
 ): Map<String, HostWidgetFactory<Element>> = mapOf(TERMINAL_HOST_TAG to HostWidgetFactory { node ->
     val id = node.props.getValue("session")
-    val terminal = BrowserTerminalView(sessions.getValue(id), id, rendering, renderObserver)
+    val terminal = BrowserTerminalView(sessions.getValue(id), id, rendering, renderObserver, clipboardPolicy,
+        notificationPolicy = notificationPolicy)
+    onView(id, terminal)
     object : HostWidget<Element> {
         override val view: Element = terminal.view
         override fun update(node: HostNode) {
@@ -20,6 +25,6 @@ public fun browserTerminalHosts(
             terminal.configureFont(node.props["fontFamily"]?.takeIf { it.isNotBlank() },
                 node.props["fontSize"]?.toDoubleOrNull() ?: 14.0)
         }
-        override fun dispose() = terminal.dispose()
+        override fun dispose() { try { onView(id, null) } finally { terminal.dispose() } }
     }
 })

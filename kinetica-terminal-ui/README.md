@@ -15,6 +15,16 @@ scrollbar; the app provides its search bar with Kinetica components.
 as selection and search revelation; the callback receives null on unmount. Framework
 focus requests target the terminal inside its containing pane.
 
+Both host factories accept `clipboardPolicy` for OSC 52. The default denies application access;
+`TerminalClipboardPolicy.WRITE_ONLY` enables copying from a remote program, while a custom policy
+can request asynchronous user approval. Surface disposal cancels the binding's pending requests.
+
+`notificationPolicy` controls OSC 9/777 desktop delivery and defaults to denial. Both factories
+expose `onView` so an application can call `requestNotificationPermission` from a user action.
+The surfaces display OSC 9;4 progress with a 15-second stale-report timeout and dispose its
+timers on unmount. A native application's notification-center delegate retains control over
+foreground notification presentation.
+
 Apps apply `kinetica-ui.module-template.yaml` for the Kinetica compiler plugin and
 Maven-local repository. Build the matching development framework with
 `bash scripts/bootstrap-kinetica.sh /path/to/kinetica` before compiling apps. See the root

@@ -7,9 +7,8 @@ class TerminalProtocolReportsTest {
         val session = TerminalSession(8, 2)
         val output = StringBuilder()
         session.onInput { output.append(it.toByteArray().decodeToString()) }
-        session.write("\u001b[31m\u001b[?69h\u001b[?2031h\u001b[?2048h" +
-            "\u001b[?69\$p\u001b[?2031\$p\u001b[?2048\$p\u001b[?u\u001b[>3u\u001b[?u\u001b[>4;2mX")
-        assertEquals("\u001b[?69;0\$y\u001b[?2031;0\$y\u001b[?2048;0\$y", output.toString())
+        session.write("\u001b[31m\u001b[?65535h\u001b[?65535\$pX")
+        assertEquals("\u001b[?65535;0\$y", output.toString())
         assertEquals("X", session.screenLine(0).text())
         assertEquals(session.paletteColor(1), session.screenLine(0).foreground(0))
         assertEquals(0, session.screenLine(0).style(0))

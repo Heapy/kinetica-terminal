@@ -28,20 +28,24 @@ internal class VtParser(private val handler: Handler) {
     private var index = 0
     private var overflow = false
     private var stringKind = 0
-    private val payload = StringBuilder()
+    private var payload = StringBuilder()
+    private var clipboardCapture = false
+    private var clipboardBytes = 0
 
     // UTF-8 is decoded for printable text and supported string payloads. Escape/CSI/DCS
-    // headers (and ignored APC/SOS/PM) follow the byte transition table instead.
+    // headers and ignored APC/SOS/PM follow the byte transition table instead.
     val rawByteState: Boolean get() = state != GROUND && (state != STRING || stringKind == IGNORED)
 
-    fun reset() { state = GROUND; payload.clear(); clear() }
+    fun reset() {
+        state = GROUND; clearPayload(); clear()
+    }
 
     fun accept(code: Int) {
         if (code == 0x18 || code == 0x1a) {
             // Ghostty unhooks a DCS on every exit, including CAN/SUB. A complete
             // DECRQSS request can therefore reply here; OSC cancellation discards it.
             if (state == STRING && stringKind == DCS) finishString(code)
-            state = GROUND; payload.clear(); return
+            state = GROUND; clearPayload(); return
         }
         if (code == 27) {
             if (state == STRING) finishString(code)
@@ -62,8 +66,17 @@ internal class VtParser(private val handler: Handler) {
         if (state == STRING) {
             if (stringKind == OSC && code == 7) { finishString(code); state = GROUND }
             else if (stringKind != IGNORED && (code >= 32 || stringKind == DCS)) {
-                if (payload.length + (if (code > 0xffff) 2 else 1) <= STRING_LIMIT) payload.append(codePointString(code))
-                else overflow = true
+                if (!overflow) {
+                    if (clipboardCapture) {
+                        clipboardBytes += when { code < 0x80 -> 1; code < 0x800 -> 2; code < 0x10000 -> 3; else -> 4 }
+                        // Ghostty's allocating capture includes its trailing NUL, but not "52;".
+                        if (clipboardBytes >= TerminalClipboardBinding.MAX_BYTES) overflow = true
+                    } else if (payload.length + (if (code > 0xffff) 2 else 1) > STRING_LIMIT) overflow = true
+                    if (!overflow) {
+                        payload.append(codePointString(code))
+                        if (stringKind == OSC && payload.length == 3 && payload.toString() == "52;") clipboardCapture = true
+                    }
+                }
             }
             return
         }
@@ -154,10 +167,16 @@ internal class VtParser(private val handler: Handler) {
         parameters.fill(-1); colon.fill(false); index = 0; count = 0
         prefix = 0; intermediates = 0; intermediateCount = 0; overflow = false
     }
-    private fun beginString(kind: Int) { state = STRING; stringKind = kind; payload.clear(); overflow = false }
+    private fun clearPayload() {
+        if (clipboardCapture) payload = StringBuilder() else payload.clear()
+        clipboardCapture = false; clipboardBytes = 0
+    }
+    private fun beginString(kind: Int) {
+        state = STRING; stringKind = kind; clearPayload(); overflow = false
+    }
     private fun finishString(terminator: Int) {
         if (!overflow && stringKind != IGNORED) handler.string(stringKind, payload.toString(), terminator)
-        payload.clear()
+        clearPayload()
     }
 
     companion object {

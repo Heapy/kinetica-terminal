@@ -114,12 +114,15 @@ class TerminalUsabilityTest {
             await("Escape closes search") { !second.search.value.visible }
             assertEquals(retainedSurface, second.view)
             assertEquals(second.view, second.window.firstResponder)
+            // Test executables are unbundled, so this routes the user action without an OS prompt.
+            assertTrue(owner.shell.execute("notifications.enable"))
             shortcut("a")
             assertContains(second.view.accessibilitySelectedText().orEmpty(), "SEARCH_ONE")
             shortcut(",")
             val panel = checkNotNull(owner.shell.window("settings")).nativeWindow
             await { application.keyWindow == panel }
             assertFalse(owner.shell.execute("screen.clear"), "Settings must not route commands into a background terminal")
+            assertFalse(owner.shell.execute("notifications.enable"), "Permission requests require an active terminal")
             fun flatten(view: NSView): List<NSView> = listOf(view) + view.subviews.filterIsInstance<NSView>().flatMap(::flatten)
             val controls = flatten(panel.contentView!!)
             val fontTitle = checkNotNull(NSFont.fontWithName("Menlo-Regular", 18.0)?.displayName)
@@ -154,6 +157,12 @@ class TerminalUsabilityTest {
             third.session.write("prompt> ")
             shortcut("k"); assertEquals(0, third.session.cursorRow)
             assertTrue(third.session.screenLine(0).text().contains("prompt>"))
+            repeat(60) { third.session.write("\u001b]133;A\u0007command-$it\r\n\u001b]133;C\u0007output\r\n") }
+            assertTrue(owner.shell.execute("prompt.previous"))
+            assertTrue(third.view.scrollOffset > 0)
+            val beforeNext = third.view.scrollOffset
+            assertTrue(owner.shell.execute("prompt.next"))
+            assertTrue(third.view.scrollOffset < beforeNext)
             assertEquals(NSTerminateLater, owner.shell.applicationShouldTerminate(application))
             await { terminated }
         } finally {

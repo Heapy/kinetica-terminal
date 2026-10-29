@@ -126,10 +126,13 @@ class TerminalApplicationTest {
             application.activateIgnoringOtherApps(true)
             first.window.makeKeyAndOrderFront(null)
             await { application.keyWindow == first.window }
+            // Use an OSC 7 directory different from the parent shell's real cwd.
+            first.session.write("\u001b]7;file://localhost/private/tmp\u0007")
             shortcut("t")
             assertEquals(2, owner.terminals.size)
             val second = owner.terminals.last(); windows.add(second.window)
             val secondPid = pid(second)
+            assertEquals("/private/tmp", second.currentWorkingDirectory())
             assertNotEquals(firstPid, secondPid)
             assertTrue(first.session !== second.session)
             assertEquals(2, first.window.tabGroup?.windows?.size)

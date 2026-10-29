@@ -8,6 +8,8 @@ import io.heapy.kinetica.terminal.*
 import platform.AppKit.NSTextField
 import platform.AppKit.NSTextView
 import platform.Foundation.*
+import kotlinx.cinterop.*
+import platform.posix.gethostname
 
 internal data class SearchState(val visible: Boolean = false, val query: String = "", val matchCase: Boolean = false,
     val index: Int = -1, val count: Int = 0, val truncated: Boolean = false)
@@ -44,7 +46,17 @@ internal class TerminalWindow(private val number: Int, private val settings: Ter
         })
     }
     fun closeWindowIfMounted() { if (::handle.isInitialized) handle.close() }
-    fun currentWorkingDirectory(): String? = transport?.currentWorkingDirectory()
+    fun currentWorkingDirectory(): String? {
+        val reported = memScoped {
+            val hostname = allocArray<ByteVar>(1024)
+            val local = if (gethostname(hostname, 1024u) == 0) hostname.toKString() else ""
+            session.localWorkingDirectory(local)?.takeIf { path ->
+                val directory = alloc<BooleanVar>()
+                NSFileManager.defaultManager.fileExistsAtPath(path, directory.ptr) && directory.value
+            }
+        }
+        return reported ?: transport?.currentWorkingDirectory()
+    }
     fun close(done: () -> Unit) {
         if (!disposed) {
             disposed = true

@@ -1,0 +1,217 @@
+{
+  "actions": [
+    0,
+    1,
+    2
+  ],
+  "modifiers": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    8,
+    64,
+    129
+  ],
+  "keys": [
+    {
+      "upstream": "A",
+      "key": "a",
+      "unshifted": 97,
+      "text": "a",
+      "base": 97
+    },
+    {
+      "upstream": "A",
+      "key": "A",
+      "unshifted": 97,
+      "text": "A",
+      "base": 97
+    },
+    {
+      "upstream": "A",
+      "key": "Ф",
+      "unshifted": 1092,
+      "text": "Ф",
+      "base": 97
+    },
+    {
+      "upstream": "SEMICOLON",
+      "key": ":",
+      "unshifted": 59,
+      "text": ":",
+      "base": 59
+    },
+    {
+      "upstream": "UNIDENTIFIED",
+      "key": "😀",
+      "unshifted": 128512,
+      "text": "😀"
+    },
+    {
+      "upstream": "ENTER",
+      "key": "Enter",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "TAB",
+      "key": "Tab",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "BACKSPACE",
+      "key": "Backspace",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "ESCAPE",
+      "key": "Escape",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "ARROW_UP",
+      "key": "ArrowUp",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "HOME",
+      "key": "Home",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "DELETE",
+      "key": "Delete",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "F1",
+      "key": "F1",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "F3",
+      "key": "F3",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "F12",
+      "key": "F12",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "F25",
+      "key": "F25",
+      "unshifted": 0,
+      "text": ""
+    },
+    {
+      "upstream": "NUMPAD_1",
+      "key": "1",
+      "unshifted": 0,
+      "text": "1",
+      "keypad": "ONE"
+    },
+    {
+      "upstream": "NUMPAD_ENTER",
+      "key": "Enter",
+      "unshifted": 0,
+      "text": "",
+      "keypad": "ENTER"
+    },
+    {
+      "upstream": "SHIFT_LEFT",
+      "key": "Shift",
+      "unshifted": 0,
+      "text": "",
+      "physical": "ShiftLeft"
+    },
+    {
+      "upstream": "CONTROL_RIGHT",
+      "key": "Control",
+      "unshifted": 0,
+      "text": "",
+      "physical": "ControlRight"
+    },
+    {
+      "upstream": "META_LEFT",
+      "key": "Meta",
+      "unshifted": 0,
+      "text": "",
+      "physical": "MetaLeft"
+    },
+    {
+      "upstream": "CAPS_LOCK",
+      "key": "CapsLock",
+      "unshifted": 0,
+      "text": "",
+      "physical": "CapsLock"
+    }
+  ],
+  "additional": [
+    {
+      "upstream": "A",
+      "key": "A",
+      "unshifted": 97,
+      "base": 97,
+      "text": "A",
+      "action": 0,
+      "modifiers": 1,
+      "consumed": 1
+    },
+    {
+      "upstream": "A",
+      "key": "A",
+      "unshifted": 97,
+      "base": 97,
+      "text": "A",
+      "action": 1,
+      "modifiers": 1,
+      "consumed": 1
+    },
+    {
+      "upstream": "A",
+      "key": "A",
+      "unshifted": 97,
+      "base": 97,
+      "text": "A",
+      "action": 2,
+      "modifiers": 1,
+      "consumed": 1
+    },
+    {
+      "upstream": "UNIDENTIFIED",
+      "key": "Unidentified",
+      "unshifted": 0,
+      "text": "日本",
+      "action": 0,
+      "modifiers": 0
+    },
+    {
+      "upstream": "UNIDENTIFIED",
+      "key": "Unidentified",
+      "unshifted": 0,
+      "text": "日本",
+      "action": 1,
+      "modifiers": 0
+    },
+    {
+      "upstream": "UNIDENTIFIED",
+      "key": "Unidentified",
+      "unshifted": 0,
+      "text": "日本",
+      "action": 2,
+      "modifiers": 0
+    }
+  ]
+}

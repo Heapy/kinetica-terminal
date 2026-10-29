@@ -37,6 +37,9 @@ internal class TerminalApplication(
             if (shift) setOf(KeyModifier.PRIMARY, KeyModifier.SHIFT) else setOf(KeyModifier.PRIMARY))
         global("app.quit", "Quit Kinetica Terminal", "q", shell::requestQuit)
         global("app.settings", "Settings…", ",", ::showSettings)
+        terminal("notifications.enable", "Enable Terminal Notifications…", emptyList()) { terminal ->
+            terminal.view.requestNotificationPermission { }
+        }
         global("window.new", "New Window", "n") { open() }
         global("window.tab", "New Tab", "t") { open(tabbed = true) }
         shell.commands.register(ApplicationCommand("window.close", "Close", listOf(key("w")), windowRequired = true) { shell.activeWindow?.close() })
@@ -57,13 +60,15 @@ internal class TerminalApplication(
         terminal("find.shiftEnter", "Previous Match", listOf(KeyShortcut("Enter", setOf(KeyModifier.SHIFT))), { it.isSearchFocused }) { it.navigate(-1) }
         terminal("screen.clear", "Clear Screen", listOf(key("k"))) { it.view.clearScreen(null) }
         terminal("history.clear", "Clear Scrollback", listOf(key("k", true))) { it.view.clearHistory(null) }
+        terminal("prompt.previous", "Previous Prompt", emptyList(), { it.session.hasSemanticPrompts && !it.session.alternateScreen }) { it.view.jumpToPrompt(-1) }
+        terminal("prompt.next", "Next Prompt", emptyList(), { it.session.hasSemanticPrompts && !it.session.alternateScreen }) { it.view.jumpToPrompt(1) }
         terminal("font.increase", "Increase Text Size", listOf(key("+"), key("="))) { it.zoom(1.0) }
         terminal("font.decrease", "Decrease Text Size", listOf(key("-"))) { it.zoom(-1.0) }
         terminal("font.reset", "Reset Text Size", listOf(key("0"))) { it.resetZoom() }
         fun items(vararg ids: String) = ids.map { MenuItem.Command(it) }
         shell.setMenus(listOf(
-            ApplicationMenu("Kinetica Terminal", items("app.settings", "app.quit")),
-            ApplicationMenu("Shell", items("window.new", "window.tab", "window.close")),
+            ApplicationMenu("Kinetica Terminal", items("app.settings", "notifications.enable", "app.quit")),
+            ApplicationMenu("Shell", items("window.new", "window.tab", "window.close") + MenuItem.Separator + items("prompt.previous", "prompt.next")),
             ApplicationMenu("Window", items("tab.next", "tab.previous") + MenuItem.Separator + (1..9).map { MenuItem.Command("tab.$it") }),
             ApplicationMenu("Edit", items("edit.undo", "edit.cut", "edit.copy", "edit.paste", "edit.selectAll") + MenuItem.Separator +
                 items("find.show", "find.next", "find.previous", "screen.clear", "history.clear")),
@@ -84,6 +89,8 @@ internal class TerminalApplication(
                 callbacks = WindowCallbacks(boundsChanged = settings::saveBounds,
                     closed = { terminals.remove(terminal) }, release = terminal::close),
                 hostWidgets = appKitTerminalHosts(mapOf("shell" to terminal.session), controls = true,
+                    clipboardPolicy = TerminalClipboardPolicy.WRITE_ONLY,
+                    notificationPolicy = { true },
                     onView = { _, view -> terminal.attached(view) }),
             ) { TerminalContent(terminal) }
             terminals += terminal

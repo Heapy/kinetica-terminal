@@ -18,6 +18,10 @@ open 'build/apps/Kinetica Terminal.app'
 The surface supports native input composition, Command+C/V, drag selection, and wheel history.
 Closing the window disposes the UI and closes/reaps the shell. When the shell exits (`exit`,
 Ctrl+D or an error), its own tab/window closes automatically; other sessions remain open.
+New tabs inherit an existing local directory reported by OSC 7, falling back to the shell's
+PTY directory. Reports naming remote hosts are never treated as local directories.
+For shells emitting OSC 133, Shell → Previous Prompt / Next Prompt navigates between
+retained prompt regions. The terminal does not install or modify shell integration scripts.
 See [the terminal module](../../kinetica-terminal/README.md)
 for API details and the current compatibility limits.
 

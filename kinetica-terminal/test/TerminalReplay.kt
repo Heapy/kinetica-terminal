@@ -16,10 +16,15 @@ internal fun checkReplay(fixture: ReplayFixture) {
     val bytes = Base64.decode(fixture.input)
     val expected = Json.parseToJsonElement(Base64.decode(fixture.expected).decodeToString()).jsonObject
     // EL at pending wrap moves subsequent output to different rows in these two emulators.
+    // DECALN also differs: Ghostty preserves foreground/background while Alacritty resets them.
     // Use original Ghostty's complete grid for this named policy difference, after proving
     // that its scenario replays exactly the archived Alacritty recording and dimensions.
-    val ghosttyLines = if (fixture.name == "erase_in_line") {
-        val policy = ghostty_alacritty_erase_in_line()
+    val policy = when (fixture.name) {
+        "erase_in_line" -> ghostty_alacritty_erase_in_line()
+        "decaln_reset" -> ghostty_alacritty_decaln_reset()
+        else -> null
+    }
+    val ghosttyLines = if (policy != null) {
         val scenario = Json.parseToJsonElement(Base64.decode(policy.scenario).decodeToString()).jsonObject
         assertEquals(fixture.columns, scenario.getValue("columns").jsonPrimitive.int)
         assertEquals(fixture.rows, scenario.getValue("rows").jsonPrimitive.int)

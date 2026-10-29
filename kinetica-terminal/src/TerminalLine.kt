@@ -57,6 +57,8 @@ public class TerminalLine internal constructor(public val columns: Int, internal
             field = value
         }
     internal var wrapContinuation: Boolean = false
+    public var promptMarker: TerminalPromptMarker = TerminalPromptMarker.NONE
+        internal set
 
     init { clear(0, columns, TerminalStyle.DEFAULT, TerminalStyle.DEFAULT, 0) }
 
@@ -68,6 +70,7 @@ public class TerminalLine internal constructor(public val columns: Int, internal
     internal fun rawBackground(column: Int): Int = data[index(column) + 2]
     public fun style(column: Int): Int = data[index(column) + 3]
     public fun isProtected(column: Int): Boolean = data[index(column)] and PROTECTED != 0
+    public fun semanticContent(column: Int): TerminalSemanticContent = TerminalSemanticContent.entries[(data[index(column)] ushr 26) and 3]
     public fun underlineColor(column: Int): Int = resolveColor(rawUnderlineColor(column))
     internal fun rawUnderlineColor(column: Int): Int { index(column); return attributes?.get(column)?.underlineColor ?: -1 }
     private fun resolveColor(value: Int): Int = if (value >= INDEXED_COLOR)
@@ -102,10 +105,11 @@ public class TerminalLine internal constructor(public val columns: Int, internal
         return column * 4
     }
 
-    internal fun put(x: Int, code: Int, width: Int, fg: Int, bg: Int, style: Int, extra: CellAttributes? = null, protectedCell: Boolean = false) {
+    internal fun put(x: Int, code: Int, width: Int, fg: Int, bg: Int, style: Int, extra: CellAttributes? = null, protectedCell: Boolean = false,
+        semanticContent: TerminalSemanticContent = TerminalSemanticContent.OUTPUT) {
         changed(x, x + 1)
         val i = x * 4
-        data[i] = code or (width shl 21) or WRITTEN or (if (protectedCell) PROTECTED else 0)
+        data[i] = code or (width shl 21) or WRITTEN or (if (protectedCell) PROTECTED else 0) or (semanticContent.ordinal shl 26)
         data[i + 1] = fg
         data[i + 2] = bg
         data[i + 3] = style
@@ -189,14 +193,22 @@ public class TerminalLine internal constructor(public val columns: Int, internal
     }
 
     internal fun putSpacerHead(x: Int, fg: Int = -1, bg: Int = -1, style: Int = 0,
-        extra: CellAttributes? = null, protectedCell: Boolean = false) {
-        put(x, 32, 1, fg, bg, style, extra, protectedCell)
+        extra: CellAttributes? = null, protectedCell: Boolean = false, semanticContent: TerminalSemanticContent = TerminalSemanticContent.OUTPUT) {
+        put(x, 32, 1, fg, bg, style, extra, protectedCell, semanticContent)
         data[x * 4] = (data[x * 4] and WRITTEN.inv()) or SPACER_HEAD
     }
 
-    internal fun replaceWithSpacerHead(x: Int) {
+    internal fun putBlank(x: Int, fg: Int, bg: Int, style: Int, extra: CellAttributes?, protectedCell: Boolean,
+        semanticContent: TerminalSemanticContent = TerminalSemanticContent.OUTPUT) {
+        put(x, 32, 1, fg, bg, style, extra, protectedCell, semanticContent)
+        data[x * 4] = data[x * 4] and WRITTEN.inv()
+    }
+
+    internal fun replaceWithSpacerHead(x: Int) = replaceWithBlank(x, spacerHead = true)
+
+    internal fun replaceWithBlank(x: Int, spacerHead: Boolean = false) {
         changed(x, x + 1)
-        data[x * 4] = (data[x * 4] and PROTECTED) or 32 or (1 shl 21) or SPACER_HEAD
+        data[x * 4] = (data[x * 4] and (PROTECTED or (3 shl 26))) or 32 or (1 shl 21) or (if (spacerHead) SPACER_HEAD else 0)
         setCombined(x, null)
     }
 
@@ -210,12 +222,14 @@ public class TerminalLine internal constructor(public val columns: Int, internal
     internal fun snapshot(colors: TerminalColors): TerminalLine = TerminalLine(columns, colors, hyperlinkLimit).also {
         for (x in 0 until columns) it.copyCell(this, x, x)
         it.wrapped = wrapped; it.wrapContinuation = wrapContinuation
+        it.promptMarker = promptMarker
     }
 
     internal fun resized(columns: Int): TerminalLine = TerminalLine(columns, colors, hyperlinkLimit).also { next ->
         for (x in 0 until minOf(this.columns, columns)) next.copyCell(this, x, x)
         next.wrapped = wrapped && columns <= this.columns
         next.wrapContinuation = wrapContinuation && columns <= this.columns
+        next.promptMarker = promptMarker
         next.repairWideCells()
     }
 

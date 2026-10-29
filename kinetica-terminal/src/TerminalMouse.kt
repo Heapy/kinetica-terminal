@@ -1,3 +1,6 @@
+// Mouse protocol semantics adapted from Ghostty input/mouse_encode.zig.
+// Copyright (c) 2024 Mitchell Hashimoto, Ghostty contributors. MIT licensed.
+// Pinned source and license: ../third-party/ghostty.json and GHOSTTY-LICENSE.
 package io.heapy.kinetica.terminal
 
 /**
@@ -15,6 +18,7 @@ public fun TerminalSession.sendMouse(column: Int, row: Int, button: Int, release
 internal fun TerminalSession.handlesMouse(button: Int, release: Boolean, motion: Boolean): Boolean =
     mouseTracking != 0 && (button in 0..2 || button in 64..67 || button in 128..129 || button == 3 && motion) &&
         !(release && motion) && !(button in 64..67 && (release || motion)) &&
+        !(mouseTracking == 9 && (release || motion || button !in 0..2)) &&
         !(motion && (mouseTracking == 1000 || mouseTracking == 1002 && button == 3))
 
 internal fun TerminalSession.encodeMouse(column: Int, row: Int, button: Int, release: Boolean = false,
@@ -22,11 +26,12 @@ internal fun TerminalSession.encodeMouse(column: Int, row: Int, button: Int, rel
     if (!handlesMouse(button, release, motion)) return null
     // Release outside the view must reach the TUI. Dragging outside is useful in motion modes.
     if (!release && (column !in 0 until columns || row !in 0 until rows) &&
-        (mouseTracking == 1000 || button == 3)) return null
+        (mouseTracking == 9 || mouseTracking == 1000 || button == 3)) return null
     val x = column.coerceIn(0, columns - 1) + 1
     val y = row.coerceIn(0, rows - 1) + 1
     val code = (if (release && !sgrMouse) 3 else button) +
-        (if (motion) 32 else 0) + (if (alt) 8 else 0) + (if (control) 16 else 0)
+        (if (motion) 32 else 0) + (if (alt && mouseTracking != 9) 8 else 0) +
+        (if (control && mouseTracking != 9) 16 else 0)
     return if (sgrMouse) "\u001b[<$code;$x;$y${if (release) 'm' else 'M'}".encodeToByteArray()
     else if (x <= 223 && y <= 223) byteArrayOf(27, 91, 77, (code + 32).toByte(), (x + 32).toByte(), (y + 32).toByte())
     else null

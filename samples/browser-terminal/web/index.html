@@ -9,11 +9,12 @@
     body { margin: 0; height: 100vh; display: flex; flex-direction: column; }
     header { padding: 14px 20px; border-bottom: 1px solid #333; font-size: 14px; }
     header span { color: #999; margin-left: 16px; }
+    header button { float: right; color: inherit; background: #25262b; border: 1px solid #555; border-radius: 4px; padding: 3px 8px; }
     #app { flex: 1; min-height: 0; margin: 12px; }
   </style>
 </head>
 <body>
-  <header>Kinetica Terminal <span>Shared Kotlin engine · local echo demo</span></header>
+  <header>Kinetica Terminal <span>Shared Kotlin engine · local echo demo</span><button id="notifications">Enable notifications</button></header>
   <main id="app"></main>
   <script type="module" src="../../../build/artifacts/CompiledWebArtifact/browser-terminaljsrelease/kotlin-output/browser-terminal.mjs"></script>
 </body>

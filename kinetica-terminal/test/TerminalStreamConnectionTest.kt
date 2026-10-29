@@ -3,6 +3,35 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalStreamConnectionTest {
+    @Test fun delayedLargeClipboardReplyIsAtomicWhenNormalInputCapacityIsFull() {
+        val session = TerminalSession(); val transport = Transport(); val loop = Loop()
+        transport.accept = 0
+        var completeRead: ((ByteArray?) -> Unit)? = null
+        session.attachClipboard(object : TerminalClipboard {
+            override fun read(location: TerminalClipboardLocation, complete: (ByteArray?) -> Unit) { completeRead = complete }
+            override fun write(location: TerminalClipboardLocation, data: ByteArray, complete: () -> Unit) = complete()
+        }, TerminalClipboardPolicy.ALLOW)
+        val connection = connection(session, transport, loop, TerminalStreamLimits(inputBytes = TERMINAL_REPLY_RESERVE))
+        assertTrue(connection.receive("\u001b]52;c;?\u001b\\".encodeToByteArray()))
+        loop.runNext()
+        val prefix = "p".repeat(TERMINAL_REPLY_RESERVE)
+        session.sendInput(prefix)
+        val content = "large clipboard 世界\n".repeat(80_000).encodeToByteArray()
+        completeRead!!(content)
+        val expected = prefix + "\u001b]52;c;${kotlin.io.encoding.Base64.Default.encode(content)}\u001b\\"
+        assertEquals(expected.length, connection.pendingInputBytes)
+        assertTrue(connection.outputPausedForInput)
+        assertTrue(connection.receive("AFTER".encodeToByteArray()))
+        loop.runNext()
+        assertEquals("", session.screenLine(0).text())
+        transport.accept = 8192
+        loop.drain()
+        assertEquals(expected, transport.writes.toByteArray().decodeToString())
+        assertEquals("AFTER", session.screenLine(0).text())
+        assertEquals(0L, connection.rejectedInputCount)
+        assertEquals(0, connection.pendingInputBytes)
+        connection.dispose()
+    }
     private class Loop : TerminalScheduler {
         data class Job(val at: Double, val action: () -> Unit)
         var now = 0.0

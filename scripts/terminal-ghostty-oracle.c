@@ -1,7 +1,8 @@
 /* Test-only libghostty-vt oracle. Build against the revision in
  * kinetica-terminal/third-party/ghostty.json. No GUI, shell or PTY is started.
  * stdin: N cols rows history; C fg bg cursor palette[256] (hex RGB configuration);
- * W hex-bytes; R cols rows; K keypad-key mods (append encoded input to replies);
+ * W hex-bytes; R cols rows [cell-width cell-height]; K keypad-key mods;
+ * E key mods consumed action unshifted utf8-hex; T color-scheme (1 dark, 2 light);
  * M action button mods column row (stateless mouse encoding, unit cells);
  * S (snapshot); U (width ranges).
  * stdout: one JSON snapshot per S. Every API failure exits nonzero.
@@ -15,6 +16,88 @@ static unsigned char replies[1024 * 1024];
 static size_t replies_len;
 static bool holds[4096];
 static size_t holds_len;
+static GhosttyColorScheme color_scheme = GHOSTTY_COLOR_SCHEME_DARK;
+static uint32_t cell_width, cell_height;
+static bool has_size;
+static bool clipboard_enabled;
+static bool effects_enabled;
+static bool pwd_enabled;
+static bool semantic_enabled;
+static struct { unsigned char bytes[4096]; size_t len; } pwd_events[512];
+static size_t pwd_events_len;
+static void pwd_changed(GhosttyTerminal terminal, void *userdata) {
+    (void)userdata;
+    GhosttyString value;
+    if (ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_PWD, &value) != GHOSTTY_SUCCESS ||
+        value.len > 4096 || pwd_events_len == 512) exit(2);
+    size_t i = pwd_events_len++;
+    pwd_events[i].len = value.len;
+    if (value.len) memcpy(pwd_events[i].bytes, value.ptr, value.len);
+}
+static struct { bool notification; char title[2049], body[2049]; size_t title_len, body_len; int state, progress; } effects[512];
+static size_t effects_len;
+static void desktop_notification(GhosttyTerminal terminal, void *userdata, const GhosttyTerminalDesktopNotification *value) {
+    (void)terminal; (void)userdata;
+    if (effects_len == 512 || value->title.len > 2048 || value->body.len > 2048) exit(2);
+    size_t i = effects_len++;
+    effects[i].notification = true; effects[i].title_len = value->title.len; effects[i].body_len = value->body.len;
+    memcpy(effects[i].title, value->title.ptr, value->title.len);
+    memcpy(effects[i].body, value->body.ptr, value->body.len);
+}
+static void progress_report(GhosttyTerminal terminal, void *userdata, const GhosttyTerminalProgressReport *value) {
+    (void)terminal; (void)userdata;
+    if (effects_len == 512) exit(2);
+    size_t i = effects_len++;
+    effects[i].notification = false; effects[i].state = value->state; effects[i].progress = value->progress;
+}
+static struct { unsigned location; unsigned char *data; size_t len; bool read; } clipboard_events[256];
+static size_t clipboard_events_len;
+static struct { unsigned char *data; size_t len; } clipboard_values[3];
+static void record_clipboard(unsigned location, const unsigned char *data, size_t len, bool read) {
+    if (location >= 3 || clipboard_events_len == 256 || len > 8 * 1024 * 1024) exit(2);
+    size_t i = clipboard_events_len++;
+    clipboard_events[i].location = location; clipboard_events[i].len = len; clipboard_events[i].read = read;
+    clipboard_events[i].data = malloc(len ? len : 1);
+    if (!clipboard_events[i].data) exit(2);
+    if (len) memcpy(clipboard_events[i].data, data, len);
+}
+static void clipboard_write(GhosttyTerminal terminal, void *userdata, const GhosttyClipboardWrite *write) {
+    (void)terminal; (void)userdata;
+    if (write->contents_len > 1) exit(2);
+    const unsigned char *data = write->contents_len ? (const unsigned char *)write->contents[0].data.ptr : NULL;
+    size_t len = write->contents_len ? write->contents[0].data.len : 0;
+    record_clipboard(write->location, data, len, false);
+    free(clipboard_values[write->location].data);
+    clipboard_values[write->location].data = malloc(len ? len : 1);
+    if (!clipboard_values[write->location].data) exit(2);
+    if (len) memcpy(clipboard_values[write->location].data, data, len);
+    clipboard_values[write->location].len = len;
+    const GhosttyClipboardWriteReply result = {.size = sizeof(result), .result = GHOSTTY_CLIPBOARD_WRITE_RESULT_SUCCESS};
+    write->reply(write, &result);
+}
+static void clipboard_read(GhosttyTerminal terminal, void *userdata, const GhosttyClipboardRead *read) {
+    (void)terminal; (void)userdata;
+    record_clipboard(read->location, NULL, 0, true);
+    const GhosttyClipboardContent content = {
+        .mime = {.ptr = (const uint8_t *)"text/plain", .len = 10},
+        .data = {.ptr = clipboard_values[read->location].data, .len = clipboard_values[read->location].len},
+    };
+    const GhosttyClipboardReadReply result = {.size = sizeof(result), .result = GHOSTTY_CLIPBOARD_READ_RESULT_SUCCESS,
+        .contents = &content, .contents_len = 1};
+    read->reply(read, &result);
+}
+static bool get_size(GhosttyTerminal terminal, void *userdata, GhosttySizeReportSize *out) {
+    (void)userdata;
+    if (!has_size) return false;
+    out->cell_width = cell_width; out->cell_height = cell_height;
+    return ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_COLS, &out->columns) == GHOSTTY_SUCCESS &&
+        ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_ROWS, &out->rows) == GHOSTTY_SUCCESS;
+}
+static bool get_color_scheme(GhosttyTerminal terminal, void *userdata, GhosttyColorScheme *out) {
+    (void)terminal; (void)userdata;
+    *out = color_scheme;
+    return true;
+}
 static void render_hold(GhosttyTerminal terminal, void *userdata, bool held) {
     (void)terminal; (void)userdata;
     if (holds_len == sizeof(holds) / sizeof(holds[0])) exit(2);
@@ -86,12 +169,62 @@ static void snapshot(GhosttyTerminal terminal) {
     printf("{\"columns\":%u,\"rows\":%u,\"cursor\":[%u,%u],\"pendingWrap\":%s,\"visible\":%s,\"alternate\":%s,\"history\":%zu,\"title\":",
         cols, rows, x, y, pending ? "true" : "false", visible ? "true" : "false", active ? "true" : "false", history);
     json_bytes((const unsigned char *)title.ptr, title.len);
+    if (semantic_enabled) {
+        bool at_prompt;
+        check(ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_CURSOR_AT_PROMPT, &at_prompt));
+        printf(",\"cursorAtPrompt\":%s", at_prompt ? "true" : "false");
+    }
+    if (pwd_enabled) {
+        GhosttyString pwd;
+        check(ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_PWD, &pwd));
+        fputs(",\"workingDirectory\":", stdout);
+        if (pwd.len) json_bytes(pwd.ptr, pwd.len); else fputs("null", stdout);
+        fputs(",\"workingDirectoryReports\":[", stdout);
+        for (size_t i = 0; i < pwd_events_len; i++) {
+            if (i) putchar(',');
+            if (pwd_events[i].len) json_bytes(pwd_events[i].bytes, pwd_events[i].len); else fputs("null", stdout);
+        }
+        putchar(']');
+    }
+    GhosttyMouseShape pointer_shape;
+    check(ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_MOUSE_SHAPE, &pointer_shape));
+    printf(",\"pointerShape\":%d", pointer_shape);
+    if (effects_enabled) {
+        fputs(",\"effects\":[", stdout);
+        for (size_t i = 0; i < effects_len; i++) {
+            if (i) putchar(',');
+            if (effects[i].notification) {
+                fputs("[\"notification\",", stdout);
+                json_bytes((const unsigned char *)effects[i].title, effects[i].title_len); putchar(',');
+                json_bytes((const unsigned char *)effects[i].body, effects[i].body_len);
+            } else {
+                printf("[\"progress\",%d,", effects[i].state);
+                if (effects[i].progress < 0) fputs("null", stdout); else printf("%d", effects[i].progress);
+            }
+            putchar(']');
+        }
+        putchar(']');
+    }
+    if (clipboard_enabled) {
+        fputs(",\"clipboard\":[", stdout);
+        for (size_t i = 0; i < clipboard_events_len; i++) {
+            printf("%s[%u,", i ? "," : "", clipboard_events[i].location);
+            if (clipboard_events[i].read) fputs("null", stdout);
+            else {
+                putchar('"');
+                for (size_t j = 0; j < clipboard_events[i].len; j++) printf("%02x", clipboard_events[i].data[j]);
+                putchar('"');
+            }
+            putchar(']');
+        }
+        putchar(']');
+    }
     fputs(",\"replies\":\"", stdout);
     for (size_t i = 0; i < replies_len; i++) printf("%02x", replies[i]);
     fputs("\",\"modes\":[", stdout);
     const GhosttyMode modes[] = {GHOSTTY_MODE_DECCKM, GHOSTTY_MODE_ORIGIN, GHOSTTY_MODE_WRAPAROUND,
         GHOSTTY_MODE_INSERT, GHOSTTY_MODE_LINEFEED, GHOSTTY_MODE_BRACKETED_PASTE, GHOSTTY_MODE_FOCUS_EVENT, GHOSTTY_MODE_SGR_MOUSE,
-        GHOSTTY_MODE_GRAPHEME_CLUSTER, GHOSTTY_MODE_SYNC_OUTPUT, GHOSTTY_MODE_CURSOR_BLINKING};
+        GHOSTTY_MODE_GRAPHEME_CLUSTER, GHOSTTY_MODE_SYNC_OUTPUT, GHOSTTY_MODE_CURSOR_BLINKING, GHOSTTY_MODE_LEFT_RIGHT_MARGIN};
     for (size_t i = 0; i < sizeof(modes) / sizeof(modes[0]); i++) {
         GhosttyTerminalModeConfig config = {.mode = modes[i]};
         check(ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_MODE, &config));
@@ -129,7 +262,13 @@ static void snapshot(GhosttyTerminal terminal) {
         check(ghostty_terminal_grid_ref(terminal, point, &ref));
         check(ghostty_grid_ref_row(&ref, &raw_row));
         check(ghostty_row_get(raw_row, GHOSTTY_ROW_DATA_WRAP, &wrap));
-        printf("%s{\"wrapped\":%s,\"cells\":[", row ? "," : "", wrap ? "true" : "false");
+        printf("%s{\"wrapped\":%s", row ? "," : "", wrap ? "true" : "false");
+        if (semantic_enabled) {
+            GhosttyRowSemanticPrompt marker;
+            check(ghostty_row_get(raw_row, GHOSTTY_ROW_DATA_SEMANTIC_PROMPT, &marker));
+            printf(",\"promptMarker\":%d", marker);
+        }
+        fputs(",\"cells\":[", stdout);
         for (unsigned col = 0; col < cols; col++) {
             point.value.coordinate.x = col;
             check(ghostty_terminal_grid_ref(terminal, point, &ref));
@@ -163,7 +302,13 @@ static void snapshot(GhosttyTerminal terminal) {
             printf("\",%d,%d,%d,%d,%d,", wide == GHOSTTY_CELL_WIDE_WIDE ? 2 : wide == GHOSTTY_CELL_WIDE_SPACER_TAIL ? 0 : 1,
                 fg, bg, flags, color(style.underline_color));
             if (uri_len) json_bytes(uri, uri_len); else fputs("null", stdout);
-            printf(",%s]", protected ? "true" : "false");
+            printf(",%s", protected ? "true" : "false");
+            if (semantic_enabled) {
+                GhosttyCellSemanticContent semantic;
+                check(ghostty_cell_get(cell, GHOSTTY_CELL_DATA_SEMANTIC_CONTENT, &semantic));
+                printf(",%d", semantic);
+            }
+            putchar(']');
         }
         fputs("]}", stdout);
     }
@@ -202,6 +347,48 @@ static void encode_key(GhosttyTerminal terminal, const char *command) {
         (mods & 2 ? GHOSTTY_MODS_ALT : 0) | (mods & 4 ? GHOSTTY_MODS_CTRL : 0) |
         (mods & 8 ? GHOSTTY_MODS_NUM_LOCK : 0));
     char bytes[128]; size_t length;
+    check(ghostty_key_encoder_encode(encoder, event, bytes, sizeof(bytes), &length));
+    reply(terminal, NULL, (const unsigned char *)bytes, length);
+    ghostty_key_event_free(event); ghostty_key_encoder_free(encoder);
+}
+static GhosttyMods keyboard_mods(unsigned bits) {
+    return (bits & 1 ? GHOSTTY_MODS_SHIFT : 0) | (bits & 2 ? GHOSTTY_MODS_ALT : 0) |
+        (bits & 4 ? GHOSTTY_MODS_CTRL : 0) | (bits & 8 ? GHOSTTY_MODS_SUPER : 0) |
+        (bits & 64 ? GHOSTTY_MODS_CAPS_LOCK : 0) | (bits & 128 ? GHOSTTY_MODS_NUM_LOCK : 0);
+}
+static void encode_keyboard(GhosttyTerminal terminal, const char *command) {
+    static const struct { const char *name; GhosttyKey key; } keys[] = {
+#define KEY(name) {#name, GHOSTTY_KEY_##name}
+        KEY(A), KEY(C), KEY(DIGIT_1), KEY(SEMICOLON), KEY(UNIDENTIFIED), KEY(ENTER), KEY(TAB), KEY(BACKSPACE), KEY(ESCAPE),
+        KEY(ARROW_UP), KEY(HOME), KEY(DELETE), KEY(F1), KEY(F3), KEY(F12), KEY(F25), KEY(NUMPAD_1), KEY(NUMPAD_ENTER),
+        KEY(SHIFT_LEFT), KEY(CONTROL_RIGHT), KEY(ALT_LEFT), KEY(META_LEFT), KEY(CAPS_LOCK), KEY(NUM_LOCK)
+#undef KEY
+    };
+    char name[32], encoded[1025]; unsigned mods, consumed, action, codepoint;
+    if (sscanf(command, "%31s %u %u %u %u %1024s", name, &mods, &consumed, &action, &codepoint, encoded) != 6 ||
+        mods > 255 || consumed > 255 || action > 2 || codepoint > 0x10ffff) exit(2);
+    size_t index = 0;
+    for (; index < sizeof(keys) / sizeof(keys[0]); index++) if (!strcmp(name, keys[index].name)) break;
+    if (index == sizeof(keys) / sizeof(keys[0])) exit(2);
+    char utf8[512]; size_t text_length = strcmp(encoded, "-") ? strlen(encoded) / 2 : 0;
+    for (size_t i = 0; i < text_length; i++) {
+        int a = hex(encoded[2 * i]), b = hex(encoded[2 * i + 1]);
+        if (a < 0 || b < 0) exit(2);
+        utf8[i] = (char)(a * 16 + b);
+    }
+    const GhosttyKeyAction actions[] = {GHOSTTY_KEY_ACTION_PRESS, GHOSTTY_KEY_ACTION_REPEAT, GHOSTTY_KEY_ACTION_RELEASE};
+    GhosttyKeyEncoder encoder; GhosttyKeyEvent event;
+    check(ghostty_key_encoder_new(NULL, &encoder)); check(ghostty_key_event_new(NULL, &event));
+    ghostty_key_encoder_setopt_from_terminal(encoder, terminal);
+    GhosttyOptionAsAlt option = GHOSTTY_OPTION_AS_ALT_TRUE;
+    ghostty_key_encoder_setopt(encoder, GHOSTTY_KEY_ENCODER_OPT_MACOS_OPTION_AS_ALT, &option);
+    ghostty_key_event_set_key(event, keys[index].key);
+    ghostty_key_event_set_action(event, actions[action]);
+    ghostty_key_event_set_mods(event, keyboard_mods(mods));
+    ghostty_key_event_set_consumed_mods(event, keyboard_mods(consumed));
+    ghostty_key_event_set_unshifted_codepoint(event, codepoint);
+    ghostty_key_event_set_utf8(event, utf8, text_length);
+    char bytes[4096]; size_t length;
     check(ghostty_key_encoder_encode(encoder, event, bytes, sizeof(bytes), &length));
     reply(terminal, NULL, (const unsigned char *)bytes, length);
     ghostty_key_event_free(event); ghostty_key_encoder_free(encoder);
@@ -271,13 +458,39 @@ int main(void) {
             check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_RENDER_HOLD, (void *)render_hold));
             check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_DEVICE_ATTRIBUTES, (void *)device_attributes));
             check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_XTVERSION, (void *)xtversion));
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_COLOR_SCHEME, (void *)get_color_scheme));
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_SIZE, (void *)get_size));
+            has_size = false; cell_width = 0; cell_height = 0;
+            color_scheme = GHOSTTY_COLOR_SCHEME_DARK;
             GhosttyTerminalCursorStyle cursor_style = GHOSTTY_TERMINAL_CURSOR_STYLE_UNDERLINE;
             bool cursor_blink = false;
             check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_DEFAULT_CURSOR_STYLE, &cursor_style));
             check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_DEFAULT_CURSOR_BLINK, &cursor_blink));
             replies_len = 0;
             holds_len = 0;
+            clipboard_enabled = false;
+            effects_enabled = false; effects_len = 0;
+            pwd_enabled = false; pwd_events_len = 0;
+            semantic_enabled = false;
+            for (size_t i = 0; i < clipboard_events_len; i++) free(clipboard_events[i].data);
+            clipboard_events_len = 0;
+            for (size_t i = 0; i < 3; i++) { free(clipboard_values[i].data); clipboard_values[i].data = NULL; clipboard_values[i].len = 0; }
         } else if (!terminal) return 2;
+        else if (line[0] == 'H') semantic_enabled = true;
+        else if (line[0] == 'P') {
+            pwd_enabled = true;
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_PWD_CHANGED, (void *)pwd_changed));
+        }
+        else if (line[0] == 'F') {
+            effects_enabled = true;
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_DESKTOP_NOTIFICATION, (void *)desktop_notification));
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_PROGRESS_REPORT, (void *)progress_report));
+        }
+        else if (line[0] == 'B') {
+            clipboard_enabled = true;
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_CLIPBOARD_WRITE, (void *)clipboard_write));
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_CLIPBOARD_READ, (void *)clipboard_read));
+        }
         else if (line[0] == 'C') {
             unsigned values[259];
             char *next = line + 1;
@@ -307,16 +520,32 @@ int main(void) {
                 bytes[i / 2] = a * 16 + b;
             }
             ghostty_terminal_vt_write(terminal, bytes, n / 2); free(bytes);
+        } else if (line[0] == 'T') {
+            unsigned scheme;
+            if (sscanf(line + 1, "%u", &scheme) != 1 || scheme < 1 || scheme > 2) return 2;
+            color_scheme = scheme == 1 ? GHOSTTY_COLOR_SCHEME_DARK : GHOSTTY_COLOR_SCHEME_LIGHT;
+            GhosttyTerminalModeConfig config = {.mode = GHOSTTY_MODE_COLOR_SCHEME_REPORT};
+            check(ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_MODE, &config));
+            if (config.value) {
+                char bytes[32]; size_t length;
+                check(ghostty_color_scheme_report_encode(color_scheme, bytes, sizeof(bytes), &length));
+                reply(terminal, NULL, (const uint8_t *)bytes, length);
+            }
         } else if (line[0] == 'R') {
-            unsigned cols, rows;
-            if (sscanf(line + 1, "%u %u", &cols, &rows) != 2 || cols > 4096 || rows > 4096) return 2;
-            check(ghostty_terminal_resize(terminal, cols, rows, 8, 16));
+            unsigned cols, rows, width = 8, height = 16;
+            int count = sscanf(line + 1, "%u %u %u %u", &cols, &rows, &width, &height);
+            if ((count != 2 && count != 4) || cols > 4096 || rows > 4096) return 2;
+            check(ghostty_terminal_resize(terminal, cols, rows, width, height));
+            has_size = true; cell_width = width; cell_height = height;
         } else if (line[0] == 'K') encode_key(terminal, line + 1);
+        else if (line[0] == 'E') encode_keyboard(terminal, line + 1);
         else if (line[0] == 'M') encode_mouse(terminal, line + 1);
         else if (line[0] == 'S') snapshot(terminal);
         else return 2;
     }
     if (terminal) ghostty_terminal_free(terminal);
+    for (size_t i = 0; i < clipboard_events_len; i++) free(clipboard_events[i].data);
+    for (size_t i = 0; i < 3; i++) free(clipboard_values[i].data);
     free(line);
     return ferror(stdin) ? 2 : 0;
 }

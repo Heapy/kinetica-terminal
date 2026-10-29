@@ -1,5 +1,11 @@
 package io.heapy.kinetica.terminal
 
+internal fun nativeBaseCodepoint(code: Int): Int? = when (code) {
+    18 -> '1'; 19 -> '2'; 20 -> '3'; 21 -> '4'; 23 -> '5'; 22 -> '6'; 26 -> '7'; 28 -> '8'; 25 -> '9'; 29 -> '0'
+    27 -> '-'; 24 -> '='; 50 -> '`'; 49 -> ' '
+    else -> terminalShortcutKey("ф", code).singleOrNull()?.takeIf { it.code < 128 }
+}?.code
+
 /** Preserve Latin layouts; use physical US key identity when Ctrl/Cmd sees non-Latin text. */
 internal fun terminalShortcutKey(characters: String, keyCode: Int): String {
     if (characters.length != 1 || characters[0].code < 128) return characters.lowercase()

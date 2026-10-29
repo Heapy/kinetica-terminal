@@ -18,6 +18,10 @@ public class AppKitTerminalView(
     private val optionAsMeta: Boolean = false,
     private val rendering: TerminalRendering = TerminalRendering.AUTO,
     renderObserver: TerminalRenderObserver? = null,
+    clipboardPolicy: TerminalClipboardPolicy = TerminalClipboardPolicy.DENY,
+    clipboard: TerminalClipboard? = null,
+    notificationPolicy: (TerminalNotification) -> Boolean = { false },
+    notifications: TerminalNotificationDelivery? = null,
 ) : NSView(NSMakeRect(0.0, 0.0, 800.0, 480.0)), NSTextInputClientProtocol, CALayerDelegateProtocol {
     private var fontSize = 14.0
     private var fontFamily: String? = null
@@ -27,6 +31,24 @@ public class AppKitTerminalView(
     private var cellWidth = 8.0
     private var cellHeight = 19.0
     private var disposed = false
+    private var notifications = notifications
+    private fun notificationDelivery(): TerminalNotificationDelivery = notifications ?: AppKitTerminalNotifications().also { notifications = it }
+    public fun requestNotificationPermission(complete: (Boolean) -> Unit) {
+        if (disposed) complete(false) else notificationDelivery().requestPermission(complete)
+    }
+    private val notificationObservation = session.onNotification { if (!disposed && notificationPolicy(it)) notificationDelivery().show(it) }
+    private val clipboardBinding = session.attachClipboard(clipboard ?: TerminalNativeClipboard(), clipboardPolicy)
+    internal var pointerCursor: NSCursor = nativePointerCursor(session.pointerShape) ?: NSCursor.IBeamCursor
+        private set
+    private val pointerObservation = session.onPointerShape { shape ->
+        nativePointerCursor(shape)?.let { cursor ->
+            pointerCursor = cursor
+            window?.invalidateCursorRectsForView(this)
+        }
+    }
+    private val pressedKeys = mutableMapOf<UShort, TerminalKey>()
+    private val pressedModifiers = mutableSetOf<UShort>()
+    private var interpretingKey: Pair<UShort, TerminalKey>? = null
     public var onViewportChanged: (() -> Unit)? = null
     internal var onScrollActivity: (() -> Unit)? = null
     public var openLink: (String) -> Boolean = { value ->
@@ -58,6 +80,7 @@ public class AppKitTerminalView(
     private var gpu: MetalTerminalDrawing? = null
     private val renderProbe = TerminalRenderProbe(renderObserver)
     private var compositionLayer: CATextLayer? = null
+    internal val progressIndicator = TerminalNativeProgress(session)
     public val renderingBackend: String get() = if (gpu != null) "metal" else "appkit"
     internal val submittedGpuFrames: Int get() = gpu?.submittedFrames ?: 0
     public var renderingFailure: String? = null
@@ -87,6 +110,8 @@ public class AppKitTerminalView(
             }
         }
         ready = true
+        addSubview(progressIndicator)
+        bounds.useContents { progressIndicator.setFrameSize(NSMakeSize(size.width, 4.0)) }
         viewport.setFocused(false)
         measure()
     }
@@ -96,8 +121,13 @@ public class AppKitTerminalView(
     override fun displayLayer(layer: CALayer) { if (!disposed && gpu != null) updateLayer() }
     override fun isOpaque(): Boolean = true
     override fun acceptsFirstResponder(): Boolean = true
-    override fun becomeFirstResponder(): Boolean { viewport.setFocused(true); session.sendFocus(true); return true }
+    override fun resetCursorRects() {
+        super.resetCursorRects()
+        if (!disposed) addCursorRect(bounds, pointerCursor)
+    }
+    override fun becomeFirstResponder(): Boolean { viewport.setFocused(true); session.sendFocus(true); notifications?.clear(); return true }
     override fun resignFirstResponder(): Boolean {
+        pressedKeys.clear(); pressedModifiers.clear()
         if (!disposed) { mouseReporter.cancel(); selecting = false; viewport.setFocused(false); session.sendFocus(false) }
         return true
     }
@@ -127,7 +157,7 @@ public class AppKitTerminalView(
 
     override fun viewDidChangeBackingProperties() {
         super.viewDidChangeBackingProperties()
-        if (ready && !disposed) { viewport.markAll(); setNeedsDisplay(true) }
+        if (ready && !disposed) measure()
     }
 
     override fun viewWillStartLiveResize() {
@@ -161,8 +191,12 @@ public class AppKitTerminalView(
         // Pixel-only changes must not end an application's synchronized-output hold.
         // For a real grid change, let the current atomic output finish before sending
         // SIGWINCH; the existing hold deadline still bounds an abandoned update.
-        if (columns != session.columns || rows != session.rows) {
-            if (liveResizing) viewport.resizeSession(columns, rows) else session.resize(columns, rows)
+        val scale = window?.backingScaleFactor ?: 1.0
+        val cellSize = TerminalCellSize((cellWidth * scale).toInt().coerceAtLeast(1), (cellHeight * scale).toInt().coerceAtLeast(1))
+        val gridChanged = columns != session.columns || rows != session.rows
+        if (gridChanged || cellSize != session.cellSize) {
+            if (liveResizing && gridChanged) viewport.resizeSession(columns, rows, cellSize)
+            else session.resize(columns, rows, cellSize)
         }
     }
 
@@ -274,7 +308,10 @@ public class AppKitTerminalView(
             when (chars.lowercase()) {
                 "c" -> copySelection(); "v" -> pasteClipboard(); "a" -> viewport.selectAll()
                 "k" -> if (shift) clearHistory(null) else clearScreen(null)
-                else -> super.keyDown(event)
+                else -> if (session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2) {
+                    val terminalKey = terminalKey(event)
+                    if (session.sendKey(terminalKey)) pressedKeys[event.keyCode] = terminalKey
+                } else super.keyDown(event)
             }
             return
         }
@@ -284,18 +321,86 @@ public class AppKitTerminalView(
             viewport.scroll((session.rows - 1) * if (key == "PageUp") 1 else -1)
             onScrollActivity?.invoke(); return
         }
-        if (!hasMarkedText() && session.sendKey(TerminalKey(key, control,
-                optionAsMeta && flags and NSEventModifierFlagOption != 0uL, shift, keypad = keypad))) {
+        val extendedKeyboard = session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2
+        val terminalKey = if (extendedKeyboard) terminalKey(event) else TerminalKey(key, control,
+            optionAsMeta && flags and NSEventModifierFlagOption != 0uL, shift, keypad = keypad)
+        // Printable text goes through NSTextInputClient first so dead keys and IME own composition.
+        val interpretText = extendedKeyboard && terminalKey.key.terminalCodepoints().size == 1 &&
+            !control && !command && !(optionAsMeta && flags and NSEventModifierFlagOption != 0uL)
+        if (!hasMarkedText() && !interpretText && session.sendKey(terminalKey)) {
+            pressedKeys[event.keyCode] = terminalKey
             viewport.followOutput(); viewport.clearSelection(); return
         }
-        interpretKeyEvents(listOf(event))
+        interpretingKey = if (!hasMarkedText()) event.keyCode to terminalKey else null
+        try { interpretKeyEvents(listOf(event)) } finally { interpretingKey = null }
+    }
+
+    private fun terminalKey(event: NSEvent): TerminalKey {
+        val flags = event.modifierFlags
+        val code = event.keyCode.toInt()
+        val keypad = nativeKeypad(code)
+        val logical = if (keypad == TerminalKeypadKey.ENTER) "Enter" else nativeKey(event.charactersIgnoringModifiers.orEmpty())
+        var text = event.characters.orEmpty().takeIf { value ->
+            value.terminalCodepoints().all { terminalPrintable(it) && it !in 0xf700..0xf8ff }
+        }.orEmpty()
+        if (session.modifyOtherKeysMode == 2 && text.isEmpty() &&
+            logical.terminalCodepoints().singleOrNull()?.let(::terminalPrintable) == true) text = logical
+        // The event already carries its layout identity. Re-translating an unmodified
+        // event through the current global layout can change a queued key after a
+        // layout switch (and makes synthetic events depend on the user's layout).
+        val layoutModifiers = NSEventModifierFlagShift or NSEventModifierFlagOption or NSEventModifierFlagCapsLock
+        val unshifted = (if (flags and layoutModifiers == 0uL) event.charactersIgnoringModifiers
+            else event.charactersByApplyingModifiers(0uL))?.lowercase()?.terminalCodepoints()?.singleOrNull()
+        return TerminalKey(logical, control = flags and NSEventModifierFlagControl != 0uL,
+            alt = flags and NSEventModifierFlagOption != 0uL, shift = flags and NSEventModifierFlagShift != 0uL,
+            meta = flags and NSEventModifierFlagCommand != 0uL, keypad = keypad,
+            action = if (event.isARepeat()) TerminalKeyAction.REPEAT else TerminalKeyAction.PRESS,
+            text = text, unshiftedCodepoint = unshifted,
+            baseCodepoint = nativeBaseCodepoint(code), capsLock = flags and NSEventModifierFlagCapsLock != 0uL,
+            consumedModifiers = if (text.isNotEmpty()) (if (flags and NSEventModifierFlagShift != 0uL) 1 else 0) or
+                (if (!optionAsMeta && flags and NSEventModifierFlagOption != 0uL) 2 else 0) else 0)
+    }
+
+    override fun keyUp(event: NSEvent) {
+        if (disposed) return
+        val pressed = pressedKeys.remove(event.keyCode) ?: return
+        val flags = event.modifierFlags
+        session.sendKey(pressed.copy(action = TerminalKeyAction.RELEASE,
+            shift = flags and NSEventModifierFlagShift != 0uL, control = flags and NSEventModifierFlagControl != 0uL,
+            alt = flags and NSEventModifierFlagOption != 0uL, meta = flags and NSEventModifierFlagCommand != 0uL,
+            capsLock = flags and NSEventModifierFlagCapsLock != 0uL))
+    }
+
+    override fun flagsChanged(event: NSEvent) {
+        if (disposed) return
+        val identity = when (event.keyCode.toInt()) {
+            56 -> "ShiftLeft"; 60 -> "ShiftRight"; 59 -> "ControlLeft"; 62 -> "ControlRight"
+            58 -> "AltLeft"; 61 -> "AltRight"; 55 -> "MetaLeft"; 54 -> "MetaRight"; 57 -> "CapsLock"
+            else -> return
+        }
+        val pressed = pressedModifiers.add(event.keyCode)
+        if (!pressed) pressedModifiers.remove(event.keyCode)
+        val flags = event.modifierFlags
+        session.sendKey(TerminalKey(identity, physicalCode = identity,
+            action = if (pressed) TerminalKeyAction.PRESS else TerminalKeyAction.RELEASE,
+            shift = flags and NSEventModifierFlagShift != 0uL, control = flags and NSEventModifierFlagControl != 0uL,
+            alt = flags and NSEventModifierFlagOption != 0uL, meta = flags and NSEventModifierFlagCommand != 0uL,
+            capsLock = flags and NSEventModifierFlagCapsLock != 0uL))
     }
 
     override fun insertText(string: Any, replacementRange: CValue<NSRange>) {
         val value = if (string is NSAttributedString) string.string else string.toString()
-        marked = ""; viewport.followOutput(); viewport.clearSelection(); session.sendInput(value); viewport.markAll()
+        val pending = interpretingKey
+        marked = ""; viewport.followOutput(); viewport.clearSelection()
+        if (pending != null && (session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2)) {
+            val key = pending.second.copy(text = value)
+            if (!session.sendKey(key)) session.sendInput(value)
+            pressedKeys[pending.first] = key
+        } else session.sendInput(value)
+        viewport.markAll()
     }
     override fun setMarkedText(string: Any, selectedRange: CValue<NSRange>, replacementRange: CValue<NSRange>) {
+        interpretingKey = null
         marked = if (string is NSAttributedString) string.string else string.toString()
         markedSelection = selectedRange; viewport.markAll()
     }
@@ -355,17 +460,30 @@ public class AppKitTerminalView(
     override fun mouseMoved(event: NSEvent) { val (x, y) = cell(event); if (!selecting) mouse(event, x, y, 3, motion = true) }
     override fun scrollWheel(event: NSEvent) {
         if (disposed) return
+        val resetPhases = NSEventPhaseMayBegin or NSEventPhaseBegan or NSEventPhaseCancelled
+        if (event.phase and resetPhases != 0uL) { verticalScroll.reset(); horizontalScroll.reset() }
+        val shift = event.modifierFlags and NSEventModifierFlagShift != 0uL
+        val reporting = session.mouseTracking != 0 && viewport.scrollOffset == 0 && !shift
+        val alternateScroll = session.alternateScreen && session.alternateScroll && session.mouseTracking == 0 && !shift
+        // Wheel reports and cursor keys carry no gesture phase or cancellation.
+        // Forwarding a flick's inertial tail queues commands the next gesture cannot
+        // retract. Keep momentum for local history, but only direct input for TUIs.
+        if ((reporting || alternateScroll) && event.momentumPhase != NSEventPhaseNone) {
+            verticalScroll.reset(); horizontalScroll.reset()
+            return
+        }
         val (x, y) = cell(event)
-        if (event.phase == NSEventPhaseBegan) { verticalScroll.reset(); horizontalScroll.reset() }
-        val reporting = session.mouseTracking != 0 && viewport.scrollOffset == 0 && event.modifierFlags and NSEventModifierFlagShift == 0uL
         if (!reporting && event.scrollingDeltaY != 0.0) onScrollActivity?.invoke()
         val tick = if (reporting) 1.0 else 3.0
-        val dy = verticalScroll.consume(event.scrollingDeltaY, event.hasPreciseScrollingDeltas, cellHeight, tick)
+        // With no inertial tail, direct trackpad gestures need more travel per
+        // point in TUIs. Keep fractional accumulation and the per-event limit.
+        val verticalScale = if (event.hasPreciseScrollingDeltas && (reporting || alternateScroll)) 2.0 else 1.0
+        val dy = verticalScroll.consume(event.scrollingDeltaY * verticalScale, event.hasPreciseScrollingDeltas, cellHeight, tick)
         val dx = horizontalScroll.consume(event.scrollingDeltaX, event.hasPreciseScrollingDeltas, cellWidth, tick)
         if (dy != 0) {
             val button = if (dy > 0) 64 else 65
             if (mouse(event, x, y, button)) repeat((kotlin.math.abs(dy) - 1).coerceAtMost(63)) { mouse(event, x, y, button) }
-            else if (!session.sendAlternateScroll(dy, shift = event.modifierFlags and NSEventModifierFlagShift != 0uL)) viewport.scroll(dy)
+            else if (!session.sendAlternateScroll(dy, shift = shift)) viewport.scroll(dy)
         }
         if (dx != 0) repeat(kotlin.math.abs(dx).coerceAtMost(64)) { mouse(event, x, y, if (dx > 0) 66 else 67) }
     }
@@ -387,6 +505,9 @@ public class AppKitTerminalView(
         if (viewport.scrollOffset != previous) onScrollActivity?.invoke()
     }
     public fun reveal(match: TerminalSearchMatch): Boolean = viewport.selectMatch(match)
+    public fun jumpToPrompt(direction: Int): Boolean = viewport.jumpToPrompt(direction).also {
+        if (it) onScrollActivity?.invoke()
+    }
     public fun clearSelection() { viewport.clearSelection() }
     @ObjCAction public fun copy(sender: NSObject?) { copySelection() }
     @ObjCAction public fun paste(sender: NSObject?) { pasteClipboard() }
@@ -432,6 +553,10 @@ public class AppKitTerminalView(
         disposed = true; selecting = false; mouseReporter.reset()
         mouseTrackingArea?.let { removeTrackingArea(it) }; mouseTrackingArea = null
         resizeHoldObservation.dispose(); pendingGridSize = null
+        pointerObservation.dispose()
+        progressIndicator.dispose()
+        notificationObservation.dispose(); notifications?.dispose(); notifications = null
+        clipboardBinding.dispose()
         onViewportChanged = null; onScrollActivity = null
         viewport.dispose(); releaseGpu(); inputContext()?.discardMarkedText()
     } }
@@ -461,7 +586,7 @@ internal fun terminalDroppedFilePaths(pasteboard: NSPasteboard): List<String> =
 private fun nativeKey(chars: String): String = when (chars.firstOrNull()?.code) {
     13, 10 -> "Enter"; 9 -> "Tab"; 25 -> "Tab"; 27 -> "Escape"; 127, 8 -> "Backspace"
     0xf700 -> "ArrowUp"; 0xf701 -> "ArrowDown"; 0xf702 -> "ArrowLeft"; 0xf703 -> "ArrowRight"
-    in 0xf704..0xf70f -> "F${chars[0].code - 0xf704 + 1}"
+    in 0xf704..0xf726 -> "F${chars[0].code - 0xf704 + 1}"
     0xf727 -> "Insert"; 0xf728 -> "Delete"; 0xf729 -> "Home"; 0xf72b -> "End"; 0xf72c -> "PageUp"; 0xf72d -> "PageDown"
     else -> chars
 }

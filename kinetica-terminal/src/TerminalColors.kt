@@ -1,5 +1,5 @@
 // Color operations and parsing adapted from Ghostty color.zig, fraction.zig,
-// osc/parsers/color.zig and stream_terminal.zig. Copyright (c) 2024 Mitchell
+// osc/parsers/color.zig, osc/parsers/kitty_color.zig and stream_terminal.zig. Copyright (c) 2024 Mitchell
 // Hashimoto, Ghostty contributors. MIT; see third-party/ghostty.json and GHOSTTY-LICENSE.
 package io.heapy.kinetica.terminal
 
@@ -14,6 +14,53 @@ internal class TerminalColors(private var original: TerminalTheme) {
     fun palette(index: Int): Int = palette[index]
     fun snapshot(): TerminalColors = TerminalColors(theme).also { palette.copyInto(it.palette) }
     fun configure(value: TerminalTheme) { original = value; theme = value }
+
+    /** Parse the whole OSC first: exceeding Ghostty's 528-operation cap rejects it atomically. */
+    fun kittyOperation(payload: String, terminator: Int, reply: (String) -> Unit): Boolean {
+        if (payload.encodeToByteArray().size > 2048) return false
+        data class Request(val key: String, val value: String, val color: Int?)
+        val special = listOf("foreground", "background", "selection_foreground", "selection_background",
+            "cursor", "cursor_text", "visual_bell", "second_transparent_background")
+        val requests = mutableListOf<Request>()
+        for (entry in payload.split(';')) {
+            if (requests.size >= 528) return false
+            val rawKey = entry.substringBefore('=')
+            val index = rawKey.takeIf { it.isNotEmpty() && it.all { c -> c in '0'..'9' } }?.toIntOrNull()?.takeIf { it in 0..255 }
+            val key = if (rawKey in special) rawKey else index?.toString() ?: continue
+            val value = entry.substringAfter('=', "").trim(' ')
+            val color = if (value.isEmpty() || value == "?") null else parseTerminalColor(value) ?: continue
+            requests.add(Request(key, value, color))
+        }
+        var changed = false
+        val response = StringBuilder()
+        for ((key, value, color) in requests) {
+            val index = key.toIntOrNull()
+            if (index == null && key !in listOf("foreground", "background", "cursor")) continue
+            if (value == "?") {
+                val current = if (index != null) palette[index] else when (key) {
+                    "foreground" -> theme.foreground
+                    "background" -> theme.background
+                    else -> theme.cursor
+                }
+                if (response.isEmpty()) response.append("\u001b]21")
+                response.append(';').append(key).append("=rgb:")
+                for (shift in 16 downTo 0 step 8) {
+                    if (shift != 16) response.append('/')
+                    response.append((current ushr shift and 255).toString(16).padStart(2, '0'))
+                }
+            } else {
+                if (index != null) palette[index] = color ?: terminalPalette(index)
+                else theme = when (key) {
+                    "foreground" -> theme.copy(foreground = color ?: original.foreground)
+                    "background" -> theme.copy(background = color ?: original.background)
+                    else -> theme.copy(cursor = color ?: original.cursor)
+                }
+                changed = true
+            }
+        }
+        if (response.isNotEmpty()) reply(response.append(if (terminator == 7) "\u0007" else "\u001b\\").toString())
+        return changed
+    }
 
     /** Returns whether the surface needs repainting. Replies retain the request terminator. */
     fun operation(command: Int, payload: String, terminator: Int, reply: (String) -> Unit): Boolean {
