@@ -82,7 +82,7 @@ def main():
     build.mkdir(parents=True, exist_ok=True)
     executable = build / "ghostty-oracle"
     library = upstream / "zig-out/lib"
-    subprocess.run(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-DKINETICA_GHOSTTY_CHECKSUM_ORACLE", "-I", str(upstream / "include"),
+    subprocess.run(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-DKINETICA_GHOSTTY_CHECKSUM_ORACLE", "-DKINETICA_GHOSTTY_WINDOW_ORACLE", "-I", str(upstream / "include"),
         str(ROOT / "scripts/terminal-ghostty-oracle.c"), "-L", str(library), "-lghostty-vt",
         "-Wl,-rpath," + str(library), "-o", str(executable)], check=True)
     cases = json.loads((ROOT / "kinetica-terminal/test-upstream/ghostty/scenarios.json").read_text())
@@ -131,6 +131,8 @@ def main():
             commands.append("B")
         if case.get("effects"):
             commands.append("F")
+        if case.get("windowResize"):
+            commands.append("X")
         if case.get("workingDirectory"):
             commands.append("P")
         if case.get("renderColors"):

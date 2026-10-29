@@ -19,6 +19,11 @@ internal fun checkGhostty(fixture: GhosttyFixture) {
         val pairedOracleHolds = mutableListOf<Boolean>()
         var oracleHoldCount = 0
         val effects = mutableListOf<JsonElement>()
+        val windowResizeRequests = mutableListOf<JsonElement>()
+        if (scenario["windowResize"]?.jsonPrimitive?.boolean == true)
+            session.onWindowResizeRequested { request -> windowResizeRequests.add(buildJsonArray {
+                add(request.rows); add(request.columns)
+            }) }
         val workingDirectories = mutableListOf<JsonElement>()
         session.onWorkingDirectory { workingDirectories.add(it?.let(::JsonPrimitive) ?: JsonNull) }
         session.onNotification { event -> effects.add(buildJsonArray { add("notification"); add(event.title); add(event.body) }) }
@@ -126,6 +131,7 @@ internal fun checkGhostty(fixture: GhosttyFixture) {
                 add(theme.foreground); add(theme.background); add(theme.cursor)
             })
             if ("effects" in oracle) compare("effects", JsonArray(effects))
+            if ("windowResizeRequests" in oracle) compare("windowResizeRequests", JsonArray(windowResizeRequests))
             if ("cursorAtPrompt" in oracle) compare("cursorAtPrompt", JsonPrimitive(session.cursorAtPrompt))
             if ("workingDirectory" in oracle) {
                 compare("workingDirectory", session.workingDirectoryUri?.let(::JsonPrimitive) ?: JsonNull)

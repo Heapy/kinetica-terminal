@@ -586,6 +586,15 @@ The same geometry answers `CSI 14/16/18 t`. Before the first resize no geometry 
 available to report. A resize without explicit cell size reuses the last size, or zero
 pixels if unknown. Repeated explicit resizes still report, and RIS resets the subscription.
 
+`CSI 8;rows;columns t` emits `onWindowResizeRequested(TerminalWindowResizeRequest)`.
+Zero or omitted dimensions mean keep the current dimension; requests retain the original
+unsigned 16-bit values. The event is synchronous, including during synchronized output,
+and does not resize the grid or send a reply. Without a subscribed host it has no effect.
+Hosts must explicitly permit window changes, schedule layout outside parser dispatch,
+constrain it to their geometry limits and call `resize` with the actual measured result.
+Dispose the subscription when its host closes. Automatic browser/AppKit window handling
+is not yet connected; both surfaces continue to use only host-driven layout.
+
 REP (`CSI Ps b`), scroll-and-clear (`CSI 22 J`) and DEC mode save/restore
 (`CSI ? Ps s` / `CSI ? Ps r`) are supported. Scroll-and-clear moves written rows into
 primary history, subject to its strict limits; alternate screens retain no history.

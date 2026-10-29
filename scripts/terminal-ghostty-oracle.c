@@ -10,6 +10,7 @@
  * J (include placement geometry and z-layer membership in graphics snapshots);
  * O (include effective renderer default colors);
  * Q checksum-report-enabled default-extension (explicit host configuration);
+ * X (record window resize requests without changing the host geometry);
  * S (snapshot); U (width ranges).
  * stdout: one JSON snapshot per S. Every API failure exits nonzero.
  */
@@ -27,6 +28,16 @@ static uint32_t cell_width, cell_height;
 static bool has_size;
 static bool clipboard_enabled;
 static bool effects_enabled;
+#ifdef KINETICA_GHOSTTY_WINDOW_ORACLE
+static bool window_resize_enabled;
+static GhosttyTerminalResizeWindowGrid window_resize_events[512];
+static size_t window_resize_events_len;
+static void resize_window(GhosttyTerminal terminal, void *userdata, const GhosttyTerminalResizeWindow *request) {
+    (void)terminal; (void)userdata;
+    if (request->tag != GHOSTTY_TERMINAL_RESIZE_WINDOW_GRID || window_resize_events_len == 512) exit(2);
+    window_resize_events[window_resize_events_len++] = request->value.grid;
+}
+#endif
 static bool pwd_enabled;
 static bool semantic_enabled;
 static bool render_colors_enabled;
@@ -263,6 +274,14 @@ static void snapshot(GhosttyTerminal terminal) {
         cols, rows, x, y, pending ? "true" : "false", visible ? "true" : "false", active ? "true" : "false", history);
     json_bytes((const unsigned char *)title.ptr, title.len);
     if (graphics_enabled) snapshot_graphics(terminal);
+#ifdef KINETICA_GHOSTTY_WINDOW_ORACLE
+    if (window_resize_enabled) {
+        fputs(",\"windowResizeRequests\":[", stdout);
+        for (size_t i = 0; i < window_resize_events_len; i++)
+            printf("%s[%u,%u]", i ? "," : "", window_resize_events[i].rows, window_resize_events[i].columns);
+        putchar(']');
+    }
+#endif
     if (semantic_enabled) {
         bool at_prompt;
         check(ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_CURSOR_AT_PROMPT, &at_prompt));
@@ -616,6 +635,9 @@ int main(void) {
             holds_len = 0;
             clipboard_enabled = false;
             effects_enabled = false; effects_len = 0;
+#ifdef KINETICA_GHOSTTY_WINDOW_ORACLE
+            window_resize_enabled = false; window_resize_events_len = 0;
+#endif
             pwd_enabled = false; pwd_events_len = 0;
             semantic_enabled = false; render_colors_enabled = false;
             graphics_enabled = false; graphics_ids_len = 0;
@@ -651,6 +673,12 @@ int main(void) {
             check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_KITTY_IMAGE_STORAGE_LIMIT, &limit));
         }
         else if (line[0] == 'H') semantic_enabled = true;
+#ifdef KINETICA_GHOSTTY_WINDOW_ORACLE
+        else if (line[0] == 'X') {
+            window_resize_enabled = true;
+            check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_RESIZE_WINDOW, (void *)resize_window));
+        }
+#endif
         else if (line[0] == 'O') render_colors_enabled = true;
         else if (line[0] == 'P') {
             pwd_enabled = true;

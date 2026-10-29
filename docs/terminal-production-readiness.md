@@ -758,6 +758,17 @@ margins, alternate screens, DECSTR/RIS and resize. Each is replayed whole and by
 All 1128 JVM tests and the fresh Release JS suite pass; the main oracle corpus and manifest
 reproduce byte-for-byte. The main corpus contains 776 scenarios / 4130 checkpoints.
 
+XTWINOPS `CSI 8;rows;columns t` now emits a synchronous, disposable
+`onWindowResizeRequested` event without resizing the grid. Zero/omitted dimensions remain
+zero, and raw values preserve the original unsigned 16-bit range. Twenty-three original
+libghostty cases / 72 checkpoints cover event payloads, invalid headers, cancellation,
+pending wrap, screen switches, synchronized output, resets and an absent host. Common
+tests also verify independent subscription disposal and later host-driven resizing.
+All 1153 JVM tests and fresh Release JS tests pass. The main corpus is now 799 scenarios /
+4202 checkpoints; all affected text/graphics fixtures and manifests reproduce byte-for-byte.
+Browser/AppKit window handling is still pending and remains disabled; hosts need explicit
+policy, deferred bounded layout, geometry constraints and disposal checks before that gate closes.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than

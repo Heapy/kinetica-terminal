@@ -354,6 +354,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
     private val resizeObservers = mutableListOf<(Int, Int) -> Unit>()
     private val sizeRefreshObservers = mutableListOf<() -> Unit>()
+    private val windowResizeObservers = mutableListOf<(TerminalWindowResizeRequest) -> Unit>()
     private val renderHoldObservers = mutableListOf<(Boolean) -> Unit>()
 
     init {
@@ -404,6 +405,15 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         val listener: () -> Unit = { observer() }
         sizeRefreshObservers += listener
         return TerminalDisposable { sizeRefreshObservers.remove(listener) }
+    }
+
+    /** Synchronous CSI 8 t requests, including during synchronized output. The default is no
+     * handler and no window effect. Hosts must explicitly permit window changes, schedule them
+     * outside parser dispatch, and report the resulting measured grid through [resize]. */
+    public fun onWindowResizeRequested(observer: (TerminalWindowResizeRequest) -> Unit): TerminalDisposable {
+        val listener: (TerminalWindowResizeRequest) -> Unit = { observer(it) }
+        windowResizeObservers += listener
+        return TerminalDisposable { windowResizeObservers.remove(listener) }
     }
 
     /** Observe application pointer changes; hosts apply platform/hover overrides separately. */
@@ -1451,7 +1461,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 996 -> if (privateCsi) reportColorScheme()
                 998 -> if (privateCsi) reportVisibility()
             }
-            't' -> if (parameterCount == 1) when (params[0]) {
+            't' -> if (params[0] == 8 && parameterCount in 1..3) {
+                val request = TerminalWindowResizeRequest(params[1], params[2])
+                windowResizeObservers.toList().forEach { it(request) }
+            } else if (parameterCount == 1) when (params[0]) {
                 14 -> reportSize(4)
                 16 -> reportSize(6)
                 18 -> reportSize(8)

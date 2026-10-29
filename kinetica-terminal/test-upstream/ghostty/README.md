@@ -182,6 +182,15 @@ parameters and headers, trailing empty parameters, pending wrap with DECAWM on/o
 margins, screen switches, DECSTR/RIS and resize are compared with the original library.
 The main corpus now contains 776 scenarios / 4130 checkpoints.
 
+The window-resize-request increment adds 23 scenarios / 72 checkpoints, bringing the
+main corpus to 799 scenarios / 4202 checkpoints. `windowResize: true` attaches the original
+`GHOSTTY_TERMINAL_OPT_RESIZE_WINDOW` callback and records ordered raw `[rows, columns]`
+requests without changing host geometry. Full, omitted, zero and saturated parameters,
+invalid headers, cancellation, pending wrap, screen switches, synchronized output and
+reset are covered; a separate case leaves the host callback absent. These prove protocol
+events and unchanged state, not platform window behavior. The callback API is enabled
+only in the 1.4 main oracle build, preserving the graphics helper's historical build mode.
+
 The tab/pending-wrap increment adds 59 scenarios / 342 checkpoints, bringing this corpus
 to 461 scenarios / 2615 checkpoints. It covers omitted/explicit/malformed tab-clear parameters,
 default/custom stops, HT/CHT/CBT pending-wrap preservation with DECAWM on/off, and narrow,

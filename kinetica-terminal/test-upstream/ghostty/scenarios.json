@@ -140882,5 +140882,427 @@
         "write": "\u001b[2Z"
       }
     ]
+  },
+  {
+    "name": "window_resize_full",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;40;120t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_rows",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;40t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_columns",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;;120t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_omitted",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_zero",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;0;0t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_zero_rows",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;0;120t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_zero_columns",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;40;0t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_trailing",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;40;t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_empty",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;;t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_too_many",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;40;120;0t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_empty_extra",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;;;0t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_maximum",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;65535;65535t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_saturation",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;999999;999999t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_colon",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;40:1;120t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_private",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?8;40;120t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_greater",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[>8;40;120t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_intermediate",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;40;120 t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_cancel",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;40;120\u0018t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_sub",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;40;120\u001at"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_negative",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;-1;120t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_missing_operation",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[;40;120t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_lifecycle",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "windowResize": true,
+    "events": [
+      {
+        "write": "\u001b[?2026h\u001b[8;20;80t"
+      },
+      {
+        "write": "\u001b[?1049h\u001b[8;30t"
+      },
+      {
+        "write": "\u001b[!p\u001b[8;;100t"
+      },
+      {
+        "write": "\u001bc\u001b[8;25;90t"
+      },
+      {
+        "write": "\u001b[8;20;80t\u001b[8;21;81t"
+      },
+      {
+        "write": "\u001b[18t"
+      }
+    ]
+  },
+  {
+    "name": "window_resize_no_host",
+    "columns": 12,
+    "rows": 3,
+    "history": 10,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[8;40;120t"
+      },
+      {
+        "write": "X\u001b[6n"
+      }
+    ]
   }
 ]
