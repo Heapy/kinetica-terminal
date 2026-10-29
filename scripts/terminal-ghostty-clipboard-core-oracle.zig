@@ -13,12 +13,14 @@ const ResponseInput = struct {
 };
 const GrantEvent = struct { action: []const u8, password: []const u8 = "", direction: clipboard.Grants.Direction = .read, one_time: bool = false };
 const DispatchEvent = struct { body: ?[]const u8 = null, terminator: clipboard.Terminator = .st, reset: bool = false };
+const PasteInput = struct { location: vt.clipboard.Location = .standard, available: []const []const u8 = &.{}, entropy: bool = true };
 const Case = struct {
     name: []const u8, metadata: ?[]const u8 = null, limit: usize = clipboard.max_write_size,
     events: []const Event = &.{}, response: ?ResponseInput = null, grants: ?[]const GrantEvent = null,
     dispatch: ?[]const DispatchEvent = null, host: bool = true, allowed: bool = true, remember: bool = false,
     read_status: clipboard.Status = .OK, write_status: clipboard.Status = .DONE, twice: bool = false,
     otp: ?[]const []const u8 = null,
+    paste: ?PasteInput = null,
 };
 const Metadata = struct { operation: []const u8, location: []const u8, id: []const u8, mime: []const u8, password: []const u8, name: []const u8 };
 const Content = struct { mime: []const u8, hex: []const u8 };
@@ -105,6 +107,37 @@ pub fn main(init: std.process.Init) !void {
     const alloc = arena.allocator();
     const cases = try std.json.parseFromSlice([]const Case, alloc, @embedFile("cases.json"), .{});
     for (cases.value) |case| {
+        if (case.paste) |input| {
+            dispatch_alloc = alloc;
+            replies.clearRetainingCapacity();
+            var terminal = try vt.Terminal.init(init.io, init.gpa, .{ .cols = 12, .rows = 6 });
+            defer terminal.deinit(init.gpa);
+            var stream = terminal.vtStream();
+            defer stream.deinit();
+            stream.handler.effects.write_pty = writePty;
+            stream.handler.effects.clipboard_read = clipboardRead;
+            terminal.modes.set(.kitty_paste_events, true);
+            const contents = try alloc.alloc(vt.clipboard.Content, input.available.len);
+            for (input.available, contents) |mime, *dest| dest.* = .{ .mime = mime, .data = "must-not-read" };
+            const seed: [44]u8 = @splat(0);
+            entropy_chunks = if (input.entropy) &.{&seed} else &.{};
+            entropy_calls = 0;
+            const previous = vt.sys.random_secure;
+            vt.sys.random_secure = oracleEntropy;
+            defer vt.sys.random_secure = previous;
+            const status: []const u8 = if (stream.handler.paste(.{
+                .source = .{ .clipboard = input.location }, .contents = .{ .memory = contents },
+            })) |written| done: {
+                if (!written) return error.ExpectedPasteEvent;
+                break :done "DONE";
+            } else |err| switch (err) { error.EntropyUnavailable => "EIO", else => return err };
+            const password = "2222222222222222222222";
+            const first = stream.handler.kitty_clipboard_grants.use(init.gpa, password, .read);
+            const second = stream.handler.kitty_clipboard_grants.use(init.gpa, password, .read);
+            try emit(alloc, .{ .name = case.name, .result = .{ .status = status, .replies = replies.items,
+                .first = first, .second = second, .calls = entropy_calls } });
+            continue;
+        }
         if (case.otp) |chunks| {
             const decoded = try alloc.alloc([]const u8, chunks.len);
             for (chunks, decoded) |chunk, *dest| dest.* = try unhex(alloc, chunk);

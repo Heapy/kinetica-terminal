@@ -1,4 +1,5 @@
-// OSC 5522 dispatch follows Ghostty 1.4.0 terminal/stream_terminal.zig (MIT).
+// OSC 5522 dispatch and paste events follow Ghostty 1.4.0 terminal/stream_terminal.zig
+// and terminal/paste.zig (MIT).
 // Copyright (c) 2024 Mitchell Hashimoto, Ghostty contributors.
 // Host callbacks and reply delivery are asynchronous in this embedding.
 package io.heapy.kinetica.terminal
@@ -43,6 +44,7 @@ internal class TerminalKittyClipboardBinding(
     private val readLimit: Int = 8 * 1024 * 1024,
     private val replyLimit: Int = 16 * 1024 * 1024,
     private val queueLimit: Int = 16,
+    private val random: (ByteArray) -> Boolean = ::terminalClipboardRandom,
 ) : TerminalDisposable {
     init { require(writeLimit in 0..queuedBytesLimit && readLimit >= 0 && replyLimit >= 1024 && queueLimit > 0) }
     private data class Pending(
@@ -53,6 +55,8 @@ internal class TerminalKittyClipboardBinding(
         val list: Boolean = false,
         val bytes: Int = 0,
         val status: KittyClipboardStatus? = null,
+        val paste: Boolean = false,
+        var pasteComplete: ((KittyClipboardStatus) -> Unit)? = null,
     )
     private val queue = ArrayDeque<Pending>()
     private val grants = KittyClipboardGrants()
@@ -64,6 +68,17 @@ internal class TerminalKittyClipboardBinding(
     private var disposed = false
     val pendingRequests: Int get() = queue.size
     val pendingBytes: Int get() = retained
+    val hasHost: Boolean get() = host != null && !disposed
+
+    /** Trusted user gesture only. False admits nothing; retry when ready, just like [accept].
+     * Completion reports DONE after delivery, or an error without sending an unsolicited error
+     * packet. Reset/disposal cancels accepted gestures with EBUSY and revokes their grants. */
+    fun paste(location: TerminalClipboardLocation, complete: (KittyClipboardStatus) -> Unit): Boolean {
+        if (!hasHost || queue.size >= queueLimit) return false
+        enqueue(Pending(KittyClipboardMetadata(KittyClipboardOperation.READ, location, "", "", "", ""),
+            terminator = 0, paste = true, pasteComplete = complete))
+        return true
+    }
 
     fun accept(body: String, terminator: Int): Boolean {
         if (disposed) return true
@@ -150,6 +165,14 @@ internal class TerminalKittyClipboardBinding(
                 var responded = false
                 var completed = false
                 fun current() = !disposed && epoch == generation && !completed
+                fun release(result: KittyClipboardStatus) {
+                    if (!current()) return
+                    completed = true
+                    queue.removeFirst(); retained -= pending.bytes; active = false
+                    val callback = pending.pasteComplete; pending.pasteComplete = null
+                    callback?.invoke(result)
+                    drain(); ready()
+                }
                 fun finish(packets: Sequence<String>) {
                     if (!current() || responded) return
                     responded = true
@@ -166,13 +189,40 @@ internal class TerminalKittyClipboardBinding(
                                 }
                             }
                         }) {
-                            if (current()) {
-                                completed = true
-                                queue.removeFirst(); retained -= pending.bytes; active = false
-                                drain(); ready()
-                            }
+                            release(KittyClipboardStatus.DONE)
                         }
                     } catch (error: Exception) { dispose(); throw error }
+                }
+                if (pending.paste) {
+                    fun fail(result: KittyClipboardStatus) {
+                        if (current() && !responded) { responded = true; release(result) }
+                    }
+                    val password = generateKittyClipboardPassword(random)
+                    if (password == null) { fail(KittyClipboardStatus.EIO); continue }
+                    try {
+                        // A user paste authorizes metadata listing, never an implicit data read.
+                        // The application's later request still goes through the host's policy.
+                        host!!.read(pending.metadata.location, emptyList(), true) { result ->
+                            if (current() && !responded) {
+                                if (result.status != KittyClipboardStatus.OK)
+                                    fail(if (result.status in READ_ERRORS) result.status else KittyClipboardStatus.EIO)
+                                else {
+                                    val packets = KittyClipboardReadSuccess(
+                                        primary = pending.metadata.location != TerminalClipboardLocation.STANDARD,
+                                        password = password, list = true, available = result.available.take(16),
+                                    ).packets().toList()
+                                    if (packets.sumOf { it.length.toLong() } > replyLimit) fail(KittyClipboardStatus.EIO)
+                                    else {
+                                        // Install before output can reach the client. Reply failure
+                                        // or cancellation resets the binding and revokes the grant.
+                                        grants.grant(password, KittyClipboardDirection.READ, oneTime = true)
+                                        finish(packets.asSequence())
+                                    }
+                                }
+                            }
+                        }
+                    } catch (_: Exception) { fail(KittyClipboardStatus.EIO) }
+                    continue
                 }
                 if (pending.status != null) { finish(status(pending, pending.status)); continue }
                 val direction = if (pending.contents == null) KittyClipboardDirection.READ else KittyClipboardDirection.WRITE
@@ -255,7 +305,9 @@ internal class TerminalKittyClipboardBinding(
 
     fun reset(preserveWrite: Boolean = false) {
         generation++; if (!preserveWrite) transaction = null
+        val canceled = queue.mapNotNull { pending -> pending.pasteComplete.also { pending.pasteComplete = null } }
         queue.clear(); retained = 0; active = false; grants.clear()
+        canceled.forEach { it(KittyClipboardStatus.EBUSY) }
         if (!disposed) ready()
     }
     override fun dispose() { disposed = true; reset() }

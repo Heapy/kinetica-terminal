@@ -694,6 +694,24 @@ expanded corpus and manifest reproduce byte-for-byte.
 User-initiated paste events, their delivery/grant lifecycle and mode-5522 capability reporting
 remain to be connected.
 
+The internal clipboard dispatcher now queues protected paste events alongside OSC operations.
+Only metadata is fetched for a user gesture; no clipboard representation is read or sent.
+It limits event listings to the original 16 MIME types and 4096-byte listing budget, generates
+a fresh secure password, and installs a one-time read grant before sending the event. The
+whole event must be acknowledged before another queued operation accesses the clipboard.
+Entropy/metadata/size failures send no event and grant no access. Reset, disposal and output
+failure revoke grants and cancel queued gestures; stale callbacks cannot complete newer work.
+Targets-only reads and requests without a human name leave a grant unused; checking the wrong
+direction consumes it. An explicit host denial still rejects a granted follow-up request.
+
+The corpus now covers 1070 cases / 4618 checkpoints, including 27 original-handler protected
+paste cases. Common tests compare exact event bytes and grant use, then separately cover async
+metadata, delivery receipts, cancellation, queue capacity, failures and unfinished writes.
+Validation passes 1019 JVM tests, the fresh Release JS suite and 56 Native clipboard tests;
+the expanded corpus and manifest reproduce byte-for-byte.
+Session mode state, cross-protocol gesture ordering and native/browser paste entry points
+remain to be wired before mode 5522 is advertised.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

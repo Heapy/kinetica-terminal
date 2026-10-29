@@ -152,6 +152,11 @@ def cases():
     otp("partial_then_redraw", [bytes(range(5))+bytes([255])*39, bytes(range(100,144))])
     rng=random.Random(552222)
     for index in range(64): otp(f"random_{index}", [rng.randbytes(44) for _ in range(4)])
+    for location in ["standard", "primary", "selection"]:
+        for available in [[], [""], ["text/plain", "image/png"], [f"application/x-{i}" for i in range(20)],
+                          ["x"*4094], ["x"*4095], ["x"*4096], ["界"*1366, "text/plain"]]:
+            result.append(dict(name=f"paste_{location}_{len(result)}",paste=dict(location=location,available=available)))
+        result.append(dict(name=f"paste_{location}_entropy_failure",paste=dict(location=location,available=["text/plain"],entropy=False)))
     return result
 
 
@@ -201,9 +206,9 @@ pub fn build(b: *std.Build) void {
     digest = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
     manifest = dict(commit=SHA,zig=subprocess.check_output([str(zig),"version"],text=True).strip(),
         cases=len(corpus),snapshots=sum(len(c.get("snapshots",[None])) for c in corpus),
-        scope="Original clipboard modules, OTP rejection sampling with deterministic entropy overrides, and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No platform clipboard or operating-system entropy coverage.",
+        scope="Original clipboard modules, OTP rejection sampling with deterministic entropy overrides, protected paste events and one-time grants, and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No platform clipboard or operating-system entropy coverage.",
         helperSha256=digest(helper),generatorSha256=digest(Path(__file__)),fixtureSha256=digest(fixture),
-        sources={p:digest(upstream/p) for p in ["src/terminal/kitty/clipboard_command.zig","src/terminal/kitty/clipboard_write.zig","src/terminal/kitty/clipboard_response.zig","src/terminal/kitty/clipboard_grants.zig","src/terminal/osc/parsers/kitty_clipboard_protocol.zig","src/terminal/stream_terminal.zig","src/terminal/sys.zig","src/simd/base64.zig"]})
+        sources={p:digest(upstream/p) for p in ["src/terminal/kitty/clipboard_command.zig","src/terminal/kitty/clipboard_write.zig","src/terminal/kitty/clipboard_response.zig","src/terminal/kitty/clipboard_grants.zig","src/terminal/osc/parsers/kitty_clipboard_protocol.zig","src/terminal/stream_terminal.zig","src/terminal/paste.zig","src/terminal/sys.zig","src/simd/base64.zig"]})
     write_generated(ROOT/"kinetica-terminal/test-upstream/ghostty/clipboard-core-manifest.json",json.dumps(manifest,indent=2)+'\n')
     print(f'Generated {len(corpus)} clipboard core cases / {manifest["snapshots"]} checkpoints')
 

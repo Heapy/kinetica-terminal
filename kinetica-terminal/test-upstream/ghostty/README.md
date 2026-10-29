@@ -397,7 +397,7 @@ browser/native tests exercise Ghostty's host-side refresh behavior and actual PT
 `clipboard-core-manifest.json` pins the original `Metadata`, `WriteState`, `Response`,
 `ReadSuccess`, `PasteEvent`, `Grants` and `generateOtp` modules/functions from Ghostty 1.4.0. The Zig helper imports
 those modules directly through `ghostty-vt`; it does not copy their protocol algorithms.
-The 1043 cases / 4591 checkpoints cover duplicate/malformed metadata, ID sanitation, UTF-8 and field limits,
+The 1070 cases / 4618 checkpoints cover duplicate/malformed metadata, ID sanitation, UTF-8 and field limits,
 every split point of a binary Base64 stream, independently padded chunks, invalid partial
 groups, MIME replacement, ordered/chained/colliding aliases, 64-entry caps and decoded budgets.
 Response cases cover every status, BEL/ST, omitted/empty metadata, binary 4096-byte chunk
@@ -409,6 +409,9 @@ authorization outcomes and repeated completion. Another 324 cases call the origi
 generator with deterministic entropy overrides: all 256 byte values, rejected samples,
 multiple batches, partial-password failures and seeded byte streams. The override fails when
 its fixture bytes run out, and the underlying Io has no entropy source, exposing any fallback.
+Another 27 cases invoke the original handler's paste path with mode 5522 enabled, checking
+all clipboard locations, empty/large/over-16-type listings, entropy failure, exact event bytes
+and one-time read-grant consumption.
 
 ```sh
 python3 scripts/generate-terminal-clipboard-core.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig
