@@ -117,6 +117,18 @@ not yet install a PNG host callback. Validation passes 505 JVM tests, the freshl
 suite and all 26 Native graphics tests. The 15 new C-helper paths pass AddressSanitizer with
 the same uninstrumented-library/disabled-LeakSanitizer limits noted below.
 
+Shared placement geometry now covers intersected source rectangles, native/aspect-ratio/
+explicit-grid sizing, creation-time offset clamping, unsigned saturation, z-layer classification,
+viewport visibility, bounded cursor advancement and permanent top/bottom crops during margin
+scrolls. An original-libghostty geometry corpus supplies 98 scenarios and 1400 checkpoints,
+including zero/changed cell geometry, large protocol values, scrollback origins and rectangular
+margin containment. The common tests compare the library's exact placement fields and geometry,
+layer-filter membership, cursor/history results and cropped rectangles. Validation passes all
+510 JVM tests, the freshly built JS suite and 31 Native graphics tests. All 286 text/graphics
+oracle artifacts reproduce byte-for-byte; the 98 geometry C-helper paths pass AddressSanitizer
+with the same instrumentation limits. These functions are not yet wired to live line anchors,
+reflow/screen lifecycle or renderers; the complete placement acceptance item stays open.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

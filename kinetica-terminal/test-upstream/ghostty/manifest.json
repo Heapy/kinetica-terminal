@@ -1,7 +1,7 @@
 {
   "repository": "https://github.com/ghostty-org/ghostty",
   "commit": "4da7523faba68ccb4042ea20585817098a51c015",
-  "helperSha256": "e2b7299d39f760052903d085c152e20847d235b20d92b4d87d72f7a59c5d7f51",
+  "helperSha256": "6298640bac57842cec6ccb2613902582c1b2146d9a8af1b12e907a4d7bc8f954",
   "librarySha256": {
     "libghostty-vt.0.dylib": "98f842bb11ef7a35ede4f52136d5aa1374e3ed9433754771d961f80d75c49aae",
     "libghostty-vt.a": "ab5b55481ce7d76bb9eaefa549d2264036be6b086fc45cc2b85516a7f9173648",

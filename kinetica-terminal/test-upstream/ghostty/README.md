@@ -18,6 +18,18 @@ screen lifecycle, session execution or rendering. PNG uses a separate libpng dec
 this original-library helper has no PNG callback yet. The graphics manifest pins the library,
 helper/generator, input compressor and generated fixtures independently of the text VT corpus.
 
+The [placement geometry corpus](graphics-geometry-manifest.json) is generated with
+`python3 scripts/generate-terminal-graphics-geometry.py /path/to/ghostty`. The helper's
+`J` option snapshots placement metadata, combined render geometry and the original
+iterator's three z-layer filters. Its 98 cases and 1400 checkpoints cover source clipping,
+native/aspect-ratio/explicit grid sizing, unsigned saturation, offsets clamped at creation,
+unknown/changed cell geometry, virtual placements, cursor advancement and margin cropping.
+The Kotlin adapter compares source/pixel/grid sizes, viewport coordinates, z-layer membership,
+cursor/index counts through the resulting scrollback, and rewritten source rectangles after
+margin scrolls. No expected geometry is calculated by the Python generator.
+These are component tests: actual line anchors, reflow/screen lifecycle, parent chains,
+placeholder rendering and platform pixels are not covered by this geometry corpus yet.
+
 `scenarios.json` is the input specification. The C helper in
 `scripts/terminal-ghostty-oracle.c` runs the original `libghostty-vt` through its
 public API. After every write/resize/key batch it exports logical cells, wraps, cursor,

@@ -5,6 +5,7 @@
  * E key mods consumed action unshifted utf8-hex; T color-scheme (1 dark, 2 light);
  * M action button mods column row (stateless mouse encoding, unit cells);
  * G image-storage-limit probe-image-ids... (decimal, at most 256 IDs);
+ * J (include placement geometry and z-layer membership in graphics snapshots);
  * S (snapshot); U (width ranges).
  * stdout: one JSON snapshot per S. Every API failure exits nonzero.
  */
@@ -25,6 +26,7 @@ static bool effects_enabled;
 static bool pwd_enabled;
 static bool semantic_enabled;
 static bool graphics_enabled;
+static bool placements_enabled;
 static uint32_t graphics_ids[256];
 static size_t graphics_ids_len;
 static struct { unsigned char bytes[4096]; size_t len; } pwd_events[512];
@@ -155,6 +157,58 @@ static GhosttyColorRgb rgb(unsigned value) {
     return (GhosttyColorRgb){.r = value >> 16, .g = value >> 8, .b = value};
 }
 static unsigned packed(GhosttyColorRgb value) { return value.r << 16 | value.g << 8 | value.b; }
+static void snapshot_placements(GhosttyTerminal terminal, GhosttyKittyGraphics graphics) {
+    fputs(",\"kittyPlacements\":[", stdout);
+    GhosttyKittyGraphicsPlacementIterator it;
+    check(ghostty_kitty_graphics_placement_iterator_new(NULL, &it));
+    bool prior = false;
+    if (graphics) {
+        check(ghostty_kitty_graphics_get(graphics, GHOSTTY_KITTY_GRAPHICS_DATA_PLACEMENT_ITERATOR, &it));
+        while (ghostty_kitty_graphics_placement_next(it)) {
+            const GhosttyKittyGraphicsPlacementData keys[] = {
+                GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_IMAGE_ID, GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_PLACEMENT_ID,
+                GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_X_OFFSET, GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_Y_OFFSET,
+                GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_SOURCE_X, GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_SOURCE_Y,
+                GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_SOURCE_WIDTH, GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_SOURCE_HEIGHT,
+                GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_COLUMNS, GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_ROWS};
+            uint32_t values[10];
+            for (size_t i = 0; i < 10; i++) check(ghostty_kitty_graphics_placement_get(it, keys[i], &values[i]));
+            bool virtual;
+            int32_t z;
+            check(ghostty_kitty_graphics_placement_get(it, GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_IS_VIRTUAL, &virtual));
+            check(ghostty_kitty_graphics_placement_get(it, GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_Z, &z));
+            GhosttyKittyGraphicsImage image = ghostty_kitty_graphics_image(graphics, values[0]);
+            GhosttyKittyGraphicsPlacementRenderInfo info = {.size = sizeof(info)};
+            check(ghostty_kitty_graphics_placement_render_info(it, image, terminal, &info));
+            printf("%s[%u,%u,%s", prior ? "," : "", values[0], values[1], virtual ? "true" : "false");
+            for (size_t i = 2; i < 10; i++) printf(",%u", values[i]);
+            printf(",%d,%u,%u,%u,%u,%u,%u,%u,%u,", z, info.pixel_width, info.pixel_height,
+                info.grid_cols, info.grid_rows, info.source_x, info.source_y, info.source_width, info.source_height);
+            if (info.viewport_visible) printf("%d,%d]", info.viewport_col, info.viewport_row);
+            else fputs("null,null]", stdout);
+            prior = true;
+        }
+    }
+    fputs("],\"kittyLayers\":[", stdout);
+    for (int layer = 1; layer <= 3; layer++) {
+        if (layer > 1) putchar(',');
+        putchar('['); prior = false;
+        if (graphics) {
+            check(ghostty_kitty_graphics_get(graphics, GHOSTTY_KITTY_GRAPHICS_DATA_PLACEMENT_ITERATOR, &it));
+            GhosttyKittyPlacementLayer selected = (GhosttyKittyPlacementLayer)layer;
+            check(ghostty_kitty_graphics_placement_iterator_set(it, GHOSTTY_KITTY_GRAPHICS_PLACEMENT_ITERATOR_OPTION_LAYER, &selected));
+            while (ghostty_kitty_graphics_placement_next(it)) {
+                uint32_t id, placement;
+                check(ghostty_kitty_graphics_placement_get(it, GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_IMAGE_ID, &id));
+                check(ghostty_kitty_graphics_placement_get(it, GHOSTTY_KITTY_GRAPHICS_PLACEMENT_DATA_PLACEMENT_ID, &placement));
+                printf("%s[%u,%u]", prior ? "," : "", id, placement); prior = true;
+            }
+        }
+        putchar(']');
+    }
+    putchar(']');
+    ghostty_kitty_graphics_placement_iterator_free(it);
+}
 static void snapshot_graphics(GhosttyTerminal terminal) {
     GhosttyKittyGraphics graphics = NULL;
     GhosttyResult result = ghostty_terminal_get(terminal, GHOSTTY_TERMINAL_DATA_KITTY_GRAPHICS, &graphics);
@@ -183,6 +237,7 @@ static void snapshot_graphics(GhosttyTerminal terminal) {
         prior = true;
     }
     putchar(']');
+    if (placements_enabled) snapshot_placements(terminal, graphics);
 }
 static void snapshot(GhosttyTerminal terminal) {
     uint16_t cols, rows, x, y;
@@ -507,10 +562,12 @@ int main(void) {
             pwd_enabled = false; pwd_events_len = 0;
             semantic_enabled = false;
             graphics_enabled = false; graphics_ids_len = 0;
+            placements_enabled = false;
             for (size_t i = 0; i < clipboard_events_len; i++) free(clipboard_events[i].data);
             clipboard_events_len = 0;
             for (size_t i = 0; i < 3; i++) { free(clipboard_values[i].data); clipboard_values[i].data = NULL; clipboard_values[i].len = 0; }
         } else if (!terminal) return 2;
+        else if (line[0] == 'J') placements_enabled = true;
         else if (line[0] == 'G') {
             char *end, *next = line + 1;
             uint64_t limit = strtoull(next, &end, 10);
