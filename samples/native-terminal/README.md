@@ -20,3 +20,11 @@ Closing the window disposes the UI and closes/reaps the shell. When the shell ex
 Ctrl+D or an error), its own tab/window closes automatically; other sessions remain open.
 See [the terminal module](../../kinetica-terminal/README.md)
 for API details and the current compatibility limits.
+
+Unhandled Kotlin exceptions are saved before termination to individual `failure-*.log`
+files in `~/Library/Logs/Kinetica Terminal/`. Reports include the Kotlin stack, causes,
+suppressed exceptions, timestamps, and app/OS details. They are readable only by the
+current user and remain across app restarts; old reports can be deleted manually.
+The logger does not record terminal contents or environment variables, although exception
+messages can contain application data. Native faults such as segmentation faults still
+require the macOS crash report. If saving fails, the original exception goes to stderr.
