@@ -27,7 +27,7 @@ internal class TerminalGraphicsState(
     // Reverse parent edges make subtree deletion linear, even after ancestor replacement deepens a chain.
     private val children = mutableMapOf<TerminalGraphicsPlacementKey, MutableSet<TerminalGraphicsPlacementKey>>()
     private var nextInternalId = 0L
-    val storage = TerminalGraphicsStorage(limit = 0, removed = { image ->
+    val storage = TerminalGraphicsStorage(limit = 0, media = TerminalGraphicsMedia(terminal::readGraphicsMedia), removed = { image ->
         entries.keys.filter { it.image == image.id }.forEach { remove(it) }
     })
     val placements: Collection<TerminalGraphicsPlacement> get() = entries.values

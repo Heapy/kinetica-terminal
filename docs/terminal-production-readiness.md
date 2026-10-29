@@ -288,6 +288,15 @@ hide/show, ordering out, detach/reattach and disposal. Deterministic common test
 callbacks, stalled rendering, finite loops, loading state, holds and shared-session views.
 External media and the broader storage/frame-wide resource audit remain open.
 
+The next increment adds the common external-media host boundary. `attachGraphicsMedia` applies
+to both screens and denies external access when detached. The executor resolves `t=f/t/s`
+payloads before image decoding, preserves unsigned `O`/`S`, verifies exact explicit lengths and
+returned-byte limits, and retains query/frame/replacement and quiet-reply semantics. Direct
+chunk continuations never reinterpret their payload as a path. Fixed error variants prevent
+host exception details from entering protocol replies. Six new common tests pass in the full
+547-test JVM suite and fresh Release JS suite. These tests use injected readers; actual native
+filesystem/shared-memory access, unlink behavior and platform regressions remain unimplemented.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

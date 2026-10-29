@@ -61,12 +61,14 @@ internal class TerminalGraphicsTransferResult(
 /**
  * One screen's decoded images, animation state and in-progress image/frame transfer. The
  * placement executor owns geometry and calls [remove] for selected image IDs. This component
- * performs no host I/O and does not advertise graphics support by itself.
+ * delegates external reads to the explicitly supplied host and does not advertise graphics
+ * support by itself. It contains no platform I/O implementation.
  */
 internal class TerminalGraphicsStorage(
     limit: Int = 320_000_000,
     private val decodeLimits: TerminalGraphicsDecodeLimits = TerminalGraphicsDecodeLimits(),
     private val removed: (TerminalGraphicsStoredImage) -> Unit = {},
+    private val media: TerminalGraphicsMedia? = null,
 ) {
     init { require(limit >= 0) }
     private val images = mutableMapOf<Long, TerminalGraphicsStoredImage>()
@@ -133,9 +135,10 @@ internal class TerminalGraphicsStorage(
         conflictingIdentifiers(command)?.let { return TerminalGraphicsTransferResult(it, command.quiet) }
         if (command.imageId == 0L) return TerminalGraphicsTransferResult()
         val error = validateMedium(command) ?: try {
-            decode(command, command.data)
+            decode(command, transmissionData(command))
             null
         } catch (error: TerminalGraphicsDecodeException) { error.messageForProtocol() }
+        catch (error: TerminalGraphicsMediaException) { error.messageForProtocol() }
         return TerminalGraphicsTransferResult(response(command, error ?: "OK"), command.quiet)
     }
 
@@ -172,8 +175,10 @@ internal class TerminalGraphicsStorage(
                 if (target == null) result else TerminalGraphicsTransferResult(result.response?.copy(id = target.id), quiet)
             }
             validateMedium(command)?.let { return startFailure(it) }
+            val data = try { transmissionData(command) }
+            catch (error: TerminalGraphicsMediaException) { return startFailure(error.messageForProtocol()) }
             val bytes = GraphicsTransferBytes(decodeLimits.maxEncodedBytes)
-            if (!bytes.append(command.data)) return startFailure("EINVAL: invalid data")
+            if (!bytes.append(data)) return startFailure("EINVAL: invalid data")
             val implicit = target == null && command.imageId == 0L && command.imageNumber == 0L
             val id = target?.id ?: if (command.imageId != 0L) command.imageId else nextId(implicit)
             load = Loading(command.withoutData(), id, implicit, quiet, bytes, target?.generation)
@@ -225,8 +230,27 @@ internal class TerminalGraphicsStorage(
 
     private fun validateMedium(command: TerminalGraphicsCommand): String? = when {
         command.format < 0 -> "EINVAL: unsupported format"
-        command.medium != 'd' -> "EINVAL: unsupported medium"
+        command.medium != 'd' && media == null -> "EINVAL: unsupported medium"
         else -> null
+    }
+
+    private fun transmissionData(command: TerminalGraphicsCommand): ByteArray {
+        if (command.medium == 'd') return command.data
+        val medium = when (command.medium) {
+            'f' -> TerminalGraphicsMedium.FILE
+            't' -> TerminalGraphicsMedium.TEMPORARY_FILE
+            's' -> TerminalGraphicsMedium.SHARED_MEMORY
+            else -> throw TerminalGraphicsMediaException(TerminalGraphicsMediaResult.UNSUPPORTED)
+        }
+        val request = TerminalGraphicsMediaRequest(medium, command.data, command.unsigned('O'), command.unsigned('S'),
+            command.format, command.unsigned('s'), command.unsigned('v'), command.compressed,
+            decodeLimits.maxEncodedBytes, decodeLimits.maxDimension)
+        val result = try { media?.read(request) ?: TerminalGraphicsMediaResult.UNSUPPORTED }
+        catch (_: Exception) { TerminalGraphicsMediaResult.INVALID_DATA }
+        if (result !is TerminalGraphicsMediaResult.Data) throw TerminalGraphicsMediaException(result)
+        if (result.bytes.size > decodeLimits.maxEncodedBytes || request.size > 0 && result.bytes.size.toLong() != request.size)
+            throw TerminalGraphicsMediaException(TerminalGraphicsMediaResult.INVALID_DATA)
+        return result.bytes
     }
 
     private fun decode(command: TerminalGraphicsCommand, bytes: ByteArray): TerminalGraphicsPixels =

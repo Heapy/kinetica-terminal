@@ -188,6 +188,21 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     // Transport budget checkpoints: ordinary text is checked every small byte slice, while
     // potentially expensive control operations are followed by an immediate checkpoint.
     private var controlEpoch = 0
+    private var graphicsMediaBinding: Pair<Any, TerminalGraphicsMedia>? = null
+    internal fun readGraphicsMedia(request: TerminalGraphicsMediaRequest): TerminalGraphicsMediaResult =
+        graphicsMediaBinding?.second?.read(request) ?: TerminalGraphicsMediaResult.UNSUPPORTED
+
+    /**
+     * Attach the one host authorized to resolve Kitty file/shared-memory payloads on both
+     * screens. Replacing a binding takes effect on the next command. Disposing an older
+     * binding cannot detach its replacement; disposal does not remove already decoded images.
+     */
+    public fun attachGraphicsMedia(media: TerminalGraphicsMedia): TerminalDisposable {
+        val binding = Any() to media
+        graphicsMediaBinding = binding
+        return TerminalDisposable { if (graphicsMediaBinding === binding) graphicsMediaBinding = null }
+    }
+
     private val primaryGraphics = TerminalGraphicsState(this, ::damageAll)
     private val alternateGraphics = TerminalGraphicsState(this, ::damageAll)
     internal val graphicsState: TerminalGraphicsState get() = if (alternateScreen) alternateGraphics else primaryGraphics

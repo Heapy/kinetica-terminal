@@ -76,8 +76,14 @@ Animation commands load, edit, compose, select and delete frames and control gap
 loop counts. A one-shot timer requests the next render; that render advances playback on a
 shared monotonic clock. A stalled renderer does not spin timers or catch up by skipping frames.
 Hidden/detached views and render holds suspend playback; showing the view or releasing the hold
-resumes it. Finite, stopped and unplaced animations become idle. External file/shared-memory
-transmission is not implemented yet. The decoded-byte budget is not a total memory bound:
+resumes it. Finite, stopped and unplaced animations become idle.
+`TerminalSession.attachGraphicsMedia` lets a host explicitly authorize and resolve file,
+temporary-file and shared-memory transmissions. The host receives the decoded path/name,
+unsigned offset and exact size, format and byte limit; it returns owned bytes or a fixed
+protocol error synchronously on the session thread. Without an attached host, external media
+return an unsupported-medium error.
+The common executor supports queries, image/frame loads, quiet replies and both screens;
+built-in native file/shared-memory readers are still pending. The decoded-byte budget is not a total memory bound:
 RGB-to-RGBA animation conversion follows upstream admission semantics and can exceed it;
 transient copies and resources retained by submitted draws are separate from cache accounting.
 Run `node scripts/verify-terminal-graphics.mjs` against the built browser
