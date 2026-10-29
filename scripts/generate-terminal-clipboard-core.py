@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Compare OSC 5522 metadata and write accumulation with original Ghostty 1.4.0."""
+"""Compare OSC 5522 metadata, writes, responses and grants with original Ghostty 1.4.0."""
 import base64
 import hashlib
 import json
 import os
+import random
 from pathlib import Path
 import shutil
 import subprocess
@@ -67,6 +68,49 @@ def cases():
     transaction("mime_limit",[data(b64(str(i)),f"application/x-{i}") for i in range(65)]+[data("!!!","application/x-64"),data(b64("replaced"),"application/x-0"),commit])
     transaction("alias_limit",[data(b64("text")),alias(" ".join(f"alias-{i}" for i in range(65))),
         alias("alias-0","missing"),alias("extra alias-1","missing"),commit])
+    def response(**value): result.append(dict(name=f"response_{len(result)}",response=value))
+    for operation in ["read","write","wdata","walias"]:
+        for status in ["DATA","DONE","EBUSY","EFBIG","EINVAL","EIO","ENOSYS","EPERM","OK"]:
+            for terminator in ["st","bel"]:
+                response(kind="packet",operation=operation,status=status,terminator=terminator)
+    for mime in [None,"","text/plain","应用/数据"]:
+        for password in [None,"","secret","пароль"]:
+            response(kind="packet",operation="read",status="DATA",primary=True,id="aA09-_+.",mime=mime,password=password,payload="00ff0a80")
+    response(kind="packet",id="x"*512)
+    for primary in [False,True]:
+        for terminator in ["st","bel"]:
+            for listing in [False,True]:
+                response(kind="read",primary=primary,terminator=terminator,list=listing)
+                response(kind="read",primary=primary,terminator=terminator,list=listing,id="42",password="otp",
+                    available=["text/plain","image/png"],contents=[dict(mime="text/plain",hex="6869"),dict(mime="image/png",hex="00ff"),dict(mime="empty",hex="")])
+            response(kind="paste",primary=primary,terminator=terminator,password="paste-password",available=["text/plain","image/png"])
+    for size in [0,1,2,3,4095,4096,4097,8191,8192,8193,65536]:
+        response(kind="read",id="chunked",contents=[dict(mime="application/octet-stream",hex=bytes(i%256 for i in range(size)).hex())])
+    for available in [[],[""],["",""],["x"*4094],["x"*4095],["x"*4096],
+                      ["x"*4094,"y"],["x"*4093,"y"],["界"*1364],["界"*1365],["界"*1366],
+                      ["text/plain","x"*4096,"image/png"],[f"application/x-{i}" for i in range(64)]]:
+        response(kind="read",list=True,available=available)
+    def grant(password,direction="read",one_time=False): return dict(action="grant",password=password,direction=direction,one_time=one_time)
+    def use(password,direction="read"): return dict(action="use",password=password,direction=direction)
+    def grants(name,events): result.append(dict(name=name,grants=events))
+    for direction in ["read","write"]:
+        for one_time in [False,True]:
+            grants(f"grants_basic_{direction}_{one_time}",[use("pw"),grant("pw",direction,one_time),use("pw",direction),use("pw",direction)])
+            grants(f"grants_mismatch_{direction}_{one_time}",[grant("pw",direction,one_time),use("pw","write" if direction=="read" else "read"),use("pw",direction)])
+    for first in [False,True]:
+        for second in [False,True]:
+            grants(f"grants_merge_{first}_{second}",[grant("pw","read",first),grant("pw","write",second),use("pw"),use("pw","write"),use("pw")])
+    for password in ["","x","x"*128,"x"*129,"界"*42,"界"*43,"\x00\n", "Привет"]:
+        grants(f"grants_length_{len(result)}",[grant(password),use(password),dict(action="clear"),use(password)])
+    grants("grants_capacity",[grant(str(i)) for i in range(33)]+[use(str(i)) for i in range(33)])
+    grants("grants_no_recency",[grant(str(i)) for i in range(32)]+[use("0"),grant("0","write"),grant("32"),use("0","write"),use("1")])
+    grants("grants_swap_eviction",[grant(str(i),one_time=True) for i in range(32)]+[use("0"),grant("32"),grant("33")]+[use(str(i)) for i in [31,1,2,32,33]])
+    rng=random.Random(5522)
+    events=[]
+    for _ in range(2000):
+        password=str(rng.randrange(40)); direction=rng.choice(["read","write"])
+        events.append(grant(password,direction,rng.choice([True,False])) if rng.randrange(3)==0 else use(password,direction))
+    grants("grants_interleaved",events)
     return result
 
 
@@ -116,9 +160,9 @@ pub fn build(b: *std.Build) void {
     digest = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
     manifest = dict(commit=SHA,zig=subprocess.check_output([str(zig),"version"],text=True).strip(),
         cases=len(corpus),snapshots=sum(len(c.get("snapshots",[None])) for c in corpus),
-        scope="Original Metadata decoder and WriteState accumulation/commit. No session dispatch, permission, response or platform clipboard coverage.",
+        scope="Original Metadata, WriteState, Response, ReadSuccess, PasteEvent and Grants modules. No session dispatch, authorization callbacks, entropy source or platform clipboard coverage.",
         helperSha256=digest(helper),generatorSha256=digest(Path(__file__)),fixtureSha256=digest(fixture),
-        sources={p:digest(upstream/p) for p in ["src/terminal/kitty/clipboard_command.zig","src/terminal/kitty/clipboard_write.zig","src/simd/base64.zig"]})
+        sources={p:digest(upstream/p) for p in ["src/terminal/kitty/clipboard_command.zig","src/terminal/kitty/clipboard_write.zig","src/terminal/kitty/clipboard_response.zig","src/terminal/kitty/clipboard_grants.zig","src/terminal/osc/parsers/kitty_clipboard_protocol.zig","src/simd/base64.zig"]})
     write_generated(ROOT/"kinetica-terminal/test-upstream/ghostty/clipboard-core-manifest.json",json.dumps(manifest,indent=2)+'\n')
     print(f'Generated {len(corpus)} clipboard core cases / {manifest["snapshots"]} checkpoints')
 

@@ -556,12 +556,25 @@ An invalid/oversized transaction cannot commit partial data. MIME and alias maps
 tokenization avoids allocating a list for every metadata field or whitespace-separated alias.
 
 These primitives are not yet wired into session OSC dispatch or platform clipboard access.
-The remaining work includes read/reply encoding, async authorization and completion, password
-grants, paste events, parser capture budgets, backpressure and native/browser MIME adapters.
-`clipboard-core-manifest.json` records 519 original-Ghostty cases / 1716 checkpoints for this
-increment, with source/helper/generator/output hashes and byte-for-byte regeneration.
+The initial corpus contained 519 original-Ghostty cases / 1716 checkpoints, with
+source/helper/generator/output hashes and byte-for-byte regeneration.
 Validation passes 975 JVM tests, fresh Release JS tests, and the three Native core tests
 (including all original-module checkpoints). No platform clipboard access is enabled by this increment.
+
+The second OSC 5522 increment adds exact status/read/paste-event response encoding and
+session password-grant storage. Read data is emitted lazily in 4096-byte chunks, empty
+representations are omitted, and targets listings obey the original byte bound and newline
+rules. Password grants distinguish read/write, merge persistent and one-time permissions,
+consume one-time grants even on a direction mismatch, and preserve the original 32-entry
+capacity and eviction order. This store accepts passwords; secure entropy generation and
+authorization decisions remain outside it.
+
+The current `clipboard-core-manifest.json` covers 676 cases / 4072 checkpoints, including
+all response statuses, BEL/ST, binary chunk boundaries, UTF-8 listings, capacity boundaries
+and 2000 interleaved grant operations. Validation passes 978 JVM tests, fresh Release JS tests
+and six Native clipboard-core/response tests. Fixtures and manifest reproduce byte-for-byte.
+Session routing, async authorization/completion, secure paste events, parser capture budgets,
+reply backpressure and native/browser MIME adapters remain required to enable OSC 5522.
 
 Graphics acceptance work:
 

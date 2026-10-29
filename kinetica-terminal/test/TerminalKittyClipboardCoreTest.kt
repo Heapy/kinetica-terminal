@@ -10,6 +10,7 @@ class TerminalKittyClipboardCoreTest {
     @Test fun metadataAndWriteTransactionsMatchOriginalGhostty() {
         for (encoded in terminalKittyClipboardCoreFixtures()) {
             val case = Json.parseToJsonElement(Base64.decode(encoded).decodeToString()).jsonObject
+            if ("response" in case || "grants" in case) continue
             val name = case.getValue("name").jsonPrimitive.content
             if ("metadata" in case) {
                 val result = parseKittyClipboardMetadata(case.getValue("metadata").jsonPrimitive.content)
