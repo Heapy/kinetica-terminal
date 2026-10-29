@@ -35,6 +35,8 @@ class TerminalGraphicsAnimationTest {
                         }
                     } catch (_: TerminalGraphicsAnimationException) {
                         // This component oracle compares error-side state too; wire replies belong to session tests.
+                    } catch (_: TerminalGraphicsDecodeException) {
+                        // Rejected compressed frames leave the prior animation unchanged.
                     }
                 }
                 val current = assertNotNull(animation)

@@ -113,7 +113,12 @@ provide race-free deletion against another process replacing a pathname or share
 
 The decoded-byte budget is not a total memory bound:
 RGB-to-RGBA animation conversion follows upstream admission semantics and can exceed it;
-transient copies and resources retained by submitted draws are separate from cache accounting.
+transfer assembly, decoder scratch buffers and immutable held-frame generations have separate
+lifetimes. Compressed raw RGB/RGBA decoding retains only the declared pixel prefix and
+publishes that owned buffer without another full copy. Extra animation-frame bytes are
+discarded while still validating the whole zlib stream and its expansion limit. Compressed
+PNG retains its encoded PNG buffer for the second decoding stage. WebGL/Metal textures used
+by unfinished commands are included in their separate renderer budget described above.
 Run `node scripts/verify-terminal-graphics.mjs` against the built browser
 demo for actual Canvas/WebGL pixel, scroll, context-loss and resource-lifecycle checks.
 `NativeGraphicsTimingTest` exercises automatic playback and hide/show, detach and disposal in

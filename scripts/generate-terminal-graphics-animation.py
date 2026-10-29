@@ -9,6 +9,7 @@ import random
 import shutil
 import subprocess
 import sys
+import zlib
 
 ROOT = Path(__file__).resolve().parent.parent
 SHA = "83fb95624b0439ee660c2679b43b38c8b63769cd"
@@ -60,6 +61,20 @@ def cases():
         events=[root(fmt=32,data=bytes(rng.randrange(256) for _ in range(24)))]
         for j in range(6): events.append(frame(bytes(rng.randrange(256) for _ in range(24)),f'r={rng.randrange(6)},c={rng.randrange(4)},z={rng.choice([-1,0,1,40])},X={rng.randrange(2)}',3,2))
         result.append(dict(name=f'random_pixels_{i}',events=events))
+    for fmt in [24, 32]:
+        pixels=bytes([200,100,50,128][:fmt//8])
+        exact=zlib.compress(pixels)
+        variants={
+            'exact':exact,
+            'extra':zlib.compress(pixels + bytes([7])*60000),
+            'short':zlib.compress(pixels[:-1]),
+            'checksum':exact[:-1]+bytes([exact[-1]^1]),
+            'truncated':exact[:-1],
+            'trailing':exact+b'\x00',
+            'concatenated':exact+zlib.compress(b''),
+        }
+        for name,data in variants.items():
+            result.append(dict(name=f'compressed_frame_{fmt}_{name}',events=[root(),frame(data,'o=z',fmt=fmt)]))
     return result
 
 def main():
@@ -98,7 +113,7 @@ pub fn build(b: *std.Build) void {
     digest=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
     manifest=dict(commit=SHA,zig=subprocess.check_output([str(zig),'version'],text=True).strip(),cases=len(corpus),snapshots=sum(len(c['snapshots']) for c in corpus),
         helperSha256=digest(helper),generatorSha256=digest(Path(__file__)),fixtureSha256=digest(fixture),
-        sources={p:digest(upstream/p) for p in ['src/terminal/kitty/graphics_animation.zig','src/terminal/kitty/graphics_pixel.zig','src/terminal/kitty/graphics_exec.zig','src/terminal/kitty/graphics_storage.zig','pkg/wuffs/src/swizzle.zig']})
+        sources={p:digest(upstream/p) for p in ['src/terminal/kitty/graphics_animation.zig','src/terminal/kitty/graphics_pixel.zig','src/terminal/kitty/graphics_exec.zig','src/terminal/kitty/graphics_storage.zig','src/terminal/kitty/graphics_image.zig','pkg/wuffs/src/swizzle.zig']})
     (ROOT/'kinetica-terminal/test-upstream/ghostty/graphics-animation-manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
     print(f'Generated {len(corpus)} animation cases and {manifest["snapshots"]} checkpoints')
 

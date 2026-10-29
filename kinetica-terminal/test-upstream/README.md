@@ -5,10 +5,12 @@ with pinned libpng and validates zlib streams against pinned zlib. It does not y
 cover original-libghostty image storage, placements or platform image rendering.
 
 The animation corpus links the unmodified pinned Ghostty Zig module and executes
-400 command/clock scenarios with 2030 snapshots. It compares all frame pixels, gaps, playback
+414 command/clock scenarios with 2058 snapshots. It compares all frame pixels, gaps, playback
 state, loop counters, timestamps, byte counts and image-generation changes. The alpha cases
 exercise all 65,536 source/destination alpha pairs. The adapter replays both the isolated core
 and complete/bytewise session input, including explicit clock ticks and storage accounting.
+Compressed RGB/RGBA frame cases compare exact data, tolerated excess bytes, short data,
+checksum failure, truncation, trailing bytes and concatenated zlib streams with Ghostty.
 Regenerate with `python3 scripts/generate-terminal-graphics-animation.py /path/to/ghostty
 /path/to/zig`; hashes and source pin are in `ghostty/graphics-animation-manifest.json`.
 The Wuffs integer source-over arithmetic retains its MIT license and provenance under

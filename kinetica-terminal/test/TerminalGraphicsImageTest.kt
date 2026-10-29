@@ -79,6 +79,44 @@ class TerminalGraphicsImageTest {
         }
     }
 
+    @Test fun compressedRawFramesRetainOnlyPixelPrefixButValidateTheWholeStream() {
+        val raw = ByteArray(60_000) { (it * 59).toByte() }
+        val stream = storedZlib(raw)
+        val allocations = mutableListOf<ByteArray>()
+        fun bounded(data: ByteArray = stream, frame: Boolean = true, width: Long = 1, decodedLimit: Int = 4) =
+            decodeTerminalGraphicsImage(32, width, 1, true, data,
+                TerminalGraphicsDecodeLimits(65536, decodedLimit), frame, allocateInflated = { size ->
+                    assertTrue(size <= 4, "A discarded frame tail must not become a temporary decoded buffer")
+                    ByteArray(size).also { allocations += it }
+                })
+        val pixels = bounded()
+        assertContentEquals(raw.copyOf(4), pixels.data)
+        assertEquals(1, allocations.size)
+        assertSame(allocations.single(), pixels.data, "The collector's owned prefix is the published pixel buffer")
+        failure(TerminalGraphicsDecodeError.INVALID_DATA) { bounded(frame = false) }
+        failure(TerminalGraphicsDecodeError.INSUFFICIENT_DATA) { bounded(storedZlib(raw.copyOf(3))) }
+        // Corruption/truncation after the retained prefix must still reject the entire frame.
+        val corrupt = stream.copyOf().also { it[it.lastIndex] = (it.last().toInt() xor 1).toByte() }
+        for (bad in listOf(corrupt, stream.copyOf(stream.size - 1), stream + byteArrayOf(0), stream + storedZlib(byteArrayOf()))) {
+            failure(TerminalGraphicsDecodeError.DECOMPRESSION_FAILED) { bounded(bad) }
+        }
+        allocations.clear()
+        failure(TerminalGraphicsDecodeError.DIMENSIONS_REQUIRED) { bounded(width = 0) }
+        failure(TerminalGraphicsDecodeError.RESOURCE_LIMIT) { bounded(decodedLimit = 3) }
+        failure(TerminalGraphicsDecodeError.DECOMPRESSION_FAILED) { bounded(corrupt, width = 0) }
+        assertTrue(allocations.isEmpty(), "Invalid dimensions need no retained decompression output")
+    }
+
+    @Test fun discardedFrameTailStillObeysInflationWorkLimit() {
+        val fixture = terminalGraphicsZlibFixtures().first { it.name == "zlib_4_6_0" }
+        val encoded = Base64.decode(fixture.zlib)
+        failure(TerminalGraphicsDecodeError.DECOMPRESSION_FAILED) {
+            decodeTerminalGraphicsImage(32, 1, 1, true, encoded,
+                TerminalGraphicsDecodeLimits(200, 4), animationFrame = true,
+                allocateInflated = { size -> assertTrue(size <= 4); ByteArray(size) })
+        }
+    }
+
     @Test fun pngRejectsInvalidChunkOrderSamplesFiltersAndInflatedLength() {
         val header = ByteArray(13).also { writeInt(it, 0, 1); writeInt(it, 4, 1); it[8] = 8; it[9] = 6 }
         val signature = byteArrayOf(137.toByte(),80,78,71,13,10,26,10)

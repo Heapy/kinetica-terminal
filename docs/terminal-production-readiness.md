@@ -732,6 +732,22 @@ host/session integration checks without changing generated fixtures.
 
 Graphics acceptance work:
 
+Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than
+materializing the whole inflated payload and then copying/truncating it. This preserves
+Ghostty's acceptance of excess animation-frame bytes. The inflater still checks the entire
+stream, checksum, trailing data and expansion limit; invalid dimensions preserve the original
+decompression-first error precedence without retaining output. Successful raw decoding hands
+off the collector's owned buffer directly. Outer-zlib PNG decoding still retains its encoded
+PNG chunks for the second stage, and broader transient/storage accounting remains open.
+
+Fourteen added original-Ghostty cases cover RGB/RGBA exact frames, excess/short data, bad
+checksums, truncation, trailing data and concatenated streams. The animation corpus now has
+414 cases / 2058 checkpoints and reproduces byte-for-byte. Allocation-guard tests allow only
+four retained output bytes for a 1×1 RGBA frame with a 60,000-byte inflated payload, reject
+corruption after that prefix, preserve the expansion limit, and verify direct buffer ownership.
+Validation passes 1029 JVM tests, the fresh Release JS suite, 85 Native graphics tests and
+the browser Canvas/WebGL graphics verifier, including the frame-wide GPU budget stress case.
+
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
 - [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
 - [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.

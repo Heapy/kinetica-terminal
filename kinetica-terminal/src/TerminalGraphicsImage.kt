@@ -28,22 +28,41 @@ internal fun decodeTerminalGraphicsImage(
     data: ByteArray,
     limits: TerminalGraphicsDecodeLimits = TerminalGraphicsDecodeLimits(),
     animationFrame: Boolean = false,
+    allocateInflated: (Int) -> ByteArray = { ByteArray(it) },
 ): TerminalGraphicsPixels {
     if (format != 24 && format != 32 && format != 100) graphicsDecodeFailure(TerminalGraphicsDecodeError.UNSUPPORTED_FORMAT)
     if (data.size > limits.maxEncodedBytes) graphicsDecodeFailure(TerminalGraphicsDecodeError.RESOURCE_LIMIT)
-    val decoded = if (compressed) {
-        val bytes = GraphicsBytes(limits.maxEncodedBytes)
-        var offset = 0
-        try {
-            inflateTerminalGraphicsZlib({ if (offset < data.size) data[offset++].toInt() and 255 else -1 }, limits.maxEncodedBytes, bytes::add)
-        } catch (_: TerminalGraphicsZlibException) { graphicsDecodeFailure(TerminalGraphicsDecodeError.DECOMPRESSION_FAILED) }
-        bytes.take()
-    } else data
-    if (format == 100) return decodeTerminalGraphicsPng(decoded, limits)
-    val length = graphicsPixelLength(width, height, format / 8, limits)
-    if (animationFrame && decoded.size < length) graphicsDecodeFailure(TerminalGraphicsDecodeError.INSUFFICIENT_DATA)
-    if ((!animationFrame && decoded.size != length)) graphicsDecodeFailure(TerminalGraphicsDecodeError.INVALID_DATA)
-    return TerminalGraphicsPixels(width.toInt(), height.toInt(), format, decoded.copyOfRange(0, length))
+    // Ghostty validates decompression before dimensions, and truncates excess raw frame data.
+    // Keep that error/acceptance order without retaining an arbitrarily large discarded tail.
+    var dimensionError: TerminalGraphicsDecodeException? = null
+    val length = if (format == 100) 0 else try { graphicsPixelLength(width, height, format / 8, limits) }
+        catch (error: TerminalGraphicsDecodeException) { dimensionError = error; 0 }
+    fun validateLength(actual: Int) {
+        dimensionError?.let { throw it }
+        if (animationFrame && actual < length) graphicsDecodeFailure(TerminalGraphicsDecodeError.INSUFFICIENT_DATA)
+        if (!animationFrame && actual != length) graphicsDecodeFailure(TerminalGraphicsDecodeError.INVALID_DATA)
+    }
+    if (!compressed) {
+        if (format == 100) return decodeTerminalGraphicsPng(data, limits)
+        validateLength(data.size)
+        return TerminalGraphicsPixels(width.toInt(), height.toInt(), format, data.copyOfRange(0, length))
+    }
+    // PNG needs its encoded chunks for the second decode stage. Raw pixels need only their
+    // declared prefix; the inflater still maintains history/checksum and validates every byte.
+    val retainedLimit = if (format == 100) limits.maxEncodedBytes else minOf(length, limits.maxEncodedBytes)
+    val bytes = GraphicsBytes(retainedLimit, allocateInflated)
+    var offset = 0
+    var inflatedSize = 0
+    try {
+        inflateTerminalGraphicsZlib({ if (offset < data.size) data[offset++].toInt() and 255 else -1 }, limits.maxEncodedBytes) { value ->
+            if (inflatedSize < retainedLimit) bytes.add(value)
+            inflatedSize++
+        }
+    } catch (_: TerminalGraphicsZlibException) { graphicsDecodeFailure(TerminalGraphicsDecodeError.DECOMPRESSION_FAILED) }
+    if (format == 100) return decodeTerminalGraphicsPng(bytes.take(), limits)
+    validateLength(inflatedSize)
+    // The bounded collector already owns exactly the raw pixel prefix: no second full copy.
+    return TerminalGraphicsPixels(width.toInt(), height.toInt(), format, bytes.take())
 }
 
 internal fun graphicsPixelLength(width: Long, height: Long, bpp: Int, limits: TerminalGraphicsDecodeLimits): Int {
@@ -57,12 +76,17 @@ internal fun graphicsPixelLength(width: Long, height: Long, bpp: Int, limits: Te
 internal fun graphicsDecodeFailure(error: TerminalGraphicsDecodeError = TerminalGraphicsDecodeError.INVALID_DATA): Nothing =
     throw TerminalGraphicsDecodeException(error)
 
-private class GraphicsBytes(private val limit: Int) {
+private class GraphicsBytes(private val limit: Int, private val allocate: (Int) -> ByteArray) {
     private var data = ByteArray(0)
     private var size = 0
     fun add(value: Int) {
         if (size == limit) graphicsDecodeFailure(TerminalGraphicsDecodeError.RESOURCE_LIMIT)
-        if (size == data.size) data = data.copyOf(maxOf(256L, data.size.toLong() * 2).coerceAtMost(limit.toLong()).toInt())
+        if (size == data.size) {
+            val capacity = maxOf(256L, data.size.toLong() * 2).coerceAtMost(limit.toLong()).toInt()
+            val grown = allocate(capacity)
+            require(grown.size == capacity)
+            data.copyInto(grown); data = grown
+        }
         data[size++] = value.toByte()
     }
     fun take(): ByteArray = if (data.size == size) data else data.copyOf(size)
