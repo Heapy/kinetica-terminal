@@ -140,6 +140,9 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       receive accepted size changes. Ordinary browser repainting preserves protocol geometry.
 - [ ] Close the clipboard paste-event mode 5522 gap.
       Validate their behavior and host integration before advertising mutable support.
+      The internal OSC 5522 metadata decoder and bounded MIME write accumulator are implemented
+      and compared with the original modules. Session dispatch, read/write replies, async
+      authorization, grants/paste events and MIME-aware platform adapters remain required.
 
 ## Graphics and external media
 

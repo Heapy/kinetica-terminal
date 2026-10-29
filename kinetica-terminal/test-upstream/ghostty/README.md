@@ -391,3 +391,22 @@ The original `Terminal.resize` invoked internally by DECCOLM clears that bit wit
 `render_hold(false)`; raw original snapshots retain this discrepancy. All other state is
 compared directly. Headless mode 40 has no geometry side effect, as in libghostty-vt; separate
 browser/native tests exercise Ghostty's host-side refresh behavior and actual PTY dimensions.
+
+## OSC 5522 core oracle
+
+`clipboard-core-manifest.json` pins the original `Metadata` decoder and `WriteState` from
+Ghostty 1.4.0. The Zig helper imports those modules directly through `ghostty-vt`; it does
+not copy their parsing, Base64, accumulation or alias-resolution algorithms. The 519 cases /
+1716 checkpoints cover duplicate/malformed metadata, ID sanitation, UTF-8 and field limits,
+every split point of a binary Base64 stream, independently padded chunks, invalid partial
+groups, MIME replacement, ordered/chained/colliding aliases, 64-entry caps and decoded budgets.
+
+```sh
+python3 scripts/generate-terminal-clipboard-core.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig
+```
+
+The generator checks the pinned SHA and clean tracked upstream sources, runs with Zig's safe
+optimization and archives reproducible fixtures plus source/helper/generator hashes. Common
+tests compare metadata results, pending byte counts, errors and all committed binary contents.
+These are low-level module comparisons; they do not prove session dispatch, replies, permission
+handling, paste events or platform clipboard support. Those integrations remain unfinished.

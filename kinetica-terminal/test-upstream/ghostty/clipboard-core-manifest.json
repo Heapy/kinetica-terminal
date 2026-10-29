@@ -1,0 +1,15 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
+  "cases": 519,
+  "snapshots": 1716,
+  "scope": "Original Metadata decoder and WriteState accumulation/commit. No session dispatch, permission, response or platform clipboard coverage.",
+  "helperSha256": "051576490f8b2aa43258d95d47c41d63dd6cc6f856615073ec78b822249ecf21",
+  "generatorSha256": "7f1e7dce60526ceebcd484de6f7b5472c76f4e534687e78053e8344b05021491",
+  "fixtureSha256": "c1a932fa18fbf277885f1dfd6250a95dbfacc2a5bee4b9ae0aa47e9aab4736c8",
+  "sources": {
+    "src/terminal/kitty/clipboard_command.zig": "6ebc69284fbee9227b6addcbc80d352caf2ee913c269c7f3d7ffde3394fa7b2a",
+    "src/terminal/kitty/clipboard_write.zig": "28a00649cde9a57334bf9510904f78ecbf51719f16dfef4401311a41770d046b",
+    "src/simd/base64.zig": "d29caf80155ee8d8102ec768c08ee25615d2cdcb9ceb58008ad1c5eeb4125e58"
+  }
+}

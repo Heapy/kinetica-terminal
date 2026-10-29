@@ -547,6 +547,22 @@ fresh Release JS tests, all 680 Native oracle cases, 28 Native AppKit/PTY/transp
 tests, and the Canvas/WebGL browser verifier, including host resizing and mode-40 restoration.
 Clipboard paste events (5522) remain open, along with the broader acceptance work below.
 
+The first OSC 5522 implementation increment supplies an internal metadata decoder and bounded
+write accumulator. It validates structure before decoding duplicate fields, distinguishes dropped
+packets from invalid values, sanitizes IDs, enforces UTF-8/field limits and decodes strict Base64
+across arbitrary packet boundaries. Transactions preserve MIME insertion order, overwrite earlier
+regions, resolve ordered aliases and count overwritten bytes toward the captured write budget.
+An invalid/oversized transaction cannot commit partial data. MIME and alias maps each cap at 64;
+tokenization avoids allocating a list for every metadata field or whitespace-separated alias.
+
+These primitives are not yet wired into session OSC dispatch or platform clipboard access.
+The remaining work includes read/reply encoding, async authorization and completion, password
+grants, paste events, parser capture budgets, backpressure and native/browser MIME adapters.
+`clipboard-core-manifest.json` records 519 original-Ghostty cases / 1716 checkpoints for this
+increment, with source/helper/generator/output hashes and byte-for-byte regeneration.
+Validation passes 975 JVM tests, fresh Release JS tests, and the three Native core tests
+(including all original-module checkpoints). No platform clipboard access is enabled by this increment.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
