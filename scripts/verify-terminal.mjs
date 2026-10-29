@@ -345,14 +345,16 @@ try {
   await page.waitForFunction(length => keypadBytes.length === length && kineticaTerminalDemo.transportState().pendingInputBytes === 0,
     Buffer.byteLength(altModesExpected));
   assert.equal(Buffer.from(await page.evaluate(() => keypadBytes.splice(0))).toString(), altModesExpected);
-  // OSC 52 uses the actual browser clipboard, in this isolated browser context.
+  // OSC 52 uses the actual browser clipboard, in this isolated browser context. Feed it
+  // through the bounded transport: async clipboard operations can pause even between the
+  // ESC and backslash of an ST terminator, so the synchronous write helper cannot retain it.
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   const clipboardText = "clipboard 世界\n" + "large ".repeat(20000);
   const clipboardEncoded = Buffer.from(clipboardText).toString("base64");
   await page.evaluate(encoded => {
     keypadBytes.length = 0;
     kineticaTerminalDemo.clipboardPolicy("allow");
-    kineticaTerminalDemo.write(`\x1b]52;c;${encoded}\x07\x1b]52;c;?\x1b\\`);
+    if (!kineticaTerminalDemo.receiveBytes(new TextEncoder().encode(`\x1b]52;c;${encoded}\x07\x1b]52;c;?\x1b\\`))) throw new Error("Clipboard output refused");
   }, clipboardEncoded);
   const clipboardReply = `\x1b]52;c;${clipboardEncoded}\x1b\\`;
   await page.waitForFunction(length => keypadBytes.length === length, Buffer.byteLength(clipboardReply));
@@ -361,7 +363,7 @@ try {
   await page.evaluate(() => {
     keypadBytes.length = 0;
     kineticaTerminalDemo.clipboardPolicy("deny");
-    kineticaTerminalDemo.write("\x1b]52;c;ZXZpbA==\x07\x1b]52;c;?\x07");
+    if (!kineticaTerminalDemo.receiveBytes(new TextEncoder().encode("\x1b]52;c;ZXZpbA==\x07\x1b]52;c;?\x07"))) throw new Error("Clipboard output refused");
   });
   await page.waitForFunction(() => keypadBytes.length > 0);
   assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), "\x1b]52;c;\x07");
@@ -373,7 +375,7 @@ try {
       writeText: () => Promise.reject(new DOMException("Denied", "NotAllowedError")),
     } });
     kineticaTerminalDemo.clipboardPolicy("allow");
-    kineticaTerminalDemo.write("\x1b]52;c;YQ==\x07\x1b]52;c;?\x07");
+    if (!kineticaTerminalDemo.receiveBytes(new TextEncoder().encode("\x1b]52;c;YQ==\x07\x1b]52;c;?\x07"))) throw new Error("Clipboard output refused");
   });
   await page.waitForFunction(() => keypadBytes.length > 0);
   assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), "\x1b]52;c;\x07");

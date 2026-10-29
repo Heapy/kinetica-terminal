@@ -12,11 +12,12 @@ public fun browserTerminalHosts(
     renderObserver: TerminalRenderObserver? = null,
     clipboardPolicy: TerminalClipboardPolicy = TerminalClipboardPolicy.DENY,
     notificationPolicy: (TerminalNotification) -> Boolean = { false },
+    mimeClipboardPolicy: TerminalMimeClipboardPolicy = TerminalMimeClipboardPolicy.DENY,
     onView: (String, BrowserTerminalView?) -> Unit = { _, _ -> },
 ): Map<String, HostWidgetFactory<Element>> = mapOf(TERMINAL_HOST_TAG to HostWidgetFactory { node ->
     val id = node.props.getValue("session")
     val terminal = BrowserTerminalView(sessions.getValue(id), id, rendering, renderObserver, clipboardPolicy,
-        notificationPolicy = notificationPolicy)
+        notificationPolicy = notificationPolicy, mimeClipboardPolicy = mimeClipboardPolicy)
     onView(id, terminal)
     object : HostWidget<Element> {
         override val view: Element = terminal.view

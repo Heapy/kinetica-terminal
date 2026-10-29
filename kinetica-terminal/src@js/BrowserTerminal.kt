@@ -15,6 +15,8 @@ public class BrowserTerminalView(
     notificationPolicy: (TerminalNotification) -> Boolean = { false },
     notifications: TerminalNotificationDelivery? = null,
     graphicsStorageBytes: Int = 64 * 1024 * 1024,
+    mimeClipboardPolicy: TerminalMimeClipboardPolicy = TerminalMimeClipboardPolicy.DENY,
+    mimeClipboard: TerminalMimeClipboard? = null,
 ) {
     public val scrollOffset: Int get() = viewport.scrollOffset
     public fun jumpToPrompt(direction: Int): Boolean = viewport.jumpToPrompt(direction)
@@ -75,6 +77,8 @@ public class BrowserTerminalView(
         TerminalDisposable { window.clearTimeout(timer) }
     }, ::updateProgress)
     private val clipboardBinding = session.attachClipboard(clipboard ?: BrowserTerminalClipboard(), clipboardPolicy)
+    private val ownedMimeClipboard = if (mimeClipboard == null) BrowserTerminalMimeClipboard() else null
+    private val mimeClipboardBinding = session.attachMimeClipboard(mimeClipboard ?: checkNotNull(ownedMimeClipboard), mimeClipboardPolicy)
 
     init {
         viewport.setVisible(false)
@@ -437,6 +441,8 @@ public class BrowserTerminalView(
         progressPresentation.dispose()
         notificationObservation.dispose(); notifications?.dispose(); notifications = null
         clipboardBinding.dispose()
+        mimeClipboardBinding.dispose()
+        ownedMimeClipboard?.dispose()
         frame?.let { window.cancelAnimationFrame(it) }; accessibilityTimer?.let { window.clearTimeout(it) }
         listeners.forEach { it() }; listeners.clear()
         drawing.dispose()

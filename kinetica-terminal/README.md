@@ -630,11 +630,11 @@ through `session.attachMimeClipboard(backend, policy)`. `TerminalMimeClipboardPo
 is the default; `WRITE_ONLY`, `ALLOW` or a custom asynchronous policy can authorize operations.
 Requests expose the untrusted application name, direction, MIME types and grant state, never
 the password itself. A host must commit all write representations atomically, and report
-unsupported destinations or I/O errors explicitly. No host returns EPERM for reads and ENOSYS
-for writes. `AppKitTerminalView` and `appKitTerminalHosts` accept a separate
-`mimeClipboardPolicy`, defaulting to `DENY`; the native sample explicitly selects `WRITE_ONLY`.
-The view also accepts a custom `mimeClipboard` backend and detaches it on disposal.
-Browser MIME adapters and secure mode-5522 paste events are still pending.
+unsupported destinations or I/O errors explicitly. Without an attached host, reads return EPERM
+and writes return ENOSYS. Both platform views and DSL host adapters accept a separate
+`mimeClipboardPolicy`, defaulting to `DENY`; both samples explicitly select `WRITE_ONLY`.
+The views also accept a custom `mimeClipboard` backend and detach it on disposal.
+Secure mode-5522 paste events and platform password generation are still pending.
 
 The AppKit MIME adapter maps types through Uniform Type Identifiers, including custom binary
 formats, and publishes all representations as one pasteboard item. Listings inspect only declared
@@ -646,6 +646,18 @@ Invalid UTF-8 plain text, conflicting representations of one native type, and ov
 are rejected before changing the clipboard. AppKit requires clearing before publishing: a system
 publication failure can leave an empty clipboard and reports an I/O error. The adapter never reads
 the previous clipboard to implement rollback under a write-only policy.
+
+The browser adapter uses the [asynchronous Clipboard API](https://www.w3.org/TR/clipboard-apis/#async-clipboard-api) with its permission, secure-context
+and user-activation requirements intact. Native types such as plain text, HTML and PNG are
+preferred; other supported MIME types use Web Custom Formats. Those custom formats use the
+browser's clipboard namespace and may not be exposed to native applications. HTML sanitization
+and image re-encoding follow browser behavior. A listing reads `ClipboardItem.types` without
+calling `getType`; data reads request only the selected representations, within an aggregate
+8 MiB limit. Writes prepare one item with all formats and enforce a 64 MiB aggregate budget
+after alias expansion. Unsupported representations reject the whole write. Disposing the view
+stops deferred reads before fetching further formats and discards late replies; the browser
+cannot abort an already submitted write. Primary/selection locations and clearing return ENOSYS:
+`Clipboard.write([])` is a no-op, and the API has no asynchronous clear operation.
 
 Use `TerminalStreamConnection`, `BrowserTerminalConnection` or `MacOsPty` when attaching an
 asynchronous MIME host. These adapters retain input while authorization, clipboard I/O or reply
@@ -758,6 +770,7 @@ python3 -m http.server 4173 --bind 127.0.0.1
 ./kotlin build -m kinetica-terminal -p js -v release
 node build/artifacts/CompiledWebArtifact/kinetica-terminaljsTestrelease/kotlin-output/kinetica-terminal_test.mjs
 node scripts/verify-terminal.mjs
+node scripts/verify-terminal-mime-clipboard.mjs
 node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-blocks.mjs
 node scripts/verify-terminal-glyphs.mjs

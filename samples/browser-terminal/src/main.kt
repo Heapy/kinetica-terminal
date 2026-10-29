@@ -31,12 +31,15 @@ fun main() {
     var fontSize = 14.0
     var fontFamily: String? = null
     var clipboardPolicy = TerminalClipboardPolicy.WRITE_ONLY
+    var mimeClipboardPolicy = TerminalMimeClipboardPolicy.WRITE_ONLY
     var notificationAllowed = true
     var surface: BrowserTerminalView? = null
     val app = BrowserKineticaApp(checkNotNull(document.querySelector("#app")),
         hostWidgets = browserTerminalHosts(mapOf("demo" to session), rendering, renderObserver,
             TerminalClipboardPolicy { request, done -> clipboardPolicy.authorize(request, done) },
-            notificationPolicy = { notificationAllowed }, onView = { _, view -> surface = view }),
+            notificationPolicy = { notificationAllowed },
+            mimeClipboardPolicy = TerminalMimeClipboardPolicy { request, done -> mimeClipboardPolicy.authorize(request, done) },
+            onView = { _, view -> surface = view }),
     ) { terminal("demo", fontSize = fontSize, fontFamily = fontFamily,
         semantics = Semantics(label = "Kinetica terminal", testTag = "terminal", focusable = true)) }.also { it.render() }
     session.write("\u001b[1;36mKinetica — shared Kotlin terminal\u001b[0m\r\n")
@@ -84,6 +87,14 @@ fun main() {
             "write" -> TerminalClipboardPolicy.WRITE_ONLY
             "allow" -> TerminalClipboardPolicy.ALLOW
             else -> error("Unknown clipboard policy")
+        }
+    }
+    api.mimeClipboardPolicy = { mode: String ->
+        mimeClipboardPolicy = when (mode) {
+            "deny" -> TerminalMimeClipboardPolicy.DENY
+            "write" -> TerminalMimeClipboardPolicy.WRITE_ONLY
+            "allow" -> TerminalMimeClipboardPolicy.ALLOW
+            else -> error("Unknown MIME clipboard policy")
         }
     }
     api.setRenderObserver = { bridge: dynamic ->

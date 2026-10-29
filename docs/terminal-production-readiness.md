@@ -658,6 +658,25 @@ nine DSL/native-application tests. The combined Native clipboard/parser/stream r
 suite passes all 72 tests. Browser MIME access, secure password generation and
 mode-5522 paste events remain open.
 
+The browser surface now binds a MIME adapter through the same separate default-deny policy;
+the browser sample explicitly permits writes. It uses native ClipboardItem formats where
+supported and Web Custom Formats for other MIME types, preserving browser permission and
+sanitization requirements. Reads fetch only requested formats, list metadata without getType,
+and enforce an aggregate 8 MiB limit before copying Blob data. Writes prepare a single item
+and cap expanded representations at 64 MiB. Unsupported types reject the whole write. View
+disposal cancels deferred data fetches and late protocol delivery. The browser cannot cancel
+already submitted writes or clear the clipboard through the async API; clearing reports ENOSYS
+instead of treating write([]), which leaves existing data unchanged, as success.
+
+The dedicated headless Chromium verifier covers real plain text, HTML, PNG and binary custom
+formats through OSC 5522, exact read-response bytes, write/read ordering, policies, unsupported
+locations, lazy providers, aggregate bounds, a 4 MiB transaction expanded beyond 64 MiB through
+aliases, synchronous/asynchronous API failures, missing API and disposal while a read is pending.
+The fresh Release JS test suite, browser application build, dedicated MIME verifier and general
+WebGL/Canvas/input/OSC-52 browser verifier pass. The OSC-52 verifier now uses the bounded
+transport, which retains the remainder of ST terminators across asynchronous clipboard waits.
+Secure password generation and mode-5522 paste events remain open on both platforms.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
