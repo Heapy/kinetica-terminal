@@ -6,11 +6,12 @@ extern "c" fn write(c_int, [*]const u8, usize) isize;
 const Item = struct { mime: []const u8, hex: []const u8 = "", fill: u8 = 0, count: usize = 0 };
 const Step = struct {
     metadata: ?[]const u8 = null, payload: []const u8 = "", fill: u8 = 97, count: usize = 0,
+    wire: ?[]const u8 = null, tail: []const u8 = "",
     bel: bool = false, action: ?[]const u8 = null,
     x: u32 = 2, y: u32 = 1, X: i32 = 20, Y: i32 = 18, operations: u2 = 1,
     mimes: []const []const u8 = &.{}, items: []const Item = &.{},
 };
-const Case = struct { name: []const u8, events: []const Step };
+const Case = struct { name: []const u8, events: []const Step, wire: bool = false };
 const Run = struct { byte: u8, count: usize };
 const Meta = struct { kind: ?u8, more: bool, id: u32, op: u32, x: i32, y: i32, X: i32, Y: i32 };
 const SavedItem = struct { mime: []const u8, hex: []const u8 };
@@ -20,6 +21,16 @@ const State = struct {
     offered: ?[]const []const u8, items: ?[]const SavedItem,
 };
 const Snapshot = struct { parsed: ?Meta, event: ?[]const u8, replies: []const u8, state: ?State };
+var wire_writer: *std.Io.Writer = undefined;
+var wire_event: ?dnd.Event = null;
+fn writePty(_: *vt.TerminalStream.Handler, bytes: []const u8) void {
+    wire_writer.writeAll(bytes) catch @panic("write failed");
+}
+fn dragAndDrop(_: *vt.TerminalStream.Handler, event: dnd.Event) void {
+    // Corpus steps deliberately contain at most one state-changing command.
+    if (wire_event != null) @panic("multiple events in one checkpoint");
+    wire_event = event;
+}
 fn meta(value: dnd.Metadata) Meta {
     return .{ .kind = if (value.type) |t| @intFromEnum(t) else null, .more = value.more,
         .id = value.client_id, .op = value.operation, .x = value.cell_x, .y = value.cell_y, .X = value.pixel_x, .Y = value.pixel_y };
@@ -70,23 +81,34 @@ pub fn main(init: std.process.Init) !void {
     const alloc = arena.allocator();
     const input = try std.json.parseFromSlice([]const Case, alloc, @embedFile("cases.json"), .{});
     for (input.value) |case| {
-        var slot: ?*dnd.State = null;
-        defer if (slot) |s| s.destroy(init.gpa);
+        var terminal = try vt.Terminal.init(init.io, init.gpa, .{ .cols = 12, .rows = 6 });
+        defer terminal.deinit(init.gpa);
+        var stream = terminal.vtStream();
+        defer stream.deinit();
+        stream.handler.effects.write_pty = writePty;
+        stream.handler.effects.drag_and_drop = dragAndDrop;
+        const slot = &terminal.kitty_dnd;
         var snapshots: std.ArrayList(Snapshot) = .empty;
         for (case.events) |step| {
             var out: std.Io.Writer.Allocating = .init(alloc);
             var event: ?dnd.Event = null;
             var parsed: ?Meta = null;
-            if (step.metadata) |metadata| {
+            wire_writer = &out.writer; wire_event = null;
+            if (step.wire) |bytes| {
+                stream.nextSlice(try data(alloc, bytes, 0, 0));
+                if (step.count > 0) stream.nextSlice(try data(alloc, "", step.fill, step.count));
+                stream.nextSlice(try data(alloc, step.tail, 0, 0));
+                event = wire_event;
+            } else if (step.metadata) |metadata| {
                 if (dnd.Metadata.parse(metadata)) |value| parsed = meta(value);
-                event = try dnd.handleCommand(&slot, init.gpa, &out.writer, .{
+                event = try dnd.handleCommand(slot, init.gpa, &out.writer, .{
                     .metadata = metadata, .payload = try data(alloc, step.payload, step.fill, step.count),
                     .terminator = if (step.bel) .bel else .st,
                 });
             } else if (step.action) |action| {
-                if (std.mem.eql(u8, action, "reset")) { if (slot) |s| s.chunking = .{}; }
-                else if (std.mem.eql(u8, action, "dispose")) { if (slot) |s| s.destroy(init.gpa); slot = null; }
-                else if (slot) |s| {
+                if (std.mem.eql(u8, action, "reset")) { if (slot.*) |s| s.chunking = .{}; }
+                else if (std.mem.eql(u8, action, "dispose")) { if (slot.*) |s| s.destroy(init.gpa); slot.* = null; }
+                else if (slot.*) |s| {
                     const pos: dnd.MoveEvent = .{ .cell_x = step.x, .cell_y = step.y, .pixel_x = step.X, .pixel_y = step.Y,
                         .operations = @bitCast(step.operations) };
                     if (std.mem.eql(u8, action, "leave")) try s.dragLeave(init.gpa, &out.writer)
@@ -99,7 +121,7 @@ pub fn main(init: std.process.Init) !void {
                 }
             }
             try snapshots.append(alloc, .{ .parsed = parsed, .event = if (event) |ev| @tagName(ev) else null,
-                .replies = try hex(alloc, out.written()), .state = try snapshot(alloc, slot) });
+                .replies = try hex(alloc, out.written()), .state = try snapshot(alloc, slot.*) });
         }
         const json = try std.json.Stringify.valueAlloc(alloc, .{ .name = case.name, .snapshots = snapshots.items }, .{});
         if (write(1,json.ptr,json.len) != json.len or write(1,"\n",1) != 1) return error.WriteFailed;

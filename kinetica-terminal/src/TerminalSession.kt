@@ -274,6 +274,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         override fun apcStart() { if (graphicsState.storage.enabled) graphicsApc.start() else graphicsApc.reset() }
         override fun apcPut(code: Int) = graphicsApc.feed(code)
         override fun apcEnd(terminator: Int) { controlEpoch++; graphicsApc.end(terminator) }
+        override fun kittyDnd(bytes: ByteArray, length: Int, terminator: Int) {
+            controlEpoch++
+            var separator = 0
+            while (separator < length && bytes[separator] != ';'.code.toByte()) separator++
+            val metadata = bytes.decodeToString(0, separator)
+            val payload = if (separator < length) bytes.copyOfRange(separator + 1, length) else byteArrayOf()
+            acceptDndResult(kittyDnd.command(metadata, payload, terminator))
+        }
         override fun csi(final: Int, command: VtParser) {
             controlEpoch++
             params.fill(0)
@@ -345,9 +353,22 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private val clipboardReplies = TerminalClipboardReplies({ bytes, required, done -> emitProtocolReply(bytes, done, !required) },
         { cancelClipboardOperations() }, ::resumeClipboardOutput)
     private val capabilityReplies = TerminalReplyStream({ bytes, done -> emitProtocolReply(bytes, done, allowUntracked = true) }, ::resumeClipboardOutput)
+    internal val kittyDnd = TerminalKittyDnd()
+    private val dndObservers = mutableListOf<(TerminalDndEvent) -> Unit>()
+    private val dndReplies = TerminalReplyStream({ bytes, done -> emitProtocolReply(bytes, done, allowUntracked = true) }, ::resumeClipboardOutput)
+
+    internal fun onDnd(observer: (TerminalDndEvent) -> Unit): TerminalDisposable {
+        dndObservers.add(observer)
+        return TerminalDisposable { dndObservers.remove(observer) }
+    }
+
+    internal fun acceptDndResult(result: TerminalDndResult) {
+        dndReplies.offerBytes(result.packets)
+        result.event?.let { event -> dndObservers.toList().forEach { it(event) } }
+    }
 
     /** A complete command or reply is waiting for host/transport capacity. */
-    public val outputPaused: Boolean get() = capabilityReplies.busy || pendingClipboard != null || kittyClipboardBinding != null && clipboardReplies.busy
+    public val outputPaused: Boolean get() = capabilityReplies.busy || dndReplies.busy || pendingClipboard != null || kittyClipboardBinding != null && clipboardReplies.busy
 
     /** Schedule another [writeAvailable] attempt; callbacks must not reenter the current write. */
     public fun onOutputReady(observer: () -> Unit): TerminalDisposable {
@@ -603,7 +624,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         resumeClipboardOutput()
     }
 
-    internal fun cancelPendingReplies() { capabilityReplies.cancel(); cancelClipboardOperations() }
+    internal fun cancelPendingReplies() { capabilityReplies.cancel(); dndReplies.cancel(); cancelClipboardOperations() }
 
     public fun sendInput(text: String) = emitInput(TerminalInputData.Text(text))
     internal fun sendProtocolBytes(bytes: ByteArray) = emitInput(TerminalInputData.Bytes(bytes))
@@ -909,6 +930,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
 
     public fun reset() {
         capabilityReplies.cancel()
+        dndReplies.cancel(); kittyDnd.reset()
         statusLineSelected = false; checksumFlags = defaultChecksumFlags
         colors.resetPalette()
         cancelClipboardOperations(preserveWrite = true)

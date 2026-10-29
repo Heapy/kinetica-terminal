@@ -820,12 +820,33 @@ the pinned sources and helper hashes, including the shared fixture encoder:
 python3 scripts/generate-terminal-dnd.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig
 ```
 
-This increment does not yet dispatch OSC 72 from `TerminalSession`. Raw capture, bounded
-transport delivery, host negotiation and browser/AppKit drag callbacks remain required.
+The first core increment did not yet dispatch OSC 72 from `TerminalSession`.
 The existing shell-quoted file-path drop behavior is separate from this protocol.
 Validation passes all 1204 JVM tests, the fresh Release JS suite and all three focused
 macOS Native tests (including the complete 360-checkpoint oracle). Fixtures and provenance
 reproduce byte-for-byte. No platform drag interaction is claimed by these core checks.
+
+The next increment connects OSC 72 to `TerminalSession` through raw byte capture capped at
+eight MiB, excluding the prefix and without a terminating NUL reservation. C0 filtering,
+CAN/SUB cancellation, C1 payload bytes, fragmented commands and UTF-8 string feeds preserve
+the original parser's behavior. RIS clears only continuation metadata; registration and
+held drop data survive, as in Ghostty. `TerminalReplyStream` now accepts byte packets, so
+plain MIME bytes are not round-tripped through UTF-8. One delivery-tracked chunk of at most
+32 KiB is outstanding; parsing resumes after delivery, and cancellation discards unsent packets
+while allowing an already accepted chunk to finish.
+
+The DnD oracle now adds 28 wire cases / 76 checkpoints through the original `TerminalStream`
+and actual command effects, for 167 cases / 436 checkpoints total. Whole and fragmented
+feeds compare parser acceptance, state, events and exact responses, including the eight-MiB
+capture boundary and one-MiB MIME cap. Session tests cover a 256-KiB binary data response,
+stalled/partial writes, ordered following DnD and terminfo queries, connection disposal,
+reset during delivery and duplicate completion callbacks. The browser verifier exercises
+binary registration, RIS, exact replies, a stopped transport and seven-byte partial writes.
+Host negotiation and browser/AppKit drag callbacks remain open; these checks do not simulate
+an OS drag or claim that dropped files already use OSC 72.
+Validation passes all 1208 JVM tests, fresh Release JS tests, seven Native DnD tests and
+22 Native parser/title/terminfo/backpressure regressions. Both browser DnD and existing
+XTGETTCAP transport verifiers pass. The expanded fixtures and manifest reproduce byte-for-byte.
 
 Graphics acceptance work:
 

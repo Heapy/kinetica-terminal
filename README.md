@@ -83,6 +83,7 @@ node scripts/verify-terminal.mjs
 node scripts/verify-terminal-mime-clipboard.mjs
 node scripts/verify-terminal-terminfo.mjs
 node scripts/verify-terminal-title.mjs
+node scripts/verify-terminal-dnd.mjs
 node scripts/verify-terminal-window-resize.mjs
 node scripts/verify-terminal-graphics.mjs
 ```

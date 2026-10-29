@@ -8,10 +8,18 @@ class TerminalDndTest {
     @Test fun originalCommandStateAndResponsesMatchEveryCheckpoint() {
         for (encoded in terminalDndFixtures()) {
             val case = Json.parseToJsonElement(Base64.decode(encoded).decodeToString()).jsonObject
-            val core = TerminalKittyDnd()
+            val wire = case["wire"]?.jsonPrimitive?.boolean == true
+            for (feed in 0..if (wire) 1 else 0) {
+            val session = if (wire) TerminalSession(columns = 12, rows = 6) else null
+            val core = session?.kittyDnd ?: TerminalKittyDnd()
+            val replies = mutableListOf<ByteArray>()
+            val events = mutableListOf<TerminalDndEvent>()
+            session?.onInput { replies += it.toByteArray() }
+            session?.onDnd { events += it }
             val expected = case.getValue("snapshots").jsonArray
             case.getValue("events").jsonArray.forEachIndexed { index, value ->
                 val step = value.jsonObject
+                replies.clear(); events.clear()
                 fun int(key: String, default: Int) = step[key]?.jsonPrimitive?.int ?: default
                 fun bytes(obj: JsonObject, key: String, fill: Int): ByteArray {
                     val count = obj["count"]?.jsonPrimitive?.int ?: 0
@@ -19,7 +27,20 @@ class TerminalDndTest {
                     else (obj[key]?.jsonPrimitive?.content ?: "").hexToByteArray()
                 }
                 val metadata = step["metadata"]?.jsonPrimitive?.content
-                val result = if (metadata != null) core.command(metadata, bytes(step, "payload", 97),
+                var result = if (step["wire"] != null) {
+                    fun write(part: ByteArray) {
+                        val size = if (feed == 0) part.size.coerceAtLeast(1) else if (part.size < 65536) 1 else 4093
+                        var offset = 0
+                        while (offset < part.size) {
+                            val length = minOf(size, part.size - offset)
+                            session!!.write(part, offset, length); offset += length
+                        }
+                    }
+                    write(step.getValue("wire").jsonPrimitive.content.hexToByteArray())
+                    write(ByteArray(int("count", 0)) { int("fill", 97).toByte() })
+                    write((step["tail"]?.jsonPrimitive?.content ?: "").hexToByteArray())
+                    TerminalDndResult()
+                } else if (metadata != null) core.command(metadata, bytes(step, "payload", 97),
                     if (step["bel"]?.jsonPrimitive?.boolean == true) 7 else 27)
                 else {
                     val position = TerminalDndPosition(step["x"]?.jsonPrimitive?.long ?: 2,
@@ -36,13 +57,19 @@ class TerminalDndTest {
                         else -> error("Unknown event")
                     }
                 }
+                if (session != null) {
+                    if (step["wire"] == null) session.acceptDndResult(result)
+                    assertTrue(events.size <= 1)
+                    result = TerminalDndResult(events.singleOrNull(), replies.asSequence())
+                }
                 val actual = buildJsonObject {
                     put("parsed", metadata?.let { meta(TerminalDndMetadata.parse(it)) } ?: JsonNull)
                     put("event", result.event?.name?.lowercase()?.let(::JsonPrimitive) ?: JsonNull)
                     put("replies", result.packets.joinToString("") { it.toHexString() })
                     put("state", snapshot(core.state))
                 }
-                assertEquals(expected[index], actual, "${case["name"]} step $index")
+                assertEquals(expected[index], actual, "${case["name"]} step $index feed $feed")
+            }
             }
         }
     }

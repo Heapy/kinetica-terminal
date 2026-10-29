@@ -494,6 +494,15 @@ state. The libghostty handler then retains the first 1024 bytes, even if the cut
 character. `session.title` uses replacement text for display, while reports preserve those
 exact bytes. `node scripts/verify-terminal-title.mjs` checks actual browser transport replies.
 
+The session parses Kitty drag-and-drop commands (`OSC 72`), including registration,
+acceptance, support queries and data requests. Commands preserve raw bytes with an eight-MiB
+capture cap. Data replies use delivery-tracked chunks of at most 32 KiB, so asynchronous
+hosts must use `writeAvailable` or the bounded transport adapters. RIS preserves registration
+and held drop data while clearing incomplete command continuation, matching Ghostty.
+Browser/AppKit drag-event routing is still pending; ordinary file drops retain their existing
+shell-path paste behavior. `node scripts/verify-terminal-dnd.mjs` checks the browser session
+and transport, not OS drag handling.
+
 Color commands accept X11 names, `rgb:`/`rgbi:`, and 3/6/9/12-digit `#` forms, plus bare
 3/6-digit hex. Queries preserve BEL versus ST and report 16-bit channels. Chained requests,
 partial malformed lists, and resets follow the pinned Ghostty behavior. Colors are shared by

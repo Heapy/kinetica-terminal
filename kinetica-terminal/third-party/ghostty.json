@@ -55,6 +55,7 @@
     "src/terminal/kitty/dnd_command.zig",
     "src/terminal/kitty/dnd_drop.zig",
     "src/terminal/kitty/dnd_response.zig",
+    "src/terminal/osc/parsers/kitty_dnd_protocol.zig",
     "src/terminal/paste.zig",
     "src/terminal/xt_checksum.zig",
     "src/terminal/device_status.zig",

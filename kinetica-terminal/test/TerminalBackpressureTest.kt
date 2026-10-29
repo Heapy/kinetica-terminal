@@ -21,7 +21,8 @@ class TerminalBackpressureTest {
             "\u001b[5n", "\u001b[?6n", "\u001b[6n", "\u001b[?998n", "\u001b[?2033h", "\u001b[?65535\$p",
             "\u001b[65535\$p", "\u001bP\$q q\u001b\\", "\u001bP\$qm\u001b\\", "\u001bP\$qr\u001b\\",
             "\u001bP\$qx\u001b\\", "\u001b]10;?;?;?\u0007", "\u001b[19t",
-            "\u001b[*y", "\u001b[65535*y", "\u001b]7501;?\u0007")
+            "\u001b[*y", "\u001b[65535*y", "\u001b]7501;?\u0007",
+            "\u001b]72;t=q:i=4294967295\u0007", "\u001b]72;t=r:x=-1:Y=-1\u0007", "\u001b]72;t=P:i=4294967295\u0007")
         for (command in commands) {
             val next = ("\u001b\\" + command.repeat(TERMINAL_READ_SLICE)).take(TERMINAL_READ_SLICE)
             session.reset()

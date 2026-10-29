@@ -1,18 +1,23 @@
 {
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
   "zig": "0.17.0",
-  "cases": 139,
-  "snapshots": 360,
-  "hostAdapter": "Calls unmodified dnd.handleCommand and State move/drop/leave methods. Reset clears chunking only, as Terminal.fullReset does. No OSC parser, platform drag or OS data access. MIME lists use lossless byte run-length snapshots.",
-  "helperSha256": "d940dd9ab1e51c877d1c4ca9f132541fd2b427e7e8743ddf14e67017cdaee0cd",
-  "generatorSha256": "899430071477fa2cfd2219132c287de0aa8f774641f6409adf7d6b9407005026",
-  "fixtureSha256": "6e896398f501fa093b452796eae99e43c2397066414f3c33dffa5e29e426c760",
+  "cases": 167,
+  "snapshots": 436,
+  "hostAdapter": "Calls unmodified dnd.handleCommand and State move/drop/leave methods. Reset clears chunking only, as Terminal.fullReset does. Wire cases use the original TerminalStream parser and effects, including RIS. Direct cases call the core methods. No platform drag or OS data access. MIME lists use lossless byte run-length snapshots.",
+  "helperSha256": "203c91c73e11c6ae8c4a798797f17e6d85449fbcffec81fbadce0c95545ab8ee",
+  "generatorSha256": "67bbb07e7234890f15342024bef2738587494a1a7440997576aacbbbb2ca8652",
+  "fixtureSha256": "00204f9137ab5e89f8e0607de80b42386a1992d82a9b02274668e964d1bf5d43",
   "commonGeneratorSha256": "122e259177060aedb144b285a0d8e7d8058e77578aae09e080728f8bc86d1d2d",
   "sources": {
     "src/terminal/kitty/dnd.zig": "b617d042779ff36a3a524ebbca7fe84a5d5d6f20e6938d234185ab3e0de74f40",
     "src/terminal/kitty/dnd_command.zig": "0a3f60923c1224c10530c1e9e02d23dc0a85c60f98f802182800af0a2c5576f3",
     "src/terminal/kitty/dnd_drop.zig": "b386849aaec29d0a73f54c2fdbe6b511417f751a32a6bfa0f489fd57e6e5e90a",
     "src/terminal/kitty/dnd_response.zig": "451b5378d91863999032c387740beccc20f27cdacb4f741fef005f546886cce7",
-    "src/terminal/Terminal.zig": "68b23d077e45ec680e158691409705bdfbf6d2fc45322cd30c7153265b8aad70"
+    "src/terminal/Terminal.zig": "68b23d077e45ec680e158691409705bdfbf6d2fc45322cd30c7153265b8aad70",
+    "src/terminal/Parser.zig": "92e0f0fe1939f2030c83a3d7e2f334d90fa6d5e4988760c4b465da54ef57c808",
+    "src/terminal/parse_table.zig": "832aa68e2ae6263f9f8fce3961f2a2863711947e46cc15184c98c12307a93d03",
+    "src/terminal/stream_terminal.zig": "1b58936b58f1b553e800fcd1390ed2c62f9ec600998c73ddabc71529131786fd",
+    "src/terminal/osc.zig": "87044bfbde4738eb134d5407d9674e74f5aaa6a8640d8da67f15a6e10e90e6a9",
+    "src/terminal/osc/parsers/kitty_dnd_protocol.zig": "9eec1e049e5e5f4cd828ff0cf45fba1c3f363248ed88f2442cadbaeb86029f74"
   }
 }

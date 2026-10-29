@@ -17,7 +17,7 @@ public sealed class TerminalInputData {
         override fun enqueueTo(buffer: TerminalInputBuffer): Boolean = buffer.tryAdd(bytes)
     }
 
-    /** Bounded clipboard reply, admitted atomically using the adapters' extra protocol budget. */
+    /** Bounded protocol reply, admitted atomically using the adapters' extra protocol budget. */
     public class ProtocolReply internal constructor(
         private val bytes: ByteArray,
         complete: ((Boolean) -> Unit)? = null,
