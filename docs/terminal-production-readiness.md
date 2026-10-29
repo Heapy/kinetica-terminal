@@ -799,6 +799,34 @@ Validation passes 1201 JVM tests, fresh Release JS tests, 58 Native title/parser
 the browser transport verifier. All affected text/graphics fixtures and manifests reproduce
 byte-for-byte. Title stacks (CSI 22/23 t) remain unimplemented in the original handlers too.
 
+Kitty drag-and-drop (`OSC 72`) now has an internal host-neutral command/state/response core.
+The original unmodified Ghostty modules generate 139 scenarios / 360 checkpoints, comparing
+decoded metadata, registration/acceptance bytes, chunk state, offered and retained drop data,
+events and exact reply bytes. Cases include unsigned/signed numeric boundaries, malformed
+metadata, BEL/ST, continuation metadata, one-MiB MIME-list limits, data packet boundaries,
+client IDs, drop replacement, conclusion and reset. The reset adapter only clears chunking,
+matching `Terminal.fullReset`; it does not claim to test the wire parser or a platform host.
+
+Host-supplied drop data is copied only after checking a configurable budget (16 MiB by
+default), with at most 16 representations. Offered MIME data is capped at one MiB and cached
+across unchanged pointer moves. Responses are lazy byte packets with at most 4096 payload
+bytes; outstanding packet sequences own their snapshot even after replacement or disposal.
+The host budget is an explicit embedding constraint beyond the original trusted-host API.
+Tests additionally check caller mutation, budget rejection without state changes, retained
+response ownership and reuse of unchanged MIME payloads. The generator and manifest record
+the pinned sources and helper hashes, including the shared fixture encoder:
+
+```sh
+python3 scripts/generate-terminal-dnd.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig
+```
+
+This increment does not yet dispatch OSC 72 from `TerminalSession`. Raw capture, bounded
+transport delivery, host negotiation and browser/AppKit drag callbacks remain required.
+The existing shell-quoted file-path drop behavior is separate from this protocol.
+Validation passes all 1204 JVM tests, the fresh Release JS suite and all three focused
+macOS Native tests (including the complete 360-checkpoint oracle). Fixtures and provenance
+reproduce byte-for-byte. No platform drag interaction is claimed by these core checks.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than

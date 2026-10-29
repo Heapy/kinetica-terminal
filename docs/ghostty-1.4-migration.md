@@ -81,6 +81,12 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Confirmed terminal behavior to implement or reconcile
 
+- [ ] Kitty drag-and-drop (`OSC 72`) end-to-end session and host integration. The internal
+      command/state/response core now matches 139 original-library scenarios / 360 checkpoints.
+      It handles registration, chunked acceptance, move/drop/leave, indexed data requests and
+      conclusion, including the original refusal of drag-out and remote data transfer.
+      Wire parsing, bounded transport delivery and browser/AppKit drag callbacks remain open;
+      the internal core alone does not enable OSC 72 in a terminal session.
 - [x] Title report (`CSI 21 t`) with explicit `configureTitleReporting` host opt-in,
       disabled by default and preserved across resets. Original-library cases also align
       OSC 0/2 validation and limits: 2047 captured bytes, valid UTF-8, then a 1024-byte
