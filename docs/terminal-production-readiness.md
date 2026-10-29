@@ -364,6 +364,21 @@ exact pause/resume through bounded input queues; the existing reply reserve rema
 Validation passes all 622 JVM tests, fresh Release JS tests, all 348 Native oracle scenarios and
 6 additional Native checksum-policy/backpressure tests.
 
+Visibility protocol mode 2033 now connects to browser and AppKit hosts, with a one-shot
+`CSI ?998n` query and `CSI ?999;1/2n` responses. Repeated enables report immediately;
+unchanged host visibility does not. RIS clears the subscription but preserves host state,
+while DECSTR preserves both. Disposable host bindings aggregate multiple surfaces without
+letting headless rendering viewports override them. Disposed bindings cannot revive a surface.
+
+The pinned original Zig parser/mode/encoder produces 11 cases / 92 checkpoints, replayed
+whole and bytewise; fixture and manifest generation reproduces byte-for-byte. The helper's
+explicit host adapter models changed visibility and subscription gating without inserting
+query bytes into incomplete sequences. All 625 JVM tests and fresh Release JS tests pass,
+as do 10 selected Native tests covering original fixtures, bounded replies, animation timing
+and real software/Metal window hiding, hidden ancestors, full occlusion, detach/reattach and
+disposal. Both browser verifiers pass; visibility coverage uses real CSS and DOM changes plus
+a synthetic document-visibility event, not an actual background-tab transition.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

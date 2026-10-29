@@ -77,6 +77,7 @@ public class AppKitTerminalView(
         TerminalDisposable { timer.invalidate() }
     })
     private var visibilityObservation: NSObjectProtocol? = null
+    private val visibilityBinding = session.attachVisibility(false)
     private var visibilityRefreshQueued = false
     private val resizeHoldObservation = session.onRenderHold { held ->
         if (!held && ready && !disposed) applyPendingGridSize()
@@ -165,6 +166,7 @@ public class AppKitTerminalView(
         val visible = owner != null && owner.visible && !owner.miniaturized &&
             owner.occlusionState and NSWindowOcclusionStateVisible != 0uL && !hiddenOrHasHiddenAncestor
         viewport.setVisible(visible)
+        visibilityBinding.setVisible(visible)
         return visible
     }
     override fun makeBackingLayer(): CALayer = gpu?.layer ?: super.makeBackingLayer()
@@ -623,6 +625,7 @@ public class AppKitTerminalView(
     override fun accessibilitySelectedText(): String? = viewport.selectedText()
     public fun dispose() { if (!disposed) {
         disposed = true; selecting = false; mouseReporter.reset()
+        visibilityBinding.dispose()
         visibilityObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; visibilityObservation = null
         mouseTrackingArea?.let { removeTrackingArea(it) }; mouseTrackingArea = null
         resizeHoldObservation.dispose(); pendingGridSize = null

@@ -4,9 +4,17 @@ Pinned C reference: Ghostty 1.4.0, `83fb95624b0439ee660c2679b43b38c8b63769cd`, f
 <https://github.com/ghostty-org/ghostty>. The MIT license is in
 `../../third-party/GHOSTTY-LICENSE`.
 
-The separate Zig animation and Unicode-placeholder corpora still use
-`4da7523faba68ccb4042ea20585817098a51c015` with Zig 0.16.0. Their manifests preserve
-that provenance until their helpers migrate; they are not presented as 1.4 evidence.
+The separate Zig animation, Unicode-placeholder and visibility corpora use the same
+1.4.0 revision with Zig 0.17.0. Their manifests preserve source and generator hashes.
+
+The [visibility corpus](visibility-manifest.json) contains 11 scenarios / 92 checkpoints
+for mode 2033, one-shot queries, repeat enables, mode save/restore, RIS/DECSTR, screen
+switches, synchronized output and malformed or incomplete sequences. The helper uses
+the original parser, mode state and response encoder. Its host adapter changes the
+original visibility flag and invokes the original reporting handler only when subscribed,
+mirroring `Termio.visibilityReport`; it does not inject query bytes into the parser.
+Kotlin replays each case whole and bytewise. Platform tests separately verify host events.
+Regenerate with `python3 scripts/generate-terminal-visibility.py /path/to/ghostty /path/to/zig`.
 
 The separate [graphics component corpus](graphics-manifest.json) is generated with
 `python3 scripts/generate-terminal-graphics-fixtures.py /path/to/ghostty`. Its 15 cases

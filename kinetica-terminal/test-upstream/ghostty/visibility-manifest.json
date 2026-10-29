@@ -1,0 +1,17 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
+  "cases": 11,
+  "snapshots": 92,
+  "hostAdapter": "Changed visibility sets Terminal.flags.visible and asks the original handler for a report only when mode 2033 is enabled, mirroring Termio.visibilityReport.",
+  "helperSha256": "36d1046d4a84c87c2fc0b9d8bc0c9b81ee700964b4ba764579e3fc704840ffa5",
+  "generatorSha256": "55355d3a5718714cd7513b65b620d4ce5de5ef8c3ea6a0f1bcf772ea4df9fb74",
+  "fixtureSha256": "2157dd2bb46181d6dc6219cfca373db602dfd13aa6fcc6d1dc60425006e7397a",
+  "sources": {
+    "src/terminal/Terminal.zig": "68b23d077e45ec680e158691409705bdfbf6d2fc45322cd30c7153265b8aad70",
+    "src/terminal/stream_terminal.zig": "1b58936b58f1b553e800fcd1390ed2c62f9ec600998c73ddabc71529131786fd",
+    "src/terminal/device_status.zig": "57605f5dc22687b1926654664475d3d05c74e0bff12bfe8a9cc955596e8fae92",
+    "src/terminal/modes.zig": "18e354f021d55aad6b6d00d0c475e72374ef3f6da2506e0fec68a7ebfd9888bb",
+    "src/termio/Termio.zig": "d893c89ff44cce41a6acfc4e4b9734edfa99f37335cd2ac80692c6cdc17a9440"
+  }
+}

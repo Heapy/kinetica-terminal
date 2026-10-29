@@ -128,15 +128,41 @@ try {
     assert.equal(await metric("uploads"), finiteUploads, `${renderer}: finite animation must stop redrawing`);
     await expectPixel(green, "finite playback parks on its final frame");
     await write(apc("a=a,i=1,s=3,v=1"));
+    await page.evaluate(() => { graphicsReplies.length = 0; });
+    await write("\x1b[?2033h");
+    const expectVisibility = async visible => {
+      await page.waitForFunction(visible => String.fromCharCode(...graphicsReplies).endsWith(`\x1b[?999;${visible ? 1 : 2}n`), visible);
+    };
+    await expectVisibility(true);
     for (const property of ["display", "visibility"]) {
       await page.evaluate(property => { document.querySelector("[data-terminal]").parentElement.style[property] = property === "display" ? "none" : "hidden"; }, property);
+      await expectVisibility(false);
       await painted();
       const hiddenUploads = await metric("uploads");
       await page.waitForTimeout(300);
       assert.equal(await metric("uploads"), hiddenUploads, `${renderer}: hidden ancestor (${property}) must pause playback`);
       await page.evaluate(property => { document.querySelector("[data-terminal]").parentElement.style[property] = ""; }, property);
       await page.waitForFunction(before => +document.querySelector("[data-terminal]").getAttribute("data-terminal-image-uploads") > before, hiddenUploads);
+      await expectVisibility(true);
     }
+    await page.evaluate(() => {
+      globalThis.detachedTerminal = document.querySelector("[data-terminal]");
+      globalThis.terminalParent = detachedTerminal.parentElement;
+      detachedTerminal.remove();
+    });
+    await expectVisibility(false);
+    await page.evaluate(() => { terminalParent.append(detachedTerminal); });
+    await expectVisibility(true);
+    await page.evaluate(() => {
+      Object.defineProperty(document,"visibilityState",{ configurable:true,value:"hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expectVisibility(false);
+    await page.evaluate(() => { delete document.visibilityState; document.dispatchEvent(new Event("visibilitychange")); });
+    await expectVisibility(true);
+    assert.equal(await page.evaluate(() => String.fromCharCode(...graphicsReplies)),
+      [1,2,1,2,1,2,1,2,1].map(value => `\x1b[?999;${value}n`).join(""), `${renderer}: visibility changes are reported once`);
+    await write("\x1b[?2033l");
     await write(apc("a=a,i=1,s=1"));
 
     await reset();

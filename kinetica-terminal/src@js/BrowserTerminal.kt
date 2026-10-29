@@ -61,6 +61,7 @@ public class BrowserTerminalView(
     private val resizeObserver: dynamic = newResizeObserver { resize() }
     private var intersecting = false
     private var graphicsVisible = false
+    private val visibilityBinding = session.attachVisibility(false)
     private val intersectionObserver: dynamic = newTerminalIntersectionObserver { value ->
         intersecting = value; updateVisibility()
     }
@@ -282,6 +283,7 @@ public class BrowserTerminalView(
             (root.clientWidth as Number).toInt() > 0 && (root.clientHeight as Number).toInt() > 0
         if (graphicsVisible == value) return
         graphicsVisible = value
+        visibilityBinding.setVisible(value)
         if (!value) { frame?.let { window.cancelAnimationFrame(it) }; frame = null }
         viewport.setVisible(value)
     }
@@ -412,6 +414,7 @@ public class BrowserTerminalView(
     public fun dispose() {
         if (disposed) return
         disposed = true; mouseReporter.reset(); cancelMouse(); viewport.dispose(); resizeObserver.disconnect()
+        visibilityBinding.dispose()
         intersectionObserver.disconnect(); visibilityObserver.disconnect()
         pointerObservation.dispose()
         progressPresentation.dispose()

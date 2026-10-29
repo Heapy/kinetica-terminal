@@ -435,6 +435,16 @@ infers light/dark from the background by default; hosts may pass an explicit
 `TerminalColorScheme` or call `configureColorScheme`. Notifications are sent only
 while subscribed, including during synchronized output, and RIS clears the subscription.
 
+Visibility queries (`CSI ? 998 n`) and mode 2033 report `CSI ? 999 ; 1 n` for a
+potentially visible terminal and `CSI ? 999 ; 2 n` for a hidden terminal. Every mode
+enable reports immediately; subsequent notifications require a visibility change.
+AppKit supplies window occlusion, attachment and ancestor visibility; browser views
+supply document, intersection, attachment and CSS visibility. Custom hosts use
+`attachVisibility(initiallyVisible)` and update/dispose the returned binding on the
+session thread. A shared session is visible if any attached host is visible. Unknown
+headless visibility starts true; disposing the last host makes it false. RIS clears
+the subscription while retaining host visibility, and DECSTR preserves both.
+
 In-band resize mode 2048 reports committed rows, columns and physical pixel dimensions
 on enable and resize. `resize(columns, rows, TerminalCellSize(width, height))` supplies
 per-cell pixels after display scaling; AppKit/browser views supply this automatically.

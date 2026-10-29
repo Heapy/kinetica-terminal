@@ -75,6 +75,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         private set
     public var colorSchemeReporting: Boolean = false
         private set
+    public var visibilityReporting: Boolean = false
+        private set
+    /** Unknown headless visibility defaults to true. Attached host surfaces supply actual state. */
+    public var potentiallyVisible: Boolean = true
+        private set
+    private val visibilitySources = mutableMapOf<Any,Boolean>()
     public var pointerShape: TerminalPointerShape = TerminalPointerShape.TEXT
         private set
     public var inBandResizeReporting: Boolean = false
@@ -413,6 +419,36 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private fun reportColorScheme() { sendInput("\u001b[?997;${colorScheme.report}n") }
 
     /**
+     * Register a host surface. A shared session is potentially visible if any registered
+     * surface is visible. Disposing the last surface marks it hidden; disposed handles are inert.
+     * Rendering-only/headless viewports do not register automatically.
+     */
+    public fun attachVisibility(initiallyVisible: Boolean): TerminalVisibilityBinding {
+        val token = Any()
+        visibilitySources[token] = initiallyVisible
+        refreshVisibility()
+        return object : TerminalVisibilityBinding {
+            override fun setVisible(visible: Boolean) {
+                if (token !in visibilitySources || visibilitySources[token] == visible) return
+                visibilitySources[token] = visible
+                refreshVisibility()
+            }
+            override fun dispose() {
+                if (visibilitySources.remove(token) != null) refreshVisibility()
+            }
+        }
+    }
+
+    private fun refreshVisibility() {
+        val visible = visibilitySources.values.any { it }
+        if (visible == potentiallyVisible) return
+        potentiallyVisible = visible
+        if (visibilityReporting) reportVisibility()
+    }
+
+    private fun reportVisibility() { sendInput("\u001b[?999;${if (potentiallyVisible) 1 else 2}n") }
+
+    /**
      * Opt in to DECRQCRA screen readback. Disabled by default, as in Ghostty: a program can
      * query individual cells to recover other programs' output. Also sets the current and
      * reset-default XTCHECKSUM bits: 1 positive, 2 omit attributes, 4 keep blanks, 8 count
@@ -639,7 +675,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         protectedCell = false; protectionMode = 0; primaryProtectionMode = 0; alternateProtectionMode = 0
         origin = false; wrap = true; pendingWrap = false; insertMode = false; graphics = false; g1Graphics = false; useG1 = false
         applicationCursor = false; bracketedPaste = false; focusReporting = false
-        colorSchemeReporting = false
+        colorSchemeReporting = false; visibilityReporting = false
         inBandResizeReporting = false
         leftRightMarginMode = false; left = 0; right = columns - 1
         applicationKeypad = false; keypadNumericOverride = true; alternateScroll = true
@@ -1135,6 +1171,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 5 -> if (!privateCsi) sendInput("\u001b[0n")
                 6 -> sendInput("\u001b[${if (privateCsi) "?" else ""}$positionRow;$positionColumn${if (privateCsi) ";1" else ""}R")
                 996 -> if (privateCsi) reportColorScheme()
+                998 -> if (privateCsi) reportVisibility()
             }
             't' -> if (parameterCount == 1) when (params[0]) {
                 14 -> reportSize(4)
@@ -1245,6 +1282,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             2026 -> setSynchronizedOutput(enabled)
             2027 -> graphemeClustering = enabled
             2031 -> colorSchemeReporting = enabled
+            2033 -> { visibilityReporting = enabled; if (enabled) reportVisibility() }
             2048 -> { inBandResizeReporting = enabled; if (enabled) reportSize() }
         }
     }
@@ -1299,6 +1337,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         2026 -> synchronizedOutput
         2027 -> graphemeClustering
         2031 -> colorSchemeReporting
+        2033 -> visibilityReporting
         2048 -> inBandResizeReporting
         else -> null
     }

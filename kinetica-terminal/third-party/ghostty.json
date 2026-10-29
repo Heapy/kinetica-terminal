@@ -46,7 +46,8 @@
     "src/renderer/image.zig",
     "src/terminal/kitty/graphics_animation.zig",
     "src/terminal/kitty/graphics_pixel.zig",
-    "src/terminal/xt_checksum.zig"
+    "src/terminal/xt_checksum.zig",
+    "src/terminal/device_status.zig"
   ],
   "adaptedTests": [
     "src/terminal/Parser.zig",
@@ -56,7 +57,8 @@
   "referenceSemantics": [
     "src/terminal/stream.zig",
     "src/terminal/sgr.zig",
-    "src/terminal/kitty/graphics_image.zig"
+    "src/terminal/kitty/graphics_image.zig",
+    "src/termio/Termio.zig"
   ],
   "zig": "0.17.0"
 }
