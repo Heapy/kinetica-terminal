@@ -282,6 +282,13 @@ Shift+PageUp/PageDown, and accessibility text are available.
   immutable protocol bytes. `toByteArray()` returns a fresh wire representation. Never decode
   legacy mouse reports as text and re-encode them. The provided stream/PTY adapters admit each
   event atomically to their bounded queues, checking oversized text before allocating UTF-8.
+- DEC reverse video (mode 5) swaps the effective default foreground and background for all
+  renderers. `TerminalViewport.theme` reflects the displayed colors, including retained frames;
+  `TerminalSession.theme` and OSC 10/11/21 replies keep the underlying color identities.
+  Explicit SGR colors, palette entries, cursor/selection colors and image RGB are unchanged.
+  SGR inverse applies after default resolution. Mode changes repaint existing rows and preserve
+  the old displayed theme during synchronized output. The mode supports query/save/restore,
+  survives DECSTR and screen changes, and resets on RIS.
 - DEC mode 1036 (enabled by default) controls the ESC prefix on legacy Alt text.
   Disabling it sends the host's text unchanged; enabling it preserves single-byte shifted
   punctuation and uses the unshifted layout scalar for Option-translated Unicode. Browser

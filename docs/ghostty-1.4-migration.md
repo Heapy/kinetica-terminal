@@ -130,8 +130,11 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       ANSI SRM (12), DEC slow-scroll (4), autorepeat (8) and Alt mode 1039 retain queryable
       state without invented runtime effects, matching the original's ignored behavior.
       These modes preserve state across DECSTR/screens; RIS restores defaults.
-- [ ] Close additional mode-table gaps: reverse video (5), DECCOLM/its gate (3/40),
-      and clipboard paste-event mode 5522.
+- [x] Reverse video (DEC 5), including mode query/save/restore, DECSTR/RIS and both screens.
+      Only effective rendering defaults swap; explicit colors, palette entries, cursor/selection
+      colors and OSC replies retain their identity. Viewport theme snapshots cover software,
+      Canvas/WebGL, AppKit/Metal, composition/clearing and synchronized output.
+- [ ] Close additional mode-table gaps: DECCOLM/its gate (3/40) and clipboard paste-event mode 5522.
       Validate their behavior and host integration before advertising mutable support.
 
 ## Graphics and external media

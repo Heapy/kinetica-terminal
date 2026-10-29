@@ -98,6 +98,28 @@ try {
   assert.equal(await page.locator("canvas").count(), 1);
   assert.equal(await page.locator("[data-terminal] *").count(), 5); // Includes the fixed progress overlay.
   const painted = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  const verifyReverseColors = async pixel => {
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?25l\x1b[0m\x1b[2J\x1b[H\x1b]10;#112233;#445566;#778899\x07\x1b[?5h"));
+    await painted();
+    assert.deepEqual(await pixel(), [17, 34, 51, 255]);
+    assert.equal(await page.locator("[data-terminal]").evaluate(el => getComputedStyle(el).backgroundColor), "rgb(17, 34, 51)");
+    await page.evaluate(() => kineticaTerminalDemo.write("█"));
+    await painted();
+    assert.deepEqual(await pixel(), [68, 85, 102, 255]);
+    await page.evaluate(() => kineticaTerminalDemo.write("\r\x1b[38;2;240;20;30m█"));
+    await painted();
+    assert.deepEqual(await pixel(), [240, 20, 30, 255], "Explicit glyph RGB is not reversed");
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[0m\x1b[2J\x1b[H\x1b[?2026h\x1b[?5l\x1b]11;#aabbcc\x07"));
+    await painted();
+    assert.deepEqual(await pixel(), [17, 34, 51, 255], "Held frame retains reversed defaults");
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?2026l"));
+    await painted();
+    assert.deepEqual(await pixel(), [170, 187, 204, 255]);
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?5h\x1b[2 q\x1b[?25h"));
+    await painted();
+    assert.deepEqual(await pixel(), [119, 136, 153, 255], "Cursor color keeps its identity");
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?25l\x1b[?5l\x1b]110\x07\x1b]111\x07\x1b]112\x07"));
+  };
   // Real GPU pixels, cache reuse, and bounded draw calls. Read while the drawing buffer is valid.
   await page.evaluate(() => {
     const gl = document.querySelector("canvas").getContext("webgl2");
@@ -193,6 +215,7 @@ try {
   await page.waitForFunction(() => terminalGpuPixel[0] === 30, null, { timeout: 2000 });
   await page.waitForFunction(() => terminalGpuPixel[0] === 238, null, { timeout: 2000 });
   await page.evaluate(() => kineticaTerminalDemo.fontSize(14));
+  await verifyReverseColors(() => page.evaluate(() => terminalGpuPixel));
   await page.evaluate(() => kineticaTerminalDemo.write("\u001b[2J\u001b[H\u001b[1;36mKinetica terminal\u001b[0m\r\nBrowser integration passed.\r\n世界 é 😀"));
   await painted();
   await page.screenshot({ path: process.env.TERMINAL_SCREENSHOT ?? "/private/tmp/kinetica-terminal-browser.png" });
@@ -222,6 +245,7 @@ try {
   await page.evaluate(() => kineticaTerminalDemo.write("\u001b[?2026l"));
   await painted();
   assert.deepEqual(await page.evaluate(() => [...document.querySelector("canvas").getContext("2d").getImageData(2, 2, 1, 1).data]), [13, 188, 121, 255]);
+  await verifyReverseColors(() => page.evaluate(() => [...document.querySelector("canvas").getContext("2d").getImageData(2, 2, 1, 1).data]));
   await page.evaluate(() => kineticaTerminalDemo.dispose());
   await page.addInitScript(() => {
     const getContext = HTMLCanvasElement.prototype.getContext;
@@ -545,5 +569,5 @@ try {
   assert.deepEqual(await readMouse(), []);
   await page.evaluate(() => kineticaTerminalDemo.dispose());
   assert.deepEqual(errors, []);
-  console.log("Browser terminal: WebGL/Canvas atomic frames, hold timeout, cursor shapes/blink, dynamic palette, glyph cache, context recovery, font resize, keypad/IME, Kitty and legacy Alt input, OSC 52 clipboard, notification permissions/routing, progress states/timeout, binary/UTF-8/urxvt/pixel mouse reports, subcell Retina motion, alternate-screen wheel scrolling, pointer capture/chords, history, and disposal passed");
+  console.log("Browser terminal: WebGL/Canvas atomic frames, hold timeout, cursor shapes/blink, dynamic palette and reverse video, glyph cache, context recovery, font resize, keypad/IME, Kitty and legacy Alt input, OSC 52 clipboard, notification permissions/routing, progress states/timeout, binary/UTF-8/urxvt/pixel mouse reports, subcell Retina motion, alternate-screen wheel scrolling, pointer capture/chords, history, and disposal passed");
 } finally { await browser.close(); }

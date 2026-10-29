@@ -513,8 +513,23 @@ for provenance; all their generated Kotlin snapshots stayed unchanged.
 
 Validation passes 933 JVM tests, fresh Release JS tests, 664 Native oracle/keyboard/AppKit tests
 and the browser integration verifier, including Alt-translated Unicode with a known layout.
-The remaining mode-table work is reverse video (5), DECCOLM and its gate (3/40), and clipboard
-paste events (5522). Their behavior and host integration remain required for full compatibility.
+Reverse video (DEC 5) now swaps effective default foreground/background at the viewport's
+render-theme boundary. Stored colors, OSC replies, palette values and explicit cell colors
+remain unchanged; SGR inverse still acts after default resolution. Cursor/selection colors
+retain their identities, and the block cursor's text uses the effective background. The shared
+boundary also covers surface clearing, composition overlays, image backgrounds and retained
+frames, so a mode change during synchronized output appears only when the frame is released.
+
+Ten original-library scenarios add 49 checkpoints with optional original RenderState colors
+(`O` in the C helper), alongside existing raw cell/OSC comparisons. The complete 655-case /
+3571-checkpoint corpus reproduces byte-for-byte. Shared graphics-helper provenance was
+regenerated with unchanged graphics snapshots. Validation passes 946 JVM tests, fresh Release
+JS tests, 698 Native oracle/color/presentation/selection/Metal tests, five native graphics pixel
+tests (software plus Metal at 1×/1.25×/2×), and the Canvas/WebGL browser verifier. These checks
+cover explicit RGB, default-color glyphs/backgrounds, cursor/selection, images and held frames.
+
+The remaining mode-table work is DECCOLM and its gate (3/40), and clipboard paste events (5522).
+Their behavior and host integration remain required for full compatibility.
 
 Graphics acceptance work:
 

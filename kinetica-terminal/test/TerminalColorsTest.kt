@@ -64,6 +64,77 @@ class TerminalColorsTest {
         assertTrue(text.filter { it.first in "nextlast" }.all { it.second == 0xabcdef })
     }
 
+    @Test fun reverseVideoSwapsOnlyDefaultsAndRepaintsBothSurfaces() {
+        val theme = TerminalTheme(foreground = 0x123456, background = 0x345678)
+        val session = TerminalSession(4, 2, theme = theme)
+        session.write("\u001b[?25lA\u001b[31mB\u001b[0;44mC\u001b[31mD\r\n\u001b[0;7;4mE")
+        val gpu = TerminalViewport(session, {})
+        val software = TerminalViewport(session, {})
+        val frame = TerminalGpuFrame()
+        val painter = ColorsPainter()
+        fun background(column: Int, row: Int = 0) = frame.rows[row].backgrounds.first {
+            column * 8.0 >= it.x && column * 8.0 < it.x + it.width
+        }.color
+        try {
+            frame.update(gpu, 8.0, 16.0); software.paint(painter, 8.0, 16.0)
+            val keys = frame.keys.toSet()
+            painter.text.clear(); painter.fills.clear()
+            session.write("\u001b[?5h")
+            assertEquals(0, gpu.firstDirtyRow); assertEquals(1, gpu.lastDirtyRow)
+            frame.update(gpu, 8.0, 16.0); software.paint(painter, 8.0, 16.0)
+            assertEquals(theme, session.theme, "OSC/configuration colors retain identity")
+            assertEquals(theme.copy(foreground = theme.background, background = theme.foreground), gpu.theme)
+            assertEquals(keys, frame.keys, "Changing defaults does not rerasterize glyph shapes")
+            assertEquals(listOf(theme.background, terminalPalette(1), theme.background, terminalPalette(1)), frame.rows[0].glyphs.map { it.color })
+            assertEquals(listOf(theme.foreground, theme.foreground, terminalPalette(4), terminalPalette(4)), (0..3).map { background(it) })
+            assertEquals(theme.foreground, frame.rows[1].glyphs.single().color, "SGR inverse acts after default resolution")
+            assertEquals(theme.background, background(0, 1))
+            assertEquals(theme.foreground, frame.rows[1].decorations.first().color)
+            assertEquals(listOf(theme.background, terminalPalette(1), theme.background, terminalPalette(1), theme.foreground),
+                painter.text.filter { it.first.trim().isNotEmpty() }.map { it.second })
+            session.write("\u001b[?5l")
+            frame.update(gpu, 8.0, 16.0)
+            assertEquals(theme.foreground, frame.rows[0].glyphs.first().color)
+        } finally { gpu.dispose(); software.dispose() }
+    }
+
+    @Test fun reverseVideoPreservesCursorSelectionAndExplicitUnderlineColors() {
+        val session = TerminalSession(4, 2)
+        val viewport = TerminalViewport(session, {})
+        val frame = TerminalGpuFrame()
+        try {
+            session.write("\u001b[4;58;2;1;2;3mAB\u001b[0m\u001b[2 q\u001b[H\u001b[?5h")
+            viewport.beginSelection(1, 0); viewport.endSelection(2, 0)
+            frame.update(viewport, 8.0, 16.0)
+            assertEquals(session.theme.cursor, frame.rows[0].backgrounds.first().color)
+            assertEquals(session.theme.foreground, frame.rows[0].glyphs.first().color, "Block text uses the effective background")
+            assertTrue(frame.rows[0].backgrounds.any { it.color == session.theme.selection })
+            assertTrue(frame.rows[0].decorations.all { it.color == 0x010203 })
+        } finally { viewport.dispose() }
+    }
+
+    @Test fun reverseVideoIsFrozenWithTheDisplayedThemeAcrossHolds() {
+        val session = TerminalSession(4, 2)
+        val viewport = TerminalViewport(session, {})
+        try {
+            val initial = session.theme
+            session.write("old\u001b[?5h\u001b[?2026h\u001b[?5l\u001b]10;#123456;#234567\u0007")
+            assertFalse(session.reverseColors)
+            assertEquals(initial.copy(foreground = initial.background, background = initial.foreground), viewport.theme)
+            viewport.markAll()
+            val painter = ColorsPainter()
+            viewport.paint(painter, 8.0, 16.0, force = true)
+            assertTrue(painter.text.any { it.first.contains("old") && it.second == initial.background })
+            session.write("\u001b[?2026l")
+            assertEquals(session.theme, viewport.theme)
+            session.write("\u001b[?2026h\u001b[?5h")
+            assertEquals(session.theme, viewport.theme)
+            session.flushSynchronizedOutput()
+            assertEquals(0x123456, viewport.theme.background)
+            assertEquals(0x234567, viewport.theme.foreground)
+        } finally { viewport.dispose() }
+    }
+
     private class ColorsPainter : TerminalPainter {
         val fills = mutableListOf<Int>()
         val text = mutableListOf<Pair<String, Int>>()

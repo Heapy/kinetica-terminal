@@ -368,3 +368,10 @@ queries, reset and screen lifecycle. The optional final `E` argument configures 
 encoder's macOS Option-as-Alt policy independently of consumed modifiers (`optionAsAlt` in
 fixtures, default 1). This matters for modifyOtherKeys and Kitty associated text; consumed Alt
 with Option-as-Alt disabled must be compared under the same host policy.
+
+Reverse-video scenarios enable `renderColors` (`O` in the C helper) to compare default
+foreground/background/cursor colors returned by the original RenderState, independently of
+stored terminal colors and OSC replies. Ten cases / 49 checkpoints cover palette and dynamic
+colors, SGR cells, query/save/restore, screens, resets, history/erasure and synchronized state.
+The original renderer state is updated immediately; retaining a displayed frame is host policy
+and is tested separately with actual CPU/GPU pixels and viewport snapshots.

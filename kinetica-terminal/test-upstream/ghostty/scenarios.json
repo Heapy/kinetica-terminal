@@ -137957,5 +137957,242 @@
         ]
       }
     ]
+  },
+  {
+    "name": "reverse_colors_defaults_queries",
+    "columns": 8,
+    "rows": 3,
+    "history": 10,
+    "renderColors": true,
+    "events": [
+      {
+        "write": "abc\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?5h\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?5h\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?5l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      }
+    ]
+  },
+  {
+    "name": "reverse_colors_dynamic_overrides",
+    "columns": 8,
+    "rows": 3,
+    "history": 10,
+    "renderColors": true,
+    "events": [
+      {
+        "write": "\u001b]10;#123456;#234567;#345678\u0007"
+      },
+      {
+        "write": "\u001b[?5h\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b]10;#abcdef\u0007\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b]11;#456789\u0007\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b]110\u0007\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b]111\u0007\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?5l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      }
+    ]
+  },
+  {
+    "name": "reverse_colors_palette_and_sgr",
+    "columns": 8,
+    "rows": 3,
+    "history": 10,
+    "renderColors": true,
+    "events": [
+      {
+        "write": "\u001b[?25lA\u001b[31mB\u001b[0;44mC\u001b[31mD\u001b[0;7mE\u001b[0;2mF\u001b[0;4;58;5;3mG"
+      },
+      {
+        "write": "\u001b[?5h\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b]4;1;#123456;3;#abcdef;4;#654321\u0007\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[0;38;2;1;2;3;48;2;4;5;6mH"
+      },
+      {
+        "write": "\u001b[?5l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      }
+    ]
+  },
+  {
+    "name": "reverse_colors_save_restore",
+    "columns": 8,
+    "rows": 3,
+    "history": 10,
+    "renderColors": true,
+    "events": [
+      {
+        "write": "\u001b[?5r\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?5h\u001b[?5s\u001b[?5l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?5r\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?5l\u001b[?5s\u001b[?5h\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?5r\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      }
+    ]
+  },
+  {
+    "name": "reverse_colors_screen_47",
+    "columns": 8,
+    "rows": 3,
+    "history": 10,
+    "renderColors": true,
+    "events": [
+      {
+        "write": "P\u001b[?5h"
+      },
+      {
+        "write": "\u001b[?47hA\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?5l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?47l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?47h\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      }
+    ]
+  },
+  {
+    "name": "reverse_colors_screen_1047",
+    "columns": 8,
+    "rows": 3,
+    "history": 10,
+    "renderColors": true,
+    "events": [
+      {
+        "write": "P\u001b[?5h"
+      },
+      {
+        "write": "\u001b[?1047hA\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?5l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?1047l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?1047h\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      }
+    ]
+  },
+  {
+    "name": "reverse_colors_screen_1049",
+    "columns": 8,
+    "rows": 3,
+    "history": 10,
+    "renderColors": true,
+    "events": [
+      {
+        "write": "P\u001b[?5h"
+      },
+      {
+        "write": "\u001b[?1049hA\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?5l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?1049l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?1049h\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      }
+    ]
+  },
+  {
+    "name": "reverse_colors_resets",
+    "columns": 8,
+    "rows": 3,
+    "history": 10,
+    "renderColors": true,
+    "events": [
+      {
+        "write": "\u001b[?5h\u001b]10;#123456;#234567;#345678\u0007ABC"
+      },
+      {
+        "write": "\u001b[!p\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001bc\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      }
+    ]
+  },
+  {
+    "name": "reverse_colors_synchronized_state",
+    "columns": 8,
+    "rows": 3,
+    "history": 10,
+    "renderColors": true,
+    "events": [
+      {
+        "write": "old\u001b[?2026h"
+      },
+      {
+        "write": "\u001b[?5h\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b]10;#123456;#234567\u0007\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?2026l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?2026h\u001b[?5l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[?2026l\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      }
+    ]
+  },
+  {
+    "name": "reverse_colors_history_erasure",
+    "columns": 8,
+    "rows": 3,
+    "history": 10,
+    "renderColors": true,
+    "events": [
+      {
+        "write": "one\r\ntwo\r\nthree\r\nfour"
+      },
+      {
+        "write": "\u001b[?5h\u001b[2J\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      },
+      {
+        "write": "\u001b[7mnew\u001b[0m"
+      },
+      {
+        "write": "\u001b[?5l\u001b[3J\u001b[?5$p\u001b]10;?;?;?\u0007\u001b]21;foreground=?;background=?;cursor=?\u001b\\"
+      }
+    ]
   }
 ]

@@ -119,6 +119,10 @@ internal fun checkGhostty(fixture: GhosttyFixture) {
             compare("pendingWrap", JsonPrimitive(session.cursorPendingWrap))
             compare("visible", JsonPrimitive(session.cursorVisible)); compare("alternate", JsonPrimitive(session.alternateScreen))
             compare("pointerShape", JsonPrimitive(session.pointerShape.ordinal))
+            if ("renderColors" in oracle) compare("renderColors", buildJsonArray {
+                val theme = session.renderTheme
+                add(theme.foreground); add(theme.background); add(theme.cursor)
+            })
             if ("effects" in oracle) compare("effects", JsonArray(effects))
             if ("cursorAtPrompt" in oracle) compare("cursorAtPrompt", JsonPrimitive(session.cursorAtPrompt))
             if ("workingDirectory" in oracle) {

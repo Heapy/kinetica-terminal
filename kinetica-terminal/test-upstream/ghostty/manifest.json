@@ -1,7 +1,7 @@
 {
   "repository": "https://github.com/ghostty-org/ghostty",
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
-  "helperSha256": "027a26a8a56debff009a866c2fd10ea13864dbb2b3378f393112fc31f2fda02a",
+  "helperSha256": "fdd1804176dea7a3ced9e83a9f51abeb3a785420b5657007b8082ad24311b9e5",
   "librarySha256": {
     "libghostty-vt.0.dylib": "07c717c64ce04854d638f2b30e89d024238222d2fb311577e57e6a58c16b6311",
     "libghostty-vt.a": "73e789c384616b5c2ea320b84eb13d38321281bda8a40a455281bda1fbbacc5f",
@@ -936,7 +936,17 @@
     "alt_modes_c0_fixterms_0": "38be08ddff3b7abdb161e0948a65af241cca1e896c169530c77fd876f69ecd23",
     "alt_modes_functional_table_0": "895fc7e37235ef7f0fdfe09f1b80fb1f900d7ef640d182a25476e11899c28944",
     "alt_modes_c0_fixterms_1": "38be08ddff3b7abdb161e0948a65af241cca1e896c169530c77fd876f69ecd23",
-    "alt_modes_functional_table_1": "895fc7e37235ef7f0fdfe09f1b80fb1f900d7ef640d182a25476e11899c28944"
+    "alt_modes_functional_table_1": "895fc7e37235ef7f0fdfe09f1b80fb1f900d7ef640d182a25476e11899c28944",
+    "reverse_colors_defaults_queries": "7e1f49f6167b60c745318f93ed47e0000fa783c55cda63a62cbee88bb5827c2a",
+    "reverse_colors_dynamic_overrides": "f4a1a47449e751bd37e1a5affb18289878c0b20a87212e8e1b11810212387811",
+    "reverse_colors_palette_and_sgr": "a02874bcb44360e89ff6e2c382666a50f79ce0c2b16079b899f64289a2c818c6",
+    "reverse_colors_save_restore": "ec0e4ace2c849f02a9f71fe2a4223030acaf6ccd01048b6787d134923273cf38",
+    "reverse_colors_screen_47": "e126a062073d7835b3a9cd876e4a4e5af0280c122c79317ffbc0c5f942e19fbd",
+    "reverse_colors_screen_1047": "14846179e235d9e193cc3a5f61f1ea4b4771b4b28a005f88195caf13eae5a91d",
+    "reverse_colors_screen_1049": "ed44fa1feaa324080cdc470ca372f1bdc383c216696589f18f37c2b3a69b70be",
+    "reverse_colors_resets": "60a2cad579a2703f06bb6646543ac113f8d6e848c9513cd89da0a67d9efae409",
+    "reverse_colors_synchronized_state": "7a233883cc21a39d1a95c979ea64e87edc0657e8f604831a2355bc9c1f62fae4",
+    "reverse_colors_history_erasure": "2fbf4306771ed8a573ac2691833c97505882975fb73095a969e90acf2aa95467"
   },
   "keyboardMatrixSha256": "6c01e3dd0dee327b115ef73db2d811a5a3bef14194045bd7f81b3c9bc4e9c90e",
   "modifyOtherKeysMatrixSha256": "218a6d9d284746fe45e95d10f4b791db3116a9f902dd9d05c43e5949fb2fe764",

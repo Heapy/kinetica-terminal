@@ -98,7 +98,8 @@ public class TerminalViewport internal constructor(
             }
         }
     }
-    public val theme: TerminalTheme get() = frozen?.theme ?: session.theme
+    /** Effective rendering defaults, including DEC 5 and any retained synchronized frame. */
+    public val theme: TerminalTheme get() = frozen?.theme ?: session.renderTheme
     public val columns: Int get() = frozen?.lines?.first()?.columns ?: session.columns
     public val rows: Int get() = frozen?.lines?.size ?: session.rows
     public val cursorColumn: Int get() = frozen?.cursorColumn ?: session.cursorColumn
@@ -197,7 +198,7 @@ public class TerminalViewport internal constructor(
         val selection = TerminalSelection({ first }, { first + lines.lastIndex }, { lines[it - first] }, { row ->
             val index = lines.indexOfFirst { it === row }; if (index < 0) -1 else first + index
         })
-        frozen = FrozenFrame(lines, first, session.theme, session.cursorColumn, session.cursorRow,
+        frozen = FrozenFrame(lines, first, session.renderTheme, session.cursorColumn, session.cursorRow,
             capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText,
             if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList())
         blinkTimer?.dispose(); blinkTimer = null
@@ -383,6 +384,7 @@ public class TerminalViewport internal constructor(
         val last = minOf(lastRow, if (force) rows - 1 else lastDirty)
         firstDirty = rows; lastDirty = -1
         val selection = selection()
+        val theme = theme
         for (y in first..last.coerceAtMost(rows - 1)) {
             (painter as? TerminalGlyphPainter)?.beginRow(y)
             val index = firstLine + y

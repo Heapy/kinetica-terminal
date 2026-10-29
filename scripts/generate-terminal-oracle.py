@@ -133,6 +133,8 @@ def main():
             commands.append("F")
         if case.get("workingDirectory"):
             commands.append("P")
+        if case.get("renderColors"):
+            commands.append("O")
         if case.get("semanticPrompts"):
             commands.append("H")
         for event in case["events"]:

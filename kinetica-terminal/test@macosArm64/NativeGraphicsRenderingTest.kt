@@ -77,6 +77,36 @@ class NativeGraphicsRenderingTest {
     private fun Surface.reset() { session.reset(); session.write("\u001b[?25l\u001b]11;#0a14c8\u0007") }
     private fun Surface.expect(color: List<Int>, message: String) = assertEquals(color, pixel(capture(), width), message)
 
+    @Test fun reverseVideoReachesSoftwareAndMetalPixelsWithoutRecoloringImages() {
+        NSApplication.sharedApplication()
+        val factories = listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })
+        for ((backend, factory) in factories.withIndex()) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    session.configureTheme(TerminalTheme(foreground = 0x112233, background = 0x445566))
+                    session.write("\u001b[?25l")
+                    expect(listOf(68, 85, 102, 255), "$backend: normal background")
+                    session.write("\u001b[?5h")
+                    expect(listOf(17, 34, 51, 255), "$backend: reversed default background")
+                    session.write("█")
+                    expect(listOf(68, 85, 102, 255), "$backend: reversed default foreground")
+                    session.write("\u001b[H\u001b[38;2;240;20;30m█\u001b[0m")
+                    expect(red, "$backend: explicit foreground")
+                    session.write("\u001b[H \u001b[H" + image(1, green, ",z=-2147483648"))
+                    expect(green, "$backend: image through a reversed default background")
+                    val before = capture()
+                    session.write("\u001b[?2026h\u001b[?5l\u001b]10;#aabbcc;#ddeeff\u0007")
+                    assertContentEquals(before, capture(), "$backend: held effective colors and images")
+                    session.write("\u001b[?2026l")
+                    expect(green, "$backend: image keeps its RGB after release")
+                    session.write(apc("a=d,d=A,q=2") + "\u001b[2J")
+                    expect(listOf(221, 238, 255, 255), "$backend: released defaults")
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
     @Test fun nativeImagePixelsRespectLayersCropAlphaHoldsAndScreenLifecycle() {
         NSApplication.sharedApplication()
         val factories = listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })

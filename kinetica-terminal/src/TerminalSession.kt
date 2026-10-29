@@ -75,6 +75,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     /** xterm numeric modifyOtherKeys mode, matching the pinned Ghostty's mode-2 support. */
     public var modifyOtherKeysMode: Int = 0
         private set
+    /** DEC 5 swaps rendering defaults only; stored colors and OSC replies retain their identity. */
+    public var reverseColors: Boolean = false
+        private set
     /** DEC mode 67: swap legacy Backspace and Ctrl+Backspace between DEL and BS. */
     public var backarrowKeyMode: Boolean = false
         private set
@@ -168,6 +171,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     internal val colors = TerminalColors(theme)
     /** Effective theme, including OSC overrides; configured defaults are restored by OSC 110–112. */
     public val theme: TerminalTheme get() = colors.theme
+    internal val renderTheme: TerminalTheme get() = theme.let {
+        if (reverseColors) it.copy(foreground = it.background, background = it.foreground) else it
+    }
     public fun paletteColor(index: Int): Int { require(index in 0..255); return colors.palette(index) }
     private val history: LineRing
     private val defaultGraphemeClustering = graphemeClustering
@@ -698,6 +704,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         previousCharacter = null
         savedModes.clear(); sideEffectModes.clear()
         modifyOtherKeysMode = 0
+        reverseColors = false
         backarrowKeyMode = false; altEscapePrefix = true; sendReceiveMode = true
         primaryKeyboard.reset(); alternateKeyboard.reset()
         primarySemantic.reset(); alternateSemantic.reset(); promptRedraw = TerminalPromptRedraw.ALL
@@ -1358,6 +1365,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 for (line in screen) { line.clear(0, columns, -1, -1, 0); line.wrapped = false; line.wrapContinuation = false }
                 damageAll()
             }
+            5 -> { if (reverseColors != enabled) { reverseColors = enabled; damageAll() } }
             6 -> { origin = enabled; position(1, 1) }
             69 -> { leftRightMarginMode = enabled; if (!enabled) { left = 0; right = columns - 1 } }
             7 -> wrap = enabled
@@ -1429,6 +1437,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private fun privateModeState(number: Int): Boolean? = when (number) {
         3, 4, 8, 9, 47, 1000, 1002, 1003, 1005, 1015, 1016, 1039, 1047, 1048, 1049 -> sideEffectModes[number] ?: false
         1 -> applicationCursor
+        5 -> reverseColors
         6 -> origin
         7 -> wrap
         12 -> cursorBlink

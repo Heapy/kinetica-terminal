@@ -8,6 +8,7 @@
  * L action button mods x y pressed (pixel coordinates, retained motion state);
  * G image-storage-limit probe-image-ids... (decimal, at most 256 IDs);
  * J (include placement geometry and z-layer membership in graphics snapshots);
+ * O (include effective renderer default colors);
  * Q checksum-report-enabled default-extension (explicit host configuration);
  * S (snapshot); U (width ranges).
  * stdout: one JSON snapshot per S. Every API failure exits nonzero.
@@ -28,6 +29,7 @@ static bool clipboard_enabled;
 static bool effects_enabled;
 static bool pwd_enabled;
 static bool semantic_enabled;
+static bool render_colors_enabled;
 static bool graphics_enabled;
 static bool placements_enabled;
 static uint32_t graphics_ids[256];
@@ -329,6 +331,17 @@ static void snapshot(GhosttyTerminal terminal) {
     check(ghostty_render_state_new(NULL, &render_state));
     check(ghostty_render_state_update(render_state, terminal));
     check(ghostty_render_state_get(render_state, GHOSTTY_RENDER_STATE_DATA_CURSOR_VISUAL_STYLE, &cursor_style));
+    if (render_colors_enabled) {
+        // Close holds before adding optional renderer defaults, independent of stored OSC colors.
+        fputs("],\"renderColors\":[", stdout);
+        const GhosttyRenderStateData fields[] = {GHOSTTY_RENDER_STATE_DATA_COLOR_FOREGROUND,
+            GHOSTTY_RENDER_STATE_DATA_COLOR_BACKGROUND, GHOSTTY_RENDER_STATE_DATA_COLOR_CURSOR};
+        for (size_t i = 0; i < 3; i++) {
+            GhosttyColorRgb color;
+            check(ghostty_render_state_get(render_state, fields[i], &color));
+            printf("%s%u", i ? "," : "", packed(color));
+        }
+    }
     ghostty_render_state_free(render_state);
     printf("],\"cursorStyle\":%d,\"colors\":[", cursor_style);
     const GhosttyTerminalData color_fields[] = {GHOSTTY_TERMINAL_DATA_COLOR_FOREGROUND,
@@ -604,7 +617,7 @@ int main(void) {
             clipboard_enabled = false;
             effects_enabled = false; effects_len = 0;
             pwd_enabled = false; pwd_events_len = 0;
-            semantic_enabled = false;
+            semantic_enabled = false; render_colors_enabled = false;
             graphics_enabled = false; graphics_ids_len = 0;
             placements_enabled = false;
             for (size_t i = 0; i < clipboard_events_len; i++) free(clipboard_events[i].data);
@@ -638,6 +651,7 @@ int main(void) {
             check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_KITTY_IMAGE_STORAGE_LIMIT, &limit));
         }
         else if (line[0] == 'H') semantic_enabled = true;
+        else if (line[0] == 'O') render_colors_enabled = true;
         else if (line[0] == 'P') {
             pwd_enabled = true;
             check(ghostty_terminal_set(terminal, GHOSTTY_TERMINAL_OPT_PWD_CHANGED, (void *)pwd_changed));
