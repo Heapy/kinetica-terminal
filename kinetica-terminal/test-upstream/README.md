@@ -64,6 +64,11 @@ the same upstream golden expectations.
   Alacritty resets them. The adapter uses the original Ghostty grid for this recording,
   verifies identical archived input/dimensions/history, and compares every cell and wrap.
   Neither the Alacritty source fixture nor Ghostty's generated expectations are rewritten.
+- `saved_cursor` and `saved_cursor_alt`: Ghostty 1.4's DEC Special Graphics table preserves
+  underscore (`U+005F`); Alacritty maps it to space. Both exact archived recordings also run
+  through original Ghostty. Their replay adapter verifies identical bytes/dimensions/history
+  and compares the complete original-Ghostty grid, including every cell and wrap. The
+  Alacritty recordings and expected grids remain unchanged.
 
 Passing this corpus includes the above documented policy comparison; it must not
 be described as byte-for-byte agreement with every Alacritty behavior.

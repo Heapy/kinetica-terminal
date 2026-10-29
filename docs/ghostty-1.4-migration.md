@@ -109,7 +109,11 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 - [x] Extend coverage for parameterless TBC and pending wrap with DECAWM disabled. Tab
       movement/clearing preserves pending wrap; TBC rejects extra parameters. CSI parameter
       counting follows the original parser, which does not append an empty trailing slot.
-- [ ] Implement and compare the remaining charset/single-shift behavior.
+- [x] G0–G3 charset designation (ASCII/British/DEC), SI/SO/LS2/LS3 and SS2/SS3, including
+      combining-character consumption, unknown designation handling, width before mapping,
+      saved cursors, screen switches and DECSTR/RIS. GR invocation is retained but does not
+      remap UTF-8 characters, as in the original. Seventy-one dedicated scenarios plus two
+      exact Alacritty replays cover the lifecycle and DEC underscore difference.
 - [x] Empty OSC 22 resets the pointer to text.
 - [ ] Compare mode reports, OSC 105 routing and modified Backspace input.
 

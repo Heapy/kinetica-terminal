@@ -10,6 +10,7 @@
     "src/terminal/Screen.zig",
     "src/terminal/PageList.zig",
     "src/terminal/Terminal.zig",
+    "src/terminal/charsets.zig",
     "src/unicode/grapheme.zig",
     "src/build/uucode_config.zig",
     "src/terminal/color.zig",

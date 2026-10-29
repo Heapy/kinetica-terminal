@@ -17,11 +17,14 @@ internal fun checkReplay(fixture: ReplayFixture) {
     val expected = Json.parseToJsonElement(Base64.decode(fixture.expected).decodeToString()).jsonObject
     // EL at pending wrap moves subsequent output to different rows in these two emulators.
     // DECALN also differs: Ghostty preserves foreground/background while Alacritty resets them.
+    // DEC special graphics preserves underscore in Ghostty, unlike these Alacritty save tests.
     // Use original Ghostty's complete grid for this named policy difference, after proving
     // that its scenario replays exactly the archived Alacritty recording and dimensions.
     val policy = when (fixture.name) {
         "erase_in_line" -> ghostty_alacritty_erase_in_line()
         "decaln_reset" -> ghostty_alacritty_decaln_reset()
+        "saved_cursor" -> ghostty_alacritty_saved_cursor()
+        "saved_cursor_alt" -> ghostty_alacritty_saved_cursor_alt()
         else -> null
     }
     val ghosttyLines = if (policy != null) {

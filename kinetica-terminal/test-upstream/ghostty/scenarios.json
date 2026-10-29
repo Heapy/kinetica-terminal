@@ -78064,5 +78064,1643 @@
         "write": "\u001b[1;Z"
       }
     ]
+  },
+  {
+    "name": "charset_g0_ascii",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(B"
+      },
+      {
+        "write": "\u000f"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g0_british",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A"
+      },
+      {
+        "write": "\u000f"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g0_dec",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(0"
+      },
+      {
+        "write": "\u000f"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g0_unknown_digit",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(0\u000fq"
+      },
+      {
+        "write": "\u001b(1"
+      },
+      {
+        "write": "#_q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g0_unknown_letter",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(0\u000fq"
+      },
+      {
+        "write": "\u001b(U"
+      },
+      {
+        "write": "#_q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g1_ascii",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b)B"
+      },
+      {
+        "write": "\u000e"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g1_british",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b)A"
+      },
+      {
+        "write": "\u000e"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g1_dec",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b)0"
+      },
+      {
+        "write": "\u000e"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g1_unknown_digit",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b)0\u000eq"
+      },
+      {
+        "write": "\u001b)1"
+      },
+      {
+        "write": "#_q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g1_unknown_letter",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b)0\u000eq"
+      },
+      {
+        "write": "\u001b)U"
+      },
+      {
+        "write": "#_q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g2_ascii",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*B"
+      },
+      {
+        "write": "\u001bn"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g2_british",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*A"
+      },
+      {
+        "write": "\u001bn"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g2_dec",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*0"
+      },
+      {
+        "write": "\u001bn"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g2_unknown_digit",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*0\u001bnq"
+      },
+      {
+        "write": "\u001b*1"
+      },
+      {
+        "write": "#_q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g2_unknown_letter",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*0\u001bnq"
+      },
+      {
+        "write": "\u001b*U"
+      },
+      {
+        "write": "#_q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g3_ascii",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b+B"
+      },
+      {
+        "write": "\u001bo"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g3_british",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b+A"
+      },
+      {
+        "write": "\u001bo"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g3_dec",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b+0"
+      },
+      {
+        "write": "\u001bo"
+      },
+      {
+        "write": "#_`abcdefghijklmnopqrstuvwxyz{|}~"
+      },
+      {
+        "write": "\u00e9\u00ff\u754c\ud83d\ude00"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g3_unknown_digit",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b+0\u001boq"
+      },
+      {
+        "write": "\u001b+1"
+      },
+      {
+        "write": "#_q"
+      }
+    ]
+  },
+  {
+    "name": "charset_g3_unknown_letter",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b+0\u001boq"
+      },
+      {
+        "write": "\u001b+U"
+      },
+      {
+        "write": "#_q"
+      }
+    ]
+  },
+  {
+    "name": "charset_invalid_designation_dash",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(0q"
+      },
+      {
+        "write": "\u001b-B"
+      },
+      {
+        "write": "q_#"
+      }
+    ]
+  },
+  {
+    "name": "charset_invalid_designation_dot",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(0q"
+      },
+      {
+        "write": "\u001b.B"
+      },
+      {
+        "write": "q_#"
+      }
+    ]
+  },
+  {
+    "name": "charset_invalid_designation_slash",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(0q"
+      },
+      {
+        "write": "\u001b/B"
+      },
+      {
+        "write": "q_#"
+      }
+    ]
+  },
+  {
+    "name": "charset_invalid_designation_percent",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(0q"
+      },
+      {
+        "write": "\u001b%B"
+      },
+      {
+        "write": "q_#"
+      }
+    ]
+  },
+  {
+    "name": "charset_invalid_designation_multiple",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(0q"
+      },
+      {
+        "write": "\u001b((B"
+      },
+      {
+        "write": "q_#"
+      }
+    ]
+  },
+  {
+    "name": "charset_locking_shifts",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b)0\u001b*B\u001b+A"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u000e#q"
+      },
+      {
+        "write": "\u001bn#q"
+      },
+      {
+        "write": "\u001bo#q"
+      },
+      {
+        "write": "\u000f#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ls1r_does_not_invoke_gl",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b)0\u001b*0\u001b+0"
+      },
+      {
+        "write": "\u001b~"
+      },
+      {
+        "write": "#q\u00e9\u00ff"
+      },
+      {
+        "write": "\u001bn#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ls2r_does_not_invoke_gl",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b)0\u001b*0\u001b+0"
+      },
+      {
+        "write": "\u001b}"
+      },
+      {
+        "write": "#q\u00e9\u00ff"
+      },
+      {
+        "write": "\u001bn#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ls3r_does_not_invoke_gl",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b)0\u001b*0\u001b+0"
+      },
+      {
+        "write": "\u001b|"
+      },
+      {
+        "write": "#q\u00e9\u00ff"
+      },
+      {
+        "write": "\u001bn#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss2_one_character",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*A\u001b+0"
+      },
+      {
+        "write": "\u001bN"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss2_c1_raw",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*A\u001b+0"
+      },
+      {
+        "bytes": "8e"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss2_combining_False",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027l\u001b*A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bN"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss2_wide_False",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027l\u001b*A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bN"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss2_non_ascii_False",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027l\u001b*A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bN"
+      },
+      {
+        "write": "\u00e9"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss2_orphan_combining_False",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027l\u001b*A"
+      },
+      {
+        "write": ""
+      },
+      {
+        "write": "\u001bN"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss2_combining_True",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027h\u001b*A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bN"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss2_wide_True",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027h\u001b*A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bN"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss2_non_ascii_True",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027h\u001b*A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bN"
+      },
+      {
+        "write": "\u00e9"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss2_orphan_combining_True",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027h\u001b*A"
+      },
+      {
+        "write": ""
+      },
+      {
+        "write": "\u001bN"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss3_one_character",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*A\u001b+0"
+      },
+      {
+        "write": "\u001bO"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss3_c1_raw",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*A\u001b+0"
+      },
+      {
+        "bytes": "8f"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss3_combining_False",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027l\u001b+A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bO"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss3_wide_False",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027l\u001b+A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bO"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss3_non_ascii_False",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027l\u001b+A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bO"
+      },
+      {
+        "write": "\u00e9"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss3_orphan_combining_False",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027l\u001b+A"
+      },
+      {
+        "write": ""
+      },
+      {
+        "write": "\u001bO"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss3_combining_True",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027h\u001b+A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bO"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss3_wide_True",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027h\u001b+A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bO"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss3_non_ascii_True",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027h\u001b+A"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001bO"
+      },
+      {
+        "write": "\u00e9"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_ss3_orphan_combining_True",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?2027h\u001b+A"
+      },
+      {
+        "write": ""
+      },
+      {
+        "write": "\u001bO"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_single_survives_controls",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*A\u001bN"
+      },
+      {
+        "write": "\t\r\u0007\u001b[31m\u001b]2;charset\u0007"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "#"
+      }
+    ]
+  },
+  {
+    "name": "charset_single_overrides_lock",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*A\u001b+0\u001bN"
+      },
+      {
+        "write": "\u001bo"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_single_last_request_wins",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*A\u001b+0\u001bN\u001bO"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001bO\u001bN"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_single_designation_after_request",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*0\u001bN"
+      },
+      {
+        "write": "\u001b*A"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_repeat_uses_unmapped_character",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A#"
+      },
+      {
+        "write": "\u001b(B\u001b[2b"
+      },
+      {
+        "write": "\u001b*A\u001bN\u001b[3b"
+      }
+    ]
+  },
+  {
+    "name": "charset_save_restore_dec",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b)0\u001b*A\u001b+0\u001bn\u001b|\u001bO"
+      },
+      {
+        "write": "\u001b7"
+      },
+      {
+        "write": "\u001b(B\u001b)B\u001b*B\u001b+B\u000f\u001bN##"
+      },
+      {
+        "write": "\u001b8"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u000e#q"
+      },
+      {
+        "write": "\u001bo#q"
+      },
+      {
+        "write": "\u001bn#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_restore_unsaved_dec",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b*0\u001bnabc"
+      },
+      {
+        "write": "\u001b8"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001bNq"
+      }
+    ]
+  },
+  {
+    "name": "charset_save_restore_ansi",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b)0\u001b*A\u001b+0\u001bn\u001b|\u001bO"
+      },
+      {
+        "write": "\u001b[s"
+      },
+      {
+        "write": "\u001b(B\u001b)B\u001b*B\u001b+B\u000f\u001bN##"
+      },
+      {
+        "write": "\u001b[u"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u000e#q"
+      },
+      {
+        "write": "\u001bo#q"
+      },
+      {
+        "write": "\u001bn#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_restore_unsaved_ansi",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b*0\u001bnabc"
+      },
+      {
+        "write": "\u001b[u"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001bNq"
+      }
+    ]
+  },
+  {
+    "name": "charset_save_restore_mode1048",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b)0\u001b*A\u001b+0\u001bn\u001b|\u001bO"
+      },
+      {
+        "write": "\u001b[?1048h"
+      },
+      {
+        "write": "\u001b(B\u001b)B\u001b*B\u001b+B\u000f\u001bN##"
+      },
+      {
+        "write": "\u001b[?1048l"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u000e#q"
+      },
+      {
+        "write": "\u001bo#q"
+      },
+      {
+        "write": "\u001bn#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_restore_unsaved_mode1048",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b*0\u001bnabc"
+      },
+      {
+        "write": "\u001b[?1048l"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001bNq"
+      }
+    ]
+  },
+  {
+    "name": "charset_screens_47",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b*0\u001bN"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001b)0\u000e"
+      },
+      {
+        "write": "\u001b[?47l"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001b[?47l"
+      }
+    ]
+  },
+  {
+    "name": "charset_screen_saved_slots_47",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b7"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b(0\u001b7"
+      },
+      {
+        "write": "\u001b(B"
+      },
+      {
+        "write": "\u001b[?47l"
+      },
+      {
+        "write": "\u001b8#q"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b8#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_screens_1047",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b*0\u001bN"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001b)0\u000e"
+      },
+      {
+        "write": "\u001b[?1047l"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001b[?1047l"
+      }
+    ]
+  },
+  {
+    "name": "charset_screen_saved_slots_1047",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b7"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b(0\u001b7"
+      },
+      {
+        "write": "\u001b(B"
+      },
+      {
+        "write": "\u001b[?1047l"
+      },
+      {
+        "write": "\u001b8#q"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b8#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_screens_1049",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b*0\u001bN"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001b)0\u000e"
+      },
+      {
+        "write": "\u001b[?1049l"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001b[?1049l"
+      }
+    ]
+  },
+  {
+    "name": "charset_screen_saved_slots_1049",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b7"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b(0\u001b7"
+      },
+      {
+        "write": "\u001b(B"
+      },
+      {
+        "write": "\u001b[?1049l"
+      },
+      {
+        "write": "\u001b8#q"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b8#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_reset_soft",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b)0\u001b*A\u001b+0\u001bo\u001bN\u001b7"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u000e#q"
+      },
+      {
+        "write": "\u001bn#q"
+      },
+      {
+        "write": "\u001bo#q"
+      },
+      {
+        "write": "\u001b8#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_reset_hard",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b)0\u001b*A\u001b+0\u001bo\u001bN\u001b7"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u000e#q"
+      },
+      {
+        "write": "\u001bn#q"
+      },
+      {
+        "write": "\u001bo#q"
+      },
+      {
+        "write": "\u001b8#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_soft_reset_unsaved_resize",
+    "columns": 20,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b(A\u001b[2;5H\u001b7"
+      },
+      {
+        "write": "\u001b[!p"
+      },
+      {
+        "resize": [
+          12,
+          5
+        ]
+      },
+      {
+        "write": "\u001b8#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_resize_preserves_pending_and_saved",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*A\u001bN\u001b7"
+      },
+      {
+        "resize": [
+          17,
+          5
+        ]
+      },
+      {
+        "write": "#q"
+      },
+      {
+        "write": "\u001b8#q"
+      }
+    ]
+  },
+  {
+    "name": "charset_status_display_preserves_single",
+    "columns": 40,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b*A\u001bN"
+      },
+      {
+        "write": "\u001b[1$}ignored"
+      },
+      {
+        "write": "\u001b[0$}"
+      },
+      {
+        "write": "#q"
+      }
+    ]
+  },
+  {
+    "name": "alacritty_saved_cursor",
+    "columns": 139,
+    "rows": 35,
+    "history": 0,
+    "events": [
+      {
+        "write": "[undeadleech@archhq saved_cursor]$ echo -e \"\\e7 \\e(0 test \\e8 xxx\"\r\n\u001b7 \u001b(0 test \u001b8 xxx\r\n[undeadleech@archhq saved_cursor]$ echo -e \"\\e[?1049h \\e(0 test \\e[?1049l xxx\"\r\n\u001b[?1049h \u001b(0 test \u001b[?1049l xxx\r\n[undeadleech@archhq saved_cursor]$ echo -e \"\\e7 \\e(0 \\e[?1049h test \\e[?1049l \\e8 xxx\"\r\n\u001b7 \u001b(0 \u001b[?1049h test \u001b[?1049l \u001b8 xxx\r\n[undeadleech@archhq saved_cursor]$ exit\r\nexit\r\n"
+      }
+    ],
+    "alacrittyRecording": {
+      "commit": "d692748d3f61253ebe9f5094320120d22f6a046f",
+      "path": "alacritty_terminal/tests/ref/saved_cursor/alacritty.recording",
+      "sha256": "d6787cd1f020e8f3b350993eb868a4e5711e95912eafcfa62ff61fe925a9bba8"
+    }
+  },
+  {
+    "name": "alacritty_saved_cursor_alt",
+    "columns": 139,
+    "rows": 35,
+    "history": 0,
+    "events": [
+      {
+        "write": "[undeadleech@archhq saved_cursor_alt]$ echo -e \"\\e(0\\e[10;$(tput cols)H \\e[?1049h\\e7 \\e[?1049l \\e(B\\e[H \\e[?1049h test\\e8xxx\"\r\n\u001b(0\u001b[10;139H \u001b[?1049h\u001b7 \u001b[?1049l \u001b(B\u001b[H \u001b[?1049h test\u001b8xxx\r\n[undeadleech@archhq saved_cursor_alt]$ exit\r\nexit\r\n"
+      }
+    ],
+    "alacrittyRecording": {
+      "commit": "d692748d3f61253ebe9f5094320120d22f6a046f",
+      "path": "alacritty_terminal/tests/ref/saved_cursor_alt/alacritty.recording",
+      "sha256": "3b77a1a5843d85156fc2f1e2288b3f3c3ca0efbb96c9a05ba09351f8bd3b842b"
+    }
   }
 ]

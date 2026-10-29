@@ -446,6 +446,25 @@ byte-for-byte. Validation passes all 745 JVM tests, fresh Release JS tests and a
 oracle scenarios. Charset designation
 and single-shift remain separate open work in the Ghostty 1.4 migration checklist.
 
+Charset handling now uses immutable G0–G3 state with ASCII, British and DEC Special Graphics
+designations, GL/GR invocation and a pending single-shift slot. SI/SO, LS2/LS3 and SS2/SS3
+follow the original. A single shift is consumed by the next printable codepoint even when
+it combines with an existing cell or has zero width; controls and ignored status-line text
+preserve it. Width/grapheme processing uses the unmapped codepoint. Unknown designations
+preserve the selected set, Unicode above 255 stays unmapped, and DEC underscore stays `_`.
+GR invocation is retained without remapping UTF-8 output, matching Ghostty's current scope.
+
+Saved cursors retain all charset state; normal screen switches copy it and 1049 exit restores
+the saved state. Restoring an unset slot now applies initial defaults/home. DECSTR invalidates
+the saved slot so resize cannot reflow a fabricated saved position. Both resets restore default
+charsets. Seventy-one original-library scenarios exercise these paths; two exact Alacritty
+recordings establish the documented underscore difference without modifying archived fixtures.
+
+The original corpus now contains 534 cases / 2961 checkpoints and regenerates byte-for-byte.
+Validation passes all 818 JVM tests, fresh Release JS tests, and 591 Native tests covering
+the original Ghostty corpus, Alacritty replays and parser regressions. This closes the charset
+migration item; clipboard transactions and the remaining protocol/resource audits stay open.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

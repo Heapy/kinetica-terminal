@@ -184,6 +184,15 @@ checked across tab clearing, SGR, reports and cursor controls; expectations come
 original parser/terminal, including the distinction between `0;g` and `;0g` and preservation
 of the current underline style for an incomplete `4:` group.
 
+The charset increment adds 71 dedicated scenarios and two exact archived Alacritty recordings
+(`saved_cursor`, `saved_cursor_alt`): 346 more checkpoints, for 534 cases / 2961 checkpoints
+in total. It exercises G0–G3 designations, SI/SO/locking shifts, SS2/SS3 (including raw C1),
+ASCII/British/DEC mappings and unmapped Unicode, ignored designations, combining characters
+with clustering on/off, shifts across control/status output, repetition, saved cursor slots,
+47/1047/1049, resets and resize. Single shift is consumed before width/grapheme processing;
+charset mapping happens afterward. The original DEC table preserves underscore; the two
+Alacritty replays document that difference without changing their archived source grids.
+
 The corpus includes 32 resize scenarios: soft/hard breaks, printed spaces versus empty
 cells, colored blanks, wide-cell padding and one-column grids, combining text, styles
 and links, scrollback, pending wrap, current/saved cursor pins, simultaneous height/width

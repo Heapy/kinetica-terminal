@@ -185,9 +185,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private var wrap = true
     private var pendingWrap = false
     private var insertMode = false
-    private var graphics = false
-    private var g1Graphics = false
-    private var useG1 = false
+    private var charset = TerminalCharsetState()
     private var previousCharacter: Int? = null
     private var statusLineSelected = false
     private var checksumReporting = false
@@ -700,7 +698,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         cursorStyle = defaultCursorStyle; primaryCursorStyle = defaultCursorStyle; cursorBlink = defaultCursorBlink
         top = 0; bottom = rows - 1; fg = -1; bg = -1; style = 0; attributes = null
         protectedCell = false; protectionMode = 0; primaryProtectionMode = 0; alternateProtectionMode = 0
-        origin = false; wrap = true; pendingWrap = false; insertMode = false; graphics = false; g1Graphics = false; useG1 = false
+        origin = false; wrap = true; pendingWrap = false; insertMode = false; charset = TerminalCharsetState()
         applicationCursor = false; bracketedPaste = false; focusReporting = false
         keyboardDisabled = false; reverseWrap = false; reverseWrapExtended = false
         colorSchemeReporting = false; visibilityReporting = false
@@ -728,9 +726,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         fg = -1; bg = -1; style = 0
         setAttributes(-1, attributes?.hyperlink)
         protectedCell = false; protectionMode = 0
-        graphics = false; g1Graphics = false; useG1 = false
+        charset = TerminalCharsetState()
         // An unset Ghostty saved cursor restores home/defaults; leave the live cursor intact.
-        saved = SavedCursor(valid = true)
+        saved = SavedCursor()
         modifyOtherKeysMode = 0
         cursorStyle = defaultCursorStyle; cursorBlink = defaultCursorBlink
         colors.resetPalette()
@@ -774,15 +772,22 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             9 -> tab(1)
             10, 11, 12 -> { lineFeed(); if (newlineMode) carriageReturn() }
             13 -> carriageReturn()
-            14 -> useG1 = true
-            15 -> useG1 = false
+            14 -> charset = charset.copy(gl = 1)
+            15 -> charset = charset.copy(gl = 0)
         }
     }
 
     private fun escapeSequence(final: Int, intermediates: Int) {
         when (intermediates) {
-            '('.code -> graphics = final == '0'.code
-            ')'.code -> g1Graphics = final == '0'.code
+            '('.code, ')'.code, '*'.code, '+'.code -> {
+                val set = when (final.toChar()) {
+                    'B' -> TerminalCharset.ASCII
+                    'A' -> TerminalCharset.BRITISH
+                    '0' -> TerminalCharset.DEC_SPECIAL
+                    else -> return
+                }
+                charset = charset.designate(intermediates - '('.code, set)
+            }
             '#'.code -> if (final == '8'.code) {
                 style = 0; setAttributes(-1, attributes?.hyperlink)
                 top = 0; bottom = rows - 1; left = 0; right = columns - 1; origin = false
@@ -800,6 +805,13 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 'E' -> { lineFeed(); carriageReturn() }
                 'M' -> reverseIndex()
                 'H' -> tabs[cursorColumn] = true
+                'N' -> charset = charset.copy(singleShift = 2)
+                'O' -> charset = charset.copy(singleShift = 3)
+                'n' -> charset = charset.copy(gl = 2)
+                'o' -> charset = charset.copy(gl = 3)
+                '~' -> charset = charset.copy(gr = 1)
+                '}' -> charset = charset.copy(gr = 2)
+                '|' -> charset = charset.copy(gr = 3)
                 'V' -> { protectedCell = true; protectionMode = PROTECTION_ISO }
                 'W' -> protectedCell = false
                 '=' -> applicationKeypad = true
@@ -900,9 +912,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
 
     private fun print(input: Int) {
         if (statusLineSelected) return
+        val activeCharset = charset.active
+        // Consume even for a combining/zero-width codepoint that never occupies a new cell.
+        if (charset.singleShift != null) charset = charset.copy(singleShift = null)
         val rightLimit = if (cursorColumn > right) columns else right + 1
-        val code = if ((if (useG1) g1Graphics else graphics) && input in 0x5f..0x7e)
-            if (input == 0x5f) 32 else DEC_GRAPHICS[input - 0x60].code else input
+        // Width and grapheme decisions precede legacy charset mapping in Ghostty.
+        val code = input
         if (code > 255 && graphemeClustering && cursorColumn > 0 && appendGrapheme(code)) return
         val width = terminalCharacterWidth(code)
         if (width == 0) {
@@ -937,7 +952,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         val line = screen[cursorRow]
         eraseWideAt(line, cursorColumn)
         if (width == 2) eraseWideAt(line, cursorColumn + 1)
-        line.put(cursorColumn, code, width, fg, bg, style, attributes, protectedCell, semantic.content)
+        line.put(cursorColumn, activeCharset.map(code), width, fg, bg, style, attributes, protectedCell, semantic.content)
         if (width == 2) line.put(cursorColumn + 1, 0, 0, fg, bg, style, attributes, protectedCell, semantic.content)
         damage(cursorRow)
         cursorColumn += width
@@ -1618,12 +1633,11 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         semanticPromptObservers.toList().forEach { it(command) }
     }
 
-    private fun saveCursor() = SavedCursor(cursorColumn, cursorRow, fg, bg, style, origin, pendingWrap, graphics, g1Graphics, useG1, attributes, protectedCell, valid = true)
+    private fun saveCursor() = SavedCursor(cursorColumn, cursorRow, fg, bg, style, origin, pendingWrap, charset, attributes, protectedCell, valid = true)
     private fun restoreCursor(value: SavedCursor) {
-        if (!value.valid) return
+        // An unset saved slot restores defaults; valid only controls resize/reflow tracking.
         cursorColumn = value.x.coerceIn(0, columns - 1); cursorRow = value.y.coerceIn(0, rows - 1)
-        fg = value.fg; bg = value.bg; style = value.style; origin = value.origin; pendingWrap = value.wrap; graphics = value.graphics
-        g1Graphics = value.g1Graphics; useG1 = value.useG1
+        fg = value.fg; bg = value.bg; style = value.style; origin = value.origin; pendingWrap = value.wrap; charset = value.charset
         protectedCell = value.protectedCell
         setAttributes(value.attributes?.underlineColor ?: -1, attributes?.hyperlink)
     }
@@ -1637,8 +1651,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private data class SavedCursor(val x: Int = 0, val y: Int = 0, val fg: Int = -1, val bg: Int = -1,
-        val style: Int = 0, val origin: Boolean = false, val wrap: Boolean = false, val graphics: Boolean = false,
-        val g1Graphics: Boolean = false, val useG1: Boolean = false, val attributes: CellAttributes? = null,
+        val style: Int = 0, val origin: Boolean = false, val wrap: Boolean = false, val charset: TerminalCharsetState = TerminalCharsetState(),
+        val attributes: CellAttributes? = null,
         val protectedCell: Boolean = false,
         val valid: Boolean = false)
 
@@ -1646,7 +1660,6 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         const val PRIMARY_DEVICE_ATTRIBUTES = "\u001b[?1;2c"
         const val PROTECTION_ISO = 1
         const val PROTECTION_DEC = 2
-        const val DEC_GRAPHICS = "◆▒␉␌␍␊°±␤␋┘┐┌└┼⎺⎻─⎼⎽├┤┴┬│≤≥π≠£·"
         fun validateSize(columns: Int, rows: Int) {
             require(columns in 1..4096 && rows in 1..4096 && columns.toLong() * rows <= 1_000_000) { "Invalid terminal dimensions: $columns x $rows" }
         }

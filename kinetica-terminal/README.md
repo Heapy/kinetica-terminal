@@ -385,6 +385,16 @@ DECSCA and ISO SPA/EPA protect cells; selective ED/EL and ordinary erasure follo
 Ghostty's distinction between DEC and ISO protection. Protection survives save/restore
 and reflow. Named differences from Alacritty are recorded in the upstream test adapter.
 
+Legacy charset state follows Ghostty 1.4: G0–G3 can designate ASCII, British (`#` → `£`)
+or DEC Special Graphics through `ESC (` / `)` / `*` / `+`. SI/SO and LS2/LS3 select GL;
+SS2/SS3 apply to exactly the next printable codepoint, including combining marks. Control
+sequences do not consume a pending single shift. GR invocation is retained but does not
+remap UTF-8 characters, matching Ghostty. Unknown designations leave the previous set intact.
+Mapping preserves codepoints above 255 and DEC underscore. Saved cursors retain the entire
+charset state, including pending single shift; screen switches copy the active charset and
+1049 exit restores its saved state. DECSTR/RIS restore default designations and invocation.
+Restoring an unset saved cursor selects the initial state and home position.
+
 DECSTR (`CSI ! p`) resets the active pen, margins, saved cursor, selected modes, cursor
 appearance, palette and checksum variant while retaining text, history, cursor position,
 tab stops, dynamic colors, hyperlinks, synchronized output and graphics. DECSASD (`CSI Ps $ }`)
