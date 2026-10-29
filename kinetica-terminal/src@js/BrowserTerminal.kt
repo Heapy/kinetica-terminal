@@ -59,6 +59,12 @@ public class BrowserTerminalView(
         TerminalDisposable { window.clearTimeout(timer) }
     })
     private val resizeObserver: dynamic = newResizeObserver { resize() }
+    private var intersecting = false
+    private var graphicsVisible = false
+    private val intersectionObserver: dynamic = newTerminalIntersectionObserver { value ->
+        intersecting = value; updateVisibility()
+    }
+    private val visibilityObserver: dynamic = newTerminalVisibilityObserver(root) { updateVisibility() }
     private val pointerObservation = session.onPointerShape { root.style.cursor = it.cssName }
     private val progressPresentation = TerminalProgressPresentation(session, TerminalScheduler { delay, action ->
         val timer = window.setTimeout({ action() }, delay)
@@ -67,6 +73,7 @@ public class BrowserTerminalView(
     private val clipboardBinding = session.attachClipboard(clipboard ?: BrowserTerminalClipboard(), clipboardPolicy)
 
     init {
+        viewport.setVisible(false)
         session.setGraphicsStorageLimit(graphicsStorageBytes)
         root.style.cssText = "position:relative;width:100%;height:100%;min-width:80px;min-height:40px;overflow:hidden;background:#1e1e1e;flex:1;user-select:none;touch-action:none;"
         root.style.cursor = session.pointerShape.cssName
@@ -223,7 +230,11 @@ public class BrowserTerminalView(
         // control submission/click. Raw listeners above own this entire subtree.
         for (type in listOf("click", "dblclick", "change", "keyup")) listen(root, type) { it.stopPropagation() }
         listen(window, "resize") { resize() }
+        listen(document, "visibilitychange") { updateVisibility() }
+        listen(document, "transitionend") { updateVisibility() }
         resizeObserver.observe(root)
+        intersectionObserver.observe(root)
+        visibilityObserver.observe(document.documentElement, js("({subtree:true,attributes:true,attributeFilter:['style','class','hidden']})"))
         schedule()
     }
 
@@ -243,6 +254,7 @@ public class BrowserTerminalView(
 
     private fun resize() {
         if (disposed) return
+        updateVisibility()
         val width = (root.clientWidth as Number).toDouble()
         val height = (root.clientHeight as Number).toDouble()
         if (width <= 0 || height <= 0) return
@@ -262,11 +274,26 @@ public class BrowserTerminalView(
         if (columns != session.columns || rows != session.rows || cellSize != session.cellSize) session.resize(columns, rows, cellSize)
     }
 
+    private fun updateVisibility() {
+        if (disposed) return
+        val cssVisibility = window.getComputedStyle(root).visibility as String
+        val value = intersecting && root.isConnected == true && document.visibilityState != "hidden" &&
+            cssVisibility != "hidden" && cssVisibility != "collapse" &&
+            (root.clientWidth as Number).toInt() > 0 && (root.clientHeight as Number).toInt() > 0
+        if (graphicsVisible == value) return
+        graphicsVisible = value
+        if (!value) { frame?.let { window.cancelAnimationFrame(it) }; frame = null }
+        viewport.setVisible(value)
+    }
+
     private fun schedule() {
         if (disposed || frame != null) return
+        updateVisibility()
+        if (!graphicsVisible || frame != null) return
         frame = window.requestAnimationFrame { _: Double ->
             frame = null
-            if (!disposed) {
+            updateVisibility()
+            if (!disposed && graphicsVisible) {
                 resize()
                 root.style.background = terminalCssColor(viewport.theme.background)
                 composition.style.background = terminalCssColor(viewport.theme.background)
@@ -385,6 +412,7 @@ public class BrowserTerminalView(
     public fun dispose() {
         if (disposed) return
         disposed = true; mouseReporter.reset(); cancelMouse(); viewport.dispose(); resizeObserver.disconnect()
+        intersectionObserver.disconnect(); visibilityObserver.disconnect()
         pointerObservation.dispose()
         progressPresentation.dispose()
         notificationObservation.dispose(); notifications?.dispose(); notifications = null
@@ -396,5 +424,9 @@ public class BrowserTerminalView(
 }
 
 private fun newResizeObserver(callback: () -> Unit): dynamic = js("new ResizeObserver(callback)")
+private fun newTerminalIntersectionObserver(callback: (Boolean) -> Unit): dynamic =
+    js("new IntersectionObserver(entries => callback(entries.some(entry => entry.isIntersecting)))")
+private fun newTerminalVisibilityObserver(root: dynamic, callback: () -> Unit): dynamic =
+    js("new MutationObserver(records => { if (records.some(record => record.target.contains(root))) callback(); })")
 
 private val mouseButtonMasks = listOf(1 to 0, 4 to 1, 2 to 2, 8 to 128, 16 to 129)

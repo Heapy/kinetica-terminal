@@ -51,7 +51,7 @@ For diagnostics, the browser host exposes `data-terminal-renderer`, `data-termin
 `renderingBackend` and `renderingFailure`. Kadingirra/Babylon are not dependencies of these
 graphics backends; the JVM target currently remains a headless engine, not a desktop surface.
 
-Canvas, WebGL, AppKit and Metal views render static Kitty graphics from direct RGB/RGBA, PNG and
+Canvas, WebGL, AppKit and Metal views render static and animated Kitty graphics from direct RGB/RGBA, PNG and
 zlib transmissions. Images follow source crops, placement scaling, three z layers, scrollback,
 relative placement anchors and screen switches. The lowest layer shows through default cell
 backgrounds; explicit backgrounds remain opaque. Synchronized output and resize holds retain
@@ -72,10 +72,18 @@ foreground colors and placement IDs from underline colors. Diacritics supply row
 ID bits; adjacent compatible cells inherit omitted coordinates. Virtual images preserve aspect
 ratio within their requested grid, follow ordinary text scrolling/reflow and always draw below
 text. Relative children use the minimum visible origin of their parent's placeholder cells.
-Animation and external file/shared-memory transmission are not implemented yet.
+Animation commands load, edit, compose, select and delete frames and control gaps, playback and
+loop counts. A one-shot timer requests the next render; that render advances playback on a
+shared monotonic clock. A stalled renderer does not spin timers or catch up by skipping frames.
+Hidden/detached views and render holds suspend playback; showing the view or releasing the hold
+resumes it. Finite, stopped and unplaced animations become idle. External file/shared-memory
+transmission is not implemented yet. The decoded-byte budget is not a total memory bound:
+RGB-to-RGBA animation conversion follows upstream admission semantics and can exceed it;
+transient copies and resources retained by submitted draws are separate from cache accounting.
 Run `node scripts/verify-terminal-graphics.mjs` against the built browser
 demo for actual Canvas/WebGL pixel, scroll, context-loss and resource-lifecycle checks.
-`NativeGraphicsRenderingTest` reads actual offscreen AppKit/Metal pixels, including fractional
+`NativeGraphicsTimingTest` exercises automatic playback and hide/show, detach and disposal in
+isolated AppKit/Metal windows. `NativeGraphicsRenderingTest` reads actual offscreen pixels, including fractional
 Metal scales, image orientation, crop/alpha/layers, synchronized frames and tile seams.
 
 Pass an optional `renderObserver: TerminalRenderObserver` to `BrowserTerminalView` or
@@ -258,8 +266,10 @@ Shift+PageUp/PageDown, and accessibility text are available.
   recovery and forced software redraws use the captured frame.
 - Custom renderers can subscribe to `onRenderHold` and call `flushSynchronizedOutput` on their
   deadline. Direct `TerminalViewport` embeddings should supply a `TerminalScheduler` whose
-  cancellable callbacks run on the owning thread. Without a scheduler, the caller drives hold
-  release and the cursor remains in its visible blink phase; no background thread is created.
+  cancellable callbacks run on the owning thread, and report host visibility through
+  `setVisible`. The scheduler also drives animation redraws. Without a scheduler, the caller
+  drives hold release and animation ticks, and the cursor remains in its visible blink phase;
+  no background thread is created.
 - `cursorStyle` and `cursorBlink` constructor arguments configure the appearance restored by
   DECSCUSR default/RIS. Defaults are a steady underline. Block, underline and bar cursors support
   mode 12 and DECRQSS cursor-style replies. Host blink timers run every 500 ms only while focused,

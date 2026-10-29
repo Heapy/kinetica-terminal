@@ -1,5 +1,11 @@
 package io.heapy.kinetica.terminal
 
+import kotlin.time.TimeSource
+
+// Views sharing a session must use the same epoch, including views mounted later.
+private val graphicsClockOrigin = TimeSource.Monotonic.markNow()
+private fun graphicsNowMillis(): Long = graphicsClockOrigin.elapsedNow().inWholeMilliseconds.coerceAtLeast(0)
+
 public enum class TerminalColorScheme(internal val report: Int) { DARK(1), LIGHT(2) }
 
 /** Per-cell physical pixels, after display scaling; zero means unknown. */
@@ -40,14 +46,58 @@ internal interface TerminalGlyphPainter : TerminalPainter {
 }
 
 /** Per-view damage, scrolling, and selection. Several surfaces may observe the same session. */
-public class TerminalViewport(
+public class TerminalViewport internal constructor(
     public val session: TerminalSession,
     private val invalidate: () -> Unit,
-    private val scheduler: TerminalScheduler? = null,
+    private val scheduler: TerminalScheduler?,
+    private val graphicsClock: () -> Long,
 ) {
+    public constructor(session: TerminalSession, invalidate: () -> Unit, scheduler: TerminalScheduler? = null) :
+        this(session, invalidate, scheduler, ::graphicsNowMillis)
+
     private var frozen: FrozenFrame? = null
-    internal fun graphicsFrame(): List<TerminalGraphicsFrameEntry> = if (disposed) emptyList() else frozen?.graphics
-        ?: session.graphicsState.captureFrame(scrollOffset, columns, rows, session.cellSize, ::visibleLine)
+    internal fun graphicsFrame(): List<TerminalGraphicsFrameEntry> {
+        if (disposed) return emptyList()
+        frozen?.let { return it.graphics }
+        advanceGraphicsFrame()
+        return if (disposed) emptyList() else frozen?.graphics
+            ?: session.graphicsState.captureFrame(scrollOffset, columns, rows, session.cellSize, ::visibleLine)
+    }
+    private var visible = true
+    private var advancingGraphics = false
+    private var graphicsTimer: TerminalDisposable? = null
+    private var graphicsWake: Any? = null
+
+    /** Hidden surfaces retain snapshots but do not advance animations or schedule redraws. */
+    public fun setVisible(visible: Boolean) {
+        if (disposed || this.visible == visible) return
+        this.visible = visible
+        cancelGraphicsTimer(); resetBlink()
+        if (visible) markAll()
+    }
+
+    private fun cancelGraphicsTimer() {
+        graphicsWake = null
+        graphicsTimer?.dispose(); graphicsTimer = null
+    }
+
+    private fun advanceGraphicsFrame() {
+        val scheduler = scheduler ?: return
+        if (!visible || advancingGraphics) return
+        cancelGraphicsTimer()
+        advancingGraphics = true
+        val delay = try { session.advanceGraphicsAnimations(graphicsClock()) } finally { advancingGraphics = false }
+        if (delay == null || disposed || !visible || frozen != null) return
+        val wake = Any(); graphicsWake = wake
+        graphicsTimer = scheduler.schedule(delay.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()) {
+            if (graphicsWake === wake && !disposed && visible && frozen == null) {
+                graphicsTimer = null; graphicsWake = null
+                // Advance only when a renderer builds the next frame. A busy/hidden GPU
+                // cannot spin timers or skip displayed frames while waiting for a drawable.
+                markAll()
+            }
+        }
+    }
     public val theme: TerminalTheme get() = frozen?.theme ?: session.theme
     public val columns: Int get() = frozen?.lines?.first()?.columns ?: session.columns
     public val rows: Int get() = frozen?.lines?.size ?: session.rows
@@ -83,6 +133,7 @@ public class TerminalViewport(
     private var dragTimer: TerminalDisposable? = null
     private var disposed = false
     private val observation = session.observe { change ->
+        if (!advancingGraphics) cancelGraphicsTimer()
         if (screenEpoch != session.screenEpoch) {
             scrollOffset = 0; scrollAnchor = null
         } else if (scrollOffset > 0) {
@@ -101,7 +152,10 @@ public class TerminalViewport(
         if (liveSelection.range() == null && frozen == null) cancelSelectionDrag()
         resetBlink()
         if (change.full || scrollOffset > 0 || hadSelection) markAll()
-        else { firstDirty = minOf(firstDirty, change.firstRow); lastDirty = maxOf(lastDirty, change.lastRow); invalidate() }
+        else {
+            firstDirty = minOf(firstDirty, change.firstRow); lastDirty = maxOf(lastDirty, change.lastRow)
+            if (!advancingGraphics) invalidate()
+        }
         if (resizeHeld && !resizingSession && !session.synchronizedOutput) {
             resizeQuietTimer?.dispose()
             resizeQuietTimer = scheduler?.schedule(8) { releaseResizeFrame() }
@@ -130,6 +184,7 @@ public class TerminalViewport(
     }
 
     private fun captureFrame(capture: Boolean = true) {
+        cancelGraphicsTimer()
         cancelSelectionDrag()
         val colors = session.colors.snapshot()
         val first = session.historySize - scrollOffset
@@ -186,7 +241,7 @@ public class TerminalViewport(
     }
 
     private fun scheduleBlink() {
-        if (disposed || frozen != null || !focused || !session.cursorBlink || !session.cursorVisible || scrollOffset != 0) return
+        if (disposed || !visible || frozen != null || !focused || !session.cursorBlink || !session.cursorVisible || scrollOffset != 0) return
         blinkTimer = scheduler?.schedule(TERMINAL_CURSOR_BLINK_MILLIS) {
             blinkTimer = null; cursorOn = !cursorOn
             firstDirty = minOf(firstDirty, cursorRow); lastDirty = maxOf(lastDirty, cursorRow); invalidate()
@@ -200,12 +255,13 @@ public class TerminalViewport(
     public fun dispose() {
         if (!disposed) {
             disposed = true; observation.dispose(); holdObservation.dispose()
+            cancelGraphicsTimer()
             cancelResizeTimers(); resizeHeld = false
             cancelSelectionDrag(); liveSelection.clear(); frozen?.selection?.clear(); scrollAnchor = null
             blinkTimer?.dispose(); holdTimer?.dispose(); blinkTimer = null; holdTimer = null; frozen = null
         }
     }
-    public fun markAll() { firstDirty = 0; lastDirty = rows - 1; if (!disposed) invalidate() }
+    public fun markAll() { firstDirty = 0; lastDirty = rows - 1; if (!disposed && !advancingGraphics) invalidate() }
     public fun scroll(lines: Int) {
         if (disposed || frozen != null) return
         scrollOffset = (scrollOffset.toLong() + lines).coerceIn(0, session.historySize.toLong()).toInt()

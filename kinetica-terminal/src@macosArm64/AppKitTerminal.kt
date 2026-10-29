@@ -7,6 +7,7 @@ import platform.AppKit.*
 import platform.Foundation.*
 import platform.QuartzCore.*
 import platform.darwin.NSObject
+import platform.darwin.NSObjectProtocol
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
@@ -23,7 +24,7 @@ public class AppKitTerminalView(
     notificationPolicy: (TerminalNotification) -> Boolean = { false },
     notifications: TerminalNotificationDelivery? = null,
     graphicsStorageBytes: Int = 64 * 1024 * 1024,
-) : NSView(NSMakeRect(0.0, 0.0, 800.0, 480.0)), NSTextInputClientProtocol, CALayerDelegateProtocol {
+) : NSView(NSMakeRect(0.0, 0.0, 800.0, 480.0)), NSTextInputClientProtocol {
     private var fontSize = 14.0
     private var fontFamily: String? = null
     private var font = terminalNativeFont(fontFamily, fontSize)
@@ -75,10 +76,17 @@ public class AppKitTerminalView(
         NSRunLoop.mainRunLoop.addTimer(timer, NSRunLoopCommonModes)
         TerminalDisposable { timer.invalidate() }
     })
+    private var visibilityObservation: NSObjectProtocol? = null
+    private var visibilityRefreshQueued = false
     private val resizeHoldObservation = session.onRenderHold { held ->
         if (!held && ready && !disposed) applyPendingGridSize()
     }
     private var gpu: MetalTerminalDrawing? = null
+    // Keep the custom Metal display delegate off NSView itself. Overriding displayLayer:
+    // on the view also intercepts AppKit's software backing-layer display and skips drawRect.
+    private val metalDisplayDelegate = object : NSObject(), CALayerDelegateProtocol {
+        override fun displayLayer(layer: CALayer) { if (!disposed && gpu != null) updateLayer() }
+    }
     private val softwareImages = AppKitTerminalImages()
     private val softwareImageFrame = TerminalGpuFrame()
     private var softwareImagesVisible = false
@@ -94,6 +102,7 @@ public class AppKitTerminalView(
         private set
 
     init {
+        viewport.setVisible(false)
         session.setGraphicsStorageLimit(graphicsStorageBytes)
         setAccessibilityElement(true)
         setAccessibilityRole("AXTextArea")
@@ -109,7 +118,7 @@ public class AppKitTerminalView(
                 layerContentsPlacement = NSViewLayerContentsPlacementTopLeft
                 wantsLayer = true
                 layerContentsRedrawPolicy = NSViewLayerContentsRedrawDuringViewResize
-                layer!!.delegate = this
+                layer!!.delegate = metalDisplayDelegate
                 compositionLayer = CATextLayer().also { renderer.layer.addSublayer(it) }
             } catch (error: Exception) {
                 renderingFailure = error.message
@@ -125,8 +134,40 @@ public class AppKitTerminalView(
     }
 
     override fun isFlipped(): Boolean = true
+    override fun viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if (!ready || disposed) return
+        visibilityObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
+        visibilityObservation = window?.let { owner ->
+            NSNotificationCenter.defaultCenter.addObserverForName(NSWindowDidChangeOcclusionStateNotification,
+                owner, NSOperationQueue.mainQueue) { refreshVisibilityAfterTransition() }
+        }
+        refreshVisibilityAfterTransition()
+    }
+    override fun viewDidHide() { super.viewDidHide(); if (ready) refreshVisibilityAfterTransition() }
+    override fun viewDidUnhide() { super.viewDidUnhide(); if (ready) refreshVisibilityAfterTransition() }
+    private fun refreshVisibilityAfterTransition() {
+        if (!ready || disposed) return
+        updateVisibility()
+        if (visibilityRefreshQueued) return
+        visibilityRefreshQueued = true
+        // AppKit can reuse a cached backing surface while completing unhide/attachment.
+        // Recheck after that transition and request a fresh frame even if the cached view
+        // consumed the synchronous dirty mark before it became drawable.
+        NSOperationQueue.mainQueue.addOperationWithBlock {
+            visibilityRefreshQueued = false
+            if (updateVisibility()) viewport.markAll()
+        }
+    }
+    private fun updateVisibility(): Boolean {
+        if (!ready || disposed) return false
+        val owner = window
+        val visible = owner != null && owner.visible && !owner.miniaturized &&
+            owner.occlusionState and NSWindowOcclusionStateVisible != 0uL && !hiddenOrHasHiddenAncestor
+        viewport.setVisible(visible)
+        return visible
+    }
     override fun makeBackingLayer(): CALayer = gpu?.layer ?: super.makeBackingLayer()
-    override fun displayLayer(layer: CALayer) { if (!disposed && gpu != null) updateLayer() }
     override fun isOpaque(): Boolean = true
     override fun acceptsFirstResponder(): Boolean = true
     override fun resetCursorRects() {
@@ -210,6 +251,7 @@ public class AppKitTerminalView(
 
     private fun invalidateRows() {
         if (!ready || disposed) return
+        updateVisibility()
         onViewportChanged?.invoke()
         val first = viewport.firstDirtyRow
         val last = viewport.lastDirtyRow
@@ -220,6 +262,7 @@ public class AppKitTerminalView(
 
     override fun updateLayer() {
         if (disposed) return
+        updateVisibility()
         gpu?.let { renderer ->
             try {
                 // Metal is the view's backing layer, so there is no separate AppKit
@@ -251,6 +294,7 @@ public class AppKitTerminalView(
 
     override fun drawRect(dirtyRect: CValue<NSRect>) {
         if (disposed) return
+        updateVisibility()
         if (gpu != null) { updateLayer(); return }
         val measurement = renderProbe.begin(viewport, "appkit")
         color(viewport.theme.background).setFill(); NSRectFill(dirtyRect)
@@ -579,6 +623,7 @@ public class AppKitTerminalView(
     override fun accessibilitySelectedText(): String? = viewport.selectedText()
     public fun dispose() { if (!disposed) {
         disposed = true; selecting = false; mouseReporter.reset()
+        visibilityObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; visibilityObservation = null
         mouseTrackingArea?.let { removeTrackingArea(it) }; mouseTrackingArea = null
         resizeHoldObservation.dispose(); pendingGridSize = null
         pointerObservation.dispose()

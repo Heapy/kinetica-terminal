@@ -467,7 +467,7 @@ class MacOsRenderObserverTest {
 }
 
 /** Exercise AppKit's actual event loop rather than approximating its window/transaction handling. */
-private fun runWindowSteps(app: NSApplication, diagnostics: () -> String, steps: Sequence<Pair<String, () -> Boolean>>, stepTimeoutSeconds: Double = 10.0) {
+internal fun runWindowSteps(app: NSApplication, diagnostics: () -> String, steps: Sequence<Pair<String, () -> Boolean>>, stepTimeoutSeconds: Double = 10.0) {
     val iterator = steps.iterator()
     var step: Pair<String, () -> Boolean>? = null
     var deadline = 0.0

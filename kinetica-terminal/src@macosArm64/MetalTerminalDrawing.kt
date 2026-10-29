@@ -156,13 +156,13 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
             atlas.clear(); textures.clear(); attributes.clear()
             viewport.markAll(); resetAtlas = false
         }
+        val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, scale, viewport.columns, viewport.rows) }
         frame.update(viewport, cellWidth, cellHeight)
         measurement?.let { it.layout = it.checkpoint() }
         atlas.prepare(frame.keys, ::rasterize, { textures.clear() }, ::upload)
         // Bind a valid texture even to the untextured branch of the fragment shader.
         if (textures.isEmpty()) createTexture()
         measurement?.let { it.atlas = it.checkpoint() }
-        val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, scale, viewport.columns, viewport.rows) }
         batches.build(frame, atlas, scale, transparentDefaultBackground = images.isNotEmpty())
         measurement?.let { it.batch = it.checkpoint() }
         return images

@@ -271,13 +271,30 @@ ASan/UBSan; the linked original libghostty dylib is not instrumented in that che
 Automatic host timers/visibility remain open. Root RGB conversion retains Ghostty's admission
 semantics, which can exceed the nominal pixel-byte limit; the broader resource audit remains open.
 
+Automatic playback now uses a shared monotonic clock and one-shot viewport timers. A timer
+requests a redraw; advancement occurs when the renderer builds that frame, avoiding timer
+loops and catch-up while drawing is stalled. Hidden/detached/disposed hosts and synchronized
+or resize holds cancel animation wakeups. Visible hosts resume without additional PTY input.
+Browser hosts observe document/intersection visibility and ordinary root/ancestor visibility
+changes; AppKit hosts observe window occlusion, attachment and hide/unhide transitions.
+The native window regression also exposed a software backing-layer callback that suppressed
+`drawRect`; the custom display delegate now belongs only to the Metal layer.
+
+This checkpoint passes 541 JVM tests, the freshly built Release JS suite, both browser
+verifiers (Canvas/WebGL pixels, timed finite playback, hidden ancestors and existing input/
+rendering/lifecycle coverage), and 96 selected Native graphics, GPU, presentation and render
+observer tests. The native timer test uses actual isolated software/Metal windows and checks
+hide/show, ordering out, detach/reattach and disposal. Deterministic common tests cover stale
+callbacks, stalled rendering, finite loops, loading state, holds and shared-session views.
+External media and the broader storage/frame-wide resource audit remain open.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
 - [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
 - [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.
 - [x] Unicode placeholders, run inheritance, aspect fitting and virtual-parent rendering.
-- [ ] Animation frames/composition/timing.
+- [x] Animation frames/composition/timing.
 - [ ] Explicit host policy for file, temporary-file and shared-memory transmission media.
 - [ ] Browser Canvas/WebGL and AppKit/Metal images, cache disposal, context recovery and render holds.
 - [ ] Audit frame-wide resource bounds across distinct crop tiles: an LRU cache limit alone does not bound textures retained by already queued draw commands.

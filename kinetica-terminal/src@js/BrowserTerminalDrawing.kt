@@ -236,11 +236,11 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         if (lost || disposed || width <= 0 || height <= 0) return
         val measurement = probe.begin(viewport, name)
         if (repaint) { viewport.markAll(); repaint = false }
+        val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, ratio, viewport.columns, viewport.rows) }
         frame.update(viewport, cellWidth, cellHeight)
         measurement?.let { it.layout = it.checkpoint() }
         atlas.prepare(frame.keys, ::rasterize, ::resetTextures, ::upload)
         measurement?.let { it.atlas = it.checkpoint() }
-        val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, ratio, viewport.columns, viewport.rows) }
         batches.build(frame, atlas, ratio, transparentDefaultBackground = images.isNotEmpty())
         measurement?.let { it.batch = it.checkpoint() }
         val query = measurement?.let { gpuTimer?.begin(it.id) }

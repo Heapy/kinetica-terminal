@@ -112,6 +112,33 @@ try {
     await expectPixel(blue, "deleting the final frame removes the image");
     assert.equal(await metric("bytes"), 0);
 
+    // Playback must redraw without any subsequent PTY bytes, then become idle at its loop limit.
+    await reset();
+    await write(image(1, red.slice(0, 3)));
+    await write(apc(`a=f,i=1,q=2,f=32,s=1,v=1,z=120;${Buffer.from(green).toString("base64")}`));
+    await write(apc("a=a,i=1,r=1,z=120,s=3,v=3"));
+    const waitPixel = expected => page.waitForFunction(({renderer, expected}) => {
+      const actual = renderer === "gpu" ? graphicsPixels.slice(8, 12) : [...graphicsCanvas.getContext("2d").getImageData(2, graphicsSampleRow, 1, 1).data];
+      return actual.every((value, i) => value === expected[i]);
+    }, {renderer, expected});
+    await waitPixel(green); await waitPixel(red); await waitPixel(green);
+    await page.waitForTimeout(180);
+    const finiteUploads = await metric("uploads");
+    await page.waitForTimeout(250);
+    assert.equal(await metric("uploads"), finiteUploads, `${renderer}: finite animation must stop redrawing`);
+    await expectPixel(green, "finite playback parks on its final frame");
+    await write(apc("a=a,i=1,s=3,v=1"));
+    for (const property of ["display", "visibility"]) {
+      await page.evaluate(property => { document.querySelector("[data-terminal]").parentElement.style[property] = property === "display" ? "none" : "hidden"; }, property);
+      await painted();
+      const hiddenUploads = await metric("uploads");
+      await page.waitForTimeout(300);
+      assert.equal(await metric("uploads"), hiddenUploads, `${renderer}: hidden ancestor (${property}) must pause playback`);
+      await page.evaluate(property => { document.querySelector("[data-terminal]").parentElement.style[property] = ""; }, property);
+      await page.waitForFunction(before => +document.querySelector("[data-terminal]").getAttribute("data-terminal-image-uploads") > before, hiddenUploads);
+    }
+    await write(apc("a=a,i=1,s=1"));
+
     await reset();
     await write(image(1, red.slice(0, 3)));
     await page.evaluate(() => kineticaTerminalDemo.write(`\x1b[${kineticaTerminalDemo.rows()};1H\n`));
