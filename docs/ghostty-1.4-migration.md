@@ -85,8 +85,11 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       zero/omitted dimensions, unsigned 16-bit limits and no automatic terminal resize.
       Twenty-three original-library cases cover payloads, rejected headers, cancellation,
       pending wrap, resets, alternate screens, synchronized output and an absent host.
-- [ ] Connect permitted XTWINOPS requests to browser layout and native window resizing,
-      with bounded scheduling, host policy, lifecycle cleanup and platform verification.
+- [x] Connect permitted XTWINOPS requests to browser layout and native window resizing,
+      with one deferred task, merged axes, policy rechecks and lifecycle cancellation.
+      AppKit accounts for UI chrome and screen/window limits; browser hosts receive CSS
+      extents and own container constraints. Both default to denial. Native Settings and
+      the browser demo provide explicit opt-ins, verified through real layouts and a test PTY.
 - [x] XTGETTCAP (`DCS +q`): all 272 static terminfo capabilities, dynamic TN from the host's
       actual TERM, malformed-key skipping, boolean/valued replies and DCS capture boundaries.
       The generated table and 309 original-handler cases include uppercase/lowercase hex,

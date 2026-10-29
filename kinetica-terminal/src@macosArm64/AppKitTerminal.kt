@@ -26,6 +26,7 @@ public class AppKitTerminalView(
     graphicsStorageBytes: Int = 64 * 1024 * 1024,
     mimeClipboardPolicy: TerminalMimeClipboardPolicy = TerminalMimeClipboardPolicy.DENY,
     mimeClipboard: TerminalMimeClipboard? = null,
+    windowResizePolicy: (TerminalWindowResizeRequest) -> Boolean = { false },
 ) : NSView(NSMakeRect(0.0, 0.0, 800.0, 480.0)), NSTextInputClientProtocol {
     private var fontSize = 14.0
     private var fontFamily: String? = null
@@ -88,6 +89,13 @@ public class AppKitTerminalView(
     private val sizeRefreshObservation = session.onSizeRefreshRequested {
         if (ready && !disposed) measure(force = true)
     }
+    private val windowResizeBinding = TerminalWindowResizeBinding(session, TerminalScheduler { delay, action ->
+        val timer = NSTimer.timerWithTimeInterval(delay / 1000.0, repeats = false) { action() }
+        NSRunLoop.mainRunLoop.addTimer(timer, NSRunLoopCommonModes)
+        TerminalDisposable { timer.invalidate() }
+    }, { if (ready && !disposed && !hiddenOrHasHiddenAncestor) window?.takeIf {
+        it.visible && !it.miniaturized && it.styleMask and NSWindowStyleMaskFullScreen == 0uL
+    } else null }, windowResizePolicy, ::resizeWindow)
     private var gpu: MetalTerminalDrawing? = null
     // Keep the custom Metal display delegate off NSView itself. Overriding displayLayer:
     // on the view also intercepts AppKit's software backing-layer display and skips drawRect.
@@ -144,6 +152,7 @@ public class AppKitTerminalView(
     override fun viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         if (!ready || disposed) return
+        windowResizeBinding.cancelPending()
         visibilityObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         visibilityObservation = window?.let { owner ->
             NSNotificationCenter.defaultCenter.addObserverForName(NSWindowDidChangeOcclusionStateNotification,
@@ -254,6 +263,32 @@ public class AppKitTerminalView(
         if (force || gridChanged || cellSize != session.cellSize) {
             if (!force && liveResizing && gridChanged) viewport.resizeSession(columns, rows, cellSize)
             else session.resize(columns, rows, cellSize)
+        }
+    }
+
+    private fun resizeWindow(request: TerminalWindowResizeRequest) {
+        val owner = window ?: return
+        val size = request.windowSize(session.columns, session.rows, cellWidth, cellHeight)
+        val available = owner.screen?.visibleFrame ?: return
+        val widthDelta = size.width?.let { it - bounds.useContents { this.size.width } } ?: 0.0
+        val heightDelta = size.height?.let { it - bounds.useContents { this.size.height } } ?: 0.0
+        val minWidth = owner.minSize.useContents { width }
+        val minHeight = owner.minSize.useContents { height }
+        val maxWidth = owner.maxSize.useContents { width }
+        val maxHeight = owner.maxSize.useContents { height }
+        owner.frame.useContents {
+            val oldWidth = this.size.width; val oldHeight = this.size.height
+            val oldX = origin.x; val oldTop = origin.y + oldHeight
+            available.useContents {
+                val width = if (size.width == null) oldWidth else (oldWidth + widthDelta)
+                    .coerceIn(minWidth.coerceAtMost(this.size.width), maxWidth.coerceAtMost(this.size.width))
+                val height = if (size.height == null) oldHeight else (oldHeight + heightDelta)
+                    .coerceIn(minHeight.coerceAtMost(this.size.height), maxHeight.coerceAtMost(this.size.height))
+                val x = if (size.width == null) oldX else oldX.coerceIn(origin.x, origin.x + (this.size.width - width).coerceAtLeast(0.0))
+                val y = if (size.height == null) oldTop - oldHeight else (oldTop - height)
+                    .coerceIn(origin.y, origin.y + (this.size.height - height).coerceAtLeast(0.0))
+                owner.setFrame(NSMakeRect(x, y, width, height), display = true)
+            }
         }
     }
 
@@ -651,6 +686,7 @@ public class AppKitTerminalView(
         mouseTrackingArea?.let { removeTrackingArea(it) }; mouseTrackingArea = null
         resizeHoldObservation.dispose(); pendingGridSize = null
         sizeRefreshObservation.dispose()
+        windowResizeBinding.dispose()
         pointerObservation.dispose()
         progressIndicator.dispose()
         notificationObservation.dispose(); notifications?.dispose(); notifications = null

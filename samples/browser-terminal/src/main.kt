@@ -33,11 +33,22 @@ fun main() {
     var clipboardPolicy = TerminalClipboardPolicy.WRITE_ONLY
     var mimeClipboardPolicy = TerminalMimeClipboardPolicy.WRITE_AND_PASTE
     var notificationAllowed = true
+    var windowResizeAllowed = false
     var surface: BrowserTerminalView? = null
     val app = BrowserKineticaApp(checkNotNull(document.querySelector("#app")),
         hostWidgets = browserTerminalHosts(mapOf("demo" to session), rendering, renderObserver,
             TerminalClipboardPolicy { request, done -> clipboardPolicy.authorize(request, done) },
             notificationPolicy = { notificationAllowed },
+            windowResizePolicy = { windowResizeAllowed },
+            resizeContainer = { _, size ->
+                val container = checkNotNull(document.querySelector("#app")).asDynamic()
+                size.width?.let { container.style.width = "${it.coerceAtMost((document.body!!.clientWidth - 24).coerceAtLeast(80).toDouble())}px" }
+                size.height?.let {
+                    val available = (document.body!!.clientHeight - checkNotNull(document.querySelector("header")).clientHeight - 24).coerceAtLeast(40)
+                    container.style.flex = "0 0 auto"
+                    container.style.height = "${it.coerceAtMost(available.toDouble())}px"
+                }
+            },
             mimeClipboardPolicy = TerminalMimeClipboardPolicy { request, done -> mimeClipboardPolicy.authorize(request, done) },
             onView = { _, view -> surface = view }),
     ) { terminal("demo", fontSize = fontSize, fontFamily = fontFamily,
@@ -73,6 +84,9 @@ fun main() {
     }
     // Small deterministic controls used by the browser integration check.
     val api: dynamic = js("({})")
+    api.windowResizeEnabled = { enabled: Boolean -> windowResizeAllowed = enabled }
+    val resizeCheckbox = document.querySelector("#window-resize")?.asDynamic()
+    resizeCheckbox?.onchange = { windowResizeAllowed = resizeCheckbox.checked == true }
     api.notificationsEnabled = { enabled: Boolean -> notificationAllowed = enabled }
     val notificationButton = document.querySelector("#notifications")?.asDynamic()
     notificationButton?.onclick = {

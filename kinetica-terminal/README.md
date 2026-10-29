@@ -592,8 +592,22 @@ unsigned 16-bit values. The event is synchronous, including during synchronized 
 and does not resize the grid or send a reply. Without a subscribed host it has no effect.
 Hosts must explicitly permit window changes, schedule layout outside parser dispatch,
 constrain it to their geometry limits and call `resize` with the actual measured result.
-Dispose the subscription when its host closes. Automatic browser/AppKit window handling
-is not yet connected; both surfaces continue to use only host-driven layout.
+Dispose the subscription when its host closes.
+
+Standalone surfaces and DSL host factories accept `windowResizePolicy`, denied by default
+like Ghostty's `vt-window-resize-allowed`. Accepted requests merge their nonzero axes into
+one 16 ms deferred operation; policy and host identity are checked again before layout.
+Detach, reattachment and disposal cancel stale work. Requested axes have Ghostty's minimum
+40 columns / 10 rows and the engine's 4096-per-axis / one-million-cell bounds. Omitted axes
+preserve the actual pixel extent, including any fractional cell remainder.
+
+AppKit resizes its owning ordinary window, including the surrounding UI, within the window's
+size limits and screen's visible frame; hidden, minimized and full-screen windows are ignored.
+Its normal measurement path then updates the grid and PTY. Browser views call the host's
+`resizeContainer(TerminalWindowSize)` with CSS pixels; null axes remain unchanged. The browser
+DSL factory also supplies the session ID. The callback owns container layout and additional
+viewport constraints; the existing ResizeObserver measures the result. The native sample has
+an opt-in Settings choice, and the browser sample has an unchecked “Allow app resizing” control.
 
 REP (`CSI Ps b`), scroll-and-clear (`CSI 22 J`) and DEC mode save/restore
 (`CSI ? Ps s` / `CSI ? Ps r`) are supported. Scroll-and-clear moves written rows into

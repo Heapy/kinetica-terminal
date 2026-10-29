@@ -92,6 +92,7 @@ internal class TerminalApplication(
                     clipboardPolicy = TerminalClipboardPolicy.WRITE_ONLY,
                     mimeClipboardPolicy = TerminalMimeClipboardPolicy.WRITE_AND_PASTE,
                     notificationPolicy = { true },
+                    windowResizePolicy = { settings.settings.allowWindowResize },
                     onView = { _, view -> terminal.attached(view) }),
             ) { TerminalContent(terminal) }
             terminals += terminal
@@ -114,7 +115,7 @@ internal class TerminalApplication(
             settingsWindow?.close()
         }
         settingsWindow = shell.openWindow(ApplicationWindow("settings", "Terminal Settings",
-            size = WindowSize(500.0, 260.0), minimumSize = WindowSize(500.0, 260.0),
+            size = WindowSize(500.0, 310.0), minimumSize = WindowSize(500.0, 310.0),
             resizable = false, minimizable = false, initialFocus = "font-size"),
             callbacks = WindowCallbacks(closed = {
                 settingsWindow = null

@@ -18,14 +18,15 @@ internal enum class TerminalColorTheme(val label: String, val colors: TerminalTh
 }
 
 internal data class TerminalSettings(val fontName: String? = null, val fontSize: Double = 14.0,
-    val colorTheme: TerminalColorTheme = TerminalColorTheme.DARK)
+    val colorTheme: TerminalColorTheme = TerminalColorTheme.DARK, val allowWindowResize: Boolean = false)
 
 /** Null defaults provide an isolated in-memory store for native application tests. */
 internal class TerminalSettingsStore(private val defaults: NSUserDefaults? = NSUserDefaults.standardUserDefaults) {
     var settings: TerminalSettings = TerminalSettings(
         defaults?.stringForKey("terminal.font")?.takeIf { it.isNotBlank() && NSFont.fontWithName(it, 14.0) != null },
         defaults?.doubleForKey("terminal.fontSize")?.takeIf { it.isFinite() && it in 6.0..96.0 } ?: 14.0,
-        TerminalColorTheme.entries.firstOrNull { it.name == defaults?.stringForKey("terminal.theme") } ?: TerminalColorTheme.DARK)
+        TerminalColorTheme.entries.firstOrNull { it.name == defaults?.stringForKey("terminal.theme") } ?: TerminalColorTheme.DARK,
+        defaults?.boolForKey("terminal.allowWindowResize") ?: false)
         private set
     private var savedFrame: String? = defaults?.stringForKey("terminal.windowFrame")
     fun save(value: TerminalSettings) {
@@ -34,6 +35,7 @@ internal class TerminalSettingsStore(private val defaults: NSUserDefaults? = NSU
         defaults?.setObject(value.fontName.orEmpty(), forKey = "terminal.font")
         defaults?.setDouble(value.fontSize, forKey = "terminal.fontSize")
         defaults?.setObject(value.colorTheme.name, forKey = "terminal.theme")
+        defaults?.setBool(value.allowWindowResize, forKey = "terminal.allowWindowResize")
     }
     fun saveBounds(bounds: WindowBounds) {
         savedFrame = NSStringFromRect(NSMakeRect(bounds.x, bounds.y, bounds.width, bounds.height))
@@ -49,6 +51,7 @@ internal class TerminalSettingsEditor(private val store: TerminalSettingsStore, 
     val font = store(store.settings.fontName.orEmpty())
     val size = store(store.settings.fontSize.toString())
     val theme = store(store.settings.colorTheme.name)
+    val windowResize = store(if (store.settings.allowWindowResize) "allow" else "deny")
     val error = store("")
     val fonts: List<ChoiceOption> = listOf(ChoiceOption("", "System Monospaced")) +
         NSFontManager.sharedFontManager.availableFonts.filterIsInstance<String>()
@@ -60,7 +63,8 @@ internal class TerminalSettingsEditor(private val store: TerminalSettingsStore, 
             error.value = "Choose a font size between 6 and 96."
             return
         }
-        store.save(TerminalSettings(font.value.takeIf { it.isNotEmpty() }, points, TerminalColorTheme.valueOf(theme.value)))
+        store.save(TerminalSettings(font.value.takeIf { it.isNotEmpty() }, points, TerminalColorTheme.valueOf(theme.value),
+            windowResize.value == "allow"))
         error.value = ""
         applied()
     }
@@ -84,6 +88,14 @@ internal fun ComponentScope.TerminalSettingsContent(editor: TerminalSettingsEdit
             host("appkit:label", props = mapOf("value" to "Color theme", "width" to "90"))
             appKitChoice(editor.theme.value, TerminalColorTheme.entries.map { ChoiceOption(it.name, it.label) },
                 onChange = { editor.theme.value = it }, semantics = Semantics(label = "Color theme", testTag = "theme"), width = 320.0)
+            host("appkit:spacer")
+        }
+        row {
+            host("appkit:label", props = mapOf("value" to "App resize", "width" to "90"))
+            appKitChoice(editor.windowResize.value, listOf(ChoiceOption("deny", "Keep window size"),
+                ChoiceOption("allow", "Allow terminal apps to resize window")),
+                onChange = { editor.windowResize.value = it },
+                semantics = Semantics(label = "Terminal apps may resize window", testTag = "window-resize"), width = 320.0)
             host("appkit:spacer")
         }
         text(editor.error.value)

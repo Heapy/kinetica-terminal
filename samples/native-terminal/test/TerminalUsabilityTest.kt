@@ -135,18 +135,23 @@ class TerminalUsabilityTest {
             val themeMenu = controls.filterIsInstance<NSPopUpButton>().single { "Light" in it.itemTitles }
             themeMenu.selectItemWithTitle("Light")
             assertTrue(application.sendAction(themeMenu.action!!, to = themeMenu.target, from = themeMenu))
+            val resizeMenu = controls.filterIsInstance<NSPopUpButton>().single { "Keep window size" in it.itemTitles }
+            resizeMenu.selectItemWithTitle("Allow terminal apps to resize window")
+            assertTrue(application.sendAction(resizeMenu.action!!, to = resizeMenu.target, from = resizeMenu))
             await("Settings choice events") { themeMenu.titleOfSelectedItem == "Light" && fontMenu.titleOfSelectedItem == fontTitle }
             NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.02))
             capture(panel, "settings")
             controls.filterIsInstance<NSButton>().single { it.identifier == "apply" }.performClick(null)
             assertFalse(panel.visible)
-            assertEquals(TerminalSettings("Menlo-Regular", 18.0, TerminalColorTheme.LIGHT), store.settings)
+            assertEquals(TerminalSettings("Menlo-Regular", 18.0, TerminalColorTheme.LIGHT, allowWindowResize = true), store.settings)
             for (terminal in owner.terminals) {
                 assertEquals(18.0, terminal.view.currentFontSize)
                 assertEquals("Menlo-Regular", terminal.view.currentFontFamily)
                 assertEquals(TerminalColorTheme.LIGHT.colors, terminal.session.theme)
             }
             await { application.keyWindow == second.window }
+            second.session.sendInput("printf '\\033[8;20;70t'\r")
+            await("Permitted PTY window resize") { second.session.columns == 70 && second.session.rows == 20 }
             shortcut("t")
             val third = owner.terminals.last(); windows += third.window
             assertEquals(18.0, third.view.currentFontSize)
@@ -179,7 +184,8 @@ class TerminalUsabilityTest {
         val window = application.openWindow(ApplicationWindow("geometry", "Geometry")) {}
         try {
             val store = TerminalSettingsStore(defaults)
-            val settings = TerminalSettings("Menlo-Regular", 17.0, TerminalColorTheme.SOLARIZED)
+            assertFalse(store.settings.allowWindowResize)
+            val settings = TerminalSettings("Menlo-Regular", 17.0, TerminalColorTheme.SOLARIZED, allowWindowResize = true)
             store.save(settings)
             store.saveBounds(WindowBounds(120.0, 120.0, 820.0, 530.0))
             val reloaded = TerminalSettingsStore(defaults)

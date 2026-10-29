@@ -17,6 +17,8 @@ public class BrowserTerminalView(
     graphicsStorageBytes: Int = 64 * 1024 * 1024,
     mimeClipboardPolicy: TerminalMimeClipboardPolicy = TerminalMimeClipboardPolicy.DENY,
     mimeClipboard: TerminalMimeClipboard? = null,
+    windowResizePolicy: (TerminalWindowResizeRequest) -> Boolean = { false },
+    resizeContainer: (TerminalWindowSize) -> Unit = {},
 ) {
     public val scrollOffset: Int get() = viewport.scrollOffset
     public fun jumpToPrompt(direction: Int): Boolean = viewport.jumpToPrompt(direction)
@@ -62,6 +64,12 @@ public class BrowserTerminalView(
     })
     private val resizeObserver: dynamic = newResizeObserver { resize() }
     private val sizeRefreshObservation = session.onSizeRefreshRequested { resize(force = true) }
+    private val windowResizeBinding = TerminalWindowResizeBinding(session, TerminalScheduler { delay, action ->
+        val timer = window.setTimeout({ action() }, delay)
+        TerminalDisposable { window.clearTimeout(timer) }
+    }, { if (!disposed && root.isConnected == true) view.parentElement else null }, windowResizePolicy, { request ->
+        resizeContainer(request.windowSize(session.columns, session.rows, cellWidth, cellHeight))
+    })
     private var measuredColumns = 0
     private var measuredRows = 0
     private var intersecting = false
@@ -70,7 +78,7 @@ public class BrowserTerminalView(
     private val intersectionObserver: dynamic = newTerminalIntersectionObserver { value ->
         intersecting = value; updateVisibility()
     }
-    private val visibilityObserver: dynamic = newTerminalVisibilityObserver(root) { updateVisibility() }
+    private val visibilityObserver: dynamic = newTerminalVisibilityObserver(root, { windowResizeBinding.cancelPending() }) { updateVisibility() }
     private val pointerObservation = session.onPointerShape { root.style.cursor = it.cssName }
     private val progressPresentation = TerminalProgressPresentation(session, TerminalScheduler { delay, action ->
         val timer = window.setTimeout({ action() }, delay)
@@ -245,7 +253,7 @@ public class BrowserTerminalView(
         listen(document, "transitionend") { updateVisibility() }
         resizeObserver.observe(root)
         intersectionObserver.observe(root)
-        visibilityObserver.observe(document.documentElement, js("({subtree:true,attributes:true,attributeFilter:['style','class','hidden']})"))
+        visibilityObserver.observe(document.documentElement, js("({subtree:true,childList:true,attributes:true,attributeFilter:['style','class','hidden']})"))
         schedule()
     }
 
@@ -439,6 +447,7 @@ public class BrowserTerminalView(
         if (disposed) return
         disposed = true; mouseReporter.reset(); cancelMouse(); viewport.dispose(); resizeObserver.disconnect()
         sizeRefreshObservation.dispose()
+        windowResizeBinding.dispose()
         visibilityBinding.dispose()
         intersectionObserver.disconnect(); visibilityObserver.disconnect()
         pointerObservation.dispose()
@@ -456,7 +465,7 @@ public class BrowserTerminalView(
 private fun newResizeObserver(callback: () -> Unit): dynamic = js("new ResizeObserver(callback)")
 private fun newTerminalIntersectionObserver(callback: (Boolean) -> Unit): dynamic =
     js("new IntersectionObserver(entries => callback(entries.some(entry => entry.isIntersecting)))")
-private fun newTerminalVisibilityObserver(root: dynamic, callback: () -> Unit): dynamic =
-    js("new MutationObserver(records => { if (records.some(record => record.target.contains(root))) callback(); })")
+private fun newTerminalVisibilityObserver(root: dynamic, detached: () -> Unit, callback: () -> Unit): dynamic =
+    js("new MutationObserver(records => { const removed = records.some(record => Array.from(record.removedNodes).some(node => node === root || node.contains(root))); if (removed) detached(); if (removed || records.some(record => record.target.contains(root))) callback(); })")
 
 private val mouseButtonMasks = listOf(1 to 0, 4 to 1, 2 to 2, 8 to 128, 16 to 129)

@@ -766,8 +766,25 @@ pending wrap, screen switches, synchronized output, resets and an absent host. C
 tests also verify independent subscription disposal and later host-driven resizing.
 All 1153 JVM tests and fresh Release JS tests pass. The main corpus is now 799 scenarios /
 4202 checkpoints; all affected text/graphics fixtures and manifests reproduce byte-for-byte.
-Browser/AppKit window handling is still pending and remains disabled; hosts need explicit
-policy, deferred bounded layout, geometry constraints and disposal checks before that gate closes.
+The following host increment connects those requests through `windowResizePolicy`, denied by
+default. A single 16 ms task merges nonzero axes, rechecks authorization and host identity,
+and cancels on detachment, reattachment or disposal. The shared conversion preserves omitted
+pixel extents, applies Ghostty's 40-column / 10-row minimum and limits the resulting grid to
+4096 per axis and one million cells. AppKit accounts for surrounding UI and clamps ordinary
+visible windows to their size limits and the screen's visible frame. Browser applications
+receive CSS pixel sizes through `resizeContainer` and own their container constraints.
+
+The native sample exposes a persisted opt-in setting; the browser sample exposes an unchecked
+checkbox and constrains its container to the page viewport. Tests exercise 20,000 requests
+with one pending job, separate-axis composition, policy revocation, cancellation inside the
+policy callback, stale timers and host replacement. Isolated AppKit/Metal windows and real
+Canvas/WebGL containers verify final grid sizes, deferred layout, zero dimensions, oversized
+requests and disposal. A test-owned PTY emits CSI 8 t after enabling the setting through the
+native Settings UI; the real application layout converges to the requested grid.
+Validation passes 1156 JVM tests, fresh Release JS tests, six focused Native resize tests,
+six native size/visibility/effect regressions, nine UI/application tests, and both the
+dedicated window-resize and general browser verifiers. No installed application or user
+shell is replaced; native window and PTY checks use isolated test-owned resources.
 
 Graphics acceptance work:
 

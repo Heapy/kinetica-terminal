@@ -25,6 +25,12 @@ The surfaces display OSC 9;4 progress with a 15-second stale-report timeout and 
 timers on unmount. A native application's notification-center delegate retains control over
 foreground notification presentation.
 
+`windowResizePolicy` controls CSI 8 t requests and defaults to denial. AppKit changes the
+owning window after deferred policy/lifetime checks and measures the resulting terminal grid.
+Browser hosts additionally provide `resizeContainer(sessionId, TerminalWindowSize)` to change
+their layout: dimensions are CSS pixels, and null means preserve that axis. Disposal cancels
+pending requests. See the engine README for coalescing, bounds and native window restrictions.
+
 Apps apply `kinetica-ui.module-template.yaml` for the Kinetica compiler plugin and
 Maven-local repository. Build the matching development framework with
 `bash scripts/bootstrap-kinetica.sh /path/to/kinetica` before compiling apps. See the root
