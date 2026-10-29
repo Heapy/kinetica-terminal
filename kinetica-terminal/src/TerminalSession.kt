@@ -771,7 +771,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         when (code) {
             7 -> bellCount++
             8 -> cursorLeft(1)
-            9 -> { tab(1); pendingWrap = false }
+            9 -> tab(1)
             10, 11, 12 -> { lineFeed(); if (newlineMode) carriageReturn() }
             13 -> carriageReturn()
             14 -> useG1 = true
@@ -1192,7 +1192,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             'u' -> restoreCursor(saved)
             'm' -> sgr()
             'h', 'l' -> for (i in 0..paramIndex) mode(params[i], final == 'h')
-            'g' -> if (params[0] == 3) tabs.fill(false) else if (params[0] == 0) tabs[cursorColumn] = false
+            'g' -> if (parameterCount <= 1) {
+                if (params[0] == 3) tabs.fill(false) else if (params[0] == 0) tabs[cursorColumn] = false
+            }
             'I' -> tab(p())
             'Z' -> repeat(p().coerceAtMost(columns)) {
                 if (cursorColumn > minX) do { cursorColumn-- } while (cursorColumn > minX && !tabs[cursorColumn])
@@ -1210,7 +1212,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 19 -> reportSize(9)
             }
         }
-        if (final !in "mhsncluJKbtrLMSTP") pendingWrap = false
+        // Tab movement/clearing preserves pending wrap, even after leaving the margin.
+        if (final !in "mhsncluJKbtrLMSTPIZg") pendingWrap = false
     }
 
     private fun scrollAndClear() {
@@ -1466,6 +1469,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         while (i <= paramIndex) {
             var end = i
             while (end < paramIndex && separators[end]) end++
+            // A trailing colon has no subparameter; Ghostty ignores that incomplete group.
+            if (separators[i] && end == i) { i++; continue }
             val subparameters = end > i
             when (val p = params[i]) {
                 0 -> { fg = -1; bg = -1; style = 0; setAttributes(-1, attributes?.hyperlink) }

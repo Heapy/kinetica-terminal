@@ -76566,5 +76566,1503 @@
         "write": "\u001b[?45;1045h\u001b[2h\u001bc\u001b[?45$p\u001b[?1045$p\u001b[2$p\u001b[?2$p"
       }
     ]
+  },
+  {
+    "name": "tab_clear_omitted_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_omitted_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_zero_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[0g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_zero_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[0g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_all_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[3g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_all_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[3g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_invalid_one_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[1g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_invalid_one_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[1g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_invalid_two_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[2g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_invalid_two_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[2g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_saturated_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[999999999g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_saturated_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[999999999g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_extra_after_zero_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[0;3g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_extra_after_zero_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[0;3g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_extra_after_all_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[3;0g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_extra_after_all_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[3;0g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_empty_parameters_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[;g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_empty_parameters_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[;g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_colon_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[0:3g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_colon_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[0:3g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_private_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[?0g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_private_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[?0g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_intermediate_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[0 g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_intermediate_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[0 g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "pending_wrap_disabled_cbt_on_fill",
+    "columns": 6,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7habcdef"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "y\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "pending_wrap_disabled_margin_on_fill",
+    "columns": 6,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7habcdef"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "y\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "pending_wrap_disabled_combining_on_fill",
+    "columns": 6,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7habcdef"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "\u0301x"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "y\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "pending_wrap_disabled_wide_on_fill",
+    "columns": 6,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7habcdef"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "y\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "pending_wrap_disabled_cbt_off_fill",
+    "columns": 6,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7labcdef"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "y\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "pending_wrap_disabled_margin_off_fill",
+    "columns": 6,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7labcdef"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "x"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "y\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "pending_wrap_disabled_combining_off_fill",
+    "columns": 6,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7labcdef"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "\u0301x"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "y\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "pending_wrap_disabled_wide_off_fill",
+    "columns": 6,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?7labcdef"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "y\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_ht_enabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "\t"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_cht_enabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "\u001b[I"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_cbt_enabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_clear_omitted_enabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "\u001b[g"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_clear_zero_enabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "\u001b[0g"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_clear_all_enabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "\u001b[3g"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_clear_extra_zero_enabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "\u001b[0;3g"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_clear_extra_all_enabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7h"
+      },
+      {
+        "write": "\u001b[3;0g"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_ht_disabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\t"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_cht_disabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[I"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_cbt_disabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_clear_omitted_disabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[g"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_clear_zero_disabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[0g"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_clear_all_disabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[3g"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_clear_extra_zero_disabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[0;3g"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_pending_wrap_clear_extra_all_disabled",
+    "columns": 12,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "abcdefghijkl"
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[3;0g"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001b[?7hY"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_trailing_zero_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[0;g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_trailing_zero_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[0;g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_trailing_all_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[3;g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_trailing_all_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[3;g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_two_empty_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[;;g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_two_empty_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[;;g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_explicit_second_zero_default",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[9G"
+      },
+      {
+        "write": "\u001b[;0g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "tab_clear_explicit_second_zero_custom",
+    "columns": 24,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[3g\u001b[5G\u001bH\u001b[9G\u001bH\u001b[17G\u001bH\u001b[9G"
+      },
+      {
+        "write": "\u001b[;0g"
+      },
+      {
+        "write": "\r\tA"
+      },
+      {
+        "write": "\tB"
+      },
+      {
+        "write": "\r\u001b[2I"
+      },
+      {
+        "write": "\u001b[Z"
+      }
+    ]
+  },
+  {
+    "name": "csi_trailing_parameter_sgr",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[31;mA"
+      },
+      {
+        "write": "\u001b[1;4;mB"
+      },
+      {
+        "write": "\u001b[;mC"
+      },
+      {
+        "write": "\u001b[4:mD"
+      },
+      {
+        "write": "\u001b[38:2::1:2:3:mE"
+      },
+      {
+        "write": "\u001b[0;;mF"
+      },
+      {
+        "write": "\u001b[4mG"
+      },
+      {
+        "write": "\u001b[4:mH"
+      },
+      {
+        "write": "\u001b[4:0mI"
+      }
+    ]
+  },
+  {
+    "name": "csi_trailing_parameter_reports",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[6;n"
+      },
+      {
+        "write": "\u001b[?6;n"
+      },
+      {
+        "write": "\u001b[18;t"
+      },
+      {
+        "write": "\u001b[?7;$p"
+      },
+      {
+        "write": "\u001b[0;c"
+      }
+    ]
+  },
+  {
+    "name": "csi_trailing_parameter_cursor",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[2;H"
+      },
+      {
+        "write": "\u001b[;4H"
+      },
+      {
+        "write": "\u001b[;H"
+      },
+      {
+        "write": "\u001b[4;G"
+      },
+      {
+        "write": "\u001b[1;A"
+      },
+      {
+        "write": "\u001b[2;I"
+      },
+      {
+        "write": "\u001b[1;Z"
+      }
+    ]
   }
 ]

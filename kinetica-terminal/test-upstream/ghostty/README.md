@@ -176,6 +176,14 @@ generator never reads Kinetica's results. Both whole-write and bytewise replay
 must agree with each intermediate upstream snapshot. `manifest.json` records
 source revision, helper/library hashes and snapshot hashes.
 
+The tab/pending-wrap increment adds 59 scenarios / 342 checkpoints, bringing this corpus
+to 461 scenarios / 2615 checkpoints. It covers omitted/explicit/malformed tab-clear parameters,
+default/custom stops, HT/CHT/CBT pending-wrap preservation with DECAWM on/off, and narrow,
+wide and combining-character output after backward tabs. Trailing empty CSI parameters are
+checked across tab clearing, SGR, reports and cursor controls; expectations come from the
+original parser/terminal, including the distinction between `0;g` and `;0g` and preservation
+of the current underline style for an incomplete `4:` group.
+
 The corpus includes 32 resize scenarios: soft/hard breaks, printed spaces versus empty
 cells, colored blanks, wide-cell padding and one-column grids, combining text, styles
 and links, scrollback, pending wrap, current/saved cursor pins, simultaneous height/width

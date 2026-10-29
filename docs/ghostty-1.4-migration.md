@@ -106,7 +106,10 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 - [ ] OSC 5522 clipboard transactions, host authorization, MIME data, aliases, cancellation,
       bounded buffering and protocol replies. Existing OSC 52 support does not cover it.
 - [x] Reconcile origin-relative CHA/VPA/HPR/VPR, CUB/BS margin behavior and the changed reflow scenarios.
-- [ ] Extend coverage for parameterless TBC, pending wrap with DECAWM disabled and charset/single-shift changes.
+- [x] Extend coverage for parameterless TBC and pending wrap with DECAWM disabled. Tab
+      movement/clearing preserves pending wrap; TBC rejects extra parameters. CSI parameter
+      counting follows the original parser, which does not append an empty trailing slot.
+- [ ] Implement and compare the remaining charset/single-shift behavior.
 - [x] Empty OSC 22 resets the pointer to text.
 - [ ] Compare mode reports, OSC 105 routing and modified Backspace input.
 

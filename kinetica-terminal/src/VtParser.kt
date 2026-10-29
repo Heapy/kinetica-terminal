@@ -124,7 +124,9 @@ internal class VtParser(private val handler: Handler) {
         when (code) {
             in 0x40..0x7e -> {
                 val valid = state != CSI_IGNORE && !overflow && (code == 'm'.code || !colon.any { it })
-                count = if (index == 0 && parameters[0] < 0) 0 else index + 1
+                // A separator commits its preceding parameter; an empty trailing slot
+                // contributes no additional parameter in Ghostty's parser.
+                count = index + if (parameters[index] >= 0) 1 else 0
                 state = GROUND
                 if (valid) handler.csi(code, this)
             }

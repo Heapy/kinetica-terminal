@@ -433,6 +433,19 @@ JS tests, 16 focused Native media/decoder tests and one native application polic
 Descriptor-stability, host read limits and FIFO rejection are included. No installed app or
 live user shell is replaced or terminated by these tests.
 
+The next terminal-state increment preserves pending wrap across HT, CHT, CBT and TBC,
+including when a backward tab leaves the right margin. TBC accepts its omitted/default mode
+and rejects extra parameters. The CSI parser now follows Ghostty's trailing-parameter rule:
+a separator commits the preceding value but an empty final slot adds no parameter. An SGR
+attribute with a colon but no subparameter (such as `4:`) leaves the existing pen unchanged.
+
+Fifty-nine original-library scenarios / 342 checkpoints cover those controls with default and
+custom tab stops, DECAWM on/off, narrow/wide/combining output, malformed headers, SGR, reports
+and cursor commands. The main corpus now has 461 cases / 2615 checkpoints and reproduces
+byte-for-byte. Validation passes all 745 JVM tests, fresh Release JS tests and all 461 Native
+oracle scenarios. Charset designation
+and single-shift remain separate open work in the Ghostty 1.4 migration checklist.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
