@@ -18,7 +18,7 @@ class MacOsKeypadTest {
                 view.keyDown(requireNotNull(NSEvent.keyEventWithType(NSEventTypeKeyDown, NSMakePoint(0.0, 0.0),
                     NSEventModifierFlagControl, 0.0, 0, null, text, text, false, code.toUShort())))
             }
-            assertEquals(listOf("\u0003", "\u0001", "\u001a", "\u0004", "\u001b"), output)
+            assertEquals(listOf("\u0003", "\u0001", "\u001a", "\u0004", "\u001b[91;5u"), output)
             output.clear()
             view.insertText("привет", NSMakeRange(NSNotFound.toULong(), 0u))
             assertEquals(listOf("привет"), output)

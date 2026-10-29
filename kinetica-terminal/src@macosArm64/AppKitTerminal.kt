@@ -397,8 +397,11 @@ public class AppKitTerminalView(
         }
         if (session.keyboardInputBlocked) return
         val extendedKeyboard = session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2
-        val terminalKey = if (extendedKeyboard) terminalKey(event) else TerminalKey(key, control,
-            optionAsMeta && flags and NSEventModifierFlagOption != 0uL, shift, keypad = keypad)
+        val terminalKey = when {
+            extendedKeyboard -> terminalKey(event)
+            optionAsMeta && flags and NSEventModifierFlagOption != 0uL -> terminalKey(event).copy(key = key)
+            else -> TerminalKey(key, control, false, shift, keypad = keypad)
+        }
         // Printable text goes through NSTextInputClient first so dead keys and IME own composition.
         val interpretText = extendedKeyboard && terminalKey.key.terminalCodepoints().size == 1 &&
             !control && !command && !(optionAsMeta && flags and NSEventModifierFlagOption != 0uL)

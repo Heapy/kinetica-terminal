@@ -125,8 +125,13 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Browser/AppKit supply physical pixels with DPR/backing scale; pixel motion retains
       subcell events and outside drag/release coordinates. Persistent original-encoder
       comparisons cover cell deduplication, rounding and UTF-8 coordinate boundaries.
-- [ ] Close additional mode-table gaps: ANSI SRM (12), DEC 4/5/8/40,
-      Alt-key policies 1036/1039 and clipboard paste-event mode 5522.
+- [x] Legacy Alt-prefix mode 1036, with UTF-8/layout fallbacks, C0/fixterms and independent
+      modified functional-key tables, connected to AppKit Option-as-Meta and browser layout input.
+      ANSI SRM (12), DEC slow-scroll (4), autorepeat (8) and Alt mode 1039 retain queryable
+      state without invented runtime effects, matching the original's ignored behavior.
+      These modes preserve state across DECSTR/screens; RIS restores defaults.
+- [ ] Close additional mode-table gaps: reverse video (5), DECCOLM/its gate (3/40),
+      and clipboard paste-event mode 5522.
       Validate their behavior and host integration before advertising mutable support.
 
 ## Graphics and external media

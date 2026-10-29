@@ -282,6 +282,17 @@ Shift+PageUp/PageDown, and accessibility text are available.
   immutable protocol bytes. `toByteArray()` returns a fresh wire representation. Never decode
   legacy mouse reports as text and re-encode them. The provided stream/PTY adapters admit each
   event atomically to their bounded queues, checking oversized text before allocating UTF-8.
+- DEC mode 1036 (enabled by default) controls the ESC prefix on legacy Alt text.
+  Disabling it sends the host's text unchanged; enabling it preserves single-byte shifted
+  punctuation and uses the unshifted layout scalar for Option-translated Unicode. Browser
+  input uses its known layout map; AppKit applies this when `optionAsMeta` is enabled.
+  C0 combinations and modified functional keys use their own tables independently of 1036:
+  Shift+Enter/Control+Enter and modified Tab/Escape remain distinct in legacy mode, and
+  Control+i/m/[ use fixterms. Kitty and modifyOtherKeys retain their own encodings.
+  Mode 1039, ANSI SRM 12 (default set), DEC slow-scroll 4 and autorepeat 8 (default reset)
+  retain queryable state, matching Ghostty 1.4's ignored runtime behavior. They do not enable
+  local echo, delay scrolling or suppress key repeats. All these modes survive DECSTR and
+  screen switches; RIS restores defaults. Private modes also support save/restore.
 - Mouse modes 1000/1002/1003 support X10, UTF-8 (1005), SGR (1006), urxvt (1015) and
   SGR pixels (1016), with left/middle/right, back/forward, vertical/horizontal wheel, modifiers
   and releases outside the viewport. Cell formats suppress repeated motion within one cell;

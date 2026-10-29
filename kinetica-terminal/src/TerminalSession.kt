@@ -112,6 +112,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     /** Active wire format; format mode bits remain independently queryable. */
     public var mouseFormat: TerminalMouseFormat = TerminalMouseFormat.X10
         private set
+    /** DEC 1036: prefix legacy Alt text with ESC. Functional and C0 key tables are independent. */
+    public var altEscapePrefix: Boolean = true
+        private set
+    /** ANSI 12 is queryable state; Ghostty does not implement local echo when it is reset. */
+    public var sendReceiveMode: Boolean = true
+        private set
     /** Mode 1007: translate wheel scrolling to cursor keys on the alternate screen. */
     public var alternateScroll: Boolean = true
         private set
@@ -692,7 +698,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         previousCharacter = null
         savedModes.clear(); sideEffectModes.clear()
         modifyOtherKeysMode = 0
-        backarrowKeyMode = false
+        backarrowKeyMode = false; altEscapePrefix = true; sendReceiveMode = true
         primaryKeyboard.reset(); alternateKeyboard.reset()
         primarySemantic.reset(); alternateSemantic.reset(); promptRedraw = TerminalPromptRedraw.ALL
         selectionEpoch++; screenEpoch++
@@ -1341,10 +1347,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
 
     private fun mode(number: Int, enabled: Boolean) {
         if (!privateCsi) {
-            when (number) { 2 -> keyboardDisabled = enabled; 4 -> insertMode = enabled; 20 -> newlineMode = enabled }
+            when (number) { 2 -> keyboardDisabled = enabled; 4 -> insertMode = enabled; 12 -> sendReceiveMode = enabled; 20 -> newlineMode = enabled }
             return
         }
-        if (number in listOf(3, 9, 47, 1000, 1002, 1003, 1005, 1006, 1015, 1016, 1047, 1048, 1049)) sideEffectModes[number] = enabled
+        if (number in listOf(3, 4, 8, 9, 47, 1000, 1002, 1003, 1005, 1006, 1015, 1016, 1039, 1047, 1048, 1049)) sideEffectModes[number] = enabled
         when (number) {
             1 -> applicationCursor = enabled
             3 -> {
@@ -1361,6 +1367,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             66 -> applicationKeypad = enabled
             67 -> backarrowKeyMode = enabled
             1035 -> keypadNumericOverride = enabled
+            1036 -> altEscapePrefix = enabled
             1045 -> reverseWrapExtended = enabled
             47, 1047, 1049 -> switchScreen(number, enabled)
             1048 -> if (enabled) saved = saveCursor() else restoreCursor(saved)
@@ -1420,7 +1427,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun privateModeState(number: Int): Boolean? = when (number) {
-        3, 9, 47, 1000, 1002, 1003, 1005, 1015, 1016, 1047, 1048, 1049 -> sideEffectModes[number] ?: false
+        3, 4, 8, 9, 47, 1000, 1002, 1003, 1005, 1015, 1016, 1039, 1047, 1048, 1049 -> sideEffectModes[number] ?: false
         1 -> applicationCursor
         6 -> origin
         7 -> wrap
@@ -1431,6 +1438,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         67 -> backarrowKeyMode
         69 -> leftRightMarginMode
         1035 -> keypadNumericOverride
+        1036 -> altEscapePrefix
         1045 -> reverseWrapExtended
         1004 -> focusReporting
         1006 -> sgrMouse
@@ -1448,6 +1456,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         val enabled = if (privateMode) privateModeState(number) else when (number) {
             2 -> keyboardDisabled
             4 -> insertMode
+            12 -> sendReceiveMode
             20 -> newlineMode
             else -> null
         }

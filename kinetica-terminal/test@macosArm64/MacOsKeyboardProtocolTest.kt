@@ -6,6 +6,36 @@ import platform.Foundation.*
 import kotlin.test.*
 
 class MacOsKeyboardProtocolTest {
+    @Test fun altPrefixModeReachesOptionAsMetaWithoutChangingFunctionalKeys() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession()
+        val view = AppKitTerminalView(session, optionAsMeta = true, rendering = TerminalRendering.SOFTWARE)
+        val window = NSWindow(NSMakeRect(0.0,0.0,640.0,320.0),NSWindowStyleMaskTitled,NSBackingStoreBuffered,false)
+        window.setReleasedWhenClosed(false); window.contentView = view
+        val out = StringBuilder()
+        val observer = session.onInput { out.append(it.toByteArray().decodeToString()) }
+        fun press(text: String = "a", raw: String = "a", code: Int = 0,
+            flags: ULong = NSEventModifierFlagOption, repeat: Boolean = false) {
+            view.keyDown(requireNotNull(NSEvent.keyEventWithType(NSEventTypeKeyDown,NSMakePoint(0.0,0.0),
+                flags,0.0,window.windowNumber,null,text,raw,repeat,code.toUShort())))
+        }
+        try {
+            assertTrue(window.makeFirstResponder(view))
+            press()
+            session.write("\u001b[?1036l")
+            press(); press("å"); press(repeat = true)
+            press("\r","\r",36)
+            press("\u0001",flags = NSEventModifierFlagOption or NSEventModifierFlagControl)
+            assertEquals("\u001baaåa\u001b\r\u001b\u0001",out.toString())
+            out.clear()
+            session.write("\u001b[?1039h\u001b[!p")
+            press()
+            session.write("\u001bc")
+            press()
+            assertEquals("a\u001ba",out.toString())
+        } finally { observer.dispose(); view.dispose(); window.close() }
+    }
+
     @Test fun backarrowModeReachesNativeBackspaceWithoutChangingKittyEncoding() {
         NSApplication.sharedApplication()
         val session = TerminalSession()
@@ -112,7 +142,7 @@ class MacOsKeyboardProtocolTest {
             out.clear()
             session.write("\u001b[<u")
             view.keyDown(event(36, "\r", NSEventModifierFlagShift))
-            assertEquals("\r", out.toString())
+            assertEquals("\u001b[27;2;13~", out.toString(), "Legacy PC-style table also distinguishes Shift+Enter")
             out.clear()
             session.write("\u001b[>4;2m")
             view.keyDown(event(36, "\r", NSEventModifierFlagShift))

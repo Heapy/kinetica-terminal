@@ -494,9 +494,27 @@ JVM tests, fresh Release JS tests, 630 Native oracle/common-mouse tests, four Na
 PTY mouse tests, and the browser integration verifier at DPR 2. Native synthetic middle-button
 and wheel events now preserve explicit coordinates instead of inheriting the user's cursor.
 
-The source mode-table audit identifies additional open work: ANSI SRM, DEC 4/5/8/40,
-Alt policies 1036/1039 and clipboard paste events (5522).
-Their behavior and host integration remain required before claiming full mode compatibility.
+Legacy Alt mode 1036 now controls text prefixing, with UTF-8, missing-text and layout-scalar
+fallbacks. AppKit Option-as-Meta carries the actual text and layout identity; browser Alt events
+use known unshifted layout data. Modified Enter/Tab/Escape follow the original PC-style table,
+independently of 1036, and C0/fixterms distinguish combinations such as Control+i/m/[. Multi-scalar
+modifyOtherKeys input falls through to legacy handling; Kitty consumes events without text or
+identity without inserting data. Existing Shift+Enter and Control+[ host expectations were
+updated to the original-library bytes, rather than preserving those older mismatches.
+
+ANSI SRM 12, DEC slow-scroll 4, autorepeat 8 and Alt mode 1039 now preserve/report state with
+Ghostty's defaults, RIS/DECSTR and screen lifecycle. They have no invented echo, scrolling or
+repeat-filter behavior: the original stores them but has no runtime consumers for those effects.
+Twenty-two original cases add 131 checkpoints, including all modifiers for Enter/Tab/Escape,
+C0/fixterms, locks, Unicode and all three key actions. The oracle's optional Option-as-Alt setting
+separates host configuration from consumed text modifiers. The full 645-case / 3522-checkpoint
+corpus reproduces byte-for-byte. The four graphics corpora sharing the C helper were regenerated
+for provenance; all their generated Kotlin snapshots stayed unchanged.
+
+Validation passes 933 JVM tests, fresh Release JS tests, 664 Native oracle/keyboard/AppKit tests
+and the browser integration verifier, including Alt-translated Unicode with a known layout.
+The remaining mode-table work is reverse video (5), DECCOLM and its gate (3/40), and clipboard
+paste events (5522). Their behavior and host integration remain required for full compatibility.
 
 Graphics acceptance work:
 

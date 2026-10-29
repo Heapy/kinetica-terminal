@@ -55,7 +55,7 @@ internal fun encodeModifyOtherKey(event: TerminalKey): String? {
         if (bits == 0 || event.key == "Backspace" && bits == 4) return null
         return "\u001b[27;${bits + 1};$functional~"
     }
-    val codepoint = points.singleOrNull() ?: return text.takeIf { it.isNotEmpty() }
+    val codepoint = points.singleOrNull() ?: return null
     // macOS Option may produce text without acting as Alt. Shift stays in this protocol's mask.
     val modifiers = if (event.consumedModifiers and 2 != 0) bits and 2.inv() else bits
     if (modifiers == 0) return text
@@ -149,7 +149,7 @@ internal fun encodeKittyKey(event: TerminalKey, flags: Int): String? {
         when (event.key) { "Enter" -> return "\r"; "Tab" -> return "\t"; "Backspace" -> return "\u007f" }
     }
     if (!all && binding == 0 && printable && !release) return text
-    if (entry == null) return if (release) "" else text.ifEmpty { null }
+    if (entry == null) return if (release) "" else text
     if (entry.modifier && !all) return ""
     val eventCode = if (!events) 0 else when (event.action) {
         TerminalKeyAction.PRESS -> 1; TerminalKeyAction.REPEAT -> 2; TerminalKeyAction.RELEASE -> 3

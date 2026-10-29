@@ -342,7 +342,8 @@ public class BrowserTerminalView(
         val text = logical.takeIf { it.terminalCodepoints().size == 1 }.orEmpty()
         val point = text.lowercase().terminalCodepoints().singleOrNull()
         if (code != null && point != null && event.shiftKey != true && event.altKey != true) layoutKeys[code] = point
-        val unshifted = if (event.shiftKey == true) layoutKeys[code] ?: terminalUnshiftedCodepoint(point, base) else point
+        val unshifted = if (event.shiftKey == true || event.altKey == true)
+            layoutKeys[code] ?: terminalUnshiftedCodepoint(point, base) else point
         return TerminalKey(logical, event.ctrlKey == true, event.altKey == true, event.shiftKey == true,
             event.metaKey == true, keypad,
             action = if (event.repeat == true) TerminalKeyAction.REPEAT else TerminalKeyAction.PRESS,

@@ -154,7 +154,7 @@ def main():
                 for key in event["keyboard"]:
                     text = key.get("text", "").encode().hex() or "-"
                     commands.append(f"E {key['upstream']} {key['modifiers']} {key.get('consumed', 0)} "
-                                    f"{key['action']} {key.get('unshifted', 0)} {text}")
+                                    f"{key['action']} {key.get('unshifted', 0)} {text} {key.get('optionAsAlt', 1)}")
             elif "mousePixels" in event:
                 batch = event["mousePixels"]
                 commands.append("V " + " ".join(map(str, batch["geometry"])) + f" {int(batch['track'])}")

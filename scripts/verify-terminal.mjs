@@ -278,6 +278,24 @@ try {
   await page.waitForFunction(() => keypadBytes.length === 1);
   assert.deepEqual(await page.evaluate(() => keypadBytes), [13]);
   await page.evaluate(() => { kineticaTerminalDemo.allowKeyboardLock(false); keypadBytes.length = 0; });
+  // Mode 1036 controls legacy Alt text, independently of C0/function keys and 1039.
+  await page.evaluate(() => { kineticaTerminalDemo.reset(); keypadBytes.length = 0; });
+  await page.keyboard.press("Alt+a");
+  await keyEvent("b", "KeyB"); // Observe the unshifted layout without a text-input event.
+  await keyEvent("∫", "KeyB", { altKey: true });
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?1036l"));
+  await page.keyboard.press("Alt+a");
+  await keyEvent("界", "KeyA", { altKey: true });
+  await page.keyboard.press("Alt+Enter");
+  await page.keyboard.press("Control+Alt+a");
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?1039h\x1b[!p"));
+  await page.keyboard.press("Alt+a");
+  await page.evaluate(() => kineticaTerminalDemo.reset());
+  await page.keyboard.press("Alt+a");
+  const altModesExpected = "\x1ba\x1bba界\x1b\r\x1b\x01a\x1ba";
+  await page.waitForFunction(length => keypadBytes.length === length && kineticaTerminalDemo.transportState().pendingInputBytes === 0,
+    Buffer.byteLength(altModesExpected));
+  assert.equal(Buffer.from(await page.evaluate(() => keypadBytes.splice(0))).toString(), altModesExpected);
   // OSC 52 uses the actual browser clipboard, in this isolated browser context.
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   const clipboardText = "clipboard 世界\n" + "large ".repeat(20000);
@@ -527,5 +545,5 @@ try {
   assert.deepEqual(await readMouse(), []);
   await page.evaluate(() => kineticaTerminalDemo.dispose());
   assert.deepEqual(errors, []);
-  console.log("Browser terminal: WebGL/Canvas atomic frames, hold timeout, cursor shapes/blink, dynamic palette, glyph cache, context recovery, font resize, keypad/IME and Kitty input, OSC 52 clipboard, notification permissions/routing, progress states/timeout, binary/UTF-8/urxvt/pixel mouse reports, subcell Retina motion, alternate-screen wheel scrolling, pointer capture/chords, history, and disposal passed");
+  console.log("Browser terminal: WebGL/Canvas atomic frames, hold timeout, cursor shapes/blink, dynamic palette, glyph cache, context recovery, font resize, keypad/IME, Kitty and legacy Alt input, OSC 52 clipboard, notification permissions/routing, progress states/timeout, binary/UTF-8/urxvt/pixel mouse reports, subcell Retina motion, alternate-screen wheel scrolling, pointer capture/chords, history, and disposal passed");
 } finally { await browser.close(); }

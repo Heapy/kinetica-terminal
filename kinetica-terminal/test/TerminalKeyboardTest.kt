@@ -3,6 +3,26 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalKeyboardTest {
+    @Test fun altPrefixSupportsScalarFallbackAndRetainsHostTextOwnership() {
+        val session = TerminalSession()
+        assertNull(session.encodeKey(TerminalKey("a")), "Unmodified typing remains owned by IME")
+        assertEquals("\u001ba", session.encodeKey(TerminalKey("a", alt = true)))
+        assertEquals("\u001b😀", session.encodeKey(TerminalKey("😀", alt = true)))
+        assertEquals("\u001b界", session.encodeKey(TerminalKey("Unidentified", alt = true, text = "", unshiftedCodepoint = 0x754c)))
+        assertEquals("å", session.encodeKey(TerminalKey("a", alt = true, text = "å", consumedModifiers = 2)))
+        session.write("\u001b[?1036l")
+        assertFalse(session.altEscapePrefix)
+        assertEquals("å", session.encodeKey(TerminalKey("a", alt = true, text = "å", unshiftedCodepoint = 97)))
+        assertEquals("", session.encodeKey(TerminalKey("a", alt = true, text = "", unshiftedCodepoint = 97)))
+        assertEquals("\u001b\u0001", session.encodeKey(TerminalKey("a", alt = true, control = true)))
+        assertEquals("\u001b\r", session.encodeKey(TerminalKey("Enter", alt = true)))
+        session.write("\u001b[?1039h\u001b[!p")
+        assertFalse(session.altEscapePrefix)
+        session.reset()
+        assertTrue(session.altEscapePrefix)
+        assertTrue(session.sendReceiveMode)
+    }
+
     @Test fun keyboardLockRequiresHostOptInAndOnlySuppressesTyping() {
         val session = TerminalSession()
         val out = StringBuilder()
@@ -79,7 +99,7 @@ class TerminalKeyboardTest {
         assertEquals("\u001b[99;5u", s.encodeKey(TerminalKey("c", control = true)))
         assertEquals("\u001b[27u", s.encodeKey(TerminalKey("Escape")))
         s.write("\u001b[<u")
-        assertEquals("\r", s.encodeKey(TerminalKey("Enter", shift = true)))
+        assertEquals("\u001b[27;2;13~", s.encodeKey(TerminalKey("Enter", shift = true)))
         assertEquals("\u0003", s.encodeKey(TerminalKey("c", control = true)))
     }
 

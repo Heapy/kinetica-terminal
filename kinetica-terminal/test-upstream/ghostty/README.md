@@ -359,3 +359,12 @@ After returning from alternate screen, the lifecycle case explicitly scrolls to 
 with the host viewport policy. Relative children of virtual placements have separate common
 frame tests; renderer pixels and cache ownership are checked by browser/native regressions.
 This corpus is not a whole-renderer pixel oracle or an AddressSanitizer run.
+
+The legacy Alt extension adds 22 scenarios / 131 checkpoints. Mode 1036 is exercised with
+1039 set/reset, UTF-8 and missing text, unshifted scalar fallback, consumed modifiers,
+press/repeat/release, modifyOtherKeys and Kitty. All modifier combinations for Enter/Tab/Escape
+and C0/fixterms cases are checked against original bytes; 4/8/12/1039 also cover defaults,
+queries, reset and screen lifecycle. The optional final `E` argument configures the original
+encoder's macOS Option-as-Alt policy independently of consumed modifiers (`optionAsAlt` in
+fixtures, default 1). This matters for modifyOtherKeys and Kitty associated text; consumed Alt
+with Option-as-Alt disabled must be compared under the same host policy.
