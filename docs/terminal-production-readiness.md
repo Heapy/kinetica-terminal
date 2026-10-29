@@ -76,6 +76,17 @@ The Ghostty feature-parity work remains in progress. Its requested scope is:
 - [ ] Kitty graphics, including platform rendering and resource limits.
 - [x] OSC 22 pointer shape with browser CSS and Ghostty-equivalent AppKit mappings.
 
+Kitty graphics is now in progress. The shared parser has a byte-oriented APC lifecycle
+and an internal `G` command parser with fixed header storage, bounded Base64 capture,
+32-bit signed/unsigned fields and ownership-safe completion/reset. All eight command actions
+are parsed, including animation commands, but none are executed by `TerminalSession` yet.
+The terminal therefore still ignores image requests and does not claim graphics support.
+Tests adapted from the pinned Ghostty parser cover flags, malformed headers, duplicate keys,
+integer overflow, padding/tail bits, every input split, 150 KB data and resource release.
+This checkpoint passes 490 JVM tests, the freshly built JS suite and 11 focused Native tests;
+the existing 279 libghostty VT scenarios remain green on JVM/JS. The new command-parser tests
+are adapted unit tests, not a new original-libghostty image-state comparison.
+
 Graphics acceptance work:
 
 - [ ] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

@@ -13,6 +13,10 @@ internal class VtParser(private val handler: Handler) {
         fun escape(final: Int, intermediates: Int)
         fun csi(final: Int, command: VtParser)
         fun string(kind: Int, value: String, terminator: Int)
+        fun apcStart() {}
+        fun apcPut(code: Int) {}
+        /** ESC/ST terminate; other controls abort the VT string. -1 discards it on explicit reset. */
+        fun apcEnd(terminator: Int) {}
     }
 
     val parameters = IntArray(64)
@@ -33,10 +37,11 @@ internal class VtParser(private val handler: Handler) {
     private var clipboardBytes = 0
 
     // UTF-8 is decoded for printable text and supported string payloads. Escape/CSI/DCS
-    // headers and ignored APC/SOS/PM follow the byte transition table instead.
-    val rawByteState: Boolean get() = state != GROUND && (state != STRING || stringKind == IGNORED)
+    // headers and APC/SOS/PM follow the byte transition table instead.
+    val rawByteState: Boolean get() = state != GROUND && (state != STRING || stringKind == IGNORED || stringKind == APC)
 
     fun reset() {
+        if (state == STRING && stringKind == APC) handler.apcEnd(-1)
         state = GROUND; clearPayload(); clear()
     }
 
@@ -45,6 +50,7 @@ internal class VtParser(private val handler: Handler) {
             // Ghostty unhooks a DCS on every exit, including CAN/SUB. A complete
             // DECRQSS request can therefore reply here; OSC cancellation discards it.
             if (state == STRING && stringKind == DCS) finishString(code)
+            if (state == STRING && stringKind == APC) finishString(code)
             state = GROUND; clearPayload(); return
         }
         if (code == 27) {
@@ -53,17 +59,27 @@ internal class VtParser(private val handler: Handler) {
         }
         if (state == DCS_IGNORE && code >= 32) return
         if (rawByteState && code in 0x80..0x9f) {
+            if (state == STRING && stringKind == APC) {
+                // All three introducers share one VT state. Re-entering that same
+                // state does not unhook/restart it in Ghostty's transition table.
+                if (code == 0x98 || code == 0x9e || code == 0x9f) return
+                finishString(code)
+            }
             when (code) {
                 0x90 -> { state = DCS_ENTRY; clear() }
                 0x9b -> { state = CSI_ENTRY; clear() }
                 0x9d -> beginString(OSC)
-                0x98, 0x9e, 0x9f -> beginString(IGNORED)
+                0x98, 0x9e, 0x9f -> beginString(APC)
                 0x9c -> { state = GROUND; payload.clear() }
                 else -> { state = GROUND; payload.clear(); handler.execute(code) }
             }
             return
         }
         if (state == STRING) {
+            if (stringKind == APC) {
+                if (code in 0..0x7f) handler.apcPut(code)
+                return
+            }
             if (stringKind == OSC && code == 7) { finishString(code); state = GROUND }
             else if (stringKind != IGNORED && (code >= 32 || stringKind == DCS)) {
                 if (!overflow) {
@@ -91,7 +107,7 @@ internal class VtParser(private val handler: Handler) {
                 '['.code -> { state = CSI_ENTRY; clear() }
                 ']'.code -> beginString(OSC)
                 'P'.code -> { state = DCS_ENTRY; clear() }
-                'X'.code, '^'.code, '_'.code -> beginString(IGNORED)
+                'X'.code, '^'.code, '_'.code -> beginString(APC)
                 in 0x20..0x2f -> { collect(code); state = ESCAPE_INTERMEDIATE }
                 in 0x30..0x7e -> { state = GROUND; handler.escape(code, intermediates) }
             }
@@ -173,9 +189,11 @@ internal class VtParser(private val handler: Handler) {
     }
     private fun beginString(kind: Int) {
         state = STRING; stringKind = kind; clearPayload(); overflow = false
+        if (kind == APC) handler.apcStart()
     }
     private fun finishString(terminator: Int) {
-        if (!overflow && stringKind != IGNORED) handler.string(stringKind, payload.toString(), terminator)
+        if (stringKind == APC) handler.apcEnd(terminator)
+        else if (!overflow && stringKind != IGNORED) handler.string(stringKind, payload.toString(), terminator)
         clearPayload()
     }
 
@@ -183,6 +201,7 @@ internal class VtParser(private val handler: Handler) {
         const val OSC = 1
         const val DCS = 2
         private const val IGNORED = 3
+        private const val APC = 4
         const val STRING_LIMIT = 4096
         private const val GROUND = 0
         private const val ESCAPE = 1

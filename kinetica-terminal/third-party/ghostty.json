@@ -34,11 +34,14 @@
     "macos/Sources/Ghostty/Surface View/SurfaceProgressBar.swift",
     "src/terminal/osc/parsers/report_pwd.zig",
     "src/terminal/osc/parsers/semantic_prompt.zig",
-    "src/os/string_encoding.zig"
+    "src/os/string_encoding.zig",
+    "src/terminal/apc.zig",
+    "src/terminal/kitty/graphics_command.zig"
   ],
   "adaptedTests": [
     "src/terminal/Parser.zig",
-    "src/terminal/UTF8Decoder.zig"
+    "src/terminal/UTF8Decoder.zig",
+    "src/terminal/kitty/graphics_command.zig"
   ],
   "referenceSemantics": [
     "src/terminal/stream.zig",
