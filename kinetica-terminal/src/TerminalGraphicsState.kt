@@ -62,28 +62,26 @@ internal class TerminalGraphicsState(
         when (command.action) {
             'q' -> storage.query(command).reply()?.let(terminal::sendInput)
             't', 'T', 'f' -> {
-                if (command.action == 'f' && !storage.hasPendingTransfer) {
-                    unsupported(command)
-                } else {
-                    // Beginning replacement has uppercase ID-delete semantics, including orphan data.
-                    if (!storage.hasPendingTransfer && command.imageId != 0L) deleteImage(command.imageId)
-                    val result = storage.transmit(command)
-                    val display = result.display
-                    val image = result.image
-                    val response = if (display != null && image != null) display(display, image) else result.response
-                    if (image?.implicitId != true) response?.encode(result.quiet)?.let(terminal::sendInput)
-                }
+                // Beginning replacement has uppercase ID-delete semantics, including orphan data.
+                if (command.action != 'f' && !storage.hasPendingTransfer && command.imageId != 0L) deleteImage(command.imageId)
+                val result = storage.transmit(command)
+                val display = result.display
+                val image = result.image
+                val response = if (display != null && image != null) display(display, image) else result.response
+                if (image?.implicitId != true) response?.encode(result.quiet)?.let(terminal::sendInput)
             }
+            'a', 'c' -> storage.animate(command).reply()?.let(terminal::sendInput)
             'p' -> display(command).encode(command.quiet)?.let(terminal::sendInput)
             'd' -> { storage.abortTransfer(); delete(command) }
-            else -> unsupported(command)
         }
         if (before !== storage.generation) mutated()
     }
 
-    private fun unsupported(command: TerminalGraphicsCommand) {
-        TerminalGraphicsResponse(command.imageId, command.imageNumber, command.placementId,
-            "ENOSYS: animation is not supported").encode(command.quiet)?.let(terminal::sendInput)
+    fun animationTick(now: Long): Long? {
+        val before = storage.generation
+        val delay = storage.animationTick(now)
+        if (before !== storage.generation) mutated()
+        return delay
     }
 
     private fun display(command: TerminalGraphicsCommand, transmitted: TerminalGraphicsStoredImage? = null): TerminalGraphicsResponse {
@@ -204,8 +202,8 @@ internal class TerminalGraphicsState(
             val id = if (action == 'n' || action == 'f' && command.imageId == 0L)
                 storage.imageByNumber(command.imageNumber)?.id ?: return else command.imageId
             if (action == 'f') {
-                // Base-image case; animated image frame deletion is added with animation execution.
-                if (deleteUnused) deleteImage(id)
+                if (deleteUnused && storage.image(id)?.animation?.frameCount == 1) deleteImage(id)
+                else storage.deleteFrame(id, command.unsigned('r'), deleteUnused)
                 return
             }
             val key = TerminalGraphicsPlacementKey(id, command.placementId, true)

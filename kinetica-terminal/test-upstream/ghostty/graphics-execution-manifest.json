@@ -1,16 +1,19 @@
 {
   "commit": "4da7523faba68ccb4042ea20585817098a51c015",
   "zlib": "1.2.12",
-  "cases": 196,
-  "snapshots": 2017,
-  "generatorSha256": "69cd45ae2b70622ef437a830fc1c4645525f96ee0983256ea5d7f2fa24ed6a75",
+  "libpng": "1.6.59",
+  "cases": 244,
+  "snapshots": 2394,
+  "generatorSha256": "43b9bde29377a9f14bdabba4fbe7b0f5f69481ffc08f4715945c151899597e2c",
   "inputGenerators": {
     "generate-terminal-oracle.py": "08790ef73bb7a83a297fd3aebc5d177624a2d7185b8517ebb4310c6ff4195054",
     "generate-terminal-graphics-fixtures.py": "ad79a4e0887bca03b4b3dfec37176c4c6d2332e4d7088ab9192f2c203498a00b",
     "generate-terminal-graphics-geometry.py": "19a57cea62a4659de577fb574c5f38a694db9781cd4040deeb4154b8532ad030",
-    "generate-terminal-graphics-anchors.py": "8d9418d83af9354d631e3575096fedf6aed876eb625d168216d6a47a0beb3bda"
+    "generate-terminal-graphics-anchors.py": "8d9418d83af9354d631e3575096fedf6aed876eb625d168216d6a47a0beb3bda",
+    "generate-terminal-image-fixtures.py": "04f165a5c011c22de3e28b339c24e43e09d33b9bde6abf073232ba7c596e3b64"
   },
   "helperSha256": "6298640bac57842cec6ccb2613902582c1b2146d9a8af1b12e907a4d7bc8f954",
+  "graphicsHelperSha256": "e3968652281fc723a4d3f2b70ff79276a844532497da6625ce48f19ac2b8a497",
   "librarySha256": "98f842bb11ef7a35ede4f52136d5aa1374e3ed9433754771d961f80d75c49aae",
-  "fixturesSha256": "7ab911a540ff3a54a11e37d59ad30b28a65a4920b77418f154d965e0e1e4e582"
+  "fixturesSha256": "7df3ac822c5b5b8a99a859557c45d51bdbac298845d369c1be660b4a182024c2"
 }

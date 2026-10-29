@@ -191,6 +191,13 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private val primaryGraphics = TerminalGraphicsState(this, ::damageAll)
     private val alternateGraphics = TerminalGraphicsState(this, ::damageAll)
     internal val graphicsState: TerminalGraphicsState get() = if (alternateScreen) alternateGraphics else primaryGraphics
+
+    /** Host monotonic clock; publish frame damage through the same hold boundary as PTY output. */
+    internal fun advanceGraphicsAnimations(now: Long): Long? {
+        val delay = graphicsState.animationTick(now)
+        flushDamage()
+        return delay
+    }
     // Keep recognition disabled until a graphics-capable host explicitly enables storage.
     private val graphicsApc = TerminalGraphicsApc(1024 * 1024) { graphicsState.execute(it) }
     internal val retainedGraphicsCommandBytes: Int get() = graphicsApc.retainedPayloadBytes

@@ -49,7 +49,7 @@ class TerminalGraphicsExecutionTest {
                     assertEquals(state.storage.imageCount, images.size, "$context unprobed image")
                     compare("kittyImages", buildJsonArray { images.forEach { image -> add(buildJsonArray {
                         add(image.id); add(image.number); add(image.pixels.width); add(image.pixels.height)
-                        add(image.pixels.format); add(image.pixels.data.toHexString())
+                        add(image.pixels.format); add(image.renderContent.pixels.data.toHexString())
                     }) } })
                     val actual = state.placements.map { placement -> buildJsonArray {
                         val g = placement.geometry
@@ -76,7 +76,7 @@ class TerminalGraphicsExecutionTest {
                             add(buildJsonArray { repeat(terminal.columns) { x -> add(buildJsonArray { add(line.text(x)); add(line.width(x)) }) } })
                         })
                     } })
-                    assertEquals(images.sumOf { it.pixels.data.size.toLong() }, state.storage.totalBytes, "$context image accounting")
+                    assertEquals(images.sumOf { it.animation.byteCount }, state.storage.totalBytes, "$context image accounting")
                     for (image in images) assertEquals(state.placements.count { it.image === image }, image.placementCount, "$context placement accounting")
                     assertEquals(0, terminal.retainedGraphicsCommandBytes, "$context APC buffer released")
                 }

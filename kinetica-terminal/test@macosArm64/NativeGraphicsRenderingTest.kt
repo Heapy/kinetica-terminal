@@ -120,6 +120,28 @@ class NativeGraphicsRenderingTest {
         }
     }
 
+    @Test fun nativeAnimationCommandsRenderFramesAndPreserveHeldPixels() {
+        NSApplication.sharedApplication()
+        for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    fun frame(color: List<Int>, fields: String = "") = apc("a=f,i=1,q=2,f=32,s=1,v=1$fields;" + Base64.encode(color.map(Int::toByte).toByteArray()))
+                    reset(); session.write(image(1,red)); expect(red,"Root frame")
+                    session.write(frame(green)); expect(red,"Append retains root")
+                    session.write(apc("a=a,i=1,c=2")); expect(green,"Selected extra frame")
+                    session.write("\u001b[?2026h" + frame(red,",r=2")); expect(green,"Edit preserves held pixels")
+                    session.write("\u001b[?2026l"); expect(red,"Released frame edit")
+                    session.write(frame(green,",r=1")); expect(red,"Undisplayed edit")
+                    session.write(apc("a=c,i=1,r=1,c=2,q=2")); expect(green,"Displayed composition")
+                    session.write(apc("a=d,d=f,i=1,r=1")); expect(green,"Root promotion")
+                    session.write(apc("a=d,d=F,i=1,r=1")); expect(blue,"Final deletion")
+                    assertEquals(0L,bytes); assertEquals(0,tiles)
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
     @Test fun nativeImageOrientationAndScaledTileSeamsProduceExactPixels() {
         NSApplication.sharedApplication()
         for (factory in listOf<() -> Surface>(::software, { metal(2.0) })) {

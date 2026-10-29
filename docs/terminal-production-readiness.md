@@ -249,6 +249,28 @@ editing and root promotion. All 534 JVM tests, the fresh Release JS suite and 58
 tests pass, including actual AppKit/Metal pixels. The fresh Canvas/WebGL verifier also passes
 image pixels, held frames, tile reuse and cleanup. Session animation and host timers remain open.
 
+Session execution now consumes the animation core. Commands `a=f`, `a=a`, `a=c` and `d=f/F`
+load/select/edit/compose/delete frames, with original reply fields and quiet inheritance.
+Transmit-like continuation commands retain the first chunk's header and image generation;
+intervening content changes or eviction reject the stale transfer. Storage accounts for every
+full frame, excludes the target from frame-admission eviction and updates image-number lookup
+on content changes. Final-frame deletion preserves descendant cleanup, while root promotion
+retains placements. Explicit monotonic ticks publish damage without requiring more PTY bytes,
+and synchronized-output snapshots keep their original pixels until release.
+
+The 400 animation cases now replay through complete and bytewise session input as well as the
+isolated core. The C execution corpus grows to 244 cases/2394 checkpoints, adding 48 scenarios
+for replies, quiet modes, chunk identity, quota/eviction, screen lifecycle and raw/compressed
+RGB/RGBA/PNG. Its graphics wrapper installs libpng 1.6.59 through libghostty's host decoder API;
+the original base oracle still runs without that callback. Generated fixtures and manifests
+reproduce byte-for-byte. Client-selected frame pixels, edits during holds, composition and root
+promotion are exercised in Canvas/WebGL and AppKit/Metal (including fractional native scales).
+Validation passes 536 JVM tests, the fresh Release JS suite, 61 Native graphics tests and the
+fresh browser pixel verifier. The C graphics host helper passes all 244 scenarios with
+ASan/UBSan; the linked original libghostty dylib is not instrumented in that check.
+Automatic host timers/visibility remain open. Root RGB conversion retains Ghostty's admission
+semantics, which can exceed the nominal pixel-byte limit; the broader resource audit remains open.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

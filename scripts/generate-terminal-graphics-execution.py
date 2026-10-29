@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import runpy
+import shlex
 import subprocess
 import sys
 import zlib
@@ -14,6 +15,7 @@ COMMON = runpy.run_path(str(ROOT / "scripts/generate-terminal-oracle.py"))
 STORAGE = runpy.run_path(str(ROOT / "scripts/generate-terminal-graphics-fixtures.py"))
 GEOMETRY = runpy.run_path(str(ROOT / "scripts/generate-terminal-graphics-geometry.py"))
 ANCHORS = runpy.run_path(str(ROOT / "scripts/generate-terminal-graphics-anchors.py"))
+IMAGES = runpy.run_path(str(ROOT / "scripts/generate-terminal-image-fixtures.py"))
 IDS = STORAGE["IDS"]
 COLORS = "C " + " ".join(f"{v:x}" for v in COMMON["DEFAULT_COLORS"] + COMMON["DEFAULT_PALETTE"])
 
@@ -108,6 +110,49 @@ def cases():
         STORAGE["command"]({"limit":1000000}),image(1),apc("a=p,i=1,C=1"),write("\x1bc"),image(1)])
     add("zero_geometry_deletion", ["R 10 6 0 0",image(1,"p=7"),image(2,"p=7,c=2,r=2"),apc("a=d,d=c"),
         apc("a=d,d=A"),image(1,"p=7"),apc("a=d,d=X,x=1"),apc("a=d,d=A")])
+    def frame(fields='',data=b'\x14\x28\x3c\xff'):
+        return apc('a=f,i=1,f=32,s=1,v=1'+(','+fields if fields else ''),data)
+    for quiet in (0,1,2):
+        add(f'animation_replies_{quiet}',[image(1),frame(f'q={quiet},p=7'),frame(f'q={quiet},r=999,c=99'),
+            frame(f'q={quiet},r=2,z=-1'),apc(f'a=a,i=1,c=2,q={quiet}'),
+            apc(f'a=c,i=1,r=2,c=1,q={quiet}'),apc(f'a=c,i=1,r=1,c=1,q={quiet}'),
+            apc(f'a=a,I=99,p=7,q={quiet}'),apc(f'a=f,I=99,r=7,q={quiet}'),
+            apc(f'a=f,i=1,I=9,r=7,q={quiet}'),apc(f'a=f,r=7,q={quiet}')])
+    for continuation in ('t','T','f'):
+        for quiet in (0,1,2):
+            add(f'animation_chunk_{continuation}_{quiet}',[image(1),frame(f'm=1,q={quiet},p=7,r=99',b'\x14'),
+                apc('a=q,i=1,f=24,s=1,v=1',b'\x01\x02\x03'),
+                apc(f'a={continuation},i=99,f=42,s=100,m=1',b'\x28'),
+                apc(f'a={continuation},i=99,q=0',b'\x3c\xff'),apc('a=a,i=1,c=2')])
+    for intervention in [apc('a=a,i=1,c=2'),apc('a=a,i=1,r=2,z=5'),apc('a=a,i=1,s=3'),
+                         apc('a=c,i=1,r=2,c=1'),apc('a=c,i=1,r=1,c=2'),apc('a=d,d=f,i=1,r=2'),
+                         STORAGE['command']({'limit':3}),write('\x1bc')]:
+        add('animation_chunk_intervention_'+intervention,[image(1),frame(),frame('m=1',b'\x14'),intervention,
+            apc('a=T,i=99',b'\x28\x3c\xff'),apc('a=a,i=1,c=3')])
+    for limit in (3,4,6,7,8,9,11,12,15,16,20):
+        add(f'animation_quota_{limit}',[image(1,'p=7'),image(2,action='t'),image(3,'p=7,P=1,Q=7'),
+            frame(),frame(),frame('r=1'),apc('a=a,i=1,c=2'),apc('a=d,d=f,i=1,r=1'),frame(),
+            apc('a=d,d=F,i=1,r=99'),apc('a=d,d=F,i=1,r=1'),image(4)],limit=limit)
+    add('animation_number_generation',[image(0,'I=9'),image(0,'I=9'),
+        apc('a=f,I=9,f=32,s=1,v=1,r=99,p=7',b'\x14\x28\x3c\xff'),
+        apc('a=f,i=1,f=32,s=1,v=1',b'\x50\x60\x70\xff'),
+        apc('a=a,I=9,c=2'),apc('a=f,I=9,f=32,s=1,v=1,m=1',b'\x01'),
+        apc('a=a,i=2,c=2'),apc('a=t',b'\x02\x03\xff'),apc('a=d,d=f,I=9,r=1'),apc('a=d,d=F,I=9,r=1')])
+    for fields,data in [('r=7',b'\x01'),('r=7',b'\x01\x02\x03\xffextra'),
+                        ('r=7,f=42',b'\x01'),('r=7,t=f',b'nonexistent'),('r=7,s=2',bytes(8)),
+                        ('r=999,c=99',bytes(4)),('r=7,o=z',b'invalid')]:
+        add('animation_invalid_'+fields,[image(1),frame(fields,data),frame(),apc('a=a,i=1,c=2')])
+    for mode in (47,1047,1049):
+        add(f'animation_screen_{mode}',[image(1),frame(),apc('a=a,i=1,c=2'),write(f'\x1b[?{mode}h'),
+            image(1),frame(data=b'\x50\x60\x70\xff'),apc('a=a,i=1,c=2'),write(f'\x1b[?{mode}l'),
+            write(f'\x1b[?{mode}h'),write('\x1bc')])
+    for fmt,data in [(24,b'\x10\x20\x30'),(32,b'\x10\x20\x30\x80'),(100,IMAGES['png'](1,1,8,6,0))]:
+        for compressed in (False,True):
+            payload=zlib.compress(data) if compressed else data
+            add(f'animation_encoding_{fmt}_{compressed}',[image(1),
+                apc(f'a=f,i=1,f={fmt},s=1,v=1,m=1'+(',o=z' if compressed else ''),payload[:1]),
+                apc('a=T,m=1,q=1',payload[1:3]),apc('a=t,q=0',payload[3:]),
+                apc('a=a,i=1,c=2'),apc('a=c,i=1,r=2,c=1'),apc('a=d,d=f,i=1,r=2')])
     return result
 
 
@@ -122,8 +167,11 @@ def main():
     build.mkdir(exist_ok=True,parents=True)
     helper=build/"ghostty-execution-oracle"
     library=upstream/"zig-out/lib"
-    subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-I",str(upstream/"include"),str(ROOT/"scripts/terminal-ghostty-oracle.c"),
-                    "-L",str(library),"-lghostty-vt","-Wl,-rpath,"+str(library),"-o",str(helper)],check=True)
+    png_version=subprocess.check_output(['pkg-config','--modversion','libpng'],text=True).strip()
+    if png_version != '1.6.59': raise SystemExit('Expected pinned libpng 1.6.59')
+    png_flags=shlex.split(subprocess.check_output(['pkg-config','--cflags','--libs','libpng'],text=True))
+    subprocess.run(["cc","-std=c11","-Wall","-Wextra","-Werror","-I",str(upstream/"include"),str(ROOT/"scripts/terminal-ghostty-graphics-oracle.c"),
+                    "-L",str(library),"-lghostty-vt","-Wl,-rpath,"+str(library),"-o",str(helper),*png_flags],check=True)
     corpus=cases()
     for case in corpus:
         result=subprocess.run([str(helper)],input="\n".join(case["commands"])+"\n",text=True,capture_output=True)
@@ -142,11 +190,12 @@ def main():
     for i,case in enumerate(corpus):
         output+=f'private fun graphicsExecution{i}(): String = '+COMMON["encoded"](case)+'\n'
     COMMON["write_generated"](ROOT/"kinetica-terminal/test/generated/TerminalGraphicsExecutionFixtures.kt",output)
-    dependencies=["generate-terminal-oracle.py","generate-terminal-graphics-fixtures.py","generate-terminal-graphics-geometry.py","generate-terminal-graphics-anchors.py"]
-    manifest={"commit":COMMON["SHA"],"zlib":zlib.ZLIB_RUNTIME_VERSION,"cases":len(corpus),"snapshots":sum(len(c["snapshots"]) for c in corpus),
+    dependencies=["generate-terminal-oracle.py","generate-terminal-graphics-fixtures.py","generate-terminal-graphics-geometry.py","generate-terminal-graphics-anchors.py","generate-terminal-image-fixtures.py"]
+    manifest={"commit":COMMON["SHA"],"zlib":zlib.ZLIB_RUNTIME_VERSION,"libpng":png_version,"cases":len(corpus),"snapshots":sum(len(c["snapshots"]) for c in corpus),
               "generatorSha256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               "inputGenerators":{p:hashlib.sha256((ROOT/"scripts"/p).read_bytes()).hexdigest() for p in dependencies},
               "helperSha256":hashlib.sha256((ROOT/"scripts/terminal-ghostty-oracle.c").read_bytes()).hexdigest(),
+              "graphicsHelperSha256":hashlib.sha256((ROOT/"scripts/terminal-ghostty-graphics-oracle.c").read_bytes()).hexdigest(),
               "librarySha256":hashlib.sha256((library/"libghostty-vt.0.dylib").read_bytes()).hexdigest(),
               "fixturesSha256":hashlib.sha256(output.encode()).hexdigest()}
     COMMON["write_generated"](ROOT/"kinetica-terminal/test-upstream/ghostty/graphics-execution-manifest.json",json.dumps(manifest,indent=2)+"\n")

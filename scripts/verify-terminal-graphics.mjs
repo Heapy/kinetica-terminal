@@ -93,6 +93,27 @@ try {
 
     await reset();
     await write(image(1, red.slice(0, 3)));
+    await write(apc(`a=f,i=1,q=2,f=32,s=1,v=1,m=1;${Buffer.from(green.slice(0, 1)).toString("base64")}`));
+    await write(apc(`a=T,i=99;${Buffer.from(green.slice(1)).toString("base64")}`));
+    await expectPixel(red, "appending a frame retains the displayed root");
+    await write(apc("a=a,i=1,c=2"));
+    await expectPixel(green, "client-selected animation frame");
+    await write("\x1b[?2026h" + apc(`a=f,i=1,r=2,q=2,f=32,s=1,v=1;${Buffer.from(red).toString("base64")}`));
+    await expectPixel(green, "frame edits preserve held pixels");
+    await write("\x1b[?2026l");
+    await expectPixel(red, "frame edit becomes visible after hold");
+    await write(apc(`a=f,i=1,r=1,q=2,f=32,s=1,v=1;${Buffer.from(green).toString("base64")}`));
+    await expectPixel(red, "editing an undisplayed frame leaves the selected frame intact");
+    await write(apc("a=c,i=1,r=1,c=2,q=2"));
+    await expectPixel(green, "frame composition refreshes displayed pixels");
+    await write(apc("a=d,d=f,i=1,r=1"));
+    await expectPixel(green, "root promotion retains placements");
+    await write(apc("a=d,d=F,i=1,r=1"));
+    await expectPixel(blue, "deleting the final frame removes the image");
+    assert.equal(await metric("bytes"), 0);
+
+    await reset();
+    await write(image(1, red.slice(0, 3)));
     await page.evaluate(() => kineticaTerminalDemo.write(`\x1b[${kineticaTerminalDemo.rows()};1H\n`));
     await painted();
     await expectPixel(red, "partially scrolled image stays visible");

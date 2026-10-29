@@ -6,14 +6,24 @@ package io.heapy.kinetica.terminal
 internal class TerminalGraphicsStoredImage(
     val id: Long,
     val number: Long,
-    val pixels: TerminalGraphicsPixels,
+    pixels: TerminalGraphicsPixels,
     val transient: Boolean,
     val implicitId: Boolean,
-    internal val age: Long,
+    internal var age: Long,
 ) {
+    val animation = TerminalGraphicsAnimation(pixels)
+    val pixels: TerminalGraphicsPixels get() = animation.rootPixels
     // Object identity is a unique content generation even across stores, resets and ID reuse.
-    val generation: Any = Any()
-    val renderContent = TerminalGraphicsImageContent(id, pixels)
+    val generation: Any get() = animation.contentGeneration
+    private var content = TerminalGraphicsImageContent(id, pixels)
+    val renderContent: TerminalGraphicsImageContent get() {
+        synchronizeRenderContent()
+        return content
+    }
+    internal fun synchronizeRenderContent() {
+        if (content.pixels !== animation.currentPixels) content = TerminalGraphicsImageContent(id, animation.currentPixels)
+    }
+    internal var accountedBytes: Long = pixels.data.size.toLong()
     internal var placementCount: Int = 0
 }
 
@@ -22,6 +32,7 @@ internal data class TerminalGraphicsResponse(
     val number: Long = 0,
     val placement: Long = 0,
     val message: String = "OK",
+    val frame: Long = 0,
 ) {
     fun encode(quiet: Int = 0): String? {
         if (quiet >= 2 || quiet == 1 && message == "OK" || id == 0L && number == 0L) return null
@@ -30,6 +41,7 @@ internal data class TerminalGraphicsResponse(
             if (id != 0L) append("i=$id")
             if (number != 0L) { if (id != 0L) append(','); append("I=$number") }
             if (placement != 0L) append(",p=$placement")
+            if (frame != 0L) append(",r=$frame")
             append(';'); append(message); append("\u001b\\")
         }
     }
@@ -47,8 +59,8 @@ internal class TerminalGraphicsTransferResult(
 }
 
 /**
- * One screen's decoded images and in-progress base-image transfer. The placement/animation
- * executor owns their geometry and calls [remove] for selected image IDs. This component
+ * One screen's decoded images, animation state and in-progress image/frame transfer. The
+ * placement executor owns geometry and calls [remove] for selected image IDs. This component
  * performs no host I/O and does not advertise graphics support by itself.
  */
 internal class TerminalGraphicsStorage(
@@ -98,7 +110,7 @@ internal class TerminalGraphicsStorage(
 
     fun remove(id: Long): Boolean {
         val image = images.remove(id) ?: return false
-        totalBytes -= image.pixels.data.size
+        totalBytes -= image.accountedBytes
         generation = Any()
         removed(image)
         return true
@@ -128,18 +140,20 @@ internal class TerminalGraphicsStorage(
     }
 
     /**
-     * Base image t/T, or any transmit-like continuation of that base image. Standalone a=f
-     * belongs to the animation executor and must never be routed here as a new base image.
+     * All transmit-like commands continue an existing load, using its original header and
+     * target generation. Only a new t/T destroys/replaces the base image and its placements.
      */
     fun transmit(command: TerminalGraphicsCommand): TerminalGraphicsTransferResult {
-        require(command.action in "tT" || command.action == 'f' && loading != null)
+        require(command.action in "tTf")
         if (!enabled) return TerminalGraphicsTransferResult()
         conflictingIdentifiers(command)?.let { return TerminalGraphicsTransferResult(it, command.quiet) }
         val current = loading
         val quiet = if (current != null && command.quiet == 0) current.quiet else command.quiet
         if (current != null && command.quiet != 0) current.quiet = quiet
         val initial = current?.header ?: command
-        fun failed(message: String) = TerminalGraphicsTransferResult(response(initial, message), quiet)
+        fun failed(message: String) = TerminalGraphicsTransferResult(response(initial, message).let {
+            if (initial.action == 'f') it.copy(id = current?.id ?: it.id, frame = if (current == null) initial.unsigned('r') else 0) else it
+        }, quiet)
         val load: Loading
         if (current != null) {
             // Failure to append leaves the previous chunks intact, as in Ghostty.
@@ -148,19 +162,27 @@ internal class TerminalGraphicsStorage(
             load = current
             loading = null
         } else {
+            val target = if (command.action == 'f') {
+                if (command.imageId == 0L && command.imageNumber == 0L) return failed("EINVAL: image ID or number required")
+                find(command) ?: return failed("ENOENT: image not found")
+            } else null
             // Replacement destroys the old image/placements at the first chunk, even if loading fails.
-            if (command.imageId != 0L) remove(command.imageId)
-            validateMedium(command)?.let { return failed(it) }
+            if (target == null && command.imageId != 0L) remove(command.imageId)
+            fun startFailure(message: String) = failed(message).let { result ->
+                if (target == null) result else TerminalGraphicsTransferResult(result.response?.copy(id = target.id), quiet)
+            }
+            validateMedium(command)?.let { return startFailure(it) }
             val bytes = GraphicsTransferBytes(decodeLimits.maxEncodedBytes)
-            if (!bytes.append(command.data)) return failed("EINVAL: invalid data")
-            val implicit = command.imageId == 0L && command.imageNumber == 0L
-            val id = if (command.imageId != 0L) command.imageId else nextId(implicit)
-            load = Loading(command.withoutData(), id, implicit, quiet, bytes)
+            if (!bytes.append(command.data)) return startFailure("EINVAL: invalid data")
+            val implicit = target == null && command.imageId == 0L && command.imageNumber == 0L
+            val id = target?.id ?: if (command.imageId != 0L) command.imageId else nextId(implicit)
+            load = Loading(command.withoutData(), id, implicit, quiet, bytes, target?.generation)
             if (command.moreChunks) {
                 loading = load
                 return TerminalGraphicsTransferResult(quiet = quiet, pending = true)
             }
         }
+        if (load.header.action == 'f') return completeFrame(load, quiet)
         val pixels = try { decode(load.header, load.data.take()) }
         catch (error: TerminalGraphicsDecodeException) { return failed(error.messageForProtocol()) }
         if (pixels.data.size > limit) return failed("ENOMEM: out of memory")
@@ -190,10 +212,10 @@ internal class TerminalGraphicsStorage(
         error("No image ID available")
     }
 
-    private fun evictTo(target: Long) {
+    private fun evictTo(target: Long, except: Long? = null) {
         if (totalBytes <= target) return
         // Sort once to avoid quadratic work when a large image evicts many tiny ones.
-        val victims = images.values.sortedWith(compareBy<TerminalGraphicsStoredImage>(
+        val victims = images.values.filter { it.id != except }.sortedWith(compareBy<TerminalGraphicsStoredImage>(
             { (if (it.transient) 0 else 1) + (if (it.placementCount > 0) 2 else 0) }, { it.age }, { it.id }))
         for (victim in victims) {
             remove(victim.id)
@@ -208,10 +230,91 @@ internal class TerminalGraphicsStorage(
     }
 
     private fun decode(command: TerminalGraphicsCommand, bytes: ByteArray): TerminalGraphicsPixels =
-        decodeTerminalGraphicsImage(command.format, command.unsigned('s'), command.unsigned('v'), command.compressed, bytes, decodeLimits)
+        decodeTerminalGraphicsImage(command.format, command.unsigned('s'), command.unsigned('v'), command.compressed, bytes, decodeLimits,
+            animationFrame = command.action == 'f')
 
     private class Loading(val header: TerminalGraphicsCommand, val id: Long, val implicit: Boolean,
-        var quiet: Int, val data: GraphicsTransferBytes)
+        var quiet: Int, val data: GraphicsTransferBytes, val targetGeneration: Any? = null)
+
+    private fun find(command: TerminalGraphicsCommand) =
+        if (command.imageId != 0L) image(command.imageId) else imageByNumber(command.imageNumber)
+
+    /** Reconcile after root RGB conversion as well as after append/delete, including failed loads. */
+    private fun account(image: TerminalGraphicsStoredImage) {
+        val size = image.animation.byteCount
+        totalBytes += size - image.accountedBytes
+        image.accountedBytes = size
+    }
+
+    private inline fun <T> mutate(image: TerminalGraphicsStoredImage, action: () -> T): T {
+        val before = image.animation.mutation
+        val content = image.generation
+        try { return action() } finally {
+            account(image)
+            image.synchronizeRenderContent()
+            if (content !== image.generation) image.age = ++age
+            if (before !== image.animation.mutation) generation = Any()
+        }
+    }
+
+    private fun completeFrame(load: Loading, quiet: Int): TerminalGraphicsTransferResult {
+        // LoadingImage's saved response has no frame number until completion resolves it.
+        var response = response(load.header).copy(id = load.id)
+        fun failed(message: String) = TerminalGraphicsTransferResult(response.copy(message = message), quiet)
+        val target = find(load.header)?.takeIf { it.generation === load.targetGeneration }
+            ?: return failed("ENOENT: image not found")
+        val pixels = try { decode(load.header, load.data.take()) }
+        catch (error: TerminalGraphicsDecodeException) { return failed(error.messageForProtocol()) }
+        if (pixels.width > target.pixels.width || pixels.height > target.pixels.height)
+            return failed("EINVAL: frame dimensions exceed image")
+        val requested = load.header.unsigned('r')
+        response = response.copy(frame = if (requested == 0L || requested > target.animation.frameCount + 1L)
+            target.animation.frameCount + 1L else requested)
+        try {
+            mutate(target) {
+                target.animation.load(load.header, pixels) { bytes ->
+                    account(target)
+                    val excess = totalBytes + bytes - limit
+                    if (bytes > limit || excess > limit) false else {
+                        evictTo(limit.toLong() - bytes, except = target.id)
+                        totalBytes + bytes <= limit
+                    }
+                }
+            }
+        } catch (error: TerminalGraphicsAnimationException) { return failed(error.message!!) }
+        return TerminalGraphicsTransferResult(response, quiet)
+    }
+
+    fun animate(command: TerminalGraphicsCommand): TerminalGraphicsTransferResult {
+        require(command.action in "ac")
+        if (!enabled) return TerminalGraphicsTransferResult()
+        conflictingIdentifiers(command)?.let { return TerminalGraphicsTransferResult(it, command.quiet) }
+        var response = response(command)
+        fun failed(message: String) = TerminalGraphicsTransferResult(response.copy(message = message), command.quiet)
+        if (command.imageId == 0L && command.imageNumber == 0L) return failed("EINVAL: image ID or number required")
+        val image = find(command) ?: return failed("ENOENT: image not found")
+        // Successful control has no reply; its errors retain the client's identifier fields.
+        if (command.action == 'c') response = response.copy(id = image.id)
+        try {
+            mutate(image) { if (command.action == 'a') image.animation.control(command) else image.animation.compose(command) }
+        } catch (error: TerminalGraphicsAnimationException) { return failed(error.message!!) }
+        return TerminalGraphicsTransferResult(if (command.action == 'a') null else response, command.quiet)
+    }
+
+    fun deleteFrame(id: Long, number: Long, deleteImage: Boolean) {
+        val image = images[id] ?: return
+        if (mutate(image) { image.animation.delete(number, deleteImage) }) remove(id)
+    }
+
+    fun animationTick(now: Long): Long? {
+        require(now >= 0)
+        var delay: Long? = null
+        for (image in images.values) {
+            val next = mutate(image) { image.animation.tick(now, image.placementCount > 0) }
+            if (next != null) delay = delay?.let { minOf(it, next) } ?: next
+        }
+        return delay
+    }
 }
 
 private fun response(command: TerminalGraphicsCommand, message: String = "OK") =

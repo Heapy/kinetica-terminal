@@ -6,14 +6,20 @@ import kotlin.test.*
 
 class TerminalGraphicsAnimationTest {
     @Test fun animationCoreMatchesOriginalGhosttyExecutionAndClock() {
-        for (encoded in terminalGraphicsAnimationFixtures()) {
+        for (encoded in terminalGraphicsAnimationFixtures()) for (mode in 0..2) {
             val case = Json.parseToJsonElement(Base64.decode(encoded).decodeToString()).jsonObject
+            val session = TerminalSession(10,6).also { it.setGraphicsStorageLimit(10_000_000) }
             var animation: TerminalGraphicsAnimation? = null
             var placed = false
             var previous: Any? = null
             for ((step, value) in case.getValue("events").jsonArray.withIndex()) {
                 val event = value.jsonObject
                 event["text"]?.jsonPrimitive?.content?.let { text ->
+                    if (mode > 0) {
+                        if (mode == 1) session.write(text) else text.encodeToByteArray().forEach { session.write(byteArrayOf(it)) }
+                        animation = assertNotNull(session.graphicsState.storage.image(1)).animation
+                        return@let
+                    }
                     val command = parse(text.removePrefix("\u001b_G").removeSuffix("\u001b\\"))
                     try {
                         when (command.action) {
@@ -30,7 +36,9 @@ class TerminalGraphicsAnimationTest {
                     }
                 }
                 val current = assertNotNull(animation)
-                val delay = event["tick"]?.jsonPrimitive?.long?.let { current.tick(it, placed) }
+                val delay = event["tick"]?.jsonPrimitive?.long?.let {
+                    if (mode == 0) current.tick(it, placed) else session.advanceGraphicsAnimations(it)
+                }
                 val actual = buildJsonObject {
                     put("pixels", buildJsonArray { for (n in 1..current.frameCount) add(current.frame(n.toLong())!!.data.toHexString()) })
                     put("gaps", buildJsonArray { for (n in 0 until current.frameCount) add(current.gap(n)) })
@@ -41,7 +49,8 @@ class TerminalGraphicsAnimationTest {
                     put("bytes", current.byteCount); put("contentChanged", previous !== current.contentGeneration)
                     put("delay", delay?.let(::JsonPrimitive) ?: JsonNull)
                 }
-                assertEquals(case.getValue("snapshots").jsonArray[step], actual, "${case.getValue("name")} step=$step")
+                assertEquals(case.getValue("snapshots").jsonArray[step], actual, "${case.getValue("name")} step=$step mode=$mode")
+                if (mode > 0) assertEquals(current.byteCount,session.graphicsState.storage.totalBytes)
                 previous = current.contentGeneration
             }
         }
@@ -110,6 +119,54 @@ class TerminalGraphicsAnimationTest {
         assertContentEquals(byteArrayOf(70,80,90,-1),edited.quad.image.pixels.tileBytes(edited.tile,true))
         animation.delete(1,false)
         assertEquals(second.tile.key,snapshot().tile.key,"Root promotion retains immutable frame content")
+    }
+
+    @Test fun sessionTicksFreezePixelsUntilSynchronizedOutputEndsAndRespectPlacementGates() {
+        val session = TerminalSession(10,6).also { it.setGraphicsStorageLimit(100); it.resize(10,6,TerminalCellSize(8,16)) }
+        val viewport = TerminalViewport(session,{})
+        val changes = mutableListOf<TerminalChange>()
+        val observation = session.observe(changes::add)
+        fun write(header: String) = session.write("\u001b_G$header\u001b\\")
+        try {
+            write("a=T,i=1,q=2,f=32,s=1,v=1,C=1;AQID/w==")
+            write("a=f,i=1,q=2,f=32,s=1,v=1,z=10;BAUG/w==")
+            val first = viewport.graphicsFrame().single().image
+            write("a=a,i=1,r=1,z=5,s=3")
+            assertEquals(5L,session.advanceGraphicsAnimations(0))
+            session.write("\u001b[?2026h")
+            changes.clear()
+            assertEquals(10L,session.advanceGraphicsAnimations(5))
+            assertTrue(changes.isEmpty())
+            assertSame(first,viewport.graphicsFrame().single().image)
+            assertContentEquals(byteArrayOf(1,2,3,-1),first.pixels.data)
+            session.write("\u001b[?2026l")
+            assertTrue(changes.any { it.full },"Releasing the hold must publish the completed image frame")
+            assertContentEquals(byteArrayOf(4,5,6,-1),viewport.graphicsFrame().single().image.pixels.data)
+            write("a=d,d=i,i=1")
+            assertNull(session.advanceGraphicsAnimations(100))
+            write("a=p,i=1,C=1")
+            changes.clear()
+            assertEquals(5L,session.advanceGraphicsAnimations(100))
+            assertEquals(1,changes.size,"A clock-driven frame advance must publish damage without more PTY bytes")
+            write("a=d,d=I,i=1")
+            assertNull(session.advanceGraphicsAnimations(200))
+            assertEquals(0L,session.graphicsState.storage.totalBytes)
+        } finally { observation.dispose(); viewport.dispose() }
+    }
+
+    @Test fun failedFrameAppendRetainsChunksAndQuietButAbortReleasesThem() {
+        val storage = TerminalGraphicsStorage(100,TerminalGraphicsDecodeLimits(maxEncodedBytes=4))
+        storage.transmit(parse("a=t,i=1,f=32,s=1,v=1;AQID/w=="))
+        assertTrue(storage.transmit(parse("a=f,i=1,f=32,s=1,v=1,m=1,r=7;BA==")).pending)
+        assertEquals("\u001b_Gi=1;EINVAL: invalid data\u001b\\",storage.transmit(parse("a=T,m=1,q=1;BQYHCA==")).reply())
+        assertEquals(1,storage.loadingBytes)
+        assertNull(storage.transmit(parse("a=t;BQb/" )).reply())
+        assertEquals(2,storage.image(1)!!.animation.frameCount)
+        assertEquals(0,storage.retainedLoadingBytes)
+        storage.transmit(parse("a=f,i=1,f=32,s=1,v=1,m=1;AQ=="))
+        storage.abortTransfer()
+        assertFalse(storage.hasPendingTransfer); assertEquals(0,storage.retainedLoadingBytes)
+        assertEquals(8L,storage.totalBytes)
     }
 
     private fun parse(wire: String): TerminalGraphicsCommand {

@@ -4,15 +4,25 @@ The [image decoder corpus](images/README.md) separately compares common PNG deco
 with pinned libpng and validates zlib streams against pinned zlib. It does not yet
 cover original-libghostty image storage, placements or platform image rendering.
 
-The animation component corpus links the unmodified pinned Ghostty Zig module and executes
+The animation corpus links the unmodified pinned Ghostty Zig module and executes
 400 command/clock scenarios with 2030 snapshots. It compares all frame pixels, gaps, playback
 state, loop counters, timestamps, byte counts and image-generation changes. The alpha cases
-exercise all 65,536 source/destination alpha pairs. This component adapter does not validate
-session dispatch, chunked frame loading, replies, eviction or host timer/render integration.
+exercise all 65,536 source/destination alpha pairs. The adapter replays both the isolated core
+and complete/bytewise session input, including explicit clock ticks and storage accounting.
 Regenerate with `python3 scripts/generate-terminal-graphics-animation.py /path/to/ghostty
 /path/to/zig`; hashes and source pin are in `ghostty/graphics-animation-manifest.json`.
 The Wuffs integer source-over arithmetic retains its MIT license and provenance under
 `third-party/wuffs.json`; its runtime notice is included with the other packaged licenses.
+
+The full graphics execution corpus additionally covers 244 scenarios and 2394 checkpoints,
+including 48 animation scenarios for chunking, replies/quiet modes, generation changes, memory
+pressure, deletion, screen transitions and RGB/RGBA/PNG with optional zlib compression.
+`scripts/terminal-ghostty-graphics-oracle.c` wraps the existing C oracle and installs the
+libghostty PNG host callback using independent libpng 1.6.59; the base oracle's no-decoder
+configuration is unchanged. Regenerate with `python3 scripts/generate-terminal-graphics-execution.py
+/path/to/ghostty`; `pkg-config` must locate the pinned libpng. The manifest records both helper
+hashes and the decoder version. These deterministic protocol oracles do not establish automatic
+host timer scheduling; actual rendered-pixel checks live in the browser and Native verifiers.
 
 Alacritty reference recordings and expected grids are pinned by commit and SHA-256
 in `alacritty/manifest.json`. `references.tar.gz` preserves the selected upstream
