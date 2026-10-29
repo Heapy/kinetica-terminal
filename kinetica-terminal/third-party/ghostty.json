@@ -48,6 +48,7 @@
     "src/renderer/image.zig",
     "src/terminal/kitty/graphics_animation.zig",
     "src/terminal/kitty/graphics_pixel.zig",
+    "src/terminal/kitty/clipboard_grants.zig",
     "src/terminal/xt_checksum.zig",
     "src/terminal/device_status.zig",
     "src/terminal/osc/parsers/program_status.zig",

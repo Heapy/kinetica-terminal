@@ -18,6 +18,7 @@ const Case = struct {
     events: []const Event = &.{}, response: ?ResponseInput = null, grants: ?[]const GrantEvent = null,
     dispatch: ?[]const DispatchEvent = null, host: bool = true, allowed: bool = true, remember: bool = false,
     read_status: clipboard.Status = .OK, write_status: clipboard.Status = .DONE, twice: bool = false,
+    otp: ?[]const []const u8 = null,
 };
 const Metadata = struct { operation: []const u8, location: []const u8, id: []const u8, mime: []const u8, password: []const u8, name: []const u8 };
 const Content = struct { mime: []const u8, hex: []const u8 };
@@ -49,6 +50,16 @@ var replies: std.ArrayList(u8) = .empty;
 var accesses: std.ArrayList(Access) = .empty;
 var writes: std.ArrayList([]const Content) = .empty;
 var stored: []const vt.clipboard.Content = &.{};
+var entropy_chunks: []const []const u8 = &.{};
+var entropy_calls: usize = 0;
+fn oracleEntropy(buffer: []u8) vt.sys.RandomSecureError!void {
+    const index = entropy_calls;
+    entropy_calls += 1;
+    if (index >= entropy_chunks.len) return error.EntropyUnavailable;
+    const chunk = entropy_chunks[index];
+    if (buffer.len != chunk.len) @panic("unexpected entropy request size");
+    @memcpy(buffer, chunk);
+}
 fn writePty(_: *vt.TerminalStream.Handler, bytes: []const u8) void { replies.appendSlice(dispatch_alloc, bytes) catch @panic("OOM"); }
 fn captureAccess(direction: []const u8, location: vt.clipboard.Location, name: []const u8, mimes: []const []const u8, list: bool, granted: bool, can_remember: bool) void {
     const copy = dispatch_alloc.alloc([]const u8, mimes.len) catch @panic("OOM");
@@ -94,6 +105,21 @@ pub fn main(init: std.process.Init) !void {
     const alloc = arena.allocator();
     const cases = try std.json.parseFromSlice([]const Case, alloc, @embedFile("cases.json"), .{});
     for (cases.value) |case| {
+        if (case.otp) |chunks| {
+            const decoded = try alloc.alloc([]const u8, chunks.len);
+            for (chunks, decoded) |chunk, *dest| dest.* = try unhex(alloc, chunk);
+            entropy_chunks = decoded;
+            entropy_calls = 0;
+            const previous = vt.sys.random_secure;
+            vt.sys.random_secure = oracleEntropy;
+            defer vt.sys.random_secure = previous;
+            const password = clipboard.generateOtp(std.Io.failing) catch {
+                try emit(alloc, .{ .name = case.name, .result = @as(?[]const u8, null), .calls = entropy_calls });
+                continue;
+            };
+            try emit(alloc, .{ .name = case.name, .result = password[0..], .calls = entropy_calls });
+            continue;
+        }
         if (case.dispatch) |events| {
             dispatch_alloc = alloc; dispatch_case = case;
             stored = &.{ .{ .mime = "text/plain", .data = "hello" }, .{ .mime = "text/html", .data = "<b>hello</b>" }, .{ .mime = "image/png", .data = "\x00\xff" } };

@@ -634,7 +634,8 @@ unsupported destinations or I/O errors explicitly. Without an attached host, rea
 and writes return ENOSYS. Both platform views and DSL host adapters accept a separate
 `mimeClipboardPolicy`, defaulting to `DENY`; both samples explicitly select `WRITE_ONLY`.
 The views also accept a custom `mimeClipboard` backend and detach it on disposal.
-Secure mode-5522 paste events and platform password generation are still pending.
+Secure mode-5522 paste events are still pending; their platform password generator is implemented
+and compared with Ghostty's rejection-sampling algorithm.
 
 The AppKit MIME adapter maps types through Uniform Type Identifiers, including custom binary
 formats, and publishes all representations as one pasteboard item. Listings inspect only declared

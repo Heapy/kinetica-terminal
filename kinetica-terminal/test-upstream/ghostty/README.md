@@ -395,15 +395,20 @@ browser/native tests exercise Ghostty's host-side refresh behavior and actual PT
 ## OSC 5522 core oracle
 
 `clipboard-core-manifest.json` pins the original `Metadata`, `WriteState`, `Response`,
-`ReadSuccess`, `PasteEvent` and `Grants` modules from Ghostty 1.4.0. The Zig helper imports
+`ReadSuccess`, `PasteEvent`, `Grants` and `generateOtp` modules/functions from Ghostty 1.4.0. The Zig helper imports
 those modules directly through `ghostty-vt`; it does not copy their protocol algorithms.
-The 676 cases / 4072 checkpoints cover duplicate/malformed metadata, ID sanitation, UTF-8 and field limits,
+The 1043 cases / 4591 checkpoints cover duplicate/malformed metadata, ID sanitation, UTF-8 and field limits,
 every split point of a binary Base64 stream, independently padded chunks, invalid partial
 groups, MIME replacement, ordered/chained/colliding aliases, 64-entry caps and decoded budgets.
 Response cases cover every status, BEL/ST, omitted/empty metadata, binary 4096-byte chunk
 boundaries and bounded UTF-8 targets listings. Grant cases cover independent directions,
 one-time consumption (including mismatches), persistent merges, length/capacity boundaries,
 swap-removal followed by eviction and 2000 deterministic interleaved operations.
+Dispatch cases exercise the original TerminalStream effects and responses, including RIS,
+authorization outcomes and repeated completion. Another 324 cases call the original OTP
+generator with deterministic entropy overrides: all 256 byte values, rejected samples,
+multiple batches, partial-password failures and seeded byte streams. The override fails when
+its fixture bytes run out, and the underlying Io has no entropy source, exposing any fallback.
 
 ```sh
 python3 scripts/generate-terminal-clipboard-core.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig
@@ -412,6 +417,8 @@ python3 scripts/generate-terminal-clipboard-core.py build/upstream/ghostty-1.4.0
 The generator checks the pinned SHA and clean tracked upstream sources, runs with Zig's safe
 optimization and archives reproducible fixtures plus source/helper/generator hashes. Common
 tests compare metadata results, pending byte counts, errors, all committed binary contents,
-encoded response bytes and grant decisions/counts. These are low-level module comparisons;
-they do not prove session dispatch, async delivery, permission dialogs, entropy generation,
-user-initiated paste integration or platform clipboard support. Those integrations remain unfinished.
+encoded response bytes, grant decisions/counts, OTP strings and exact entropy-call counts.
+They also replay the synchronous dispatch cases through the session and bounded transport.
+Async delivery, platform clipboard access and platform CSPRNG calls are tested separately;
+these deterministic fixtures do not establish operating-system entropy quality. User-initiated
+mode-5522 paste integration remains unfinished.

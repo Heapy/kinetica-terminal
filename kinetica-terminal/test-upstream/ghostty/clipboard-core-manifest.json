@@ -1,12 +1,12 @@
 {
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
   "zig": "0.17.0",
-  "cases": 719,
-  "snapshots": 4267,
-  "scope": "Original clipboard modules and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No platform clipboard or secure entropy coverage.",
-  "helperSha256": "a28263290605aae1fd77a26f6a746403bea0b801fdbc74e65c4cc827399d19a3",
-  "generatorSha256": "fcabb25945233cfe16c6b60d3246ac22d7bb258f775ac13d1125da21d864ea8e",
-  "fixtureSha256": "2c2e7959bbb6909c22d96d26c9d2075a98f4ebd2c77323b153f2f01bfe120471",
+  "cases": 1043,
+  "snapshots": 4591,
+  "scope": "Original clipboard modules, OTP rejection sampling with deterministic entropy overrides, and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No platform clipboard or operating-system entropy coverage.",
+  "helperSha256": "7f2a41b782be7a486f6cbeb48e72b7f43fd4d51703a448c9917da4829c3010f5",
+  "generatorSha256": "a0cc111c4c9d3d12d4d270b4fcd184b459377f5ed3227208f503ca0b693d23c0",
+  "fixtureSha256": "888a48d08836bf455fe2696619e9e5509359846ea2ec2572f002c3fe5e760940",
   "sources": {
     "src/terminal/kitty/clipboard_command.zig": "6ebc69284fbee9227b6addcbc80d352caf2ee913c269c7f3d7ffde3394fa7b2a",
     "src/terminal/kitty/clipboard_write.zig": "28a00649cde9a57334bf9510904f78ecbf51719f16dfef4401311a41770d046b",
@@ -14,6 +14,7 @@
     "src/terminal/kitty/clipboard_grants.zig": "b5991422d229db6d67d9cd2f46131858a01d481470caafe2307fdb19827a796d",
     "src/terminal/osc/parsers/kitty_clipboard_protocol.zig": "13b9bc6e0137550305cbb805ee75553536eca59021a238485047c6808478e1ab",
     "src/terminal/stream_terminal.zig": "1b58936b58f1b553e800fcd1390ed2c62f9ec600998c73ddabc71529131786fd",
+    "src/terminal/sys.zig": "9e1159a2fed2ec4ca946f4eb3bc009109d654d95cc4dfa3f149f80c93e786210",
     "src/simd/base64.zig": "d29caf80155ee8d8102ec768c08ee25615d2cdcb9ceb58008ad1c5eeb4125e58"
   }
 }

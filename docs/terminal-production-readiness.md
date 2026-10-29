@@ -677,6 +677,23 @@ WebGL/Canvas/input/OSC-52 browser verifier pass. The OSC-52 verifier now uses th
 transport, which retains the remainder of ST terminators across asynchronous clipboard waits.
 Secure password generation and mode-5522 paste events remain open on both platforms.
 
+Secure paste-password generation now uses the original 22-character alphabet and unbiased
+rejection sampling with 44-byte batches. Entropy comes from JVM SecureRandom, browser Web Crypto
+getRandomValues and macOS SecRandomCopyBytes. Missing/failed entropy returns no password, with
+no weak fallback; temporary random-byte storage is wiped on success and failure. Browser errors
+are handled as JavaScript Throwable values, including DOMException, rather than only Kotlin
+Exception subclasses.
+
+The clipboard oracle now has 1043 cases / 4591 checkpoints, including 324 new calls to original
+Ghostty generateOtp under deterministic entropy overrides. Fixtures check every byte value,
+rejection/redraw, partial-generation failure and exact entropy-call counts. Separate platform
+smoke tests exercise the real CSPRNG adapters; they do not claim to measure entropy quality.
+Validation passes 1009 JVM tests, the fresh Release JS suite, 46 Native clipboard tests, and
+four entropy tests in headless Chromium with real Web Crypto and injected failures. The
+expanded corpus and manifest reproduce byte-for-byte.
+User-initiated paste events, their delivery/grant lifecycle and mode-5522 capability reporting
+remain to be connected.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

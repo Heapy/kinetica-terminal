@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare OSC 5522 metadata, writes, responses and grants with original Ghostty 1.4.0."""
+"""Compare OSC 5522 metadata, writes, responses, grants and OTP encoding with original Ghostty 1.4.0."""
 import base64
 import hashlib
 import json
@@ -142,6 +142,16 @@ def cases():
             "type=write"+credentials,write_data("data"),"type=wdata","type=write"+credentials,"type=wdata",
             dict(reset=True),read("text/plain",credentials)],remember=True)
     dispatch("reset_during_write",["type=write:id=before",write_data("retained"),dict(reset=True),"type=wdata",read()])
+    def otp(name, chunks): result.append(dict(name="otp_"+name,otp=[chunk.hex() for chunk in chunks]))
+    # Exercise every byte value, including rejection rather than modulo-biased selection.
+    # The oracle entropy override fails when the supplied chunks are exhausted.
+    for value in range(256): otp(f"byte_{value}", [bytes([value])*44])
+    otp("unavailable", [])
+    otp("redraw", [bytes([255])*44, bytes(range(44))])
+    otp("partial_then_failure", [bytes(range(5))+bytes([255])*39])
+    otp("partial_then_redraw", [bytes(range(5))+bytes([255])*39, bytes(range(100,144))])
+    rng=random.Random(552222)
+    for index in range(64): otp(f"random_{index}", [rng.randbytes(44) for _ in range(4)])
     return result
 
 
@@ -191,9 +201,9 @@ pub fn build(b: *std.Build) void {
     digest = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
     manifest = dict(commit=SHA,zig=subprocess.check_output([str(zig),"version"],text=True).strip(),
         cases=len(corpus),snapshots=sum(len(c.get("snapshots",[None])) for c in corpus),
-        scope="Original clipboard modules and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No platform clipboard or secure entropy coverage.",
+        scope="Original clipboard modules, OTP rejection sampling with deterministic entropy overrides, and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No platform clipboard or operating-system entropy coverage.",
         helperSha256=digest(helper),generatorSha256=digest(Path(__file__)),fixtureSha256=digest(fixture),
-        sources={p:digest(upstream/p) for p in ["src/terminal/kitty/clipboard_command.zig","src/terminal/kitty/clipboard_write.zig","src/terminal/kitty/clipboard_response.zig","src/terminal/kitty/clipboard_grants.zig","src/terminal/osc/parsers/kitty_clipboard_protocol.zig","src/terminal/stream_terminal.zig","src/simd/base64.zig"]})
+        sources={p:digest(upstream/p) for p in ["src/terminal/kitty/clipboard_command.zig","src/terminal/kitty/clipboard_write.zig","src/terminal/kitty/clipboard_response.zig","src/terminal/kitty/clipboard_grants.zig","src/terminal/osc/parsers/kitty_clipboard_protocol.zig","src/terminal/stream_terminal.zig","src/terminal/sys.zig","src/simd/base64.zig"]})
     write_generated(ROOT/"kinetica-terminal/test-upstream/ghostty/clipboard-core-manifest.json",json.dumps(manifest,indent=2)+'\n')
     print(f'Generated {len(corpus)} clipboard core cases / {manifest["snapshots"]} checkpoints')
 
