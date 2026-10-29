@@ -19,6 +19,8 @@
     "src/terminal/stream_terminal.zig",
     "src/terminal/stream.zig",
     "src/terminal/dcs.zig",
+    "src/terminfo/Source.zig",
+    "src/terminfo/ghostty.zig",
     "src/input/key_encode.zig",
     "src/input/kitty.zig",
     "src/terminal/kitty/key.zig",

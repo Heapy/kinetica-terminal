@@ -178,7 +178,7 @@ public class TerminalStreamConnection internal constructor(
         task?.dispose()
         output.clear()
         try { input.clear() } finally {
-            session.cancelClipboardOperations()
+            session.cancelPendingReplies()
             if (!outputFinished) session.finishProgramStatuses()
         }
     }

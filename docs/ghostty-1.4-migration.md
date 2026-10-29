@@ -81,6 +81,12 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Confirmed terminal behavior to implement or reconcile
 
+- [x] XTGETTCAP (`DCS +q`): all 272 static terminfo capabilities, dynamic TN from the host's
+      actual TERM, malformed-key skipping, boolean/valued replies and DCS capture boundaries.
+      The generated table and 309 original-handler cases include uppercase/lowercase hex,
+      numeric headers, control bytes, cancellation and UTF-8 name limits. Long responses use
+      bounded delivery chunks and stop consuming output until the transport acknowledges them.
+
 - [x] DECSTR (`CSI ! p`): reset implemented modes, margins, pen/protection/charsets, saved
       cursor, cursor appearance and modifyOtherKeys while retaining screen contents and cursor
       position. Palette overrides reset; dynamic colors, hyperlinks, tab stops, synchronized

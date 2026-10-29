@@ -83,6 +83,7 @@ public class MacOsPty(
             pid = child.value
         }
         inputSubscription = session.onInput(::send)
+        session.terminfoName = env["TERM"]
         resizeSubscription = session.onResize { columns, rows -> if (!disposed && !ended) kinetica_pty_resize(fd, columns, rows) }
         timer = NSTimer.timerWithTimeInterval(0.008, repeats = true) { pump() }.also {
             NSRunLoop.mainRunLoop.addTimer(it, NSRunLoopCommonModes)
@@ -162,7 +163,7 @@ public class MacOsPty(
     private fun finish() {
         if (ended || disposed) return
         ended = true
-        session.cancelClipboardOperations()
+        session.cancelPendingReplies()
         outputOffset = 0; outputSize = 0
         session.finishInput()
         timer?.invalidate(); timer = null
@@ -196,7 +197,7 @@ public class MacOsPty(
         check(NSThread.isMainThread) { "Dispose MacOsPty on the main thread" }
         if (disposed) return
         disposed = true; timer?.invalidate(); timer = null
-        session.cancelClipboardOperations()
+        session.cancelPendingReplies()
         inputSubscription.dispose(); resizeSubscription.dispose()
         outputOffset = 0; outputSize = 0
         if (fd >= 0) { close(fd); fd = -1 }

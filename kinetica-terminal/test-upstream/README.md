@@ -1,5 +1,15 @@
 # Upstream terminal test corpus
 
+The XTGETTCAP corpus enumerates the original Ghostty terminfo map (272 static capabilities)
+and replays 309 original-handler cases. Generated runtime replies preserve boolean, numeric,
+literal control and parameterized terminfo representations exactly. Cases cover mixed-case
+hex, multiple/malformed keys, DCS headers/termination, the 1 MiB capture boundary and configured
+TN names, including UTF-8 byte limits. Regenerate with
+`python3 scripts/generate-terminal-terminfo.py /path/to/ghostty /path/to/zig`;
+`ghostty/terminfo-manifest.json` records source and artifact hashes. The helper enumerates
+byte-identical terminfo source copies because Zig prohibits sharing one physical source file
+between two modules; request execution uses the unmodified Ghostty module itself.
+
 The [image decoder corpus](images/README.md) separately compares common PNG decoding
 with pinned libpng and validates zlib streams against pinned zlib. It does not yet
 cover original-libghostty image storage, placements or platform image rendering.

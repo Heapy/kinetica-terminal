@@ -81,6 +81,7 @@ apps against a development checkout, bootstrap it above, then run:
 # With the local HTTP server running:
 node scripts/verify-terminal.mjs
 node scripts/verify-terminal-mime-clipboard.mjs
+node scripts/verify-terminal-terminfo.mjs
 node scripts/verify-terminal-graphics.mjs
 ```
 

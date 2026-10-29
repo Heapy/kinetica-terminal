@@ -86,6 +86,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         private set
     public var bracketedPaste: Boolean = false
         private set
+    /** Host's actual TERM value for XTGETTCAP TN; null/empty or over 128 UTF-8 bytes means unknown.
+     * Configuration survives RIS/DECSTR. MacOsPty sets it from its child's final environment. */
+    public var terminfoName: String? = null
     public var kittyPasteEvents: Boolean = false
         private set
     public val clipboardPasteEventsEnabled: Boolean get() = kittyPasteEvents && kittyClipboardBinding?.hasHost == true
@@ -285,6 +288,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             else if (kind == VtParser.DCS) {
                 // DECRQSS ignores numeric DCS parameters; its request buffer holds at most two bytes.
                 val request = value.dropWhile { it in '0'..'9' || it == ';' }
+                if (request.startsWith("+q")) {
+                    capabilityReplies.offer(terminalTerminfoReplies(request.substring(2), terminfoName))
+                    return
+                }
                 if (!request.startsWith("\$q") || request.length > 4) return
                 if (request == "\$q q") {
                     val number = when (this@TerminalSession.cursorStyle) {
@@ -335,9 +342,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private val outputReadyObservers = mutableListOf<() -> Unit>()
     private val clipboardReplies = TerminalClipboardReplies({ bytes, required, done -> emitProtocolReply(bytes, done, !required) },
         { cancelClipboardOperations() }, ::resumeClipboardOutput)
+    private val capabilityReplies = TerminalReplyStream({ bytes, done -> emitProtocolReply(bytes, done, allowUntracked = true) }, ::resumeClipboardOutput)
 
-    /** A complete clipboard command or reply is waiting for host/transport capacity. */
-    public val outputPaused: Boolean get() = pendingClipboard != null || kittyClipboardBinding != null && clipboardReplies.busy
+    /** A complete command or reply is waiting for host/transport capacity. */
+    public val outputPaused: Boolean get() = capabilityReplies.busy || pendingClipboard != null || kittyClipboardBinding != null && clipboardReplies.busy
 
     /** Schedule another [writeAvailable] attempt; callbacks must not reenter the current write. */
     public fun onOutputReady(observer: () -> Unit): TerminalDisposable {
@@ -583,6 +591,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         resumeClipboardOutput()
     }
 
+    internal fun cancelPendingReplies() { capabilityReplies.cancel(); cancelClipboardOperations() }
+
     public fun sendInput(text: String) = emitInput(TerminalInputData.Text(text))
     internal fun sendProtocolBytes(bytes: ByteArray) = emitInput(TerminalInputData.Bytes(bytes))
     /** Success means every attached bounded transport accepted all bytes, not merely queued them. */
@@ -729,11 +739,11 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         damageAll(); flushDamage()
     }
 
-    /** Synchronous feed. For asynchronous clipboard hosts use [writeAvailable] or the bounded adapters. */
+    /** Synchronous feed. For asynchronous hosts or streamed capability replies use [writeAvailable] or the bounded adapters. */
     public fun write(text: String) {
         damage(cursorRow)
         for (char in text) {
-            check(!outputPaused) { "Clipboard output is paused; use writeAvailable or a bounded transport" }
+            check(!outputPaused) { "Protocol output is paused; use writeAvailable or a bounded transport" }
             val high = highSurrogate
             highSurrogate = null
             if (high != null) {
@@ -769,7 +779,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         var epoch = controlEpoch
         var nextCheckpoint = 0
         for (i in offset until offset + length) {
-            if (canContinue == null) check(!outputPaused) { "Clipboard output is paused; use writeAvailable or a bounded transport" }
+            if (canContinue == null) check(!outputPaused) { "Protocol output is paused; use writeAvailable or a bounded transport" }
             if (canContinue != null && (consumed == nextCheckpoint || epoch != controlEpoch)) {
                 if (outputPaused || !canContinue()) break
                 nextCheckpoint = consumed + TERMINAL_READ_SLICE
@@ -882,6 +892,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     public fun reset() {
+        capabilityReplies.cancel()
         statusLineSelected = false; checksumFlags = defaultChecksumFlags
         colors.resetPalette()
         cancelClipboardOperations(preserveWrite = true)

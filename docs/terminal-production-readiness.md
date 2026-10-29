@@ -730,6 +730,26 @@ nine native UI/application tests, the browser MIME verifier and the general brow
 The original clipboard oracle remains at 1070 cases / 4618 checkpoints; this increment adds
 host/session integration checks without changing generated fixtures.
 
+XTGETTCAP now answers the complete pinned terminfo table: 272 static capabilities plus a
+host-configured TN. The macOS PTY reports the actual child TERM; missing, empty or overlong
+names are silent. A generated 309-case original-handler corpus checks every static capability,
+hex normalization, malformed keys, numeric headers, embedded control bytes, DCS termination,
+the exact 1 MiB capture boundary and 128-byte UTF-8 name boundary. It exposed NUL removal in
+the generic string collector, which could turn a malformed capability into a valid query;
+DCS now preserves that byte. Other string payload limits are unchanged.
+
+Capability responses are emitted lazily in at most 32 KiB delivery-tracked chunks, one in
+flight at a time. Output parsing pauses until the response completes; closing the transport
+or resetting the session discards unsent chunks. Common tests hold a partial writer, check
+that following screen output waits, and verify cancellation/reconnection. The real PTY test
+requests 20,000 long TN responses and compares all bytes against its own TERM environment.
+Chromium separately checks a blocked writer, large responses and transport disposal.
+Validation passes 1032 JVM tests, fresh Release JS tests, four Native capability tests,
+87 native clipboard/transport regressions, and the capability/general browser verifiers.
+Live Vim, Neovim and tmux tests pass in isolated shells (Neovim uses the existing local
+`build/manual-release/nvim-macos-arm64/bin/nvim` through KINETICA_NVIM). Generated table,
+fixtures and manifest reproduce byte-for-byte against the unmodified 1.4.0 sources.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than

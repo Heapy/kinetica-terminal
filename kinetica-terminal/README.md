@@ -470,6 +470,21 @@ VT220 feature-bit interpretation; see [XTerm controls](https://invisible-island.
 Request parsing follows the pinned Ghostty's parameter-tolerant behavior. Invalid
 prefixes/intermediates and primary-DA replies produce no identification reply.
 
+XTGETTCAP (`DCS + q`) answers all 272 static capabilities from the pinned Ghostty terminfo
+table, including colors, booleans and parameterized control strings. Hex keys are case
+insensitive; unknown/malformed keys are skipped, and each known key gets its own ST-terminated
+reply. `session.terminfoName` supplies `TN`; null, empty or more than 128 UTF-8 bytes means
+unknown. This configuration survives resets and screen changes. `MacOsPty` sets it from the
+child's actual `TERM`, including an explicit environment override. Other transports must
+configure it when they know the peer's terminal profile.
+
+Requests accept up to 1 MiB of DCS payload, excluding the header. Replies are streamed in
+blocks of at most 32 KiB, with only one block awaiting delivery. The bounded transports pause
+PTY/server output until the response finishes; custom async hosts must use `writeAvailable`
+and acknowledge `TerminalInputData.ProtocolReply` delivery. Untracked `onInput` observers
+retain synchronous operation. Reset/transport closure cancels unsent blocks. Run
+`node scripts/verify-terminal-terminfo.mjs` to check the browser integration.
+
 Color commands accept X11 names, `rgb:`/`rgbi:`, and 3/6/9/12-digit `#` forms, plus bare
 3/6-digit hex. Queries preserve BEL versus ST and report 16-bit channels. Chained requests,
 partial malformed lists, and resets follow the pinned Ghostty behavior. Colors are shared by
@@ -730,7 +745,7 @@ notifications. AppKit progress pixels and browser progress state/expiry are chec
 
 This is an initial VT implementation, not complete xterm conformance. Known limits:
 
-- No image protocols, ligatures or blinking text. Hyperlink activation and search controls
+- No sixel, ligatures or blinking text. Hyperlink activation and search controls
   are currently provided by the native host; browser hosts can use the shared search/link APIs.
   DECRQSS supports cursor style, SGR attributes and vertical/horizontal margins;
   its SGR report omits underline color, matching the pinned Ghostty reference.

@@ -36,6 +36,8 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
     private var payload = StringBuilder()
     private var clipboardCapture = false
     private var clipboardBytes = 0
+    private var capabilityCapture = false
+    private var capabilityBytes = 0
 
     // UTF-8 is decoded for printable text and supported string payloads. Escape/CSI/DCS
     // headers and APC/SOS/PM follow the byte transition table instead.
@@ -88,9 +90,14 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
                         clipboardBytes += when { code < 0x80 -> 1; code < 0x800 -> 2; code < 0x10000 -> 3; else -> 4 }
                         // Ghostty's allocating capture includes its trailing NUL, not the OSC number.
                         if (clipboardBytes >= clipboardLimit) overflow = true
+                    } else if (capabilityCapture) {
+                        capabilityBytes += when { code < 0x80 -> 1; code < 0x800 -> 2; code < 0x10000 -> 3; else -> 4 }
+                        if (capabilityBytes > CAPABILITY_LIMIT) overflow = true
                     } else if (payload.length + (if (code > 0xffff) 2 else 1) > STRING_LIMIT) overflow = true
                     if (!overflow) {
-                        payload.append(codePointString(code))
+                        // DCS preserves NUL bytes too; codePointString uses empty text for
+                        // blank terminal cells, which must not turn a malformed key into Co.
+                        if (code == 0) payload.append('\u0000') else payload.append(codePointString(code))
                         if (stringKind == OSC &&
                             (payload.length == 3 && payload.toString() == "52;" ||
                                 payload.length == 5 && payload.toString() == "5522;")) clipboardCapture = true
@@ -162,7 +169,8 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
                         for (i in intermediateCount - 1 downTo 0) append((intermediates ushr (i * 8) and 255).toChar())
                         append(code.toChar())
                     }
-                    beginString(DCS); payload.append(header)
+                    val capability = intermediateCount == 1 && intermediates == '+'.code && code == 'q'.code
+                    beginString(DCS); payload.append(header); capabilityCapture = capability
                 }
             }
             in 0x30..0x39, ';'.code -> if (state == DCS_ENTRY || state == DCS_PARAM) { parameter(code); state = DCS_PARAM } else state = DCS_IGNORE
@@ -189,8 +197,9 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
         prefix = 0; intermediates = 0; intermediateCount = 0; overflow = false
     }
     private fun clearPayload() {
-        if (clipboardCapture) payload = StringBuilder() else payload.clear()
+        if (clipboardCapture || capabilityCapture) payload = StringBuilder() else payload.clear()
         clipboardCapture = false; clipboardBytes = 0
+        capabilityCapture = false; capabilityBytes = 0
     }
     private fun beginString(kind: Int) {
         state = STRING; stringKind = kind; clearPayload(); overflow = false
@@ -208,6 +217,7 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
         private const val IGNORED = 3
         private const val APC = 4
         const val STRING_LIMIT = 4096
+        const val CAPABILITY_LIMIT = 1024 * 1024
         private const val GROUND = 0
         private const val ESCAPE = 1
         private const val ESCAPE_INTERMEDIATE = 2
