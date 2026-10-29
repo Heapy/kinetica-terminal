@@ -1,18 +1,19 @@
 {
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
   "zig": "0.17.0",
-  "cases": 676,
-  "snapshots": 4072,
-  "scope": "Original Metadata, WriteState, Response, ReadSuccess, PasteEvent and Grants modules. No session dispatch, authorization callbacks, entropy source or platform clipboard coverage.",
-  "helperSha256": "6ffec9adc156bf816cd8f0be3d132fd94b6fffea4d9f1fb024db82761a976f26",
-  "generatorSha256": "28b0604caa4f0fe88d09f03cf635bb92e06a0b43cbf30c93dd4fe1c21e12dc05",
-  "fixtureSha256": "3bc057e55936b9d1aa958e29074d7477bdee7127f5b27ddd1fc33180caf214e1",
+  "cases": 718,
+  "snapshots": 4262,
+  "scope": "Original clipboard modules and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No mounted host or secure entropy coverage.",
+  "helperSha256": "a28263290605aae1fd77a26f6a746403bea0b801fdbc74e65c4cc827399d19a3",
+  "generatorSha256": "b71edeed6dbd523d47f8395bd0b1c182ce9ca4a56345fc9bcb1ec4f367a090bd",
+  "fixtureSha256": "960cab50f0710231987c0056425e20b5f42965b6930e4a5b2616dd4dd9f56ec0",
   "sources": {
     "src/terminal/kitty/clipboard_command.zig": "6ebc69284fbee9227b6addcbc80d352caf2ee913c269c7f3d7ffde3394fa7b2a",
     "src/terminal/kitty/clipboard_write.zig": "28a00649cde9a57334bf9510904f78ecbf51719f16dfef4401311a41770d046b",
     "src/terminal/kitty/clipboard_response.zig": "09357fe08fba9d4c16a598a26f680cf97a140263989ee08bb3b2c5d8d160861e",
     "src/terminal/kitty/clipboard_grants.zig": "b5991422d229db6d67d9cd2f46131858a01d481470caafe2307fdb19827a796d",
     "src/terminal/osc/parsers/kitty_clipboard_protocol.zig": "13b9bc6e0137550305cbb805ee75553536eca59021a238485047c6808478e1ab",
+    "src/terminal/stream_terminal.zig": "1b58936b58f1b553e800fcd1390ed2c62f9ec600998c73ddabc71529131786fd",
     "src/simd/base64.zig": "d29caf80155ee8d8102ec768c08ee25615d2cdcb9ceb58008ad1c5eeb4125e58"
   }
 }

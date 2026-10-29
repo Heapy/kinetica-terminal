@@ -569,12 +569,30 @@ consume one-time grants even on a direction mismatch, and preserve the original 
 capacity and eviction order. This store accepts passwords; secure entropy generation and
 authorization decisions remain outside it.
 
-The current `clipboard-core-manifest.json` covers 676 cases / 4072 checkpoints, including
+The second-increment `clipboard-core-manifest.json` covered 676 cases / 4072 checkpoints, including
 all response statuses, BEL/ST, binary chunk boundaries, UTF-8 listings, capacity boundaries
 and 2000 interleaved grant operations. Validation passes 978 JVM tests, fresh Release JS tests
 and six Native clipboard-core/response tests. Fixtures and manifest reproduce byte-for-byte.
 Session routing, async authorization/completion, secure paste events, parser capture budgets,
 reply backpressure and native/browser MIME adapters remain required to enable OSC 5522.
+
+The third increment adds an internal asynchronous dispatcher for read/write authorization,
+MIME transactions and status replies. Host operations remain serialized until the complete
+response is acknowledged by the reply sink. Pending requests and their retained bytes are
+bounded; a full queue rejects the packet without effects so the owner can pause and retry.
+Read results are copied before deferred delivery, and both decoded data and exact encoded
+reply sizes are checked before emitting OK. Duplicate callbacks are ignored. Binding reset
+or disposal cancels pending work, including an unfinished write transaction; this is an
+embedding lifecycle operation, not an assertion that Ghostty's RIS aborts write assembly.
+
+The corpus now contains 718 cases / 4262 checkpoints, including 42 original TerminalStream
+dispatch scenarios that compare host access metadata, committed MIME contents and wire replies.
+Separate tests cover asynchronous permissions, delivery acknowledgements, queue limits,
+cancellation, host/transport failures and exact reply-size boundaries. Validation passes
+985 JVM tests, fresh Release JS tests and 13 Native Kitty clipboard tests. Fixtures and
+manifest reproduce byte-for-byte. The dispatcher is still internal and unmounted: session
+routing with parser backpressure, transport delivery acknowledgements, secure paste events
+and native/browser MIME adapters remain necessary for end-to-end OSC 5522 support.
 
 Graphics acceptance work:
 

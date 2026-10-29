@@ -111,6 +111,36 @@ def cases():
         password=str(rng.randrange(40)); direction=rng.choice(["read","write"])
         events.append(grant(password,direction,rng.choice([True,False])) if rng.randrange(3)==0 else use(password,direction))
     grants("grants_interleaved",events)
+    def dispatch(name, events, **options):
+        result.append(dict(name="dispatch_"+name,dispatch=[dict(body=e) if isinstance(e,str) else e for e in events],**options))
+    def read(mimes="text/plain", metadata=""): return "type=read"+metadata+";"+b64(mimes)
+    def write_data(value, mime="text/plain", metadata=""): return "type=wdata:mime="+b64(mime)+metadata+";"+b64(value)
+    dispatch("roundtrip",["type=write:id=*4 2*:loc=primary",write_data("hello "),write_data("world"),
+        write_data("<b>hello</b>","text/html"),"type=walias:mime="+b64("text/plain")+";"+b64("TEXT UTF8_STRING"),
+        dict(body="type=wdata",terminator="bel"),read(". TEXT text/html missing",":id=q:loc=primary")])
+    dispatch("clear",["type=write", "type=wdata;ignored",read(". text/plain")])
+    dispatch("replace",["type=write:id=old",write_data("old"),"type=write:id=new",write_data("new"),"type=wdata",read()])
+    dispatch("read_during_write",["type=write",write_data("new"),read(),"type=wdata",read()])
+    dispatch("chunk_metadata",["type=write:id=begin:loc=primary",write_data("data",metadata=":id=end:loc=standard"),"type=wdata:id=commit:loc=standard"])
+    for payload in ["",".","text/plain","text/plain text/plain",". text/plain image/png text/html unknown text/plain .", "unknown", "text/plain\ttext/html\nimage/png"]:
+        dispatch("read_"+str(len(result)),[read(payload,":id=r"),dict(body=read(payload,":loc=primary"),terminator="bel")])
+    for raw in ["type=read;!!!","type=read;/w==","type=read:name=!!!;dGV4dC9wbGFpbg==","type=read:","type=unknown"]:
+        dispatch("invalid_read_"+str(len(result)),["type=write",write_data("valid"),raw,"type=wdata",read()])
+    for raw in ["type=wdata:mime=!!!","type=walias:mime=!!!","type=walias", "type=wdata:mime="+b64("text/plain")+";!!!",
+                "type=walias:mime="+b64("text/plain")+";!!!", "type=walias:mime="+b64("text/plain")+";/w=="]:
+        dispatch("invalid_write_"+str(len(result)),["type=write:id=start",write_data("first"),dict(body=raw,terminator="bel"),write_data("after"),"type=wdata",read()])
+    dispatch("dropped_write",["type=write",write_data("valid"),"type=wdata:","type=wdata:type=unknown", "type=write:name=!!!", "type=wdata", read()])
+    dispatch("oversized",["type=write:id=big",write_data("1234"),write_data("5"),"type=wdata",read()],limit=4)
+    dispatch("without_host",[read(),"type=write:id=w",write_data("ignored"),"type=wdata",read(".")],host=False)
+    dispatch("denied",[read(),"type=write",write_data("denied"),"type=wdata",read(".")],allowed=False)
+    for status in ["OK","EPERM","ENOSYS","EBUSY","EIO"]:
+        dispatch("read_status_"+status,[read(". text/plain",":id=read")],read_status=status,twice=True)
+    for status in ["DONE","EPERM","ENOSYS","EBUSY","EIO","EINVAL"]:
+        dispatch("write_status_"+status,["type=write:id=write",write_data("data"),"type=wdata",read()],write_status=status,twice=True)
+    for credentials in [":pw=cHc=:name=YXBw",":pw=cHc=",":name=YXBw",":pw=:name=YXBw"]:
+        dispatch("remember_"+str(len(result)),[read("text/plain",credentials),read("text/plain",credentials),read(".",credentials),
+            "type=write"+credentials,write_data("data"),"type=wdata","type=write"+credentials,"type=wdata",
+            dict(reset=True),read("text/plain",credentials)],remember=True)
     return result
 
 
@@ -160,9 +190,9 @@ pub fn build(b: *std.Build) void {
     digest = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
     manifest = dict(commit=SHA,zig=subprocess.check_output([str(zig),"version"],text=True).strip(),
         cases=len(corpus),snapshots=sum(len(c.get("snapshots",[None])) for c in corpus),
-        scope="Original Metadata, WriteState, Response, ReadSuccess, PasteEvent and Grants modules. No session dispatch, authorization callbacks, entropy source or platform clipboard coverage.",
+        scope="Original clipboard modules and synchronous TerminalStream dispatch/effects/replies. Async ordering, cancellation and reply backpressure are embedding policies tested separately. No mounted host or secure entropy coverage.",
         helperSha256=digest(helper),generatorSha256=digest(Path(__file__)),fixtureSha256=digest(fixture),
-        sources={p:digest(upstream/p) for p in ["src/terminal/kitty/clipboard_command.zig","src/terminal/kitty/clipboard_write.zig","src/terminal/kitty/clipboard_response.zig","src/terminal/kitty/clipboard_grants.zig","src/terminal/osc/parsers/kitty_clipboard_protocol.zig","src/simd/base64.zig"]})
+        sources={p:digest(upstream/p) for p in ["src/terminal/kitty/clipboard_command.zig","src/terminal/kitty/clipboard_write.zig","src/terminal/kitty/clipboard_response.zig","src/terminal/kitty/clipboard_grants.zig","src/terminal/osc/parsers/kitty_clipboard_protocol.zig","src/terminal/stream_terminal.zig","src/simd/base64.zig"]})
     write_generated(ROOT/"kinetica-terminal/test-upstream/ghostty/clipboard-core-manifest.json",json.dumps(manifest,indent=2)+'\n')
     print(f'Generated {len(corpus)} clipboard core cases / {manifest["snapshots"]} checkpoints')
 

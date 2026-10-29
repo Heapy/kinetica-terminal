@@ -12,9 +12,12 @@ const ResponseInput = struct {
     available: []const []const u8 = &.{}, contents: []const ContentInput = &.{},
 };
 const GrantEvent = struct { action: []const u8, password: []const u8 = "", direction: clipboard.Grants.Direction = .read, one_time: bool = false };
+const DispatchEvent = struct { body: ?[]const u8 = null, terminator: clipboard.Terminator = .st, reset: bool = false };
 const Case = struct {
     name: []const u8, metadata: ?[]const u8 = null, limit: usize = clipboard.max_write_size,
     events: []const Event = &.{}, response: ?ResponseInput = null, grants: ?[]const GrantEvent = null,
+    dispatch: ?[]const DispatchEvent = null, host: bool = true, allowed: bool = true, remember: bool = false,
+    read_status: clipboard.Status = .OK, write_status: clipboard.Status = .DONE, twice: bool = false,
 };
 const Metadata = struct { operation: []const u8, location: []const u8, id: []const u8, mime: []const u8, password: []const u8, name: []const u8 };
 const Content = struct { mime: []const u8, hex: []const u8 };
@@ -39,12 +42,81 @@ fn unhex(alloc: std.mem.Allocator, value: []const u8) ![]const u8 {
     for (bytes, 0..) |*byte, i| byte.* = try std.fmt.parseInt(u8, value[i * 2 ..][0..2], 16);
     return bytes;
 }
+const Access = struct { direction: []const u8, location: []const u8, name: []const u8, mimes: []const []const u8, list: bool, granted: bool, can_remember: bool };
+var dispatch_alloc: std.mem.Allocator = undefined;
+var dispatch_case: Case = undefined;
+var replies: std.ArrayList(u8) = .empty;
+var accesses: std.ArrayList(Access) = .empty;
+var writes: std.ArrayList([]const Content) = .empty;
+var stored: []const vt.clipboard.Content = &.{};
+fn writePty(_: *vt.TerminalStream.Handler, bytes: []const u8) void { replies.appendSlice(dispatch_alloc, bytes) catch @panic("OOM"); }
+fn captureAccess(direction: []const u8, location: vt.clipboard.Location, name: []const u8, mimes: []const []const u8, list: bool, granted: bool, can_remember: bool) void {
+    const copy = dispatch_alloc.alloc([]const u8, mimes.len) catch @panic("OOM");
+    for (mimes, copy) |mime, *dest| dest.* = dispatch_alloc.dupe(u8, mime) catch @panic("OOM");
+    accesses.append(dispatch_alloc, .{ .direction = direction, .location = @tagName(location), .name = dispatch_alloc.dupe(u8, name) catch @panic("OOM"), .mimes = copy, .list = list, .granted = granted, .can_remember = can_remember }) catch @panic("OOM");
+}
+fn clipboardRead(_: *vt.TerminalStream.Handler, request: vt.clipboard.Read) void {
+    captureAccess("read", request.location, request.name, request.mimes, request.list, request.granted, request.can_remember);
+    const available = dispatch_alloc.alloc([]const u8, stored.len) catch @panic("OOM");
+    for (stored, available) |content, *mime| mime.* = content.mime;
+    const status = if (dispatch_case.allowed) dispatch_case.read_status else .EPERM;
+    request.reply(switch (status) {
+        .OK => .{ .success = .{ .contents = stored, .available = available, .remember = dispatch_case.remember } },
+        .EPERM => .denied, .ENOSYS => .unsupported, .EBUSY => .busy, .EIO => .io_error,
+        else => @panic("invalid test read status"),
+    });
+    if (dispatch_case.twice) request.reply(.denied);
+}
+fn clipboardWrite(_: *vt.TerminalStream.Handler, request: vt.clipboard.Write) void {
+    const mimes = dispatch_alloc.alloc([]const u8, request.contents.len) catch @panic("OOM");
+    for (request.contents, mimes) |content, *mime| mime.* = content.mime;
+    captureAccess("write", request.location, request.name, mimes, false, request.granted, request.can_remember);
+    const status = if (dispatch_case.allowed) dispatch_case.write_status else .EPERM;
+    if (status == .DONE) {
+        const copy = dispatch_alloc.alloc(vt.clipboard.Content, request.contents.len) catch @panic("OOM");
+        const captured = dispatch_alloc.alloc(Content, request.contents.len) catch @panic("OOM");
+        for (request.contents, copy, captured) |content, *dest, *out| {
+            dest.* = .{ .mime = dispatch_alloc.dupe(u8, content.mime) catch @panic("OOM"), .data = dispatch_alloc.dupe(u8, content.data) catch @panic("OOM") };
+            out.* = .{ .mime = dest.mime, .hex = hex(dispatch_alloc, dest.data) catch @panic("OOM") };
+        }
+        stored = copy; writes.append(dispatch_alloc, captured) catch @panic("OOM");
+    }
+    request.reply(switch (status) {
+        .DONE => .{ .success = .{ .remember = dispatch_case.remember } },
+        .EPERM => .denied, .ENOSYS => .unsupported, .EBUSY => .busy, .EIO => .io_error, .EINVAL => .invalid_data,
+        else => @panic("invalid test write status"),
+    });
+    if (dispatch_case.twice) request.reply(.denied);
+}
 pub fn main(init: std.process.Init) !void {
     var arena = std.heap.ArenaAllocator.init(init.gpa);
     defer arena.deinit();
     const alloc = arena.allocator();
     const cases = try std.json.parseFromSlice([]const Case, alloc, @embedFile("cases.json"), .{});
     for (cases.value) |case| {
+        if (case.dispatch) |events| {
+            dispatch_alloc = alloc; dispatch_case = case;
+            stored = &.{ .{ .mime = "text/plain", .data = "hello" }, .{ .mime = "text/html", .data = "<b>hello</b>" }, .{ .mime = "image/png", .data = "\x00\xff" } };
+            var terminal = try vt.Terminal.init(init.io, init.gpa, .{ .cols = 12, .rows = 6 });
+            defer terminal.deinit(init.gpa);
+            var stream = terminal.vtStream();
+            defer stream.deinit();
+            stream.handler.effects.write_pty = writePty;
+            stream.handler.kitty_clipboard_write_max_bytes = case.limit;
+            if (case.host) { stream.handler.effects.clipboard_read = clipboardRead; stream.handler.effects.clipboard_write = clipboardWrite; }
+            const DispatchSnapshot = struct { replies: []const u8, accesses: []const Access, writes: []const []const Content };
+            var snapshots: std.ArrayList(DispatchSnapshot) = .empty;
+            for (events) |event| {
+                replies.clearRetainingCapacity(); accesses.clearRetainingCapacity(); writes.clearRetainingCapacity();
+                if (event.reset) stream.nextSlice("\x1bc");
+                if (event.body) |body| {
+                    stream.nextSlice("\x1b]5522;"); stream.nextSlice(body); stream.nextSlice(event.terminator.string());
+                }
+                try snapshots.append(alloc, .{ .replies = try alloc.dupe(u8, replies.items), .accesses = try alloc.dupe(Access, accesses.items), .writes = try alloc.dupe([]const Content, writes.items) });
+            }
+            try emit(alloc, .{ .name = case.name, .snapshots = snapshots.items });
+            continue;
+        }
         if (case.response) |input| {
             var output: std.Io.Writer.Allocating = .init(alloc);
             defer output.deinit();
