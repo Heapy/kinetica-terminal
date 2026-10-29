@@ -377,6 +377,23 @@ try {
   await page.waitForFunction(n => keypadBytes.length === n, Buffer.byteLength(expectedModifyOther));
   assert.equal(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(keypadBytes))), expectedModifyOther);
   await page.evaluate(() => { kineticaTerminalDemo.write("\u001b[>4n"); keypadBytes.length = 0; });
+  // DECBKM swaps only unmodified/Control Backspace; Kitty retains its own encoding.
+  await page.evaluate(() => kineticaTerminalDemo.write("\u001b[?67h"));
+  await page.keyboard.press("Backspace");
+  await page.keyboard.press("Control+Backspace");
+  await page.keyboard.press("Shift+Backspace");
+  await page.keyboard.press("Control+Shift+Backspace");
+  await page.evaluate(() => kineticaTerminalDemo.write("\u001b[>4;2m"));
+  await page.keyboard.press("Control+Shift+Backspace");
+  await page.evaluate(() => kineticaTerminalDemo.write("\u001b[>4n\u001b[>1u"));
+  await page.keyboard.press("Backspace");
+  await page.keyboard.press("Control+Backspace");
+  await page.evaluate(() => kineticaTerminalDemo.write("\u001b[<u\u001b[?67l"));
+  await page.keyboard.press("Backspace");
+  const expectedBackarrow = "\b\u007f\u007f\b\u001b[27;6;127~\u007f\u001b[127;5u\u007f";
+  await page.waitForFunction(n => keypadBytes.length === n, Buffer.byteLength(expectedBackarrow));
+  assert.equal(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(keypadBytes))), expectedBackarrow);
+  await page.evaluate(() => { keypadBytes.length = 0; });
   await page.evaluate(() => {
     kineticaTerminalDemo.write("\u001b[?996n\u001b[?2031h");
     kineticaTerminalDemo.configureTheme(0xffffff);

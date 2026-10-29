@@ -115,7 +115,14 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       remap UTF-8 characters, as in the original. Seventy-one dedicated scenarios plus two
       exact Alacritty replays cover the lifecycle and DEC underscore difference.
 - [x] Empty OSC 22 resets the pointer to text.
-- [ ] Compare mode reports, OSC 105 routing and modified Backspace input.
+- [x] Compare fixed mode reports, OSC 105 routing and modified Backspace input. ANSI modes
+      1/5/7/10/11/13–19 and DEC 117 report permanently reset. DECBKM (67) swaps plain and
+      Ctrl+Backspace in legacy encoding; other modifier combinations and Kitty retain their
+      own encodings. DECSTR preserves 67; RIS resets it. OSC 105 resets unsupported special
+      colors in Ghostty and has no palette/dynamic-color effect; original fixtures verify this.
+- [ ] Close additional mode-table gaps: ANSI SRM (12), DEC 4/5/8/40, mouse formats
+      1005/1015/1016, Alt-key policies 1036/1039 and clipboard paste-event mode 5522.
+      Validate their behavior and host integration before advertising mutable support.
 
 ## Graphics and external media
 

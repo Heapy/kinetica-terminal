@@ -6,6 +6,44 @@ import platform.Foundation.*
 import kotlin.test.*
 
 class MacOsKeyboardProtocolTest {
+    @Test fun backarrowModeReachesNativeBackspaceWithoutChangingKittyEncoding() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession()
+        val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE)
+        val window = NSWindow(NSMakeRect(0.0,0.0,640.0,320.0),NSWindowStyleMaskTitled,NSBackingStoreBuffered,false)
+        window.setReleasedWhenClosed(false); window.contentView = view
+        val out = StringBuilder()
+        val observer = session.onInput { out.append(it.toByteArray().decodeToString()) }
+        fun backspace(flags: ULong = 0u) {
+            view.keyDown(requireNotNull(NSEvent.keyEventWithType(NSEventTypeKeyDown,NSMakePoint(0.0,0.0),
+                flags,0.0,window.windowNumber,null,"\u007f","\u007f",false,51u)))
+        }
+        try {
+            assertTrue(window.makeFirstResponder(view))
+            backspace(); backspace(NSEventModifierFlagControl)
+            session.write("\u001b[?67h")
+            backspace(); backspace(NSEventModifierFlagControl); backspace(NSEventModifierFlagShift)
+            backspace(NSEventModifierFlagControl or NSEventModifierFlagShift)
+            assertEquals("\u007f\b\b\u007f\u007f\b",out.toString())
+            out.clear()
+            session.write("\u001b[>4;2m")
+            backspace(NSEventModifierFlagControl or NSEventModifierFlagShift)
+            assertEquals("\u001b[27;6;127~",out.toString())
+            out.clear()
+            session.write("\u001b[>4n\u001b[>1u")
+            backspace(); backspace(NSEventModifierFlagControl)
+            assertEquals("\u007f\u001b[127;5u",out.toString())
+            out.clear()
+            session.write("\u001b[<u\u001b[!p")
+            backspace()
+            assertEquals("\b",out.toString(),"DECSTR preserves DECBKM")
+            out.clear()
+            session.write("\u001bc")
+            backspace()
+            assertEquals("\u007f",out.toString())
+        } finally { observer.dispose(); view.dispose(); window.close() }
+    }
+
     @Test fun optedInKeyboardLockBlocksNativeKeysAndImeCommitsUntilReset() {
         NSApplication.sharedApplication()
         val session = TerminalSession()

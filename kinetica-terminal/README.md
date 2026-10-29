@@ -471,6 +471,14 @@ Numeric `modifyOtherKeys` mode 2 (`CSI > 4 ; 2 m`) follows the pinned Ghostty en
 Kitty takes precedence while its flags are active. AppKit and browser input support
 modified Enter/Tab and printable keys, without encoding IME commitments twice.
 
+DECBKM (`CSI ? 67 h/l`) swaps plain Backspace and Ctrl+Backspace between DEL and BS in
+legacy input. Ghostty's Shift/Alt/Super combinations and Kitty keyboard encoding do not use
+that swap. The mode supports query and private save/restore, survives DECSTR and screen
+changes, and resets on RIS. Backspace events carrying printable dead-key/composition text
+are consumed without sending deletion bytes. Host-local shortcuts still precede terminal input.
+DECRQM reports fixed-reset state 4 for ANSI 1/5/7/10/11/13–19 and DEC 117; set/reset attempts
+cannot change those fixed reports. Other unimplemented modes remain unrecognized.
+
 The color-scheme query (`CSI ? 996 n`) and mode 2031 notifications use the host's
 configured theme classification, independently of OSC color overrides. `configureTheme`
 infers light/dark from the background by default; hosts may pass an explicit

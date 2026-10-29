@@ -465,6 +465,25 @@ Validation passes all 818 JVM tests, fresh Release JS tests, and 591 Native test
 the original Ghostty corpus, Alacritty replays and parser regressions. This closes the charset
 migration item; clipboard transactions and the remaining protocol/resource audits stay open.
 
+The mode/input audit adds DECBKM (67), query and private save/restore. Legacy plain and
+Ctrl+Backspace swap DEL/BS; Shift/Alt/Super combinations keep their original table entries,
+modifyOtherKeys keeps its extended encodings, and Kitty ignores DECBKM. Printable host text
+on a Backspace event is consumed without sending deletion bytes, matching dead-key behavior.
+The mode survives DECSTR and screen changes; RIS resets it. DECRPM now reports permanently
+reset for ANSI 1/5/7/10/11/13–19 and DEC 117, independently of set/reset attempts.
+
+Thirty-eight original scenarios add 166 checkpoints, including unknown/malformed queries,
+press/repeat/release, modifiers/lock bits, host text, protocol changes and reset/save lifecycle.
+They also confirm that OSC 105 affects unsupported special colors in Ghostty, not the ANSI
+palette: our ignored behavior already agrees, as do unsupported dynamic resets 113–119.
+The full 572-case / 3127-checkpoint oracle regenerates byte-for-byte. Validation passes 856
+JVM tests, fresh Release JS tests, 578 Native oracle/keyboard tests, three AppKit input tests,
+and the fresh browser integration verifier with real Backspace events.
+
+The source mode-table audit identifies additional open work: ANSI SRM, DEC 4/5/8/40,
+mouse formats 1005/1015/1016, Alt policies 1036/1039 and clipboard paste events (5522).
+Their behavior and host integration remain required before claiming full mode compatibility.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

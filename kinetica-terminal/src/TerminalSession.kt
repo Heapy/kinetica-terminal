@@ -75,6 +75,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     /** xterm numeric modifyOtherKeys mode, matching the pinned Ghostty's mode-2 support. */
     public var modifyOtherKeysMode: Int = 0
         private set
+    /** DEC mode 67: swap legacy Backspace and Ctrl+Backspace between DEL and BS. */
+    public var backarrowKeyMode: Boolean = false
+        private set
     /** DEC mode 1035: force numeric encoding, matching Ghostty's default keypad policy. */
     public var keypadNumericOverride: Boolean = true
         private set
@@ -686,6 +689,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         previousCharacter = null
         savedModes.clear(); sideEffectModes.clear()
         modifyOtherKeysMode = 0
+        backarrowKeyMode = false
         primaryKeyboard.reset(); alternateKeyboard.reset()
         primarySemantic.reset(); alternateSemantic.reset(); promptRedraw = TerminalPromptRedraw.ALL
         selectionEpoch++; screenEpoch++
@@ -1351,6 +1355,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             25 -> cursorVisible = enabled
             45 -> reverseWrap = enabled
             66 -> applicationKeypad = enabled
+            67 -> backarrowKeyMode = enabled
             1035 -> keypadNumericOverride = enabled
             1045 -> reverseWrapExtended = enabled
             47, 1047, 1049 -> switchScreen(number, enabled)
@@ -1410,6 +1415,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         25 -> cursorVisible
         45 -> reverseWrap
         66 -> applicationKeypad
+        67 -> backarrowKeyMode
         69 -> leftRightMarginMode
         1035 -> keypadNumericOverride
         1045 -> reverseWrapExtended
@@ -1432,7 +1438,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             20 -> newlineMode
             else -> null
         }
-        val state = when (enabled) { true -> 1; false -> 2; null -> 0 }
+        // Ghostty recognizes these unsupported modes as fixed reset, rather than unknown.
+        val fixedReset = if (privateMode) number == 117 else when (number) {
+            1, 5, 7, 10, 11, 13, 14, 15, 16, 17, 18, 19 -> true
+            else -> false
+        }
+        val state = if (fixedReset) 4 else when (enabled) { true -> 1; false -> 2; null -> 0 }
         sendInput("\u001b[${if (privateMode) "?" else ""}$number;$state${'$'}y")
     }
 

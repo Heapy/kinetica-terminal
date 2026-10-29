@@ -193,6 +193,14 @@ with clustering on/off, shifts across control/status output, repetition, saved c
 charset mapping happens afterward. The original DEC table preserves underscore; the two
 Alacritty replays document that difference without changing their archived source grids.
 
+The subsequent mode/input audit adds 38 scenarios / 166 checkpoints, bringing the main
+corpus to 572 cases / 3127 checkpoints. Fixed-reset ANSI modes and DEC 117 are queried across
+set/reset attempts and terminal resets. DECBKM is compared across press/repeat/release, all
+Shift/Alt/Ctrl/Super combinations, lock bits, control/printable host text, modifyOtherKeys and
+six Kitty flag combinations, plus mode save/restore, DECSTR, RIS and screen changes.
+OSC 105 and dynamic resets 113–119 are verified as no-ops for the palette and supported dynamic
+colors, matching the original's unsupported special/dynamic targets; OSC 105 is not OSC 104.
+
 The corpus includes 32 resize scenarios: soft/hard breaks, printed spaces versus empty
 cells, colored blanks, wide-cell padding and one-column grids, combining text, styles
 and links, scrollback, pending wrap, current/saved cursor pins, simultaneous height/width

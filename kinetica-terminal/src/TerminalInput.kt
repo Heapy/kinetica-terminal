@@ -34,8 +34,13 @@ public data class TerminalKey(
 public fun TerminalSession.encodeKey(event: TerminalKey): String? {
     if (kittyKeyboardFlags != 0) return encodeKittyKey(event, kittyKeyboardFlags)
     if (event.action == TerminalKeyAction.RELEASE) return ""
+    if (event.key == "Backspace") {
+        val points = event.text.orEmpty().terminalCodepoints()
+        // A dead-key/composition event may carry printable text instead of a deletion.
+        if (points.isNotEmpty() && points.all(::terminalPrintable)) return ""
+    }
     if (modifyOtherKeysMode == 2) encodeModifyOtherKey(event)?.let { return it }
-    if (event.meta && modifyOtherKeysMode != 2) return null
+    if (event.meta && modifyOtherKeysMode != 2 && event.key != "Backspace") return null
     val modifier = 1 + (if (event.shift) 1 else 0) + (if (event.alt) 2 else 0) +
         (if (event.control) 4 else 0) + (if (event.meta) 8 else 0)
     val final = when (event.key) {
@@ -73,7 +78,11 @@ public fun TerminalSession.encodeKey(event: TerminalKey): String? {
     }
     val value = when (event.key) {
         "Enter" -> if (newlineMode) "\r\n" else "\r"
-        "Backspace" -> if (event.control) "\b" else "\u007f"
+        "Backspace" -> {
+            // Ghostty's modified-key table overrides DECBKM for Shift/Alt/Super combinations.
+            val swap = backarrowKeyMode && !event.shift && !event.alt && !event.meta
+            if (event.control xor swap) "\b" else "\u007f"
+        }
         "Tab" -> if (event.shift) "\u001b[Z" else "\t"
         "Escape" -> "\u001b"
         else -> if (event.control && event.key.length == 1) {
