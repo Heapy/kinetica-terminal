@@ -585,7 +585,11 @@
     "soft_reset_pending_wrap": "86a97f286eb1ff8900510af9f92ff613038c457a04679c6054b49ffbaf711be8",
     "soft_reset_alternate_saved": "78db231467fe7c3e75c09d73af465ca1d0abc60c19c632a291627e9f24d85bbb",
     "soft_reset_invalid_forms": "6894fcce54b71a143610df833b01bfc59db39b0efd53a65355d2ddd35e290be9",
-    "soft_reset_rep_and_mode_save": "92f0b0c2bd7323e04de4cbce13fafb8e6de7d32ece227a4f161f82608e3056ca"
+    "soft_reset_rep_and_mode_save": "92f0b0c2bd7323e04de4cbce13fafb8e6de7d32ece227a4f161f82608e3056ca",
+    "extended_cursor_position": "b74ef19bf5ebd451ef4f02d08c12888170a489b24d48cfbd645faeb69da4df47",
+    "extended_cursor_origin": "a88a2c519d434ad97392e2a8e7c49818b9121b8a9cfdf1610ced9e836a7e2c31",
+    "device_status_invalid_forms": "71670e35f569157d0eb72fbaa74e9a10d77dda8dfe74a26563833d0ce77ef7c1",
+    "screen_character_size_reports": "3ce75cd3dc356940c064761fdab1978530fc10b9d71fe04a6aeab108e88fc454"
   },
   "keyboardMatrixSha256": "6c01e3dd0dee327b115ef73db2d811a5a3bef14194045bd7f81b3c9bc4e9c90e",
   "modifyOtherKeysMatrixSha256": "218a6d9d284746fe45e95d10f4b791db3116a9f902dd9d05c43e5949fb2fe764",

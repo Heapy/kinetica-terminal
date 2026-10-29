@@ -414,7 +414,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             48 -> "$rows;$columns;${rows.toLong() * cell.height};${columns.toLong() * cell.width}"
             4 -> "${rows.toLong() * cell.height};${columns.toLong() * cell.width}"
             6 -> "${cell.height};${cell.width}"
-            8 -> "$rows;$columns"
+            8, 9 -> "$rows;$columns"
             else -> return
         }
         sendInput("\u001b[$style;${dimensions}t")
@@ -1090,15 +1090,16 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             'Z' -> repeat(p().coerceAtMost(columns)) {
                 if (cursorColumn > minX) do { cursorColumn-- } while (cursorColumn > minX && !tabs[cursorColumn])
             }
-            'n' -> when (params[0]) {
-                5 -> sendInput("\u001b[0n")
-                6 -> sendInput("\u001b[${if (privateCsi) "?" else ""}${(cursorRow - minY).coerceAtLeast(0) + 1};${(cursorColumn - minX).coerceAtLeast(0) + 1}R")
-                996 -> if (privateCsi && parameterCount == 1) reportColorScheme()
+            'n' -> if (parameterCount == 1) when (params[0]) {
+                5 -> if (!privateCsi) sendInput("\u001b[0n")
+                6 -> sendInput("\u001b[${if (privateCsi) "?" else ""}$positionRow;$positionColumn${if (privateCsi) ";1" else ""}R")
+                996 -> if (privateCsi) reportColorScheme()
             }
             't' -> if (parameterCount == 1) when (params[0]) {
                 14 -> reportSize(4)
                 16 -> reportSize(6)
                 18 -> reportSize(8)
+                19 -> reportSize(9)
             }
         }
         if (final !in "mhsncluJKbtrLMSTP") pendingWrap = false

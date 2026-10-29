@@ -89,8 +89,8 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 - [ ] Connect DECSTR to status-display/checksum state as those currently absent protocols are
       implemented, and cover reverse-wrap/keyboard-disable modes when adding their behavior.
 - [x] RIS resets palette overrides in addition to its existing state reset.
-- [ ] DECXCPR (`CSI ?6n`) responds with `CSI ?row;column;1R`, including origin/margin handling.
-- [ ] `CSI 19 t` reports screen size in characters; the release dispatches `.csi_19_t`.
+- [x] DECXCPR (`CSI ?6n`) responds with `CSI ?row;column;1R`, including origin/margin handling.
+- [x] `CSI 19 t` reports screen size in characters; the release dispatches `.csi_19_t`.
 - [ ] DECRQCRA/XTCHECKSUM requests and configured checksum variants.
 - [ ] Visibility mode 2033, its mode query, `CSI ?998n` and `CSI ?999;1/2n` reports, connected
       to host visibility. View animation visibility alone does not implement this protocol.

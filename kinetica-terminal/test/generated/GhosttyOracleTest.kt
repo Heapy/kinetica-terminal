@@ -297,4 +297,8 @@ class GhosttyOracleTest {
     @Test fun soft_reset_alternate_saved() = checkGhostty(ghostty_soft_reset_alternate_saved())
     @Test fun soft_reset_invalid_forms() = checkGhostty(ghostty_soft_reset_invalid_forms())
     @Test fun soft_reset_rep_and_mode_save() = checkGhostty(ghostty_soft_reset_rep_and_mode_save())
+    @Test fun extended_cursor_position() = checkGhostty(ghostty_extended_cursor_position())
+    @Test fun extended_cursor_origin() = checkGhostty(ghostty_extended_cursor_origin())
+    @Test fun device_status_invalid_forms() = checkGhostty(ghostty_device_status_invalid_forms())
+    @Test fun screen_character_size_reports() = checkGhostty(ghostty_screen_character_size_reports())
 }

@@ -339,6 +339,12 @@ is 330 / 2823. Both corpora reproduce byte-for-byte. All 567 JVM tests, fresh Re
 oracle tests and 8 Native reset/graphics tests pass. Status-display,
 checksum and reverse-wrap/keyboard-disable behavior remain tracked in the migration checklist.
 
+DECXCPR now includes page 1 (`CSI ?row;column;1R`) and `CSI 19 t` replies with the screen
+size in characters (`CSI 9;rows;columns t`). Device status requests reject extra parameters
+and unsupported private forms. Four additional original-libghostty scenarios cover normal/
+alternate screens, pending wrap, origin/margins, unknown host geometry, resizing and malformed
+queries (298 scenarios / 1829 states total). All 571 JVM tests and fresh Release JS tests pass.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

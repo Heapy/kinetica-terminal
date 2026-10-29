@@ -74146,5 +74146,111 @@
         "write": "\u001b[2b\u001b[?1r\u001b[?1$p"
       }
     ]
+  },
+  {
+    "name": "extended_cursor_position",
+    "columns": 12,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[6n\u001b[?6n"
+      },
+      {
+        "write": "\u001b[3;8H\u001b[6n\u001b[?6n"
+      },
+      {
+        "write": "\u001b[5;12HX\u001b[?6nY\u001b[?6n"
+      },
+      {
+        "write": "\u001b[?1049h\u001b[?6n\u001b[4;7H\u001b[?6n\u001b[?1049l\u001b[?6n"
+      }
+    ]
+  },
+  {
+    "name": "extended_cursor_origin",
+    "columns": 12,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[2;4r\u001b[?69h\u001b[3;10s\u001b[?6h\u001b[2;4H\u001b[6n\u001b[?6n"
+      },
+      {
+        "write": "\u001b[99;99H\u001b[?6n"
+      },
+      {
+        "write": "\u001b[?6l\u001b[4;10H\u001b[?6n"
+      },
+      {
+        "write": "\u001b[?6h\u001b[!p\u001b[?6n"
+      }
+    ]
+  },
+  {
+    "name": "device_status_invalid_forms",
+    "columns": 12,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[4;8H\u001b[5n\u001b[?5n"
+      },
+      {
+        "write": "\u001b[6;0n\u001b[?6;0n\u001b[5;0n\u001b[6:n\u001b[?6:0n"
+      },
+      {
+        "write": "\u001b[n\u001b[?n\u001b[0n\u001b[>6n\u001b[=6n\u001b[?6$n"
+      },
+      {
+        "write": "\u001b[5n\u001b[6n\u001b[?6n"
+      }
+    ]
+  },
+  {
+    "name": "screen_character_size_reports",
+    "columns": 12,
+    "rows": 5,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[18t\u001b[19t"
+      },
+      {
+        "resize": [
+          12,
+          5
+        ],
+        "cellSize": [
+          8,
+          16
+        ]
+      },
+      {
+        "write": "\u001b[18t\u001b[19t"
+      },
+      {
+        "write": "\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[19t"
+      },
+      {
+        "resize": [
+          18,
+          7
+        ],
+        "cellSize": [
+          9,
+          20
+        ]
+      },
+      {
+        "write": "\u001b[14t\u001b[16t\u001b[18t\u001b[19t"
+      },
+      {
+        "write": "\u001b[?1049h\u001b[19t\u001b[?1049l"
+      },
+      {
+        "write": "\u001b[19;0t\u001b[19:t\u001b[?19t\u001b[>19t\u001b[19$t"
+      }
+    ]
   }
 ]
