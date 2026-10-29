@@ -848,6 +848,32 @@ Validation passes all 1208 JVM tests, fresh Release JS tests, seven Native DnD t
 22 Native parser/title/terminfo/backpressure regressions. Both browser DnD and existing
 XTGETTCAP transport verifiers pass. The expanded fixtures and manifest reproduce byte-for-byte.
 
+The shared drag-host coordinator now separates view lifetime from terminal registration.
+Each view receives a binding with default copy/move feedback intersected with the source's
+allowed operations, then the client's accepted operation once available. Delayed OS reads
+carry a registration/gesture ticket; leave, a new gesture, unregister/re-register, disposal
+and transport cancellation invalidate stale callbacks. Re-registering the existing client
+without unregistering preserves the original state's identity and ongoing drop semantics.
+
+One session queues at most four host actions and 16 MiB of not-yet-submitted drop data, in
+addition to the core's held drop. Each action has at most sixteen representations and one
+MiB of MIME bytes. Only unsent tail moves from the same view coalesce; accepted drops retain
+their order. Payloads are copied after admission, and MIME tokens containing spaces/control
+bytes are rejected. Invalid offers also cancel an older queued move. Switching active views
+sends leave before movement; disposing one view cancels its queued work and owned drop data
+while preserving registration and the application-owned session. Delivery failure clears
+pending host data and invalidates readers, while transport-accepted bytes finish normally.
+Resume callbacks schedule work instead of reentering the current parser call.
+
+Common regressions cover 20,000 blocked moves, source/client operation negotiation, partial
+acceptance, owned bytes, a queued drop followed by a new drag, stale/duplicate readers,
+multiple views, queue and data limits, malformed MIME tokens and transport failure. This is
+the shared host coordination layer; browser DOM and AppKit drag callbacks remain unconnected.
+Validation passes 1215 JVM tests, fresh Release JS tests and fourteen Native DnD tests,
+including all original-library core/wire checkpoints. A reply already in progress retains
+its own data snapshot when a view is disposed; later requests cannot access that view's
+discarded drop state. No browser or AppKit drag interaction is claimed by this increment.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than

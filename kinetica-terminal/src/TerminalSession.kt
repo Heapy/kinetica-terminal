@@ -354,8 +354,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         { cancelClipboardOperations() }, ::resumeClipboardOutput)
     private val capabilityReplies = TerminalReplyStream({ bytes, done -> emitProtocolReply(bytes, done, allowUntracked = true) }, ::resumeClipboardOutput)
     internal val kittyDnd = TerminalKittyDnd()
+    internal var dndHosts: TerminalDndHosts? = null
+    internal fun attachDndHost(scheduler: TerminalScheduler, changed: () -> Unit = {}): TerminalDndHostBinding =
+        (dndHosts ?: TerminalDndHosts(this, scheduler).also { dndHosts = it }).attach(changed)
     private val dndObservers = mutableListOf<(TerminalDndEvent) -> Unit>()
-    private val dndReplies = TerminalReplyStream({ bytes, done -> emitProtocolReply(bytes, done, allowUntracked = true) }, ::resumeClipboardOutput)
+    private val dndReplies = TerminalReplyStream({ bytes, done -> emitProtocolReply(bytes, done, allowUntracked = true) },
+        ::resumeClipboardOutput, failed = { dndHosts?.cancelPending() })
 
     internal fun onDnd(observer: (TerminalDndEvent) -> Unit): TerminalDisposable {
         dndObservers.add(observer)
@@ -624,7 +628,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         resumeClipboardOutput()
     }
 
-    internal fun cancelPendingReplies() { capabilityReplies.cancel(); dndReplies.cancel(); cancelClipboardOperations() }
+    internal fun cancelPendingReplies() { dndHosts?.cancelPending(); capabilityReplies.cancel(); dndReplies.cancel(); cancelClipboardOperations() }
 
     public fun sendInput(text: String) = emitInput(TerminalInputData.Text(text))
     internal fun sendProtocolBytes(bytes: ByteArray) = emitInput(TerminalInputData.Bytes(bytes))

@@ -88,6 +88,9 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       conclusion, including the original refusal of drag-out and remote data transfer.
       Raw wire parsing and bounded transport delivery are connected. Browser/AppKit drag
       callbacks and host negotiation remain open; session support does not yet route OS drops.
+      A shared host coordinator now owns per-view gestures, client/source operation feedback,
+      bounded pending actions and stale-reader cancellation. Platform event adapters remain
+      the next required integration step.
 - [x] Title report (`CSI 21 t`) with explicit `configureTitleReporting` host opt-in,
       disabled by default and preserved across resets. Original-library cases also align
       OSC 0/2 validation and limits: 2047 captured bytes, valid UTF-8, then a 1024-byte

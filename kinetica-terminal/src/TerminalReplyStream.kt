@@ -5,6 +5,7 @@ internal class TerminalReplyStream(
     private val send: (ByteArray, (Boolean) -> Unit) -> Unit,
     private val ready: () -> Unit,
     private val chunkBytes: Int = 32 * 1024,
+    private val failed: () -> Unit = {},
 ) {
     init { require(chunkBytes > 0) }
     private var packets: Iterator<ByteArray>? = null
@@ -44,7 +45,7 @@ internal class TerminalReplyStream(
                 active = true
                 send(if (size == chunk.size) chunk else chunk.copyOf(size)) { delivered ->
                     active = false
-                    if (!delivered) { packets = null; next = null }
+                    if (!delivered) { packets = null; next = null; failed() }
                     drain()
                 }
             }
