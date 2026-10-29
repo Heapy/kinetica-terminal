@@ -39,7 +39,9 @@
     "src/terminal/kitty/graphics_command.zig",
     "src/terminal/kitty/graphics_exec.zig",
     "src/terminal/kitty/graphics_storage.zig",
-    "src/terminal/c/kitty_graphics.zig"
+    "src/terminal/c/kitty_graphics.zig",
+    "src/terminal/kitty/graphics_unicode.zig",
+    "src/renderer/image.zig"
   ],
   "adaptedTests": [
     "src/terminal/Parser.zig",

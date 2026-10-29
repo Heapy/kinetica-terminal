@@ -17,6 +17,7 @@ try {
       globalThis.graphicsReplies = [];
       kineticaTerminalDemo.connectTransport({ write(bytes) { graphicsReplies.push(...bytes); return bytes.length; }, resize() {}, consumed() {}, rejected() { throw Error("Rejected input"); }, failed(message) { throw Error(message); } });
       globalThis.graphicsCanvas = document.querySelector("canvas");
+      globalThis.graphicsSampleRow = 2;
       globalThis.graphicsResources = new Set();
       if (renderer === "gpu") {
         const gl = graphicsCanvas.getContext("webgl2");
@@ -28,7 +29,7 @@ try {
         gl.drawArraysInstanced = (...args) => {
           draw(...args);
           const pixels = new Uint8Array(gl.drawingBufferWidth * 4);
-          gl.readPixels(0, gl.drawingBufferHeight - 3, gl.drawingBufferWidth, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+          gl.readPixels(0, gl.drawingBufferHeight - 1 - graphicsSampleRow, gl.drawingBufferWidth, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
           globalThis.graphicsPixels = [...pixels];
         };
       } else {
@@ -43,7 +44,7 @@ try {
     const painted = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     const write = async value => { await page.evaluate(value => kineticaTerminalDemo.write(value), value); await painted(); };
     const reset = async () => { await page.evaluate(() => kineticaTerminalDemo.reset()); await write("\x1b[?25l\x1b]11;#0a14c8\x07"); };
-    const pixel = async (x = 2) => page.evaluate(({ renderer, x }) => renderer === "gpu" ? graphicsPixels.slice(x * 4, x * 4 + 4) : [...graphicsCanvas.getContext("2d").getImageData(x, 2, 1, 1).data], { renderer, x });
+    const pixel = async (x = 2) => page.evaluate(({ renderer, x }) => renderer === "gpu" ? graphicsPixels.slice(x * 4, x * 4 + 4) : [...graphicsCanvas.getContext("2d").getImageData(x, graphicsSampleRow, 1, 1).data], { renderer, x });
     const metric = async key => +(await page.locator("[data-terminal]").getAttribute(`data-terminal-image-${key}`));
     const expectPixel = async (expected, message) => assert.deepEqual(await pixel(), expected, `${renderer}: ${message}`);
     await reset();
@@ -117,12 +118,47 @@ try {
     assert((await metric("bytes")) < 2046 * 4 + 32);
     await write(apc("a=d,d=A,q=2"));
     assert.equal(await metric("bytes"), 0);
+    await reset();
+    await write("\x1b[16t");
+    const cell = await page.evaluate(() => {
+      const reply = String.fromCharCode(...graphicsReplies);
+      const matches = [...reply.matchAll(/\x1b\[6;(\d+);(\d+)t/g)];
+      return [+matches.at(-1)[2], +matches.at(-1)[1]];
+    });
+    const placeholderPixels = Buffer.alloc(cell[0] * 2 * cell[1] * 3);
+    for (let y = 0; y < cell[1]; y++) for (let x = 0; x < cell[0] * 2; x++)
+      placeholderPixels.set((x < cell[0] ? red : green).slice(0,3), (y * cell[0] * 2 + x) * 3);
+    const virtual = apc(`a=T,q=2,i=1,p=7,U=1,z=20,f=24,s=${cell[0]*2},v=${cell[1]},c=2,r=1;${placeholderPixels.toString("base64")}`);
+    const placeholder = String.fromCodePoint(0x10eeee);
+    await write(virtual + "\x1b[H\x1b[38;2;0;0;1m" + placeholder + "\u0305\u0305" + placeholder);
+    await expectPixel(red, "Unicode placeholder first image cell");
+    assert.deepEqual(await pixel(cell[0] + 2), green, `${renderer}: placeholder inherits next image column`);
+    await write("\x1b[H ");
+    await expectPixel(blue, "erasing a placeholder removes its image fragment");
+    assert.deepEqual(await pixel(cell[0] + 2), red, `${renderer}: a new placeholder run starts at image column zero`);
+    await write("\x1b[H" + placeholder + "\u0305\u0305");
+    assert.deepEqual(await pixel(cell[0] + 2), green);
+    await write("\x1b[?2026h\x1b[2J");
+    await expectPixel(red, "held placeholder cells preserve their image fragments");
+    await write("\x1b[?2026l");
+    await expectPixel(blue, "released placeholder deletion");
+    assert.equal(await metric("bytes"), 0);
+    await reset();
+    const tinyImage = apc(`a=T,q=2,i=1,p=7,U=1,f=24,s=1,v=1,c=4,r=3;${Buffer.from(red.slice(0,3)).toString("base64")}`);
+    const tinyRows = [0x305,0x30d,0x30e].map(row => placeholder + String.fromCodePoint(row,0x305) + placeholder.repeat(3)).join("\r\n");
+    await page.evaluate(row => graphicsSampleRow = row, Math.round((cell[1] * 3 - cell[0] * 4) / 2) + 2);
+    await write(tinyImage + "\x1b[H\x1b[38;2;0;0;1m" + tinyRows);
+    await expectPixel(red, "rounded zero source span retains the first image fragment");
+    await page.evaluate(row => graphicsSampleRow = row, cell[1] * 2 + 2);
+    await write("\x1b[5;1Hx");
+    await expectPixel(red, "rounded edge source span repeats the last texel");
+    await page.evaluate(() => graphicsSampleRow = 2);
     assert.equal(await page.locator("[data-terminal]").getAttribute("data-terminal-rendering-error"), null);
     assert.deepEqual(errors, []);
     await write("\x1b[H" + image(10, red.slice(0, 3)));
     await page.evaluate(() => kineticaTerminalDemo.dispose());
     assert.equal(await page.evaluate(renderer => renderer === "gpu" ? graphicsResources.size : [...graphicsResources].filter(canvas => canvas.width !== 0 || canvas.height !== 0).length, renderer), 0, `${renderer}: dispose releases image resources`);
     await page.close();
-    console.log(`${renderer}: Kitty graphics pixels, layers, alpha, crop, hold, tile reuse and cleanup passed`);
+    console.log(`${renderer}: Kitty graphics pixels, layers, alpha, crop, Unicode placeholders, rounded spans, hold, tile reuse and cleanup passed`);
   }
 } finally { await browser.close(); }

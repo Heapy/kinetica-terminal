@@ -31,6 +31,7 @@ internal class TerminalGraphicsState(
         entries.keys.filter { it.image == image.id }.forEach { remove(it) }
     })
     val placements: Collection<TerminalGraphicsPlacement> get() = entries.values
+    fun placement(key: TerminalGraphicsPlacementKey): TerminalGraphicsPlacement? = entries[key]
     var generation: Any = Any()
         private set
 
@@ -129,7 +130,8 @@ internal class TerminalGraphicsState(
     }
 
     /** Resolve dynamically so descendants follow parent replacement, scrolling and reflow. */
-    fun position(placement: TerminalGraphicsPlacement): TerminalPosition? {
+    fun position(placement: TerminalGraphicsPlacement,
+        virtualOrigins: Map<TerminalGraphicsPlacementKey, TerminalPosition> = emptyMap()): TerminalPosition? {
         var current = placement
         var x = 0; var y = 0; var depth = 0
         while (current.parent != null) {
@@ -138,8 +140,7 @@ internal class TerminalGraphicsState(
             y = saturatedAdd(y, current.verticalOffset)
             current = entries[current.parent] ?: return null
         }
-        val anchor = current.anchor ?: return null
-        val origin = terminal.graphicsAnchorPosition(anchor) ?: return null
+        val origin = current.anchor?.let(terminal::graphicsAnchorPosition) ?: virtualOrigins[current.key] ?: return null
         return TerminalPosition(saturatedAdd(origin.x, x), saturatedAdd(origin.y, y), false)
     }
 

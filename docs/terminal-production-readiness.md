@@ -205,14 +205,39 @@ application plus its UI module compile without installing or replacing the user'
 shared/browser implementation is unchanged from the preceding verified commit. Animation,
 Unicode placeholders and external media remain open.
 
+The Unicode-placeholder increment scans visible `U+10EEEE` runs, using raw palette indices/RGB
+bytes for IDs and the pinned diacritic table for row/column/high-ID fields. It preserves Ghostty's
+run inheritance, virtual-target preference, aspect-ratio fitting, centering and exact integer
+rounding. Placeholder images always enter the below-text layer, while the placeholder grapheme
+itself never reaches a font renderer. Relative descendants can resolve against the minimum
+visible origin of a virtual parent's cells. Viewport snapshots retain those fragments and their
+image generations together with text during synchronized output and resize holds.
+
+Rounded source spans can be zero or extend one texel past an edge while destination pixels
+remain visible. Shared tiles implement premultiplied boundary sampling and edge clamping, so
+all four renderers handle these cases consistently. The new oracle links the unmodified pinned
+Ghostty **Zig module**, because its C placement API does not expose placeholder runs/geometry.
+It covers 390 cases and 403 checkpoints, including every diacritic, unsigned image IDs, invalid
+marks, target lookup, palette changes, grid limits, scroll/reflow and screen transitions.
+The screen-switch case explicitly selects the bottom viewport after returning to primary,
+matching this host's existing screen-switch policy rather than changing viewport UX.
+
+Validation passes 529 JVM tests, the freshly built JS suite, 81 selected Native graphics/rendering
+tests and real Canvas/WebGL/AppKit/Metal placeholder pixels, including inheritance, cell erasure,
+held frames and rounded source spans. Generated diacritics, fixtures and their provenance manifest
+reproduce byte-for-byte. This oracle runs with Zig ReleaseSafe checks; it is not an ASan run of
+the full Ghostty renderer. Animation and external media remain open.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
 - [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
 - [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.
-- [ ] Unicode placeholders and animation frames/composition/timing.
+- [x] Unicode placeholders, run inheritance, aspect fitting and virtual-parent rendering.
+- [ ] Animation frames/composition/timing.
 - [ ] Explicit host policy for file, temporary-file and shared-memory transmission media.
 - [ ] Browser Canvas/WebGL and AppKit/Metal images, cache disposal, context recovery and render holds.
+- [ ] Audit frame-wide resource bounds across distinct crop tiles: an LRU cache limit alone does not bound textures retained by already queued draw commands.
 - [ ] Original-libghostty image/placement oracle and real platform pixel/resource regressions.
 
 The OSC 133 increment adds 26 semantic/alignment oracle cases plus the original Alacritty

@@ -67,8 +67,13 @@ until completion; image draws copy their small instance data into command-owned 
 The host
 still owns session image data after a view is disposed. Diagnostics expose
 `data-terminal-image-bytes`, `data-terminal-image-tiles` and cumulative
-`data-terminal-image-uploads`. Animation, Unicode placeholders and external file/shared-memory
-transmission are not implemented yet. Run `node scripts/verify-terminal-graphics.mjs` against the built browser
+`data-terminal-image-uploads`. Unicode placeholders (`U+10EEEE`) select image IDs from raw
+foreground colors and placement IDs from underline colors. Diacritics supply row/column/high
+ID bits; adjacent compatible cells inherit omitted coordinates. Virtual images preserve aspect
+ratio within their requested grid, follow ordinary text scrolling/reflow and always draw below
+text. Relative children use the minimum visible origin of their parent's placeholder cells.
+Animation and external file/shared-memory transmission are not implemented yet.
+Run `node scripts/verify-terminal-graphics.mjs` against the built browser
 demo for actual Canvas/WebGL pixel, scroll, context-loss and resource-lifecycle checks.
 `NativeGraphicsRenderingTest` reads actual offscreen AppKit/Metal pixels, including fractional
 Metal scales, image orientation, crop/alpha/layers, synchronized frames and tile seams.

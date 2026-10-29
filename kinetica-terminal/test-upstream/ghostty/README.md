@@ -248,3 +248,29 @@ alternate screens, history and synchronized output. Host-specific defaults and a
 recoloring have separate tests. Pointer shape is captured through the original library's
 `GHOSTTY_TERMINAL_DATA_MOUSE_SHAPE` API at every checkpoint; OSC 22 cases cover all W3C
 names and aliases, malformed/canceled/incomplete commands, screen switches and RIS.
+## Unicode placeholder oracle
+
+`graphics-unicode-manifest.json` records a separate original-Ghostty Zig-module oracle.
+`scripts/terminal-ghostty-unicode-oracle.zig` calls the pinned module's actual
+`kitty.graphics.unicode.placementIterator` and `Placement.renderPlacement`; it does not
+reimplement their geometry. The public C placement API reports virtual placements as lacking
+a viewport position and cannot provide this reference data. The helper uses a local module
+dependency without editing the upstream checkout and builds with Zig 0.16.0 ReleaseSafe.
+
+Regenerate with:
+
+```sh
+python3 scripts/generate-terminal-graphics-unicode.py build/upstream/ghostty build/upstream/zig-aarch64-macos-0.16.0/zig
+```
+
+The generator verifies the pinned commit and clean tracked sources, uses the existing
+`build/upstream/zig-cache` dependency cache (overridable with `ZIG_GLOBAL_CACHE_DIR`), and
+records source/helper/generator/output hashes. It also extracts the original sorted diacritic
+table into `src/TerminalGraphicsDiacritics.kt`; do not edit that generated table directly.
+The 390 cases/403 checkpoints compare whole and bytewise session replay on common-test targets:
+every diacritic, optional-field inheritance, invalid marks, RGB/indexed colors, high ID bits,
+placement selection, centered aspect fitting and rounding, grid limits and scroll/reflow/screens.
+After returning from alternate screen, the lifecycle case explicitly scrolls to bottom to align
+with the host viewport policy. Relative children of virtual placements have separate common
+frame tests; renderer pixels and cache ownership are checked by browser/native regressions.
+This corpus is not a whole-renderer pixel oracle or an AddressSanitizer run.

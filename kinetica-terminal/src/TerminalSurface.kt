@@ -47,7 +47,7 @@ public class TerminalViewport(
 ) {
     private var frozen: FrozenFrame? = null
     internal fun graphicsFrame(): List<TerminalGraphicsFrameEntry> = if (disposed) emptyList() else frozen?.graphics
-        ?: session.graphicsState.captureFrame(scrollOffset, columns, rows, session.cellSize)
+        ?: session.graphicsState.captureFrame(scrollOffset, columns, rows, session.cellSize, ::visibleLine)
     public val theme: TerminalTheme get() = frozen?.theme ?: session.theme
     public val columns: Int get() = frozen?.lines?.first()?.columns ?: session.columns
     public val rows: Int get() = frozen?.lines?.size ?: session.rows
@@ -144,7 +144,7 @@ public class TerminalViewport(
         })
         frozen = FrozenFrame(lines, first, session.theme, session.cursorColumn, session.cursorRow,
             capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText,
-            if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) else emptyList())
+            if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList())
         blinkTimer?.dispose(); blinkTimer = null
     }
 
@@ -362,7 +362,7 @@ public class TerminalViewport(
                 if (painter is TerminalGlyphPainter) painter.background(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background,
                     line.rawBackground(start) == TerminalStyle.DEFAULT && flags and TerminalStyle.INVERSE == 0 && !selected && !(block && start == cursorX))
                 else painter.fill(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background)
-                if (flags and TerminalStyle.HIDDEN == 0) {
+                if (flags and TerminalStyle.HIDDEN == 0 && line.codePoint(start) != TERMINAL_GRAPHICS_PLACEHOLDER) {
                     if (blockElement) painter.blockElement(line.codePoint(start), start * cellWidth, y * cellHeight,
                         (x - start) * cellWidth, cellHeight, foreground)
                     else if (painter is TerminalGlyphPainter) painter.glyph(text.toString(), start * cellWidth, y * cellHeight, x - start, foreground, flags)

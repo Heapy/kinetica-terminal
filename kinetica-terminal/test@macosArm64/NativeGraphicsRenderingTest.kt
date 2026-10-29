@@ -144,4 +144,40 @@ class NativeGraphicsRenderingTest {
             } finally { surface.dispose() }
         }
     }
+
+    @Test fun nativeUnicodePlaceholdersInheritColumnsAndFollowCellErasure() {
+        NSApplication.sharedApplication()
+        for (factory in listOf<() -> Surface>(::software, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    reset()
+                    val cw = session.cellSize!!.width; val ch = session.cellSize!!.height
+                    val data = ByteArray(cw * 2 * ch * 3) { index ->
+                        (if ((index / 3) % (cw * 2) < cw) red else green)[index % 3].toByte()
+                    }
+                    val placeholder = "\uDBFB\uDEEE"
+                    session.write(apc("a=T,q=2,i=1,p=7,U=1,z=20,f=24,s=${cw*2},v=$ch,c=2,r=1;${Base64.encode(data)}") +
+                        "\u001b[H\u001b[38;2;0;0;1m$placeholder\u0305\u0305$placeholder")
+                    expect(red,"First placeholder cell")
+                    assertEquals(green,pixel(capture(),width,cw+2),"Inherited next image column")
+                    session.write("\u001b[H ")
+                    expect(blue,"Erased placeholder")
+                    assertEquals(red,pixel(capture(),width,cw+2),"New run starts from source column zero")
+                    session.write("\u001b[H$placeholder\u0305\u0305\u001b[?2026h\u001b[2J")
+                    expect(red,"Held placeholders survive erasure")
+                    session.write("\u001b[?2026l"); expect(blue,"Released erasure")
+                    assertEquals(0L,bytes)
+                    reset()
+                    val tinyRows = listOf('\u0305','\u030d','\u030e').joinToString("\r\n") { "$placeholder$it\u0305" + placeholder.repeat(3) }
+                    session.write(apc("a=T,q=2,i=1,p=7,U=1,f=24,s=1,v=1,c=4,r=3;${Base64.encode(red.take(3).map(Int::toByte).toByteArray())}") +
+                        "\u001b[H\u001b[38;2;0;0;1m$tinyRows")
+                    val tiny = capture()
+                    val padding = kotlin.math.round((ch * 3 - cw * 4) / 2.0).toInt()
+                    assertEquals(red,pixel(tiny,width,2,padding+2),"Rounded zero source span")
+                    assertEquals(red,pixel(tiny,width,2,ch*2+2),"Rounded span at the image edge")
+                }
+            } finally { surface.dispose() }
+        }
+    }
 }

@@ -1,0 +1,11 @@
+{
+  "commit": "4da7523faba68ccb4042ea20585817098a51c015",
+  "zig": "0.16.0",
+  "cases": 390,
+  "snapshots": 403,
+  "sourceSha256": "8e1bb778abad3cf7ae09434e4ed64748c1dbc69a7671c713e4e3ae5cf0590ed7",
+  "helperSha256": "6fdbf56fb7e900ad42f6eebbce9ccb4737d5b9a226b146692d06ece66b502509",
+  "generatorSha256": "5f05616566a1f490488815faad25aa2a5b8561eb6e41e95f336ee7c3725dc70a",
+  "fixtureSha256": "345915463cf06177cdeb5e3145126d30cce346bbf39cb69811f2326c1acd528d",
+  "diacriticsSha256": "de011bff4b6bce10cb53705072a4939049b3e8a1fc5e7ad43892f745916c9162"
+}
