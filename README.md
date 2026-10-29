@@ -93,7 +93,7 @@ Extracted from the terminal worktree developed in
 framework commit `858e530`. That terminal work was uncommitted, so this repository
 starts with a source snapshot rather than a fabricated commit history.
 
-Project code is Apache-2.0. Adapted Ghostty code, Alacritty recordings, Unicode/uucode
+Project code is Apache-2.0. Adapted Ghostty/Wuffs code, Alacritty recordings, Unicode/uucode
 and X11 data retain their original notices and pinned provenance under
 `kinetica-terminal/third-party`, `test-upstream` and `resources/META-INF/LICENSES`.
 See [LICENSE](LICENSE) and the [upstream fixture guide](kinetica-terminal/test-upstream/README.md).

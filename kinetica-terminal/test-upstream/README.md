@@ -4,6 +4,16 @@ The [image decoder corpus](images/README.md) separately compares common PNG deco
 with pinned libpng and validates zlib streams against pinned zlib. It does not yet
 cover original-libghostty image storage, placements or platform image rendering.
 
+The animation component corpus links the unmodified pinned Ghostty Zig module and executes
+400 command/clock scenarios with 2030 snapshots. It compares all frame pixels, gaps, playback
+state, loop counters, timestamps, byte counts and image-generation changes. The alpha cases
+exercise all 65,536 source/destination alpha pairs. This component adapter does not validate
+session dispatch, chunked frame loading, replies, eviction or host timer/render integration.
+Regenerate with `python3 scripts/generate-terminal-graphics-animation.py /path/to/ghostty
+/path/to/zig`; hashes and source pin are in `ghostty/graphics-animation-manifest.json`.
+The Wuffs integer source-over arithmetic retains its MIT license and provenance under
+`third-party/wuffs.json`; its runtime notice is included with the other packaged licenses.
+
 Alacritty reference recordings and expected grids are pinned by commit and SHA-256
 in `alacritty/manifest.json`. `references.tar.gz` preserves the selected upstream
 files verbatim with deterministic archive metadata. The Apache-2.0 license is

@@ -228,6 +228,19 @@ held frames and rounded source spans. Generated diacritics, fixtures and their p
 reproduce byte-for-byte. This oracle runs with Zig ReleaseSafe checks; it is not an ASan run of
 the full Ghostty renderer. Animation and external media remain open.
 
+The next increment adds the isolated animation core: immutable full RGBA frame buffers,
+clipped transmission, Wuffs-compatible integer source-over composition, frame edits/deletion,
+playback controls and deterministic monotonic-clock advancement. A new oracle executes the
+unmodified pinned Ghostty Zig module for 400 cases and 2030 checkpoints, including all 65,536
+source/destination alpha combinations. It compares every frame's bytes, gaps, playback state,
+loop counters, timestamps, memory size and content-generation invalidation. Fixtures and their
+manifest reproduce byte-for-byte. All 533 JVM tests, the fresh Release JS suite and 57 Native
+graphics tests pass. Additional tests preserve previously published pixels across edits and
+root promotion, exercise failed frame admission and prevent gapless scheduling loops.
+This is a component checkpoint: session dispatch/replies, chunk identity, eviction accounting,
+render snapshots and host timer integration still need to consume this core. Animation therefore
+remains unchecked below; the current session still rejects standalone animation commands.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

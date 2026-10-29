@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/google/wuffs",
+  "commit": "7411f488fe2e2c205c3d3b3d28638b7356522930",
+  "license": "MIT",
+  "adaptedSource": "release/c/wuffs-v0.4.c",
+  "adaptedFunction": "wuffs_private_impl__composite_nonpremul_nonpremul_u32_axxx",
+  "sourceSha256": "1f8039ef82911604c063f6ac2ed57254bdb17d742aebdeae06356530d4a0fde7",
+  "archiveSha256": "17877d346f7988651d6c62e45b2e3b05c86809a6442c5e34612374b2a9719a1c"
+}

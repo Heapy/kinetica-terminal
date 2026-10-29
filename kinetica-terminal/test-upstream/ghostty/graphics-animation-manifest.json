@@ -1,0 +1,16 @@
+{
+  "commit": "4da7523faba68ccb4042ea20585817098a51c015",
+  "zig": "0.16.0",
+  "cases": 400,
+  "snapshots": 2030,
+  "helperSha256": "36180a26bddc989eff8deef577fc0c7a14876517062eb4b073e02dc5f437a87d",
+  "generatorSha256": "007f08260d316743aaf0ce511e7bb3a8971cf9ecf48387fca604f4b51d04581b",
+  "fixtureSha256": "3aab850424eb5dd910c82f7ff889ae0b3e7c7d9dffcd16f831f4c6f136df8aec",
+  "sources": {
+    "src/terminal/kitty/graphics_animation.zig": "d798431b96e977009cc46b5d43b67b7f623a7b1ec62bf8bfe00c80ac4304cecf",
+    "src/terminal/kitty/graphics_pixel.zig": "14fe775bcd8e7c313d24d69564eb3cfbfce74bec3ee11a8c7d52915802b20294",
+    "src/terminal/kitty/graphics_exec.zig": "617587c5edd81699029ae726436abf01a2852ed06598fea8ad4456a1bb99e8e2",
+    "src/terminal/kitty/graphics_storage.zig": "a2c29c02531f00b939485a9e45eeb8198d55648f116282c31e37bed84677328d",
+    "pkg/wuffs/src/swizzle.zig": "a70d5a0b43a733e60d60a0ead5236ac6981c2dfd0103072dfdef0df21c91365b"
+  }
+}
