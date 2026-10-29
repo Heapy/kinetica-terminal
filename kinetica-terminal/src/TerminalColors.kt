@@ -6,7 +6,7 @@ package io.heapy.kinetica.terminal
 // RGB occupies the low 24 bits. Indexed colors retain their identity across palette changes.
 internal const val INDEXED_COLOR = 1 shl 24
 
-/** Session-wide state: screens, saved cursors and RIS never reset the color overrides. */
+/** Session-wide colors: RIS resets palette entries while preserving dynamic color overrides. */
 internal class TerminalColors(private var original: TerminalTheme) {
     private val palette = IntArray(256, ::terminalPalette)
     var theme: TerminalTheme = original
@@ -14,6 +14,7 @@ internal class TerminalColors(private var original: TerminalTheme) {
     fun palette(index: Int): Int = palette[index]
     fun snapshot(): TerminalColors = TerminalColors(theme).also { palette.copyInto(it.palette) }
     fun configure(value: TerminalTheme) { original = value; theme = value }
+    fun resetPalette() { for (i in palette.indices) palette[i] = terminalPalette(i) }
 
     /** Parse the whole OSC first: exceeding Ghostty's 528-operation cap rejects it atomically. */
     fun kittyOperation(payload: String, terminator: Int, reply: (String) -> Unit): Boolean {

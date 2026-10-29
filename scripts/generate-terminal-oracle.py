@@ -2,8 +2,8 @@
 """Generate common Kotlin goldens from the pinned original libghostty-vt.
 
 Usage: python3 scripts/generate-terminal-oracle.py /path/to/ghostty
-First build that checkout with Zig 0.16.0:
-  zig build -Demit-lib-vt=true -Doptimize=ReleaseFast -Dsimd=false -Demit-xcframework=false
+First build that checkout with Zig 0.17.0:
+  zig build -Demit-lib-vt=true -Doptimize=fast -Dsimd=false -Demit-xcframework=false
 This tool compiles a test-only C helper, then feeds it raw bytes, resize and key events.
 It never reads Kinetica output. Ordinary tests need neither Zig nor libghostty.
 """
@@ -17,7 +17,7 @@ import tarfile
 import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
-SHA = "4da7523faba68ccb4042ea20585817098a51c015"
+SHA = "83fb95624b0439ee660c2679b43b38c8b63769cd"  # Ghostty 1.4.0
 
 # The host supplies these defaults to both engines; they are configuration, not expectations.
 DEFAULT_COLORS = [0xd4d4d4, 0x1e1e1e, 0xeeeeee]

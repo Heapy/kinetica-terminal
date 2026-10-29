@@ -423,7 +423,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     /** Clear retained primary history, including when a full-screen application is active. */
     public fun clearHistory() {
         flushSynchronizedOutput()
-        history.clear(); selectionEpoch++
+        history.clear(); primaryGraphics.reapRetired(); selectionEpoch++
         damageAll(); flushDamage()
     }
 
@@ -590,6 +590,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     public fun reset() {
+        colors.resetPalette()
         clipboardBinding?.reset()
         primaryGraphics.reset(); alternateGraphics.reset()
         previousCharacter = null
@@ -656,7 +657,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         if (code in 0x80..0x9f) { escapeSequence(code - 0x40, 0); return }
         when (code) {
             7 -> bellCount++
-            8 -> { cursorColumn = (cursorColumn - 1).coerceAtLeast(0); pendingWrap = false }
+            8 -> { cursorColumn = (cursorColumn - 1).coerceAtLeast(if (cursorColumn < left) 0 else left); pendingWrap = false }
             9 -> { tab(1); pendingWrap = false }
             10, 11, 12 -> { lineFeed(); if (newlineMode) carriageReturn() }
             13 -> carriageReturn()
@@ -847,8 +848,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                     if (!wrap) return true
                     // A wrap can recycle the source row; retain the bounded cluster first.
                     val cluster = TerminalLine(1, colors, limits.hyperlinkBytesPerLine).also { it.copyCell(line, x, 0) }
-                    if (line.isCombined(x)) line.replaceWithBlank(x, spacerHead = rightLimit == columns)
-                    else if (rightLimit == columns) line.putSpacerHead(x, fg, bg, style, attributes, protectedCell, semantic.content)
+                    if (rightLimit == columns) line.putSpacerHead(x, fg, bg, style, attributes, protectedCell, semantic.content)
                     else line.putBlank(x, fg, bg, style, attributes, protectedCell, semantic.content)
                     damage(cursorRow)
                     softWrap(); x = left; line = screen[cursorRow]
@@ -991,30 +991,33 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         fun p(i: Int = 0, default: Int = 1): Int = if (i > paramIndex || params[i] == 0) default else params[i]
         val minY = if (origin) top else 0
         val minX = if (origin) left else 0
+        val positionRow = (cursorRow - minY).coerceAtLeast(0) + 1
+        val positionColumn = (cursorColumn - minX).coerceAtLeast(0) + 1
         val upLimit = if (cursorRow >= top) top else 0
         val downLimit = if (cursorRow <= bottom) bottom else rows - 1
         val selective = privateCsi || protectionMode == PROTECTION_ISO
         when (final) {
             'A' -> cursorRow = (cursorRow - p()).coerceAtLeast(upLimit)
             'B' -> cursorRow = (cursorRow + p()).coerceAtMost(downLimit)
-            'e' -> position(cursorRow + 1 + p(), cursorColumn + 1)
+            'e' -> position(positionRow + p(), positionColumn)
             'C' -> cursorColumn = (cursorColumn + p()).coerceAtMost(if (cursorColumn <= right) right else columns - 1)
-            'a' -> position(cursorRow + 1, cursorColumn + 1 + p())
-            'D' -> cursorColumn = (cursorColumn - p()).coerceAtLeast(0)
+            'a' -> position(positionRow, positionColumn + p())
+            'D' -> cursorColumn = (cursorColumn - p()).coerceAtLeast(if (cursorColumn < left) 0 else left)
             'E' -> { cursorRow = (cursorRow + p()).coerceAtMost(downLimit); carriageReturn() }
             'F' -> { cursorRow = (cursorRow - p()).coerceAtLeast(upLimit); carriageReturn() }
-            'G', '`' -> position(cursorRow + 1, p())
-            'd' -> position(p(), cursorColumn + 1)
+            'G', '`' -> position(positionRow, p())
+            'd' -> position(p(), positionColumn)
             'H', 'f' -> position(p(), p(1))
             'J' -> when (params[0]) {
                 0 -> { eraseLine(0, selective); eraseRows(cursorRow + 1, rows, selective) }
                 1 -> { eraseRows(0, cursorRow, selective); eraseLine(1, selective) }
                 2 -> {
-                    if (!alternateScreen && screen.last().promptMarker != TerminalPromptMarker.NONE) scrollAndClear()
+                    val lastContent = screen.indexOfLast { it.promptMarker != TerminalPromptMarker.NONE || it.hasText() }
+                    if (!alternateScreen && lastContent >= 0 && screen[lastContent].promptMarker != TerminalPromptMarker.NONE) scrollAndClear()
                     eraseRows(0, rows, selective); pendingWrap = false
                     graphicsState.clearScreen()
                 }
-                3 -> { history.clear(); damageAll() }
+                3 -> { history.clear(); primaryGraphics.reapRetired(); damageAll() }
                 22 -> if (parameterCount == 1) scrollAndClear()
             }
             'K' -> eraseLine(params[0], selective)

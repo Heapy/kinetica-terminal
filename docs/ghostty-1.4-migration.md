@@ -1,8 +1,10 @@
 # Ghostty 1.4 reference migration
 
 The compatibility target now includes Ghostty 1.4.0, released on October 27, 2026.
-The existing generated fixtures still use `4da7523faba68ccb4042ea20585817098a51c015`
-(September 30). Do not relabel those fixtures as 1.4 results.
+The main reference and all C-generated fixtures now use the release. The separate Zig animation
+and Unicode-placeholder corpora still use `4da7523faba68ccb4042ea20585817098a51c015`
+(September 30), explicitly recorded in their manifests and `retainedOracleReferences`.
+Do not relabel those retained fixtures as 1.4 results.
 
 The official annotated tag `v1.4.0` resolves to
 `83fb95624b0439ee660c2679b43b38c8b63769cd`. A separate checkout at
@@ -21,8 +23,8 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
 - [ ] Regenerate all affected fixtures and provenance through `scripts/`, review behavioral
       differences, and preserve the existing scenario coverage.
 - [ ] Add regressions for newly supported behavior; passing the old corpus alone is insufficient.
-- [ ] Update the primary pin only with the corresponding generated evidence and implementation.
-- [ ] Run shared JVM/JS checks, relevant Native tests and fresh browser rendering/input checks.
+- [x] Update the primary C-reference pin with regenerated evidence and corresponding implementation.
+- [x] Run shared JVM/JS checks, relevant Native tests and fresh browser rendering/input checks for the C-reference migration.
 - [ ] Complete the release-note/source audit for remaining emulation and input differences.
 
 The first release comparison builds the existing C graphics host against both libraries and
@@ -48,13 +50,29 @@ the new library. Zig's own build fetch succeeded after a transient dependency TL
 avoid seeding its 0.17 cache with standalone `zig fetch` archives, which produced a nested
 package and a subsequent hash mismatch in this run. Dependency hashes were not changed.
 
+The first implementation checkpoint aligns the C reference corpus with the release: 279 text/
+input scenarios (1760 states), 15 storage cases (120 states), 98 geometry cases (1400 states),
+48 anchor cases (442 states) and 266 integrated graphics cases (2489 states). Generation is
+byte-for-byte reproducible. The expanded cases cover blank anchors after hard/soft breaks,
+pending wrap and repeated widening, cancelled APC actions/continuations and C1 exits.
+History-clear now compares directly with the original library; the old retirement exception
+has been removed.
+
+Implementation changes preserve pins and saved cursors through reflow, discard cancelled APCs,
+remove placements in explicitly erased history, reset the palette on RIS while retaining dynamic
+colors, reset empty OSC 22 to text, preserve the current pen on a widening grapheme's spacer,
+avoid adding origin margins twice, stop CUB/BS at the left margin, and find shell prompts above
+blank rows for ED2. Validation passes 547 JVM tests, fresh Release JS tests, all 279 Native C
+oracle tests, 103 additional Native graphics/GPU/presentation/pointer tests, and both browser
+verifiers. The new protocols and Zig helper migration below remain open.
+
 ## Confirmed terminal behavior to implement or reconcile
 
 - [ ] DECSTR (`CSI ! p`): reset the selected modes, margins, pen/protection/charsets, saved
       cursor, cursor appearance, modifyOtherKeys, status display and checksum variant while
       retaining screen contents and cursor position. Match `Terminal.softReset` exactly:
       it resets palette overrides but preserves dynamic colors and **does not reset tab stops**.
-- [ ] RIS resets palette overrides in addition to its existing state reset.
+- [x] RIS resets palette overrides in addition to its existing state reset.
 - [ ] DECXCPR (`CSI ?6n`) responds with `CSI ?row;column;1R`, including origin/margin handling.
 - [ ] `CSI 19 t` reports screen size in characters; the release dispatches `.csi_19_t`.
 - [ ] DECRQCRA/XTCHECKSUM requests and configured checksum variants.
@@ -63,17 +81,18 @@ package and a subsequent hash mismatch in this run. Dependency hashes were not c
 - [ ] OSC 7501 program status parsing, support query, state/observer integration and bounds.
 - [ ] OSC 5522 clipboard transactions, host authorization, MIME data, aliases, cancellation,
       bounded buffering and protocol replies. Existing OSC 52 support does not cover it.
-- [ ] Compare new origin-relative CHA/VPA/HPR/VPR, CUB/BS margin behavior, parameterless TBC,
-      pending wrap with DECAWM disabled, charset/single-shift and reflow changes against tests.
-- [ ] Compare mode reports, OSC 105 routing, empty OSC 22 reset and modified Backspace input.
+- [x] Reconcile origin-relative CHA/VPA/HPR/VPR, CUB/BS margin behavior and the changed reflow scenarios.
+- [ ] Extend coverage for parameterless TBC, pending wrap with DECAWM disabled and charset/single-shift changes.
+- [x] Empty OSC 22 resets the pointer to text.
+- [ ] Compare mode reports, OSC 105 routing and modified Backspace input.
 
 ## Graphics and external media
 
 - [ ] Separate image transmission identity from content generation: animation playback and
       edits must not invalidate a pending frame merely because pixels changed. Compare the
       release's pending image/frame state and continuation behavior against the old corpus.
-- [ ] Reconcile erased-history placement cleanup, cancelled/aborted APC commands and C1
-      introducers using whole-stream and bytewise oracle regressions.
+- [x] Reconcile erased-history placement cleanup and cancelled/aborted APC commands, including
+      C1 abort/recovery, using whole-stream and bytewise oracle regressions.
 - [ ] Adapt placeholder/render-state oracles to the release's moved placement resolution.
 - [ ] Native file, temporary-file and shared-memory readers with explicit host policy,
       offset/size handling, bounded allocations, safe file validation and deterministic cleanup.

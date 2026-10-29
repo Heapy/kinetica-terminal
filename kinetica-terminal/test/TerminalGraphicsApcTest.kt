@@ -38,12 +38,15 @@ class TerminalGraphicsApcTest {
         }
     }
 
-    @Test fun abortControlsCompleteRecognizedCommandsButExplicitResetDiscardsThem() {
+    @Test fun onlyEscAndStCompleteCommandsWhileCancellationAndResetDiscardThem() {
         for (end in listOf(0x18, 0x1a, 0x1b, 0x80, 0x85, 0x90, 0x9b, 0x9c, 0x9d)) {
             val stream = Stream()
-            stream.write("\u001b_Gi=31;YQ=="); stream.parser.accept(end)
+            stream.write("\u001b_Gi=31;YQ==")
+            assertTrue(stream.commands.isEmpty(), "An incomplete APC must not execute")
+            stream.parser.accept(end)
             assertEquals(listOf(end), stream.endings)
-            assertEquals(31, stream.commands.single().imageId)
+            if (end == 0x1b || end == 0x9c) assertEquals(31, stream.commands.single().imageId)
+            else assertTrue(stream.commands.isEmpty(), "Abort control $end must not execute the command")
             assertEquals(0, stream.apc.retainedPayloadBytes)
         }
         val stream = Stream()

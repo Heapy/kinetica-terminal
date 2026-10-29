@@ -205,10 +205,10 @@ internal class TerminalGraphicsApc(private val maxEncodedBytes: Int, private val
         } else parser?.feed(byte)
     }
     fun end(terminator: Int) {
-        val completed = if (terminator >= 0) parser?.complete() else null
+        val completed = if (terminator == 0x1b || terminator == 0x9c) parser?.complete() else null
         reset()
-        // Ghostty executes complete Kitty commands even on CAN/SUB/C1 exits. An explicit
-        // parser reset is different and must discard the unfinished command without dispatch.
+        // Ghostty 1.4 discards cancelled/aborted commands. Its stream dispatches at
+        // ESC (the start of ESC \) or 8-bit ST; CAN/SUB/other C1 exits only release data.
         completed?.let(command)
     }
     fun reset() { parser = null; identifying = false }

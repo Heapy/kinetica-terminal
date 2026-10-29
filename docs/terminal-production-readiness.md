@@ -297,6 +297,22 @@ host exception details from entering protocol replies. Six new common tests pass
 547-test JVM suite and fresh Release JS suite. These tests use injected readers; actual native
 filesystem/shared-memory access, unlink behavior and platform regressions remain unimplemented.
 
+The reference migration to Ghostty 1.4.0 (`83fb95624b0439ee660c2679b43b38c8b63769cd`)
+now updates the main C oracle and all C graphics corpora. The 279 text/input scenarios retain
+1760 checkpoints; graphics now include 48 anchor cases/442 states and 266 execution cases/2489
+states, alongside the unchanged-size storage and geometry corpora. Their generators reproduce
+byte-for-byte. New cancellation and reflow cases use the original library's results, and
+explicit history erasure no longer needs a reference-policy exception.
+
+The implementation follows the release's blank-pin/saved-cursor reflow, APC cancellation,
+history placement cleanup, RIS palette reset, empty OSC 22, widening-grapheme spacer attributes,
+origin-relative movement, left-margin CUB/BS and prompt-aware ED2 behavior. Validation passes
+547 JVM tests, fresh Release JS tests, 279 Native oracle tests, 103 selected Native graphics/
+GPU/presentation/pointer tests and both browser verifiers. The separate Zig animation and
+placeholder corpora retain their old pin until migrated. New 1.4 protocols, animation
+transmission-identity changes and remaining work are tracked in the
+[1.4 migration checklist](ghostty-1.4-migration.md); this checkpoint does not claim full 1.4 parity.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

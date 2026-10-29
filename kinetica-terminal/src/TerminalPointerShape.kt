@@ -15,6 +15,7 @@ public enum class TerminalPointerShape {
 
     internal companion object {
         fun parse(value: String): TerminalPointerShape? = entries.firstOrNull { it.cssName == value } ?: when (value) {
+            "" -> TEXT
             "left_ptr" -> DEFAULT
             "question_arrow" -> HELP
             "hand" -> POINTER

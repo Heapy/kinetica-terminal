@@ -1,6 +1,18 @@
 {
   "repository": "https://github.com/ghostty-org/ghostty",
-  "commit": "4da7523faba68ccb4042ea20585817098a51c015",
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "version": "1.4.0",
+  "previousCommit": "4da7523faba68ccb4042ea20585817098a51c015",
+  "retainedOracleReferences": [
+    {
+      "commit": "4da7523faba68ccb4042ea20585817098a51c015",
+      "zig": "0.16.0",
+      "manifests": [
+        "test-upstream/ghostty/graphics-animation-manifest.json",
+        "test-upstream/ghostty/graphics-unicode-manifest.json"
+      ]
+    }
+  ],
   "license": "MIT",
   "adaptedSources": [
     "src/terminal/Parser.zig",
@@ -55,5 +67,5 @@
     "src/terminal/sgr.zig",
     "src/terminal/kitty/graphics_image.zig"
   ],
-  "zig": "0.16.0"
+  "zig": "0.17.0"
 }

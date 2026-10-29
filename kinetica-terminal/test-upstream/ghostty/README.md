@@ -1,8 +1,12 @@
 # Ghostty differential oracle
 
-Pinned source: `4da7523faba68ccb4042ea20585817098a51c015` from
+Pinned C reference: Ghostty 1.4.0, `83fb95624b0439ee660c2679b43b38c8b63769cd`, from
 <https://github.com/ghostty-org/ghostty>. The MIT license is in
 `../../third-party/GHOSTTY-LICENSE`.
+
+The separate Zig animation and Unicode-placeholder corpora still use
+`4da7523faba68ccb4042ea20585817098a51c015` with Zig 0.16.0. Their manifests preserve
+that provenance until their helpers migrate; they are not presented as 1.4 evidence.
 
 The separate [graphics component corpus](graphics-manifest.json) is generated with
 `python3 scripts/generate-terminal-graphics-fixtures.py /path/to/ghostty`. Its 15 cases
@@ -31,8 +35,8 @@ These are component tests: actual line anchors, reflow/screen lifecycle, parent 
 placeholder rendering and platform pixels are not covered by this geometry corpus yet.
 
 The [row-anchor corpus](graphics-anchors-manifest.json) is generated with
-`python3 scripts/generate-terminal-graphics-anchors.py /path/to/ghostty`. Its 45 cases
-and 418 checkpoints create real placements in the original library and replay text writes,
+`python3 scripts/generate-terminal-graphics-anchors.py /path/to/ghostty`. Its 48 cases
+and 442 checkpoints create real placements in the original library and replay text writes,
 scrolling, width/height changes and screen switches. Common tests attach internal row anchors
 at the same cursor positions and compare viewport coordinates, cursor, pending wrap and history
 after whole and bytewise writes. Cases include blank pins, several pins in different insertion
@@ -40,16 +44,15 @@ orders, overwritten/erased text, wide glyph heads/tails, one-column grids, saved
 resizing inactive screens. Tall placements make history origins observable through the public
 viewport API without inventing expected coordinates in the generator.
 
-One declared difference is `anchorPolicy: retire-cleared-history`: the pinned Ghostty's explicit
-history erasure moves pins in deleted rows to `(0, 0)`, whereas Kinetica invalidates them and
-releases their row references. The raw oracle snapshots retain Ghostty's result; only those
-previously observed history pins are compared against the declared retirement policy. Separate
-common tests check strict line/byte-limit eviction, recycling, disposal and reset of both screens.
+Ghostty 1.4 removes placements anchored in erased history, matching Kinetica's row retirement.
+The old `anchorPolicy: retire-cleared-history` exception has been removed. New cases exercise
+blank pins after hard/soft breaks and pending wrap, plus saved cursors through repeated widening.
+Separate common tests check strict line/byte-limit eviction, recycling, disposal and reset of both screens.
 These tests prove anchor mechanics, not APC execution, margin clipping integration or rendering.
 
 The [session execution corpus](graphics-execution-manifest.json) is generated with
-`python3 scripts/generate-terminal-graphics-execution.py /path/to/ghostty`. Its 196 cases
-and 2017 checkpoints replay complete APC bytes and ordinary terminal operations through
+`python3 scripts/generate-terminal-graphics-execution.py /path/to/ghostty`. Its 266 cases
+and 2489 checkpoints replay complete APC bytes and ordinary terminal operations through
 `TerminalSession`, both whole and bytewise. The reference helper receives exactly the same
 writes, geometry changes and storage limits. The comparator checks every selected image's
 decoded bytes, exact PTY replies, placement fields/resolved geometry/layers, cursor, pending
@@ -61,11 +64,11 @@ original-library snapshots for the integrated path. It adds deferred transmit-an
 ID/number/implicit lookup, placement replacement, internal IDs, virtual and relative placements,
 parent selection/cycles/depth/saturated offsets, cascade deletion, eviction, all static deletion
 selectors, screen switches, reset, erasure, full/margin scrolling, IL/DL and render holds.
-The manifest hashes all reused input generators. The previously declared explicit-history-clear
-policy case remains in the anchor corpus; this execution corpus does not normalize snapshots.
-Static `d=f/F` behavior is covered, but animation execution and Unicode-placeholder rendering
-are still pending. PNG decode has its separate libpng corpus; the original C helper does not
-install a PNG callback. No file/shared-memory input or platform renderer runs in these tests.
+The manifest hashes all reused input generators. History-clear is included without a policy
+exception. Animation frame loading/editing/composition/control/deletion, chunk identity, quotas,
+quiet replies, cancelled APC actions and C1 exits are covered. The graphics wrapper installs an
+independent libpng 1.6.59 callback; the base text helper still has no PNG callback.
+No file/shared-memory input or platform renderer runs in these tests.
 
 `scenarios.json` is the input specification. The C helper in
 `scripts/terminal-ghostty-oracle.c` runs the original `libghostty-vt` through its
@@ -109,10 +112,10 @@ style and is deliberately not used for cursor geometry. Mode 12 and mode 2026 ar
 independently, and the helper records each render-hold callback.
 It does not execute a shell or any terminal-requested external action.
 
-Build the pinned checkout with Zig 0.16.0:
+Build the pinned C-reference checkout with Zig 0.17.0:
 
 ```sh
-zig build -Demit-lib-vt=true -Doptimize=ReleaseFast -Dsimd=false -Demit-xcframework=false
+zig build -Demit-lib-vt=true -Doptimize=fast -Dsimd=false -Demit-xcframework=false
 ```
 
 Then from Kinetica:

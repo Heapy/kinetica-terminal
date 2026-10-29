@@ -373,7 +373,8 @@ prefixes/intermediates and primary-DA replies produce no identification reply.
 Color commands accept X11 names, `rgb:`/`rgbi:`, and 3/6/9/12-digit `#` forms, plus bare
 3/6-digit hex. Queries preserve BEL versus ST and report 16-bit channels. Chained requests,
 partial malformed lists, and resets follow the pinned Ghostty behavior. Colors are shared by
-primary/alternate screens and survive RIS; OSC 104 and 110–112 restore configured defaults.
+primary/alternate screens. RIS resets palette overrides and preserves dynamic foreground,
+background and cursor colors; OSC 104 and 110–112 restore configured defaults.
 Unsupported pointer, selection, Tektronix and special-color targets are consumed without
 effects or replies. The archived X11 names and license can be regenerated offline with
 `python3 scripts/generate-terminal-x11-colors.py`; provenance is in `third-party/x11-rgb.json`.
@@ -385,7 +386,8 @@ Requests exceeding its 2048-byte payload or 528-operation limit are rejected ato
 OSC 21 and the xterm color commands share state and configured reset defaults.
 
 OSC 22 controls the mouse pointer separately from the text cursor. All 34 W3C names and
-Ghostty's xterm/foot aliases are accepted; invalid names are ignored and RIS preserves the
+Ghostty's xterm/foot aliases are accepted; an empty request restores `text`, other invalid
+names are ignored and RIS preserves the
 last requested shape. Browser views apply CSS cursor styles. AppKit uses Ghostty's native
 mapping (text, arrow, hands, axial resize, context menu, crosshair and not-allowed); unsupported
 native shapes preserve the previously displayed cursor. `pointerShape` and `onPointerShape`
@@ -624,7 +626,9 @@ The common tests include pinned Alacritty recordings and Ghostty-derived parser/
 regressions, with deterministic chunked replay. See [test-upstream](test-upstream/README.md)
 for licenses, provenance, generation and documented behavior differences. The test-only
 [Ghostty oracle](test-upstream/ghostty/README.md) generates snapshots from the original
-library; it is not a runtime dependency. Adapted runtime code carries Ghostty's MIT license;
+library; it is not a runtime dependency. The C oracle is pinned to Ghostty 1.4.0; separate
+Zig animation and placeholder corpora retain their previous reference during the
+[migration](../docs/ghostty-1.4-migration.md). Adapted runtime code carries Ghostty's MIT license;
 Unicode/uucode and X11 data retain their own notices,
 also included under `resources/META-INF/LICENSES` and in packaged native demo bundles.
 

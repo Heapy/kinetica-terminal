@@ -149,13 +149,16 @@ private class TerminalResizer(
             // Its blank cell participates before later pins are clamped to the destination width.
             if (y == 0) length = maxOf(length, 1)
             if (length == 0 && source.promptMarker != TerminalPromptMarker.NONE) length = 1
+            // Ghostty 1.4 PageList reflow: deferred hard breaks and a full destination
+            // row reset the destination column before clamping pins in blank cells.
+            val destinationX = if (deferredRows > 0 || x == next) 0 else x
             val anchors = source.graphicsAnchors().map { anchor ->
                 val column = if (anchor.column >= length)
-                    minOf(anchor.column, next - 1 - x.coerceAtMost(next - 1)) else anchor.column
+                    minOf(anchor.column, next - 1 - destinationX) else anchor.column
                 anchor to column
             }
             val savedHere = saved?.takeIf { it.y == y }?.let {
-                if (it.x >= length) it.copy(x = minOf(it.x, next - 1 - x.coerceAtMost(next - 1))) else it
+                if (it.x >= length) it.copy(x = minOf(it.x, next - 1 - destinationX)) else it
             }
             if (savedHere != null) length = maxOf(length, savedHere.x + 1)
             for ((_, column) in anchors) length = maxOf(length, column + 1)

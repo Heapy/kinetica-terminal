@@ -11,7 +11,6 @@ class TerminalGraphicsAnchorTest {
             val case = caseValue.jsonObject
             val terminal = TerminalSession(8, 5, scrollback = 1000)
             val anchors = mutableMapOf<Int, TerminalGraphicsAnchor>()
-            val retired = mutableSetOf<Int>()
             fun write(value: String) {
                 val bytes = value.encodeToByteArray()
                 if (bytewise) bytes.forEach { terminal.write(byteArrayOf(it)) } else terminal.write(bytes)
@@ -29,11 +28,6 @@ class TerminalGraphicsAnchorTest {
                     }
                     else -> {
                         val text = event.getValue("write").jsonPrimitive.content
-                        if (case["anchorPolicy"]?.jsonPrimitive?.content == "retire-cleared-history" && text == "\u001b[3J") {
-                            // Explicit policy difference: original eraseHistory relocates erased pins to (0,0).
-                            // Our strict retained-row policy releases them; raw reference snapshots stay intact.
-                            for ((id, anchor) in anchors) if ((terminal.graphicsAnchorPosition(anchor)?.y ?: 0) < 0) retired += id
-                        }
                         write(text)
                     }
                 }
@@ -43,10 +37,6 @@ class TerminalGraphicsAnchorTest {
                     it.jsonArray[1].jsonPrimitive.int to it.jsonArray
                 }
                 for ((id, anchor) in anchors) {
-                    if (id in retired) {
-                        assertNull(anchor.line, "$context id=$id retired history")
-                        continue
-                    }
                     val position = terminal.graphicsAnchorPosition(anchor)
                     val viewport = position?.let {
                         graphicsViewportPosition(it.x, it.y, TerminalGraphicsSize(1,1000), terminal.columns, terminal.rows)
