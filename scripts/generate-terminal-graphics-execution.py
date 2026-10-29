@@ -135,6 +135,21 @@ def cases():
                 apc('a=q,i=1,f=24,s=1,v=1',b'\x01\x02\x03'),
                 apc(f'a={continuation},i=99,f=42,s=100,m=1',b'\x28'),
                 apc(f'a={continuation},i=99,q=0',b'\x3c\xff'),apc('a=a,i=1,c=2')])
+    for initial in ('t','T','f'):
+        for medium in ('f','t','s'):
+            for action in ('t','T','f'):
+                for quiet in (0,2):
+                    add(f'external_abandons_chunk_{initial}_{medium}_{action}_{quiet}',[
+                        image(1),
+                        apc(f'a={initial},i={1 if initial == "f" else 2},f=24,s=1,v=1,m=1,q={quiet}',b'\x09'),
+                        apc(f'a={action},i=1,t={medium},f=24,s=1,v=1,m=1',b'/no-host-access'),
+                        apc('a=t,i=3,f=24,s=1,v=1',b'\x04\x05\x06'),
+                        apc('a=a,i=1,c=2')])
+            add(f'external_query_and_conflict_preserve_chunk_{initial}_{medium}',[
+                image(1),apc(f'a={initial},i=1,f=24,s=1,v=1,m=1',b'\x01'),
+                apc(f'a=q,i=2,t={medium},f=24,s=1,v=1',b'/no-host-access'),
+                apc(f'a=t,i=1,I=2,t={medium}',b'/no-host-access'),
+                apc('a=t',b'\x02\x03'),apc('a=a,i=1,c=2')])
     for intervention in [apc('a=a,i=1,c=2'),apc('a=a,i=1,r=2,z=5'),apc('a=a,i=1,s=3'),
                          apc('a=c,i=1,r=2,c=1'),apc('a=c,i=1,r=1,c=2'),apc('a=d,d=f,i=1,r=2'),
                          STORAGE['command']({'limit':3}),write('\x1bc')]:

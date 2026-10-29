@@ -314,9 +314,18 @@ The Zig animation and placeholder corpora now also use 1.4: all 400 animation sc
 390 placeholder scenarios remain covered, with original RenderState visibility checks.
 The storage clock matches the release's idle-generation gate and resumes after image or
 placement mutations. This increment passes 548 JVM tests, fresh Release JS tests, 74 Native
-graphics/animation tests and both Canvas/WebGL graphics verifiers. New 1.4 protocols, animation
-transmission-identity changes and remaining work are tracked in the
+graphics/animation tests and both Canvas/WebGL graphics verifiers. New 1.4 protocols and
+remaining work are tracked in the
 [1.4 migration checklist](ghostty-1.4-migration.md); this checkpoint does not claim full 1.4 parity.
+
+External media now abandon unfinished direct image/frame loads before processing a new
+transmission, matching the 1.4 executor even when the host rejects the read. Queries and
+conflicting identifiers preserve the existing load. The execution oracle adds 63 scenarios
+(total 329 / 2813 checkpoints); injected-host tests cover successful file, temporary-file and
+shared-memory replacements and frame additions. The stable transmission ticket in upstream
+snapshot restoration is separate from APC chunk identity, which still checks pixel generation.
+The corpus reproduces byte-for-byte; all 550 JVM tests, fresh Release JS tests and 14 focused
+Native media/execution tests pass.
 
 Graphics acceptance work:
 

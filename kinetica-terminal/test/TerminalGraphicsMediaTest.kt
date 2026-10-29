@@ -75,7 +75,7 @@ class TerminalGraphicsMediaTest {
         var calls = 0
         val storage = TerminalGraphicsStorage(media = TerminalGraphicsMedia { calls++; TerminalGraphicsMediaResult.Data(rgb) })
         storage.transmit(command("a=t,i=1,f=24,s=1,v=1,m=1",byteArrayOf(1)))
-        val result = storage.transmit(command("a=f,t=f,m=1",byteArrayOf(2,3)))
+        val result = storage.transmit(command("a=f,t=d,m=0",byteArrayOf(2,3)))
         assertContentEquals(rgb,assertNotNull(result.image).pixels.data)
         assertEquals(0,calls,"A continuation uses the original direct header, not a new host read")
         storage.query(command("a=q,t=f"))
@@ -85,6 +85,49 @@ class TerminalGraphicsMediaTest {
         storage.setLimit(0)
         storage.transmit(command("a=t,i=1,t=f"))
         assertEquals(0,calls)
+    }
+
+    @Test fun externalMediaAbandonImageAndFrameChunksBeforeStartingTheirOwnTransfer() {
+        for (initial in "tTf") for (medium in "fts") for (action in "tTf") {
+            var calls = 0
+            val storage = TerminalGraphicsStorage(media = TerminalGraphicsMedia {
+                calls++; TerminalGraphicsMediaResult.Data(rgb)
+            })
+            val old = assertNotNull(storage.transmit(command("a=t,i=1,f=24,s=1,v=1",rgb)).image)
+            storage.transmit(command("a=$initial,i=${if (initial == 'f') 1 else 2},q=2,f=24,s=1,v=1,m=1",byteArrayOf(9)))
+            assertTrue(storage.hasPendingTransfer)
+            val result = storage.transmit(command("a=$action,i=1,t=$medium,f=24,s=1,v=1,m=1"))
+            assertEquals(1,calls)
+            assertEquals("\u001b_Gi=1${if (action == 'f') ",r=2" else ""};OK\u001b\\",result.reply(),
+                "The abandoned transfer's quiet flag must not suppress the new reply")
+            assertFalse(storage.hasPendingTransfer); assertEquals(0,storage.retainedLoadingBytes)
+            assertNull(storage.image(2))
+            val image = assertNotNull(storage.image(1))
+            if (action == 'f') {
+                assertSame(old,image)
+                assertEquals(2,image.animation.frameCount)
+                assertContentEquals(byteArrayOf(1,2,3,-1),image.animation.frame(2)!!.data)
+            } else {
+                assertNotSame(old,image)
+                assertContentEquals(rgb,image.pixels.data)
+                assertEquals(action == 'T',result.display != null)
+            }
+        }
+    }
+
+    @Test fun externalFailuresDiscardChunksButQueriesAndConflictingIdentifiersPreserveThem() {
+        for (initial in "tf") for (medium in "fts") {
+            val storage = TerminalGraphicsStorage()
+            storage.transmit(command("a=t,i=1,f=24,s=1,v=1",rgb))
+            fun begin() = storage.transmit(command("a=$initial,i=1,f=24,s=1,v=1,m=1,q=2",byteArrayOf(1)))
+            begin()
+            storage.query(command("a=q,i=2,t=$medium,f=24,s=1,v=1"))
+            assertEquals(1,storage.loadingBytes)
+            storage.transmit(command("a=t,i=1,I=2,t=$medium"))
+            assertEquals(1,storage.loadingBytes)
+            assertNotNull(storage.transmit(command("a=t,i=2,t=$medium,f=24,s=1,v=1")).reply())
+            assertFalse(storage.hasPendingTransfer); assertEquals(0,storage.retainedLoadingBytes)
+        }
     }
 
     @Test fun attachmentAppliesToBothScreensAndOldDisposalCannotDetachReplacement() {

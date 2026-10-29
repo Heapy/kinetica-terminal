@@ -145,13 +145,14 @@ internal class TerminalGraphicsStorage(
     }
 
     /**
-     * All transmit-like commands continue an existing load, using its original header and
-     * target generation. Only a new t/T destroys/replaces the base image and its placements.
+     * Direct transmit-like commands continue an existing load with its original header and
+     * target generation. External media abandon the load before starting a new transmission.
      */
     fun transmit(command: TerminalGraphicsCommand): TerminalGraphicsTransferResult {
         require(command.action in "tTf")
         if (!enabled) return TerminalGraphicsTransferResult()
         conflictingIdentifiers(command)?.let { return TerminalGraphicsTransferResult(it, command.quiet) }
+        if (command.medium != 'd') abortTransfer()
         val current = loading
         val quiet = if (current != null && command.quiet == 0) current.quiet else command.quiet
         if (current != null && command.quiet != 0) current.quiet = quiet

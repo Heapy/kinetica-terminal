@@ -101,9 +101,14 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Graphics and external media
 
-- [ ] Separate image transmission identity from content generation: animation playback and
-      edits must not invalidate a pending frame merely because pixels changed. Compare the
-      release's pending image/frame state and continuation behavior against the old corpus.
+- [x] Verify image/frame continuation identity against the actual release executor. Wire
+      chunked frames still pin `Image.generation` in `graphics_exec.zig` and reject a changed
+      target. The new stable `Image.transmission` belongs to `ImageStorage.PendingImage`
+      tickets used to restore decoded pixels from snapshots, not ordinary APC chunking.
+      The earlier requirement to change wire identity conflated these two paths.
+- [x] External file/temporary-file/shared-memory transmissions abandon unfinished direct
+      image or frame chunks before processing the new command, including failed host reads.
+      Queries and conflicting identifiers leave the previous transfer intact.
 - [x] Reconcile erased-history placement cleanup and cancelled/aborted APC commands, including
       C1 abort/recovery, using whole-stream and bytewise oracle regressions.
 - [x] Adapt placeholder/render-state oracles to the release's moved placement resolution.
