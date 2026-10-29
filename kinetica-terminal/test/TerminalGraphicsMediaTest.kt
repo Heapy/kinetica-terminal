@@ -164,6 +164,9 @@ class TerminalGraphicsMediaTest {
             assertEquals(TerminalGraphicsMediaResult.INVALID_DATA,assertFailsWith<TerminalGraphicsMediaException> { value.readLength(4096) }.result)
         assertEquals(TerminalGraphicsMediaResult.DIMENSIONS_TOO_LARGE,
             assertFailsWith<TerminalGraphicsMediaException> { request(width=4294967295L).readLength(4096) }.result)
+        assertEquals(TerminalGraphicsMediaResult.DIMENSIONS_TOO_LARGE,
+            assertFailsWith<TerminalGraphicsMediaException> { request(width=4294967295L).readLength(-1) }.result,
+            "Ghostty validates raw shared-memory dimensions before rejecting the offset")
         assertFailsWith<TerminalGraphicsMediaException> { request().readLength(2) }
     }
 }

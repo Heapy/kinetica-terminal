@@ -123,15 +123,22 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 - [x] Reconcile erased-history placement cleanup and cancelled/aborted APC commands, including
       C1 abort/recovery, using whole-stream and bytewise oracle regressions.
 - [x] Adapt placeholder/render-state oracles to the release's moved placement resolution.
-- [ ] Native file, temporary-file and shared-memory readers with explicit host policy,
+- [x] Native file, temporary-file and shared-memory readers with explicit host policy,
       offset/size handling, bounded allocations, safe file validation and deterministic cleanup.
-      The common `attachGraphicsMedia` API is implemented; injected-reader tests do not prove
-      platform I/O support.
-- [ ] Follow 1.4's shared-memory name rules (pass valid names unchanged to `shm_open`, including
+      `MacOsTerminalGraphicsMedia` defaults to deny; the local-PTY application explicitly enables
+      all three media. Real resource tests supplement the common injected-reader tests.
+- [x] Follow 1.4's shared-memory name rules (pass valid names unchanged to `shm_open`, including
       forms without a leading slash) and canonical `/private/tmp` temporary-file handling.
-- [ ] Add original-library external-media comparisons and real native lifecycle regressions,
+- [x] Add original-library external-media comparisons and real native lifecycle regressions,
       including cleanup after read/decode failure and rejected paths/ranges.
 - [ ] Complete the existing decoded storage and frame-wide renderer resource audit.
+
+The native media corpus has 61 cases: 57 compare original-reader bytes/errors and cleanup.
+Four regular/temporary-file seeks past EOF with omitted size crash the original Zig 0.17
+safe build with integer overflow. Those crashes are recorded rather than treated as conformance
+expectations; our separate recovery assertions require an empty read and temporary-file cleanup.
+The image decoder then rejects insufficient pixel data. The oracle enables PNG capability with
+a trapping callback and never decodes; actual PNG decoding is covered by native integration tests.
 
 The broader graphics acceptance list remains in
 [terminal production readiness](terminal-production-readiness.md). This migration adds to that

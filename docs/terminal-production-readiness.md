@@ -414,6 +414,25 @@ this policy, and RIS/DECSTR clear the requested lock while preserving host permi
 Validation passes all 686 JVM tests, fresh Release JS tests, 402 Native oracle cases, six
 Native common keyboard tests, two AppKit keyboard/IME tests and the updated browser verifier.
 
+Native external Kitty media now have a concrete `MacOsTerminalGraphicsMedia` host adapter.
+Library defaults deny all media; the native local-PTY application explicitly enables files,
+temporary files and shared memory and detaches the binding on close. Reads validate opened
+file types/canonical paths, exact sizes and offsets, enforce encoded-byte limits, and map only
+the requested shared-memory range plus alignment. Shared names are passed unchanged. Validated
+temporary files and opened shared-memory names are consumed even after read/decode failure.
+Path-based cleanup follows the original semantics; it is not race-free against concurrent name
+replacement. Nonblocking file open prevents a FIFO from hanging before regular-file validation.
+
+A separate original-Ghostty native oracle records 61 real-resource scenarios. Fifty-seven
+compare bytes, errors and cleanup; four past-EOF file cases crash the original Zig safe reader
+and are retained as explicit upstream crashes. Our empty EOF recovery is tested separately,
+not counted as conformance. The reader oracle never invokes PNG decoding; native integration
+tests separately cover PNG success/failure, image/frame transmission, queries and cleanup.
+Fixtures and provenance regenerate byte-for-byte. Validation passes 686 JVM tests, fresh Release
+JS tests, 16 focused Native media/decoder tests and one native application policy/lifecycle test.
+Descriptor-stability, host read limits and FIFO rejection are included. No installed app or
+live user shell is replaced or terminated by these tests.
+
 Graphics acceptance work:
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.

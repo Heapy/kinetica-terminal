@@ -1,5 +1,32 @@
 # Ghostty differential oracle
 
+## Native external-media oracle
+
+`native-media-manifest.json` pins a separate macOS-only Zig oracle that invokes the original
+`LoadingImage.init` against real isolated files, temporary files and POSIX shared memory.
+Regenerate it on macOS arm64 with:
+
+```sh
+python3 scripts/generate-terminal-native-media.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig
+bash scripts/engine.sh test -m kinetica-terminal -p macosArm64 --include-classes='*NativeGraphicsMediaTest'
+```
+
+The 61 portable setup recipes cover policy, offsets, exact/implicit sizes, invalid names,
+canonical paths, custom temporary directories, symlinks, unchanged shared-memory names,
+page padding, compressed/PNG byte ranges and cleanup. Fifty-seven compare original bytes,
+error names and resource existence. Four file seeks past EOF with omitted size crash the
+original Zig safe build; the manifest records those crashes, and the native test verifies
+our bounded EOF recovery separately. No generated expectation substitutes our behavior for
+an upstream crash. Only the oracle's own temporary resources are created/deleted.
+
+The PNG capability gate is enabled by a callback that traps if called. This oracle ends
+before decoding: it proves raw reads, not PNG validity or rendering. Separate native tests
+exercise queries, image/frame loads, real PNG decoding and read/decode failure cleanup.
+Additional regressions verify descriptor stability, bounded reads and nonblocking FIFO rejection.
+The existing C corpora below still disable external media and retain their original scope.
+
+## C and other component oracles
+
 Pinned C reference: Ghostty 1.4.0, `83fb95624b0439ee660c2679b43b38c8b63769cd`, from
 <https://github.com/ghostty-org/ghostty>. The MIT license is in
 `../../third-party/GHOSTTY-LICENSE`.

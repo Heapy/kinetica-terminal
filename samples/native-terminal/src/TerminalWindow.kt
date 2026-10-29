@@ -19,6 +19,10 @@ internal class TerminalWindow(private val number: Int, private val settings: Ter
     lateinit var handle: AppKitWindow
     val window get() = handle.nativeWindow
     val session = TerminalSession(theme = settings.settings.colorTheme.colors)
+    // This application owns a local PTY and explicitly permits Ghostty-compatible local media.
+    private val graphicsMedia = session.attachGraphicsMedia(MacOsTerminalGraphicsMedia(
+        allowFiles = true, allowTemporaryFiles = true, allowSharedMemory = true,
+    ))
     val font = store(settings.settings)
     val search = store(SearchState())
     private var surface: AppKitTerminalView? = null
@@ -60,7 +64,7 @@ internal class TerminalWindow(private val number: Int, private val settings: Ter
     fun close(done: () -> Unit) {
         if (!disposed) {
             disposed = true
-            observation.dispose(); timer?.invalidate(); timer = null
+            observation.dispose(); graphicsMedia.dispose(); timer?.invalidate(); timer = null
         }
         transport?.close(done) ?: done()
     }

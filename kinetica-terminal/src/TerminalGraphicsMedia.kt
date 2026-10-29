@@ -23,10 +23,10 @@ public class TerminalGraphicsMediaRequest internal constructor(
 ) {
     /** Ghostty uses the raw pixel length for uncompressed shared memory, excluding page padding. */
     internal fun readLength(available: Long): Long {
-        if (available < 0) throw TerminalGraphicsMediaException(TerminalGraphicsMediaResult.INVALID_DATA)
         if (medium == TerminalGraphicsMedium.SHARED_MEMORY && format != 100 &&
             (width > maxDimension || height > maxDimension))
             throw TerminalGraphicsMediaException(TerminalGraphicsMediaResult.DIMENSIONS_TOO_LARGE)
+        if (available < 0) throw TerminalGraphicsMediaException(TerminalGraphicsMediaResult.INVALID_DATA)
         val length = when {
             size > 0 -> size
             medium == TerminalGraphicsMedium.SHARED_MEMORY && !compressed && format != 100 -> width * height * (format / 8)

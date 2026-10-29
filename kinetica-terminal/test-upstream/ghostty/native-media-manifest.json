@@ -1,0 +1,17 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
+  "platform": "macos-arm64",
+  "cases": 61,
+  "scope": "Original LoadingImage.init native readers, raw encoded bytes, errors and resource deletion. PNG capability enabled with a callback that traps if invoked: decoding is outside this reader-only oracle. Recorded upstream crashes are not conformance expectations; recovery is tested separately. Decode/render behavior is tested separately.",
+  "upstreamCrashes": [
+    "f_past_end",
+    "f_huge_offset",
+    "t_past_end",
+    "t_huge_offset"
+  ],
+  "helperSha256": "1931c27f5852391297ce663c2f97f551155158c485bf1feabd0151548c468fc8",
+  "generatorSha256": "2a35b1dd0f279cccd89afc178099f11de880d22830a23e492aceac75bce5a0b2",
+  "fixtureSha256": "bbeb787d12318e5e1741d00920252faafccef47d3ba701b9166ade0b2ef84eaf",
+  "sourceSha256": "8514c7de340555f363432de961ce95786a7dde3a2207932ba6ed63cd4e6a129a"
+}

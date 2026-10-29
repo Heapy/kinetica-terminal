@@ -82,8 +82,32 @@ temporary-file and shared-memory transmissions. The host receives the decoded pa
 unsigned offset and exact size, format and byte limit; it returns owned bytes or a fixed
 protocol error synchronously on the session thread. Without an attached host, external media
 return an unsupported-medium error.
-The common executor supports queries, image/frame loads, quiet replies and both screens;
-built-in native file/shared-memory readers are still pending. The decoded-byte budget is not a total memory bound:
+The common executor supports queries, image/frame loads, quiet replies and both screens.
+On macOS, `MacOsTerminalGraphicsMedia` provides the native readers. Every medium defaults to
+denied; an embedding host can enable the ones it authorizes:
+
+```kotlin
+val media = session.attachGraphicsMedia(MacOsTerminalGraphicsMedia(
+    allowFiles = true,
+    allowTemporaryFiles = true,
+    allowSharedMemory = true,
+))
+// Detach when the host closes its session.
+media.dispose()
+```
+
+The native application explicitly enables these readers for its local PTY sessions. Library
+views do not enable them automatically. Relative paths use the application's working directory.
+Files must be regular files; validation uses the opened descriptor's canonical path. Temporary
+files must be within a recognized temporary directory and their canonical path must contain
+`tty-graphics-protocol`. After that validation they are deleted even on read/decode failure.
+Shared-memory names pass unchanged to `shm_open` and are unlinked after a successful open,
+including later failures. Reads are bounded by the protocol and optional `maxReadBytes` cap
+(400 MiB by default); only the requested shared-memory range plus page alignment is mapped.
+File reads and memory copies are synchronous. These path rules follow Ghostty and do not
+provide race-free deletion against another process replacing a pathname or shared-memory name.
+
+The decoded-byte budget is not a total memory bound:
 RGB-to-RGBA animation conversion follows upstream admission semantics and can exceed it;
 transient copies and resources retained by submitted draws are separate from cache accounting.
 Run `node scripts/verify-terminal-graphics.mjs` against the built browser

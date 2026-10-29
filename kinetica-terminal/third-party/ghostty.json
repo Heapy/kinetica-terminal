@@ -39,6 +39,7 @@
     "src/os/string_encoding.zig",
     "src/terminal/apc.zig",
     "src/terminal/kitty/graphics_command.zig",
+    "src/terminal/kitty/graphics_image.zig",
     "src/terminal/kitty/graphics_exec.zig",
     "src/terminal/kitty/graphics_storage.zig",
     "src/terminal/c/kitty_graphics.zig",
@@ -60,7 +61,6 @@
   "referenceSemantics": [
     "src/terminal/stream.zig",
     "src/terminal/sgr.zig",
-    "src/terminal/kitty/graphics_image.zig",
     "src/termio/Termio.zig",
     "src/Surface.zig",
     "src/config/Config.zig"
