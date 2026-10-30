@@ -49,6 +49,11 @@ public class TerminalLine internal constructor(public val columns: Int, internal
         val packed = packTerminalCells(checkNotNull(cells), columns) ?: return
         compressedCells = packed; cells = null
     }
+    /** Bulk readers must not leave an entire compressed history decoded after a scan. */
+    internal fun <T> readPreservingCompression(read: () -> T): T {
+        val wasCompressed = compressed
+        return try { read() } finally { if (wasCompressed) compress() }
+    }
     private var combined: Array<String?>? = null
     private var attributes: Array<CellAttributes?>? = null
     private var combinedCount = 0
@@ -257,10 +262,12 @@ public class TerminalLine internal constructor(public val columns: Int, internal
         setAttributes(target, from.attributes?.get(source))
     }
 
-    internal fun snapshot(colors: TerminalColors): TerminalLine = TerminalLine(columns, colors, hyperlinkLimit).also {
-        for (x in 0 until columns) it.copyCell(this, x, x)
-        it.wrapped = wrapped; it.wrapContinuation = wrapContinuation
-        it.promptMarker = promptMarker
+    internal fun snapshot(colors: TerminalColors): TerminalLine = readPreservingCompression {
+        TerminalLine(columns, colors, hyperlinkLimit).also {
+            for (x in 0 until columns) it.copyCell(this, x, x)
+            it.wrapped = wrapped; it.wrapContinuation = wrapContinuation
+            it.promptMarker = promptMarker
+        }
     }
 
     internal fun resized(columns: Int): TerminalLine = TerminalLine(columns, colors, hyperlinkLimit).also { next ->

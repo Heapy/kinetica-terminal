@@ -60,6 +60,21 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Selection and clipboard scans now restore each compressed source row after reading it,
+including exception paths. Plain/VT/HTML/mixed copy and legacy selection text process one
+compressed row at a time; frame snapshots also preserve source history compression. Rows
+already resident for rendering stay resident. Output strings, mapping caches and retained
+snapshot rows still scale with selection size; this does not close the overall resource gate.
+Four regression tests failed before the fix: ordinary selection text expanded a measured
+history from 59,672 to 143,888 resident accounting bytes, long copies accumulated decoded rows,
+retained copy caches left rows decoded, and interrupted formatting failed to release its row.
+`TerminalCopyStorageTest` now checks all formats and trim settings over 600 rows, styled links,
+combining/wide text, codepoint maps, wrapped/blank rows, shared visible rows, repeat copies,
+exceptions, and capture followed by hidden history erasure. Validation passes 1678 JVM tests,
+fresh Release JS tests and 23 focused Native tests. Browser copy-on-select and frozen-gesture
+verifiers pass on macOS/Linux with Canvas/WebGL and Retina. Evidence logs:
+`/tmp/kinetica-copy-storage-*`.
+
 Browser/AppKit now count actual local left presses with shared Ghostty repeat-click rules,
 independent of native click-count hints. `clickRepeatIntervalMillis = 0` uses the macOS system
 interval or 500 ms browser fallback; positive values cover Ghostty's u32 millisecond range.

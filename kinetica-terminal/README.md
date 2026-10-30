@@ -621,7 +621,11 @@ NSWindow and check the revealed/selected text and absence of Kitty input events.
   Optional grapheme/link metadata is not compressed. `historyResidentStorageBytes` estimates
   retained row storage after compression; `historyStorageBytes` and eviction keep their original
   logical charges. Compression does not increase the configured history length or byte budget.
-  Search/reflow can materialize history again, so this is not a bound on peak memory or RSS.
+  Selection text, clipboard formatters and frame snapshots restore each source row's prior
+  compression state after reading it, including failed formatting. Copying decodes one compressed
+  row at a time; existing visible row arrays remain resident. The output strings, mapping caches
+  and retained snapshot rows still scale with the selected content. Search/reflow can materialize
+  history again, so this is not a bound on peak memory or RSS.
 - These are accounting bytes, **not an exact heap/RSS limit**. A row charges 128 bytes plus
   16 bytes per packed cell; optional reference arrays charge 32 + 8 bytes per column each.
   Combined strings charge 32 + 2 bytes per UTF-16 unit, attributes 32 bytes per populated cell,

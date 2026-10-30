@@ -231,13 +231,15 @@ internal class TerminalSelection(
         return buildString {
             for (y in range.start.line..range.end.line) {
                 val row = line(y)
-                val from = if (y == range.start.line) range.start.column else 0
-                val to = if (y == range.end.line) range.end.column else row.columns
-                val value = buildString {
-                    for (x in from until to) if (row.width(x) != 0 && !row.isSpacerHead(x)) row.appendTextTo(this, x)
+                row.readPreservingCompression {
+                    val from = if (y == range.start.line) range.start.column else 0
+                    val to = if (y == range.end.line) range.end.column else row.columns
+                    val value = buildString {
+                        for (x in from until to) if (row.width(x) != 0 && !row.isSpacerHead(x)) row.appendTextTo(this, x)
+                    }
+                    append(if (to == row.columns && !row.wrapped) value.trimEnd(' ') else value)
+                    if (y < range.end.line && !row.wrapped) append('\n')
                 }
-                append(if (to == row.columns && !row.wrapped) value.trimEnd(' ') else value)
-                if (y < range.end.line && !row.wrapped) append('\n')
             }
         }
     }
@@ -354,20 +356,22 @@ internal fun terminalSelectionText(range: TerminalSelectionRange, line: (Int) ->
     var blankCells = 0
     for (y in range.start.line..range.end.line) {
         val row = line(y)
-        var from = if (range.rectangle || y == range.start.line) range.start.column else 0
-        val to = if (range.rectangle || y == range.end.line) range.end.column else row.columns
-        if ((range.rectangle || y == range.start.line) && row.isSpacerHead(from)) continue
-        if (from < row.columns && row.width(from) == 0) from--
-        if ((from until to).none { row.hasText(it) && !row.isSpacerHead(it) }) { blankRows++; continue }
-        repeat(blankRows) { append('\n') }; blankRows = if (row.wrapped) 0 else 1
-        if (y == range.start.line || !line(y - 1).wrapped) blankCells = 0
-        for (x in from until to) {
-            if (row.width(x) == 0 || row.isSpacerHead(x)) continue
-            if (!row.hasText(x) || trimTrailingSpaces && row.codePoint(x) == ' '.code) { blankCells++; continue }
-            repeat(blankCells) { append(' ') }; blankCells = 0
-            val start = length
-            row.appendTextTo(this, x)
-            if (length > start) cellText?.invoke(start, length)
+        row.readPreservingCompression {
+            var from = if (range.rectangle || y == range.start.line) range.start.column else 0
+            val to = if (range.rectangle || y == range.end.line) range.end.column else row.columns
+            if ((range.rectangle || y == range.start.line) && row.isSpacerHead(from)) return@readPreservingCompression
+            if (from < row.columns && row.width(from) == 0) from--
+            if ((from until to).none { row.hasText(it) && !row.isSpacerHead(it) }) { blankRows++; return@readPreservingCompression }
+            repeat(blankRows) { append('\n') }; blankRows = if (row.wrapped) 0 else 1
+            if (y == range.start.line || !line(y - 1).wrapped) blankCells = 0
+            for (x in from until to) {
+                if (row.width(x) == 0 || row.isSpacerHead(x)) continue
+                if (!row.hasText(x) || trimTrailingSpaces && row.codePoint(x) == ' '.code) { blankCells++; continue }
+                repeat(blankCells) { append(' ') }; blankCells = 0
+                val start = length
+                row.appendTextTo(this, x)
+                if (length > start) cellText?.invoke(start, length)
+            }
         }
     }
 }

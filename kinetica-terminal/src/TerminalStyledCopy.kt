@@ -124,55 +124,57 @@ internal fun terminalStyledSelection(range: TerminalSelectionRange, line: (Int) 
     fun closeLink() { if (link != null) append(if (html) "</a>" else "\u001b]8;;\u001b\\"); link = null }
     for (y in range.start.line..range.end.line) {
         val row = line(y)
-        var from = if (range.rectangle || y == range.start.line) range.start.column else 0
-        val to = if (range.rectangle || y == range.end.line) range.end.column else row.columns
-        if ((range.rectangle || y == range.start.line) && row.isSpacerHead(from)) continue
-        if (from < row.columns && row.width(from) == 0) from--
-        val nonblank = (from until to).any { row.hasText(it) || !html && row.rawBackground(it) >= 0 }
-        if (!nonblank) { blankRows++; continue }
-        if (blankRows > 0) { closeStyle(); repeat(blankRows) { append(if (html) "\n" else "\r\n") }; blankRows = 0 }
-        blankRows = if (row.wrapped) 0 else 1
-        if (y == range.start.line || !line(y - 1).wrapped) blankCells = 0
-        var x = from
-        while (x < to) {
-            if (row.width(x) == 0 || row.isSpacerHead(x)) { x++; continue }
-            val nextStyle = copyStyle(row, x)
-            if (!row.hasText(x) && nextStyle.default && row.width(x) == 1) { blankCells++; x++; continue }
-            if (!html && blankCells > 0 && blankCells <= x - from) { append("\u001b[${blankCells}C"); blankCells = 0 }
-            if (blankCells > 0) {
-                if (!html) { closeStyle(); closeLink() }
-                repeat(blankCells) { append(' ') }; blankCells = 0
-            }
-            if (style != nextStyle) {
-                if (html || nextStyle.default) closeStyle()
-                style = nextStyle
-                if (!style.default) openCopyStyle(style, html)
-            }
-            val nextLink = row.hyperlinkIdentity(x)
-            if (!(link === nextLink || link?.sameIdentity(nextLink) == true)) {
-                if (html || nextLink == null) closeLink()
-                link = nextLink
-                nextLink?.value?.let { value ->
-                    if (html) {
-                        append("<a href=\"")
-                        // Match Ghostty's URI byte escaping independently of cell codepoint maps.
-                        value.uri.encodeToByteArray().forEach { htmlCodepoint(it.toInt() and 255) }
-                        append("\">")
-                    } else append("\u001b]8;${if (value.id.isEmpty()) "" else "id=${value.id}"};${value.uri}\u001b\\")
+        row.readPreservingCompression {
+            var from = if (range.rectangle || y == range.start.line) range.start.column else 0
+            val to = if (range.rectangle || y == range.end.line) range.end.column else row.columns
+            if ((range.rectangle || y == range.start.line) && row.isSpacerHead(from)) return@readPreservingCompression
+            if (from < row.columns && row.width(from) == 0) from--
+            val nonblank = (from until to).any { row.hasText(it) || !html && row.rawBackground(it) >= 0 }
+            if (!nonblank) { blankRows++; return@readPreservingCompression }
+            if (blankRows > 0) { closeStyle(); repeat(blankRows) { append(if (html) "\n" else "\r\n") }; blankRows = 0 }
+            blankRows = if (row.wrapped) 0 else 1
+            if (y == range.start.line || !line(y - 1).wrapped) blankCells = 0
+            var x = from
+            while (x < to) {
+                if (row.width(x) == 0 || row.isSpacerHead(x)) { x++; continue }
+                val nextStyle = copyStyle(row, x)
+                if (!row.hasText(x) && nextStyle.default && row.width(x) == 1) { blankCells++; x++; continue }
+                if (!html && blankCells > 0 && blankCells <= x - from) { append("\u001b[${blankCells}C"); blankCells = 0 }
+                if (blankCells > 0) {
+                    if (!html) { closeStyle(); closeLink() }
+                    repeat(blankCells) { append(' ') }; blankCells = 0
                 }
+                if (style != nextStyle) {
+                    if (html || nextStyle.default) closeStyle()
+                    style = nextStyle
+                    if (!style.default) openCopyStyle(style, html)
+                }
+                val nextLink = row.hyperlinkIdentity(x)
+                if (!(link === nextLink || link?.sameIdentity(nextLink) == true)) {
+                    if (html || nextLink == null) closeLink()
+                    link = nextLink
+                    nextLink?.value?.let { value ->
+                        if (html) {
+                            append("<a href=\"")
+                            // Match Ghostty's URI byte escaping independently of cell codepoint maps.
+                            value.uri.encodeToByteArray().forEach { htmlCodepoint(it.toInt() and 255) }
+                            append("\">")
+                        } else append("\u001b]8;${if (value.id.isEmpty()) "" else "id=${value.id}"};${value.uri}\u001b\\")
+                    }
+                }
+                if (!row.hasText(x) && row.rawBackground(x) >= 0 && !html) {
+                    var count = 1
+                    while (x + count < to && !row.hasText(x + count) && row.width(x + count) == 1 &&
+                        row.rawBackground(x + count) == row.rawBackground(x)) count++
+                    append("\u001b[${count}X\u001b[${count}C"); x += count
+                    continue
+                }
+                val text = if (!row.hasText(x)) " " else row.text(x).let {
+                    if (mappings.isEmpty()) it else TerminalCopyContent(it, intArrayOf(0, it.length)).format(mappings)
+                }
+                if (html) text.terminalCodepoints().forEach { htmlCodepoint(it) } else append(text)
+                x++
             }
-            if (!row.hasText(x) && row.rawBackground(x) >= 0 && !html) {
-                var count = 1
-                while (x + count < to && !row.hasText(x + count) && row.width(x + count) == 1 &&
-                    row.rawBackground(x + count) == row.rawBackground(x)) count++
-                append("\u001b[${count}X\u001b[${count}C"); x += count
-                continue
-            }
-            val text = if (!row.hasText(x)) " " else row.text(x).let {
-                if (mappings.isEmpty()) it else TerminalCopyContent(it, intArrayOf(0, it.length)).format(mappings)
-            }
-            if (html) text.terminalCodepoints().forEach { htmlCodepoint(it) } else append(text)
-            x++
         }
     }
     closeStyle(); closeLink()
