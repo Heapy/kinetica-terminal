@@ -90,13 +90,18 @@ Context menus and Select All use the presented frame during synchronized output.
 were traced through pinned `Surface.setSelectionAndCopy`, `mouseButtonCallback`, `linkAtPos` and
 the select-all binding, plus `Config.copy-on-select`. Default macOS policy is none; Linux browser
 policy is primary. The built-in macOS/browser adapters cannot provide primary selection and never
-redirect it to standard; custom MIME backends can handle the primary destination. Both attempts
+redirect it to standard; custom MIME backends receive the `SELECTION` destination for the
+`PRIMARY` policy, matching Ghostty’s `.selection` routing. This is distinct from the OSC 52
+`PRIMARY` destination (`p`). Both attempts
 remain independent if one backend call throws, and clipboard failures preserve the selection.
 Validation passes 1657 JVM tests, fresh Release JS tests and 52 focused Native tests, including
 private-pasteboard destination routing, native mouse/menu events and injected host failure.
 The dedicated browser copy-on-select verifier and existing editing/selection regressions pass
 on macOS/Linux shortcuts with Canvas/WebGL. Evidence: `TerminalContextSelectionTest`,
 `MacOsCopyTest`, `scripts/verify-terminal-copy-on-select.mjs` and `/tmp/kinetica-copy-on-select-*`.
+The corrected `PRIMARY`/`BOTH` routing to `SELECTION` is also verified with 1659 JVM
+tests, fresh Release JS tests, `MacOsCopyTest`, and all four platform/renderer combinations
+of the browser copy-on-select verifier; logs: `/tmp/kinetica-copy-selection-routing-*`.
 
 Browser/AppKit user copy now supports plain, VT, HTML and mixed formats; mixed is the
 default and publishes plain text plus styled HTML as one item. VT/HTML preserve explicit

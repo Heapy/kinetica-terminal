@@ -35,10 +35,10 @@ class MacOsCopyTest {
             view.selectAll(null); assertTrue(destinations.isEmpty(), "macOS defaults to none")
             view.copyFormat = TerminalCopyFormat.VT
             view.copyOnSelect = TerminalCopyOnSelect.PRIMARY; view.selectAll(null)
-            assertEquals(listOf(TerminalClipboardLocation.PRIMARY), destinations); destinations.clear()
-            assertNull(board.stringForType(NSPasteboardTypeString), "Unsupported primary is never redirected")
+            assertEquals(listOf(TerminalClipboardLocation.SELECTION), destinations); destinations.clear()
+            assertNull(board.stringForType(NSPasteboardTypeString), "Unsupported selection is never redirected")
             view.copyOnSelect = TerminalCopyOnSelect.BOTH; view.selectAll(null)
-            assertEquals(listOf(TerminalClipboardLocation.STANDARD, TerminalClipboardLocation.PRIMARY), destinations); destinations.clear()
+            assertEquals(listOf(TerminalClipboardLocation.STANDARD, TerminalClipboardLocation.SELECTION), destinations); destinations.clear()
             assertEquals("alpha beta", board.stringForType(NSPasteboardTypeString))
             assertNotNull(board.stringForType(NSPasteboardTypeHTML), "Automatic copies use mixed even when explicit copy uses VT")
             view.copyOnSelect = TerminalCopyOnSelect.CLIPBOARD
@@ -71,7 +71,7 @@ class MacOsCopyTest {
             destinations.clear()
             view.copyOnSelect = TerminalCopyOnSelect.BOTH; rejectStandard = true
             view.selectAll(null)
-            assertEquals(listOf(TerminalClipboardLocation.STANDARD, TerminalClipboardLocation.PRIMARY), destinations)
+            assertEquals(listOf(TerminalClipboardLocation.STANDARD, TerminalClipboardLocation.SELECTION), destinations)
             assertNotNull(view.accessibilitySelectedText(), "Host failure keeps selection and still attempts the other destination")
         } finally { view.dispose(); window.close(); board.releaseGlobally() }
     }
