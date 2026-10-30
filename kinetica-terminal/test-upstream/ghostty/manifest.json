@@ -1271,7 +1271,12 @@
     "keyboard_negotiation_less_u": "ff1448ac33fd2d1b21923f1e9b1a7619eccca2d05ef4c3b59f827392193bc84b",
     "keyboard_negotiation_equal_u": "a8cc306b87ee2e526260a01c1e4f0b47db052f9e081f7ab1a802747b8bcf1542",
     "keyboard_negotiation_query_u": "830d4cb776fc556eadad73837164f9e331f2705768060f29a4467b43bac6edaa",
-    "alacritty_hyperlinks": "e1d7512391977b82c433de8ee09a2d23a633c3e737d84ddd9d66a1ec043813fc"
+    "alacritty_hyperlinks": "e1d7512391977b82c433de8ee09a2d23a633c3e737d84ddd9d66a1ec043813fc",
+    "iterm2_copy": "1cf06998e7156268c355b1bc9f6e04bb38fbab0f2e49664eeea037e21a4e42d8",
+    "iterm2_copy_controls": "1e1ea016aa09c9bcf23258e71d7d1c2367ac049be54304f0895edad6e093f36f",
+    "iterm2_copy_large": "3d0ab543e2f950e200e7e9a76941ecfcb77f940dc31df44e27a75574508724a0",
+    "iterm2_cwd": "55d42c005bc063ff423a9d459277e6649473f012bbff51d6cf73b15939b5c08b",
+    "iterm2_cwd_boundaries": "30817f7002c5f1da13877db723654ca624ecf81ef7e0b02580bd171877baaee0"
   },
   "keyboardMatrixSha256": "6c01e3dd0dee327b115ef73db2d811a5a3bef14194045bd7f81b3c9bc4e9c90e",
   "modifyOtherKeysMatrixSha256": "218a6d9d284746fe45e95d10f4b791db3116a9f902dd9d05c43e5949fb2fe764",

@@ -69,9 +69,9 @@ The Ghostty feature-parity work remains in progress. Its requested scope is:
 - [x] In-band resize (2048), physical cell geometry from AppKit/browser and CSI 14/16/18 t.
 - [x] REP, Kitty scroll-and-clear (`CSI 22 J`), XTSAVE/XTRESTORE (strict history limits documented).
 - [x] X10 mouse tracking (9).
-- [x] OSC 52 clipboard with host policy and platform integration.
+- [x] OSC 52 clipboard and OSC 1337 Copy with host policy and platform integration.
 - [x] Desktop notifications (OSC 9/777) and ConEmu progress (OSC 9;4).
-- [x] OSC 7 working directory, report observers and local-directory inheritance on macOS.
+- [x] OSC 7 / OSC 1337 CurrentDir working directory, report observers and local-directory inheritance on macOS.
 - [x] OSC 133 prompt/command metadata, redraw semantics and prompt navigation APIs/menu.
 - [ ] Kitty graphics, including platform rendering and resource limits.
 - [x] OSC 22 pointer shape with browser CSS and Ghostty-equivalent AppKit mappings.

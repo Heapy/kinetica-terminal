@@ -4,6 +4,36 @@ import kotlin.io.encoding.Base64
 import kotlin.test.*
 
 class TerminalClipboardTest {
+    @Test fun iterm2CopyUsesTheExistingPolicyQueueAndCancellation() {
+        fun copy(text: String) = "\u001b]1337;Copy=:${Base64.encode(text.encodeToByteArray())}\u0007"
+        val session = TerminalSession()
+        val clipboard = Clipboard()
+        session.write(copy("without host"))
+        session.attachClipboard(clipboard)
+        session.write(copy("denied"))
+        assertEquals(0, clipboard.writes)
+        val decisions = ArrayDeque<(Boolean) -> Unit>()
+        val binding = session.attachClipboard(clipboard, TerminalClipboardPolicy { request, done ->
+            assertEquals(TerminalClipboardLocation.STANDARD, request.location)
+            decisions.addLast(done)
+        })
+        session.write(copy("first") + set("second"))
+        assertEquals(1, decisions.size); assertEquals(0, clipboard.writes)
+        decisions.removeFirst()(true)
+        assertEquals("first", clipboard.data.decodeToString())
+        decisions.removeFirst()(true)
+        assertEquals("second", clipboard.data.decodeToString())
+        val large = "x".repeat(1500)
+        session.write(copy(large)); decisions.removeFirst()(true)
+        assertEquals(large, clipboard.data.decodeToString())
+        session.write(copy("x".repeat(150_000)))
+        assertTrue(decisions.isEmpty(), "OSC 1337 keeps the original fixed capture limit")
+        session.write(copy("reset")); session.reset(); decisions.removeFirst()(true)
+        session.write(copy("detached")); binding.dispose(); decisions.removeFirst()(true)
+        assertEquals(3, clipboard.writes); assertEquals(0, clipboard.reads)
+        assertEquals(large, clipboard.data.decodeToString())
+    }
+
     @Test fun protocolBudgetPreservesWrappedInputAndReleasesItsLargeAllocation() {
         val buffer = TerminalInputBuffer(8)
         buffer.add("abcdef"); buffer.consume(4); buffer.add("ghij")

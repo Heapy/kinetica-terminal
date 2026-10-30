@@ -983,4 +983,9 @@ class GhosttyOracleTest {
     @Test fun keyboard_negotiation_equal_u() = checkGhostty(ghostty_keyboard_negotiation_equal_u())
     @Test fun keyboard_negotiation_query_u() = checkGhostty(ghostty_keyboard_negotiation_query_u())
     @Test fun alacritty_hyperlinks() = checkGhostty(ghostty_alacritty_hyperlinks())
+    @Test fun iterm2_copy() = checkGhostty(ghostty_iterm2_copy())
+    @Test fun iterm2_copy_controls() = checkGhostty(ghostty_iterm2_copy_controls())
+    @Test fun iterm2_copy_large() = checkGhostty(ghostty_iterm2_copy_large())
+    @Test fun iterm2_cwd() = checkGhostty(ghostty_iterm2_cwd())
+    @Test fun iterm2_cwd_boundaries() = checkGhostty(ghostty_iterm2_cwd_boundaries())
 }

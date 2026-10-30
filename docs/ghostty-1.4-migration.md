@@ -27,6 +27,19 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
 - [x] Run shared JVM/JS checks, relevant Native tests and fresh browser rendering/input checks for the C-reference migration.
 - [ ] Complete the release-note/source audit for remaining emulation and input differences.
 
+- [x] Route the original iTerm2 OSC 1337 `Copy=:base64` and `CurrentDir=value` keys to
+      the existing clipboard policy/queue and working-directory observers. Match ASCII
+      case-insensitive keys and the original fixed capture: at most 2047 UTF-8 bytes after
+      `1337;`, including the key/value separator. Missing/empty values, clipboard read/clear
+      attempts, unsupported keys and oversized commands stay ignored. Five original C-library
+      scenarios add 85 checkpoints, replayed whole and bytewise, covering malformed keys,
+      binary clipboard values, BEL/ST, cancellation, boundaries, screens, holds and resets.
+      Separate host tests cover denial, deferred permission ordering, cancellation and a
+      rejected oversized write; actual Chromium clipboard writes/readback and denied aliases
+      pass through the transport. Validation: 1448 JVM tests, fresh Release JS tests and
+      995 focused Native oracle/clipboard/directory tests. The generated oracle sources
+      and manifest regenerate byte-for-byte. The broader source audit remains open.
+
 - [x] Add rectangular ranges to the shared selection engine and viewport API. Original
       Ghostty supplies 6804 rectangle/text expectations, checked in four corner orientations
       with whole-stream and bytewise input. Regression tests cover per-row wide-glyph

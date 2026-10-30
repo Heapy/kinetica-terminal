@@ -42,7 +42,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         private set
     private var titleBytes = ByteArray(0)
     private var titleReporting = false
-    /** Raw OSC 7 URI, or null after clearing/reset. Hosts must validate it before using a local path. */
+    /** Raw OSC 7 / OSC 1337 CurrentDir URI, or null after clearing/reset. Hosts must validate local paths. */
     public var workingDirectoryUri: String? = null
         private set
     private val primarySemantic = TerminalSemanticState()
@@ -603,7 +603,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     /**
-     * Observe accepted OSC 7 reports, including repeats and explicit clearing. Events are immediate
+     * Observe accepted OSC 7 / OSC 1337 CurrentDir reports, including repeats and OSC 7 clearing. Events are immediate
      * during synchronized output. Reset clears [workingDirectoryUri] without emitting a report.
      */
     public fun onWorkingDirectory(observer: (String?) -> Unit): TerminalDisposable {
@@ -2065,10 +2065,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             "7" -> {
                 // Ghostty's fixed OSC capture needs one byte for the terminating NUL.
                 if (payload.encodeToByteArray().size >= 2048) return
-                val uri = payload.takeIf { it.isNotEmpty() }
-                workingDirectoryUri = uri
-                workingDirectoryObservers.toList().forEach { it(uri) }
+                reportWorkingDirectory(payload)
             }
+            "1337" -> finishIterm2Osc(payload, terminator)
             "52" -> acceptClipboard(payload, terminator, kitty = false)
             "5522" -> acceptClipboard(payload, terminator, kitty = true)
             "7501" -> programStatusRegistry.accept(payload, terminator, ::sendInput)
@@ -2100,6 +2099,27 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 if (uri.isEmpty() && id.isNotEmpty()) return
                 setAttributes(attributes?.underlineColor ?: -1, if (uri.isEmpty()) null else TerminalLink(TerminalHyperlink(id, uri)))
             }
+        }
+    }
+
+    private fun reportWorkingDirectory(payload: String) {
+        val uri = payload.takeIf { it.isNotEmpty() }
+        workingDirectoryUri = uri
+        workingDirectoryObservers.toList().forEach { it(uri) }
+    }
+
+    /** Ghostty's iTerm2 parser supports only these two keys, with a fixed NUL-terminated capture. */
+    private fun finishIterm2Osc(payload: String, terminator: Int) {
+        if (payload.encodeToByteArray().size >= 2048) return
+        val equals = payload.indexOf('=')
+        if (equals < 1 || equals == payload.lastIndex) return
+        val key = payload.substring(0, equals)
+        if (key.any { it.code > 0x7f }) return // Upstream key matching is ASCII case-insensitive.
+        val value = payload.substring(equals + 1)
+        when (key.lowercase()) {
+            "copy" -> if (value.length > 1 && value[0] == ':' && value != ":?")
+                acceptClipboard("c;${value.substring(1)}", terminator, kitty = false)
+            "currentdir" -> reportWorkingDirectory(value)
         }
     }
 

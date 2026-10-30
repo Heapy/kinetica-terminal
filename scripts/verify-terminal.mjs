@@ -364,14 +364,24 @@ try {
   await page.waitForFunction(length => keypadBytes.length === length, Buffer.byteLength(clipboardReply));
   assert.equal(await page.evaluate(() => navigator.clipboard.readText()), clipboardText);
   assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), clipboardReply);
+  const iterm2Text = "iTerm2 clipboard 世界", iterm2Encoded = Buffer.from(iterm2Text).toString("base64");
+  await page.evaluate(encoded => {
+    keypadBytes.length = 0;
+    if (!kineticaTerminalDemo.receiveBytes(new TextEncoder().encode(`\x1b]1337;Copy=:${encoded}\x07\x1b]52;c;?\x07`)))
+      throw new Error("iTerm2 clipboard output refused");
+  }, iterm2Encoded);
+  const iterm2Reply = `\x1b]52;c;${iterm2Encoded}\x07`;
+  await page.waitForFunction(length => keypadBytes.length === length, Buffer.byteLength(iterm2Reply));
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), iterm2Text);
+  assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), iterm2Reply);
   await page.evaluate(() => {
     keypadBytes.length = 0;
     kineticaTerminalDemo.clipboardPolicy("deny");
-    if (!kineticaTerminalDemo.receiveBytes(new TextEncoder().encode("\x1b]52;c;ZXZpbA==\x07\x1b]52;c;?\x07"))) throw new Error("Clipboard output refused");
+    if (!kineticaTerminalDemo.receiveBytes(new TextEncoder().encode("\x1b]1337;Copy=:ZXZpbA==\x07\x1b]52;c;ZXZpbA==\x07\x1b]52;c;?\x07"))) throw new Error("Clipboard output refused");
   });
   await page.waitForFunction(() => keypadBytes.length > 0);
   assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), "\x1b]52;c;\x07");
-  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), clipboardText);
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), iterm2Text);
   await page.evaluate(() => {
     keypadBytes.length = 0;
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: {

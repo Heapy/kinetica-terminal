@@ -808,6 +808,8 @@ OSC 7 stores its raw payload in `workingDirectoryUri`; an empty report or reset 
 `onWorkingDirectory` observes every accepted report, including repeated values, immediately
 even during synchronized output. Like libghostty, reset clears state without a report event.
 Payloads must fit in 2047 UTF-8 bytes. URI parsing is a host decision, not a parser side effect.
+OSC 1337 `CurrentDir=value` uses the same state and observers, but an empty value is ignored.
+Its 2047-byte limit includes `CurrentDir=`; the key is ASCII case-insensitive.
 `localWorkingDirectory(localHostname)` accepts `file` and `kitty-shell-cwd` URIs with an explicit
 `localhost` or matching machine authority. It decodes file paths as UTF-8, preserves literal
 Kitty paths, and rejects malformed escapes, NULs and remote authorities. The native sample
@@ -846,6 +848,11 @@ binds one host to the session. Both view constructors and DSL host adapters acce
 they deny access by default. `WRITE_ONLY` permits remote applications to copy text without reading
 the user's clipboard; `ALLOW` permits both. A custom `TerminalClipboardPolicy` can show a permission
 dialog and complete asynchronously on the session thread. The samples explicitly select `WRITE_ONLY`.
+
+OSC 1337 `Copy=:base64` writes the standard clipboard through the same policy and request
+queue. Its key is ASCII case-insensitive. As in Ghostty, the complete `Copy=:base64` payload
+must fit in 2047 UTF-8 bytes; larger writes can use OSC 52. Empty data, `:?` queries and
+other iTerm2 keys are ignored, so this alias cannot clear or read the clipboard.
 
 The AppKit and browser backends support the standard text clipboard; primary/selection destinations
 return an empty read and ignore writes. Custom backends receive all three destinations and raw bytes.
