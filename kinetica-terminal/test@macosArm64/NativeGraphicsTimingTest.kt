@@ -2,6 +2,7 @@
 
 package io.heapy.kinetica.terminal
 
+import kotlinx.cinterop.useContents
 import platform.AppKit.*
 import platform.Foundation.*
 import platform.QuartzCore.CACurrentMediaTime
@@ -15,17 +16,24 @@ class NativeGraphicsTimingTest {
 
     @Test fun automaticPlaybackStopsForHiddenDetachedAndDisposedNativeViews() {
         val app = NSApplication.sharedApplication()
+        app.setActivationPolicy(NSApplicationActivationPolicy.NSApplicationActivationPolicyRegular)
         for (backend in listOf(TerminalRendering.SOFTWARE,TerminalRendering.GPU)) {
             val session = TerminalSession(20,6)
             val view = AppKitTerminalView(session,rendering=backend)
             val window = NSWindow(NSMakeRect(120.0,120.0,240.0,120.0),NSWindowStyleMaskBorderless,NSBackingStoreBuffered,false)
             window.setReleasedWhenClosed(false)
+            // Playback is intentionally paused while occluded. Keep this isolated
+            // fixture above ordinary app windows, including during unhide/reattach.
+            window.level = NSFloatingWindowLevel
+            val screen = NSScreen.screens.filterIsInstance<NSScreen>().first()
+            window.setFrameOrigin(screen.visibleFrame.useContents { NSMakePoint(origin.x + 40, origin.y + 40) })
             var image: TerminalGraphicsStoredImage? = null
             try {
                 window.contentView = view
                 runWindowSteps(app, {
                     "$backend frame=${image?.animation?.currentIndex}, shown=${image?.animation?.shownAt}, uploads=${view.imageUploads}, " +
-                        "dirty=${view.needsDisplay}, visible=${window.visible}, occlusion=${window.occlusionState}, hidden=${view.hiddenOrHasHiddenAncestor}"
+                        "dirty=${view.needsDisplay}, visible=${window.visible}, occluded=${window.occlusionState and NSWindowOcclusionStateVisible == 0uL}, " +
+                        "occlusion=${window.occlusionState}, hidden=${view.hiddenOrHasHiddenAncestor}"
                 }, sequence {
                     window.orderFrontRegardless()
                     yield("Visible window" to { window.visible && window.occlusionState and NSWindowOcclusionStateVisible != 0uL })

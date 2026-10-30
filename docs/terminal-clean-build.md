@@ -88,9 +88,9 @@ are unchanged. No existing project artifacts were imported into either export.
 
 The final full native run at the verified exported source passes 1770 tests and fails
 `NativeGraphicsTimingTest.automaticPlaybackStopsForHiddenDetachedAndDisposedNativeViews`.
-Its GPU window remains visible with frame index 0 and one image upload; the step waiting
-for the next automatic frame times out. Earlier complete runs passed this case, so this
-is an intermittent failure requiring a separate timer/visibility/presentation investigation.
+Its GPU window remains ordered on screen (`visible=true`) with frame index 0 and one
+image upload; the step waiting for the next automatic frame times out. Earlier complete
+runs passed this case, prompting a timer/visibility/presentation investigation.
 The investigation reproduced a concrete lost-wake path: `CAMetalLayer.nextDrawable()`
 can return null after the animation timer has invalidated the view. Returning without a
 retry consumes that invalidation before frame preparation can schedule the next timer.
@@ -106,9 +106,27 @@ animation, visibility and resize tests pass. This proves recovery from an unavai
 drawable; it does not establish that the earlier intermittent run took that exact path.
 Both new regressions also pass ten consecutive repetitions. The original lifecycle
 test still fails in three of ten repetitions: initial playback and reattachment on
-the software renderer, and unhiding on Metal. Those failures establish that the
-missing-drawable fix is not the whole explanation; the shared view/timer path still
-needs investigation. Logs are `/tmp/kinetica-drawable-{before,after,repeat}.log`.
+the software renderer, and unhiding on Metal. A full diagnostic run passes 1772 tests
+and fails software reattachment. These failures are separate from missing drawables.
+
+Tracing the actual owner-window state resolves the remaining failure: every captured
+stall has occlusion state 8192, without `NSWindowOcclusionStateVisible` (1 << 1). The view
+is correctly paused because the window is fully covered; `NSWindow.visible` alone only
+shows that it is ordered on screen. Visible phases in the trace use 8194. The timing
+fixture now uses the same floating-window level and visible-screen placement as the
+native visibility fixture, and explicitly uses the regular application activation policy.
+Timeouts and all hidden/detached/disposed generation assertions are unchanged. Temporary
+production tracing has been removed. Logs and the diagnostic patch are retained under
+`build/reports/terminal-drawable-retry/`.
+
+The corrected fixture passes the nine native animation/visibility/resize checks. Without
+tracing, twenty repetitions of the previously problematic ordering pass all twenty animation
+lifecycle cases and all forty drawable regressions. The neighbouring
+`retainsLastCompletedFrameAcrossOcclusionWithoutFurtherWrites` test passes 19/20: one run
+submits a sixth frame after its idle baseline of five. That separate late-frame observation
+still needs investigation; its idle assertion is unchanged. The combined repeat log records
+79 passed / 1 failed, rather than a blanket passing result. Logs are
+`/tmp/kinetica-animation-window-{after,repeat}.log` and their copies in the report directory.
 The timeout is not relaxed and the clean-export native gate remains open.
 
 `build/reports/terminal-clean-engine/report.json` retains the source hashes, individual run
