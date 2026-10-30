@@ -158,6 +158,7 @@ public class AppKitTerminalView(
         it.visible && !it.miniaturized && it.styleMask and NSWindowStyleMaskFullScreen == 0uL
     } else null }, windowResizePolicy, ::resizeWindow)
     private var gpu: MetalTerminalDrawing? = null
+    internal var acquireMetalDrawable: (CAMetalLayer) -> CAMetalDrawableProtocol? = { it.nextDrawable() }
     // Keep the custom Metal display delegate off NSView itself. Overriding displayLayer:
     // on the view also intercepts AppKit's software backing-layer display and skips drawRect.
     private val metalDisplayDelegate = object : NSObject(), CALayerDelegateProtocol {
@@ -189,7 +190,9 @@ public class AppKitTerminalView(
         setContentCompressionResistancePriority(1f, NSUserInterfaceLayoutOrientationVertical)
         if (rendering != TerminalRendering.SOFTWARE) {
             try {
-                val renderer = MetalTerminalDrawing(renderProbe) { if (!disposed) setNeedsDisplay(true) }
+                val renderer = MetalTerminalDrawing(renderProbe, acquireDrawable = { acquireMetalDrawable(it) }) {
+                    if (!disposed) setNeedsDisplay(true)
+                }
                 gpu = renderer
                 renderer.setVisible(false)
                 layerContentsPlacement = NSViewLayerContentsPlacementTopLeft

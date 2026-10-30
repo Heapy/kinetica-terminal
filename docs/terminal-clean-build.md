@@ -91,7 +91,25 @@ The final full native run at the verified exported source passes 1770 tests and 
 Its GPU window remains visible with frame index 0 and one image upload; the step waiting
 for the next automatic frame times out. Earlier complete runs passed this case, so this
 is an intermittent failure requiring a separate timer/visibility/presentation investigation.
-The timeout is not relaxed and this clean-build gate is **not complete**.
+The investigation reproduced a concrete lost-wake path: `CAMetalLayer.nextDrawable()`
+can return null after the animation timer has invalidated the view. Returning without a
+retry consumes that invalidation before frame preparation can schedule the next timer.
+`NativeMetalDrawableTest` injects a temporary failure into the real AppKit view, waits for
+attachment redraws and the animation wake to drain, then restores drawable acquisition
+without writing output or manually invalidating the view. It times out before the fix.
+A second failing test covers coalescing and hidden/disposed renderer cancellation.
+
+The renderer now shares one delayed retry for unavailable and dropped drawables. Successful
+acquisition, hiding and disposal cancel it; late presentation callbacks cannot cancel a
+retry from a later acquisition failure. Both regressions and 21 existing native rendering,
+animation, visibility and resize tests pass. This proves recovery from an unavailable
+drawable; it does not establish that the earlier intermittent run took that exact path.
+Both new regressions also pass ten consecutive repetitions. The original lifecycle
+test still fails in three of ten repetitions: initial playback and reattachment on
+the software renderer, and unhiding on Metal. Those failures establish that the
+missing-drawable fix is not the whole explanation; the shared view/timer path still
+needs investigation. Logs are `/tmp/kinetica-drawable-{before,after,repeat}.log`.
+The timeout is not relaxed and the clean-export native gate remains open.
 
 `build/reports/terminal-clean-engine/report.json` retains the source hashes, individual run
 results and hashes of all copied logs. `final-native.log` contains the remaining failure;

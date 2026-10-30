@@ -20,6 +20,7 @@ import kotlin.math.roundToInt
 internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = TerminalRenderProbe(null),
     imageBudget: Long = 64L * 1024 * 1024,
     private val fontProvider: (String?, Double, Int) -> NSFont = ::terminalNativeFont,
+    private val acquireDrawable: (CAMetalLayer) -> CAMetalDrawableProtocol? = { it.nextDrawable() },
     private val invalidate: () -> Unit) {
     private val device = checkNotNull(MTLCreateSystemDefaultDevice()) { "Metal is unavailable" }
     private val maxTextureDimension = when {
@@ -92,7 +93,6 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     private var visible = true
     private var releasePending = false
     private var presentationSequence = 0L
-    private var lastPresentation = 0L
     private var presentationRetry: NSTimer? = null
     internal val glyphTextureCount: Int get() = textures.size
     internal val vertexBufferBytes: Long get() = buffers.sumOf { it.length.toLong() }
@@ -128,6 +128,16 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
 
     private fun cancelPresentationRetry() {
         presentationRetry?.invalidate(); presentationRetry = null
+    }
+
+    private fun schedulePresentationRetry() {
+        if (disposed || !visible || presentationRetry != null) return
+        // A missing or dropped drawable consumes AppKit's dirty mark. Keep one
+        // delayed retry so an idle shell or an animation wake cannot stall forever.
+        presentationRetry = NSTimer.timerWithTimeInterval(0.016, repeats = false) {
+            presentationRetry = null
+            if (!disposed && visible) invalidate()
+        }.also { NSRunLoop.mainRunLoop.addTimer(it, NSRunLoopCommonModes) }
     }
 
     private fun pixelDimension(points: Double): Int = ceil(points * scale).toInt().coerceIn(1, maxTextureDimension)
@@ -185,7 +195,11 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         val transactional = synchronizePresentation || width != submittedWidth || height != submittedHeight || scale != submittedScale
         layer.presentsWithTransaction = transactional
         val measurement = probe.begin(viewport, "metal")
-        val drawable = layer.nextDrawable() ?: return
+        val drawable = acquireDrawable(layer) ?: run {
+            schedulePresentationRetry()
+            return
+        }
+        cancelPresentationRetry()
         measurement?.let { it.acquire = it.checkpoint() }
         val images = prepare(viewport, measurement)
         val command = encode(drawable.texture as MTLTextureProtocol, viewport.theme.background, images)
@@ -196,19 +210,9 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
             val time = presented?.presentedTime ?: 0.0
             NSOperationQueue.mainQueue.addOperationWithBlock {
                 if (!disposed) {
-                    if (sequence > lastPresentation) {
-                        lastPresentation = sequence
-                        cancelPresentationRetry()
-                        if (time == 0.0 && visible) {
-                            // Window attachment can drop a drawable. An idle shell may never
-                            // invalidate again; retry on the next frame without spinning the
-                            // main queue while Core Animation is still committing the window.
-                            presentationRetry = NSTimer.timerWithTimeInterval(0.016, repeats = false) {
-                                presentationRetry = null
-                                if (!disposed && visible) invalidate()
-                            }.also { NSRunLoop.mainRunLoop.addTimer(it, NSRunLoopCommonModes) }
-                        }
-                    }
+                    // A late callback for an older frame must not cancel a retry
+                    // requested by a more recent failed drawable acquisition.
+                    if (sequence == presentationSequence && time == 0.0) schedulePresentationRetry()
                     if (measurement != null) probe.observer?.onFramePresented(measurement.id, time)
                 }
             }
