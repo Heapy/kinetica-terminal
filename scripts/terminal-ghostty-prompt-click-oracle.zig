@@ -9,13 +9,23 @@ const Snapshot = struct { reply: []const u8 };
 fn click(alloc: std.mem.Allocator, t: *vt.Terminal, x: u16, y: u16, offset: u32) ![]const u8 {
     if (!t.cursorIsAtPrompt()) return "";
     const screen = t.screens.active;
-    const mode = switch (screen.semantic_prompt.click) { .click_events => |v| v, else => return "" };
+    if (screen.semantic_prompt.click == .none) return "";
     var it = screen.cursor.page_pin.promptIterator(.left_up, null);
     const prompt = it.next() orelse return "";
     const active = screen.pages.pin(.{ .active = .{} }).?;
     const history = screen.pages.pointFromPin(.screen, active).?.screen.y;
     const target = screen.pages.pin(.{ .screen = .{ .x = x, .y = history - @min(history, offset) + y } }).?;
     if (target.before(prompt)) return "";
+    if (screen.semantic_prompt.click == .cl) {
+        const movement = screen.promptClickMove(target);
+        var reply: std.ArrayList(u8) = .empty;
+        const left: []const u8 = if (t.modes.get(.cursor_keys)) "\x1bOD" else "\x1b[D";
+        const right: []const u8 = if (t.modes.get(.cursor_keys)) "\x1bOC" else "\x1b[C";
+        for (0..movement.left) |_| try reply.appendSlice(alloc, left);
+        for (0..movement.right) |_| try reply.appendSlice(alloc, right);
+        return reply.items;
+    }
+    const mode = screen.semantic_prompt.click.click_events;
     const row: u32 = switch (mode) { .absolute => @as(u32, y) + 1, .relative => promptClickRelativeRow(&screen.pages, prompt, target) };
     return std.fmt.allocPrint(alloc, "\x1b[<0;{d};{d}M", .{ x + 1, row });
 }

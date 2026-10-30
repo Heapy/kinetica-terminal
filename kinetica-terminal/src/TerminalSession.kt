@@ -57,8 +57,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     // Surface.zig maybePromptClick / PageList.PromptIterator.nextLeftUp in pinned Ghostty.
     internal fun sendPromptClick(column: Int, line: Int, viewportRow: Int): Boolean {
         if (!cursorClickToMove || !cursorAtPrompt) return false
-        val mode = promptClickMode
-        if (mode != TerminalPromptClick.ABSOLUTE && mode != TerminalPromptClick.RELATIVE) return false
+        val mode = promptClickMode ?: return false
         var prompt = historySize + cursorRow
         while (prompt >= 0 && this.line(prompt).promptMarker == TerminalPromptMarker.NONE) prompt--
         if (prompt < 0) return false
@@ -70,9 +69,54 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             if (prompt == 0 && this.line(prompt).promptMarker == TerminalPromptMarker.CONTINUATION) prompt = continuation
         }
         if (line < prompt) return false
+        if (mode != TerminalPromptClick.ABSOLUTE && mode != TerminalPromptClick.RELATIVE) {
+            val movement = promptClickMovement(column, line)
+            val arrow = if (applicationCursor) "\u001bO" else "\u001b["
+            val bytes = (arrow + if (movement < 0) "D" else "C").encodeToByteArray()
+            repeat(kotlin.math.abs(movement)) { sendProtocolBytes(bytes) }
+            return true
+        }
         val row = if (mode == TerminalPromptClick.ABSOLUTE) viewportRow + 1 else line - prompt + 1
         sendProtocolBytes("\u001b[<0;${column + 1};${row}M".encodeToByteArray())
         return true
+    }
+
+    // All four cl modes use Screen.promptClickLine in Ghostty 1.4, including its
+    // cell-based counting and hard-line boundaries. Do not substitute grapheme navigation.
+    private fun promptClickMovement(column: Int, targetLine: Int): Int {
+        val cursorLine = historySize + cursorRow
+        val cursorCellInput = screen[cursorRow].semanticContent(cursorColumn) == TerminalSemanticContent.INPUT
+        if (semantic.content != TerminalSemanticContent.INPUT && !cursorCellInput) return 0
+        if (cursorLine == targetLine && cursorColumn == column) return 0
+        var count = 0
+        if (cursorLine < targetLine || cursorLine == targetLine && cursorColumn < column) {
+            for (y in cursorLine..targetLine) {
+                val row = line(y)
+                if (y != cursorLine && row.promptMarker != TerminalPromptMarker.CONTINUATION) break
+                val start = if (y == cursorLine) cursorColumn + 1 else 0
+                for (x in start until row.columns) {
+                    if (row.semanticContent(x) != TerminalSemanticContent.INPUT) continue
+                    count++
+                    if (y == targetLine && x == column) return count
+                }
+                if (!row.wrapped) {
+                    if (cursorCellInput) count++
+                    break
+                }
+            }
+            return count
+        }
+        for (y in cursorLine downTo targetLine) {
+            val row = line(y)
+            val end = if (y == cursorLine) cursorColumn else row.columns
+            for (x in end - 1 downTo 0) {
+                if (row.semanticContent(x) != TerminalSemanticContent.INPUT) continue
+                count++
+                if (y == targetLine && x == column) return -count
+            }
+            if (!row.wrapContinuation) break
+        }
+        return -count
     }
     // Like libghostty-vt, an embedded engine cannot assume shell redraw support until negotiated.
     public var promptRedraw: TerminalPromptRedraw = TerminalPromptRedraw.NONE

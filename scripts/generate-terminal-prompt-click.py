@@ -39,6 +39,35 @@ def cases():
             result.append(dict(name=f"{name}_{mode}", events=events))
         result.append(dict(name=f"scrolled_{mode}", events=[dict(text=prompt + "x" * 100), dict(scroll=2)] +
             [dict(x=5, y=y) for y in range(6)]))
+    for mode in ("line", "m", "v", "w"):
+        prompt = osc(f"A;cl={mode}") + "$ " + osc("B")
+        setups = {
+            "end": prompt + "hello",
+            "start": prompt + "hello\x1b[1;3H",
+            "middle": prompt + "hello\x1b[1;5H",
+            "output_cursor": prompt + "hello" + osc("C") + "\x1b[1;1H",
+            "input_cell_output_cursor": prompt + "hello" + osc("C") + "\x1b[1;4H",
+            "prompt_cells": prompt + "ab" + osc("P;k=r") + "xx" + osc("B") + "cd\x1b[1;3H",
+            "wide": prompt + "a界b😀c\x1b[1;3H",
+            "combining": prompt + "aéb\x1b[1;3H",
+            "pending_wrap": prompt + "1234567890",
+            "spacer_head": prompt + "123456789界x",
+            "soft_wrap_end": prompt + "x" * 30,
+            "soft_wrap_start": prompt + "x" * 30 + "\x1b[1;3H",
+            "hard_wrap_end": prompt + "abc\r\ndef",
+            "hard_wrap_start": prompt + "abc\r\ndef\x1b[1;3H",
+            "input_until_eol": osc(f"A;cl={mode}") + "$ " + osc("I") + "abc\r\ndef",
+            "noncontinuation": prompt + "x" * 30 + "\x1b[2;1H" + osc("A") + "\x1b[1;3H",
+            "history": prompt + "x" * 100,
+            "offset": "out\r\n" + prompt + "hello",
+            "app_cursor": prompt + "hello\x1b[?1h",
+            "alternate": prompt + "\x1b[?1049h" + prompt + "abc",
+        }
+        for name, text in setups.items():
+            result.append(dict(name=f"cl_{mode}_{name}", events=[dict(text=text)] +
+                [dict(x=x, y=y) for y in range(6) for x in range(12)]))
+        result.append(dict(name=f"cl_{mode}_scrolled", events=[dict(text=prompt + "x" * 100), dict(scroll=2)] +
+            [dict(x=x, y=y) for y in range(6) for x in (0, 5, 11)]))
     return result
 
 
@@ -86,7 +115,7 @@ pub fn build(b: *std.Build) void {
         cases=len(corpus),snapshots=sum(len(c["snapshots"]) for c in corpus),
 
         helperSha256=digest(helper),generatorSha256=digest(Path(__file__)),fixtureSha256=digest(fixture),
-        sources={p:digest(upstream/p) for p in ["src/terminal/Terminal.zig","src/terminal/stream_terminal.zig","src/terminal/stream.zig","src/terminal/Parser.zig","src/terminal/PageList.zig","src/Surface.zig"]})
+        sources={p:digest(upstream/p) for p in ["src/terminal/Terminal.zig","src/terminal/stream_terminal.zig","src/terminal/stream.zig","src/terminal/Parser.zig","src/terminal/PageList.zig","src/terminal/Screen.zig","src/Surface.zig"]})
     (ROOT/"kinetica-terminal/test-upstream/ghostty/prompt-click-manifest.json").write_text(json.dumps(manifest,indent=2)+'\n')
     print(f'Generated {len(corpus)} prompt-click cases / {manifest["snapshots"]} checkpoints')
 

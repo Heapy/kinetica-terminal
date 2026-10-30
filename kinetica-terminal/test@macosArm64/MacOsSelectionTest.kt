@@ -10,6 +10,32 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    @Test fun nativeLegacyPromptClicksUseNegotiatedCursorKeys() = withView { session, _, mouse ->
+        val replies = StringBuilder()
+        val subscription = session.onInput { replies.append(it.toByteArray().decodeToString()) }
+        try {
+            for (mode in listOf("line", "m", "v", "w")) {
+                session.reset()
+                session.write("\u001b]133;A;cl=$mode\u0007$ \u001b]133;B\u0007hello")
+                replies.clear()
+                mouse(NSEventTypeLeftMouseDown, 3, 0, 1)
+                assertTrue(replies.isEmpty())
+                mouse(NSEventTypeLeftMouseUp, 3, 0, 1)
+                assertEquals("\u001b[D".repeat(4), replies.toString())
+                session.write("\u001b[1;3H\u001b[?1h")
+                replies.clear()
+                mouse(NSEventTypeLeftMouseDown, 11, 0, 1)
+                mouse(NSEventTypeLeftMouseUp, 11, 0, 1)
+                assertEquals("\u001bOC".repeat(5), replies.toString())
+                replies.clear(); session.cursorClickToMove = false
+                mouse(NSEventTypeLeftMouseDown, 11, 0, 1)
+                mouse(NSEventTypeLeftMouseUp, 11, 0, 1)
+                assertTrue(replies.isEmpty())
+                session.cursorClickToMove = true
+            }
+        } finally { subscription.dispose() }
+    }
+
     @Test fun nativePromptClicksReportOnReleaseButDragsAndTrackedPressesDoNot() = withView { session, _, mouse ->
         val replies = mutableListOf<String>()
         val subscription = session.onInput { replies += it.toByteArray().decodeToString() }

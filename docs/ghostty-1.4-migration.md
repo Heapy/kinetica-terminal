@@ -110,7 +110,14 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       whole and bytewise; artifacts reproduce byte-for-byte. Validation: 1372 JVM tests,
       fresh JS tests, three Native common prompt tests, three AppKit selection tests, four
       Native mouse/PTY tests and the Chromium input/rendering verifier.
-- [ ] Implement older OSC 133 `cl=line/m/v/w` click-to-cursor key synthesis; these remain metadata.
+- [x] Older OSC 133 `cl=line/m/v/w` click-to-cursor key synthesis. All four follow the original
+      Screen.promptClickMove implementation: input-cell counting, skipped non-input cells,
+      hard/soft line boundaries and CSI/SS3 cursor keys. The extended original-library corpus
+      has 116 cases / 6506 checkpoints, including wide cells, combining marks, spacer heads,
+      history, erased prompts and cursor content versus cell content. The shared gesture and
+      host-policy gates apply to both reporting families. Validation passes 1372 JVM tests,
+      fresh JS tests, three Native common prompt tests, four AppKit selection tests, four
+      Native mouse/PTY tests and Chromium input/rendering checks; fixtures reproduce exactly.
 - [x] XTWINOPS resize request (`CSI 8;rows;columns t`) core observer contract, with raw
       zero/omitted dimensions, unsigned 16-bit limits and no automatic terminal resize.
       Twenty-three original-library cases cover payloads, rejected headers, cancellation,

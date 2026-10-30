@@ -1,17 +1,18 @@
 {
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
   "zig": "0.17.0",
-  "cases": 32,
-  "snapshots": 586,
-  "helperSha256": "ce80ed0a6058308c335cfe3a64274d168994dffe1eda1438001277068c670aae",
-  "generatorSha256": "a42c99f9101bf69bf73791a1da5a47375331eec4f9532da618a56d61146ee5c7",
-  "fixtureSha256": "fd7d9e7503c436c56249e3bc02885ad9121ffbfe9b11aeb6d1f702ad8dbbc3fb",
+  "cases": 116,
+  "snapshots": 6506,
+  "helperSha256": "a920590a65620ecb2c1b28c9addf5ba39a74ad0151df55a36850c862bb6ce35c",
+  "generatorSha256": "e22319a78c22c21fbcbdd6778d362c7a2fde8b930f516da53b3a7a3f9bf18877",
+  "fixtureSha256": "44dcf4f2be1a9263e9af33ce82e6c8284a1f5e23f6e88bdb50567e8ae927ee81",
   "sources": {
     "src/terminal/Terminal.zig": "68b23d077e45ec680e158691409705bdfbf6d2fc45322cd30c7153265b8aad70",
     "src/terminal/stream_terminal.zig": "1b58936b58f1b553e800fcd1390ed2c62f9ec600998c73ddabc71529131786fd",
     "src/terminal/stream.zig": "084e0d3f5d10bd84f9eef31a97ceb976d2abb54e8b4fe139f403a5af91539055",
     "src/terminal/Parser.zig": "92e0f0fe1939f2030c83a3d7e2f334d90fa6d5e4988760c4b465da54ef57c808",
     "src/terminal/PageList.zig": "1c7faa54173b0f3156e4e2ba2df06fb2601fa14a32650aef9a5594508228097f",
+    "src/terminal/Screen.zig": "33e5bd5515e96a059cbb2c438fb2634333c0a712f29134ffdd2509923f97aa1f",
     "src/Surface.zig": "a63a77a8c01598366d82498661cfbb9244391036578422e7b3b37cbdc737b318"
   }
 }

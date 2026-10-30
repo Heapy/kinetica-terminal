@@ -719,8 +719,10 @@ prompt, including retained history (`2`). Dragging, word/line selection, cancell
 alternate screens and frozen frames do not report prompt clicks. Application mouse tracking
 owns its press/release pair. Set `session.cursorClickToMove=false` to disable this host behavior;
 the policy survives terminal resets. Custom views use `endPointerSelection` after a local press
-and `beginSelection`; programmatic `endSelection` remains selection-only. The older `cl` modes
-are still metadata and do not yet synthesize cursor keys.
+and `beginSelection`; programmatic `endSelection` remains selection-only. The older
+`cl=line/m/v/w` modes synthesize left/right cursor keys. As in Ghostty 1.4, all four count
+input-marked cells, skip prompt/output cells and cross soft wraps but stop at hard line
+boundaries. The application's cursor-key mode selects CSI or SS3 arrows.
 
 Like libghostty-vt, a new embedded session assumes no shell redraw support. `A/N;redraw=1`,
 `redraw=0` and `redraw=last` select full, disabled or current-line prompt clearing on primary

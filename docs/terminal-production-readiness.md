@@ -1140,7 +1140,7 @@ classification, input termination, screen transitions, margins, erasure and resi
 Separate common tests cover command metadata/decoding, observer disposal, prompt navigation
 and host Clear Screen. Native sample commands and the browser host exercise navigation;
 click options were initially exposed as metadata. The subsequent Ghostty 1.4 prompt-click
-increment implements `click_events=1/2` in both hosts (the older `cl` cursor-key modes remain open).
+increment implements `click_events=1/2` in both hosts.
 Its separate original-library corpus covers 32 cases / 586 checkpoints, including prompt rows
 in history, soft wraps, continuation boundaries, output, erasure, reset and alternate screens.
 The terminal parser and prompt iterator run unmodified; the small coordinate helper is extracted
@@ -1148,6 +1148,13 @@ verbatim from pinned Surface.zig. The adapter models an already completed local 
 common gesture tests, real Chromium pointer events and isolated AppKit mouse callbacks validate
 host arbitration. The increment passes 1372 JVM tests, fresh JS tests, three Native common prompt
 tests, three AppKit selection tests, four Native mouse/PTY tests and the browser verifier.
+The following `cl=line/m/v/w` increment uses original Screen.promptClickMove to extend that
+corpus to 116 cases / 6506 checkpoints. All four modes retain Ghostty 1.4's line-based,
+input-cell navigation, including wide-cell counting, non-input gaps and soft/hard boundaries.
+Both hosts also exercise the resulting CSI/SS3 cursor keys and the shared host policy.
+Validation passes 1372 JVM tests, fresh JS tests, three Native common prompt tests, four
+AppKit selection tests, four Native mouse/PTY tests and the Chromium verifier. Generated
+fixtures and provenance reproduce byte-for-byte.
 Validation passes 479 JVM tests, the freshly built JS suite, all 279 Native oracle scenarios,
 six Native common semantic tests and seven native application tests. The browser verifier
 passes prompt navigation alongside its existing rendering/input/lifecycle checks. All 282

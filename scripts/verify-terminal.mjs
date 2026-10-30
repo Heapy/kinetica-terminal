@@ -531,6 +531,14 @@ try {
     await page.mouse.down(); await page.mouse.up();
     assert.deepEqual(await readMouse(), Array.from(Buffer.from("\x1b[<0;6;2M\x1b[<0;6;2m")), "Tracking owns both press and release");
   }
+  for (const mode of ["line", "m", "v", "w"]) {
+    await resetMouse(`\x1b]133;A;cl=${mode}\x07$ \x1b]133;B\x07hello`);
+    await moveCell(3, 0); await page.mouse.down(); await page.mouse.up();
+    assert.deepEqual(await readMouse(), Array.from(Buffer.from("\x1b[D".repeat(4))));
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[1;3H\x1b[?1h"));
+    await moveCell(11, 0); await page.mouse.down(); await page.mouse.up();
+    assert.deepEqual(await readMouse(), Array.from(Buffer.from("\x1bOC".repeat(5))));
+  }
   await resetMouse("\x1b[?1000h");
   await moveCell(95, 1); await page.mouse.down(); await page.mouse.up();
   assert.deepEqual(await readMouse(), [27, 91, 77, 32, 128, 34, 27, 91, 77, 35, 128, 34]);
