@@ -44,6 +44,7 @@
     "macos/Sources/Ghostty/Ghostty.App.swift",
     "macos/Sources/Helpers/UntrustedURLAlert.swift",
     "macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift",
+    "macos/Sources/Ghostty/Ghostty.Input.swift",
     "src/terminal/osc/parsers/clipboard_operation.zig",
     "src/terminal/osc.zig",
     "src/terminal/osc/parsers/osc9.zig",

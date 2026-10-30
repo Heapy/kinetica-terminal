@@ -13,11 +13,28 @@ import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
 
+// Option translation and side mapping follow Ghostty's AppKit runtime (MIT).
+// Copyright (c) 2024 Mitchell Hashimoto, Ghostty contributors; see third-party/GHOSTTY-LICENSE.
+/** Which macOS Option keys act as Alt instead of participating in text layout. */
+public enum class AppKitTerminalOptionAsAlt { NONE, BOTH, LEFT, RIGHT }
+
+private fun AppKitTerminalOptionAsAlt.applies(flags: ULong): Boolean {
+    // IOLLEvent.h NX_DEVICERALTKEYMASK. Ghostty.Input.swift uses the same mapping:
+    // both keys collapse to right; aggregate Option without a side bit defaults to left.
+    val right = flags and 0x40uL != 0uL
+    return when (this) {
+        AppKitTerminalOptionAsAlt.NONE -> false
+        AppKitTerminalOptionAsAlt.BOTH -> true
+        AppKitTerminalOptionAsAlt.LEFT -> !right
+        AppKitTerminalOptionAsAlt.RIGHT -> right
+    }
+}
+
 /** A single custom-drawn native view; no NSTextField or NSView is allocated for terminal cells. */
 public class AppKitTerminalView(
     public val session: TerminalSession,
     private val sessionId: String = "terminal",
-    private val optionAsMeta: Boolean = false,
+    optionAsMeta: Boolean = false,
     private val rendering: TerminalRendering = TerminalRendering.AUTO,
     renderObserver: TerminalRenderObserver? = null,
     clipboardPolicy: TerminalClipboardPolicy = TerminalClipboardPolicy.DENY,
@@ -28,6 +45,8 @@ public class AppKitTerminalView(
     mimeClipboardPolicy: TerminalMimeClipboardPolicy = TerminalMimeClipboardPolicy.DENY,
     mimeClipboard: TerminalMimeClipboard? = null,
     windowResizePolicy: (TerminalWindowResizeRequest) -> Boolean = { false },
+    private val optionAsAlt: AppKitTerminalOptionAsAlt =
+        if (optionAsMeta) AppKitTerminalOptionAsAlt.BOTH else AppKitTerminalOptionAsAlt.NONE,
 ) : NSView(NSMakeRect(0.0, 0.0, 800.0, 480.0)), NSTextInputClientProtocol {
     private var fontSize = 14.0
     private var fontFamily: String? = null
@@ -500,12 +519,13 @@ public class AppKitTerminalView(
         val extendedKeyboard = session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2
         val terminalKey = when {
             extendedKeyboard -> terminalKey(event)
-            optionAsMeta && flags and NSEventModifierFlagOption != 0uL -> terminalKey(event).copy(key = key)
+            flags and NSEventModifierFlagOption != 0uL -> terminalKey(event).copy(key = key)
             else -> TerminalKey(key, control, false, shift, keypad = keypad)
         }
         // Printable text goes through NSTextInputClient first so dead keys and IME own composition.
-        val interpretText = extendedKeyboard && terminalKey.key.terminalCodepoints().size == 1 &&
-            !control && !command && !(optionAsMeta && flags and NSEventModifierFlagOption != 0uL)
+        val optionPressed = flags and NSEventModifierFlagOption != 0uL
+        val interpretText = (extendedKeyboard || optionPressed) && terminalKey.key.terminalCodepoints().size == 1 &&
+            !control && !command && !(optionAsAlt.applies(flags) && optionPressed)
         if (!hasMarkedText() && !interpretText && session.sendKey(terminalKey)) {
             pressedKeys[event.keyCode] = terminalKey
             viewport.followOutput(); viewport.clearSelection(); return
@@ -519,7 +539,14 @@ public class AppKitTerminalView(
         val code = event.keyCode.toInt()
         val keypad = nativeKeypad(code)
         val logical = if (keypad == TerminalKeypadKey.ENTER) "Enter" else nativeKey(event.charactersIgnoringModifiers.orEmpty())
-        var text = event.characters.orEmpty().takeIf { value ->
+        val optionIsAlt = optionAsAlt.applies(flags)
+        // Like Ghostty's AppKit translation event, remove only Option for the selected
+        // side. Keep Shift/CapsLock, including their punctuation and non-ASCII layout text.
+        val characters = if (optionIsAlt && flags and NSEventModifierFlagOption != 0uL)
+            event.charactersByApplyingModifiers(flags and NSEventModifierFlagOption.inv())
+                ?: event.charactersIgnoringModifiers
+        else event.characters
+        var text = characters.orEmpty().takeIf { value ->
             value.terminalCodepoints().all { terminalPrintable(it) && it !in 0xf700..0xf8ff }
         }.orEmpty()
         if (session.modifyOtherKeysMode == 2 && text.isEmpty() &&
@@ -537,7 +564,8 @@ public class AppKitTerminalView(
             text = text, unshiftedCodepoint = unshifted,
             baseCodepoint = nativeBaseCodepoint(code), capsLock = flags and NSEventModifierFlagCapsLock != 0uL,
             consumedModifiers = if (text.isNotEmpty()) (if (flags and NSEventModifierFlagShift != 0uL) 1 else 0) or
-                (if (!optionAsMeta && flags and NSEventModifierFlagOption != 0uL) 2 else 0) else 0)
+                (if (!optionIsAlt && flags and NSEventModifierFlagOption != 0uL) 2 else 0) else 0,
+            optionAsAlt = optionIsAlt)
     }
 
     override fun keyUp(event: NSEvent) {
@@ -547,7 +575,7 @@ public class AppKitTerminalView(
         session.sendKey(pressed.copy(action = TerminalKeyAction.RELEASE,
             shift = flags and NSEventModifierFlagShift != 0uL, control = flags and NSEventModifierFlagControl != 0uL,
             alt = flags and NSEventModifierFlagOption != 0uL, meta = flags and NSEventModifierFlagCommand != 0uL,
-            capsLock = flags and NSEventModifierFlagCapsLock != 0uL))
+            capsLock = flags and NSEventModifierFlagCapsLock != 0uL, optionAsAlt = optionAsAlt.applies(flags)))
     }
 
     override fun flagsChanged(event: NSEvent) {
@@ -566,7 +594,7 @@ public class AppKitTerminalView(
             action = if (pressed) TerminalKeyAction.PRESS else TerminalKeyAction.RELEASE,
             shift = flags and NSEventModifierFlagShift != 0uL, control = flags and NSEventModifierFlagControl != 0uL,
             alt = flags and NSEventModifierFlagOption != 0uL, meta = flags and NSEventModifierFlagCommand != 0uL,
-            capsLock = flags and NSEventModifierFlagCapsLock != 0uL))
+            capsLock = flags and NSEventModifierFlagCapsLock != 0uL, optionAsAlt = optionAsAlt.applies(flags)))
     }
 
     override fun insertText(string: Any, replacementRange: CValue<NSRange>) {

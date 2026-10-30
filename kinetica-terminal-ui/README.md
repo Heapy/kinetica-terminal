@@ -35,3 +35,8 @@ Apps apply `kinetica-ui.module-template.yaml` for the Kinetica compiler plugin a
 Maven-local repository. Build the matching development framework with
 `bash scripts/bootstrap-kinetica.sh /path/to/kinetica` before compiling apps. See the root
 README for the current local-only framework coordinates.
+
+The native host factory forwards `optionAsAlt = AppKitTerminalOptionAsAlt.LEFT` (or `RIGHT`,
+`BOTH`, `NONE`) to the standalone view. This lets one Option key act as Alt while the other
+continues producing macOS layout text. The existing `optionAsMeta` boolean still selects
+both/neither when no explicit policy is supplied.

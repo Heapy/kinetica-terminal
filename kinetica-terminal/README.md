@@ -327,8 +327,12 @@ Closing hangs up the PTY and reaps its
 child off the UI thread, escalating to termination after a bounded grace period.
 
 The native surface uses `NSTextInputClient` for marked text and committed input. Command+C/V
-copy and paste. Option supports macOS text input by default; pass `optionAsMeta = true` to
-`AppKitTerminalView` for escape-prefixed Option keys. Drag selection, wheel scrolling,
+copy and paste. Option supports macOS text input by default. `AppKitTerminalView` and
+`appKitTerminalHosts` accept `optionAsAlt = AppKitTerminalOptionAsAlt.NONE`, `BOTH`, `LEFT`
+or `RIGHT`; the selected side is translated without Option while retaining Shift/CapsLock.
+The other side keeps normal AppKit dead-key/IME text input. `optionAsMeta = true` remains a
+convenience for `BOTH`; an explicit `optionAsAlt` wins. When both Option keys are held, right
+wins, matching Ghostty; aggregate-only synthetic flags default to left. Drag selection, wheel scrolling,
 Shift+PageUp/PageDown, and accessibility text are available.
 
 ## Engine and lifecycle
@@ -365,7 +369,8 @@ Shift+PageUp/PageDown, and accessibility text are available.
 - DEC mode 1036 (enabled by default) controls the ESC prefix on legacy Alt text.
   Disabling it sends the host's text unchanged; enabling it preserves single-byte shifted
   punctuation and uses the unshifted layout scalar for Option-translated Unicode. Browser
-  input uses its known layout map; AppKit applies this when `optionAsMeta` is enabled.
+  input uses its known layout map; AppKit supplies Option-free translated text for the
+  configured Alt side, independently of mode 1036.
   C0 combinations and modified functional keys use their own tables independently of 1036:
   Shift+Enter/Control+Enter and modified Tab/Escape remain distinct in legacy mode, and
   Control+i/m/[ use fixterms. Kitty and modifyOtherKeys retain their own encodings.

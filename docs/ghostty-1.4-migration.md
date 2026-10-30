@@ -35,11 +35,27 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
       plus the right-Alt modifier bit; replay passes the resolved policy independently.
       Twenty-four new scenarios / 164 checkpoints cross both sides, consumed Alt, shifted
       and missing text, actions, mode 1036 and legacy/modifyOtherKeys/Kitty. Fifteen scenarios
-      failed before the fix. Native left/right Option selection is the next adapter task;
-      these fixtures alone do not prove AppKit event translation.
+      failed before the fix. These fixtures prove shared encoding; separate native adapter
+      evidence follows below.
       Validation: 1476 JVM tests, fresh Release JS tests, 1021 Native oracle/keyboard tests
       and the actual Chromium keyboard/IME verifier. All 1012 oracle fixture/manifest files
       regenerate byte-for-byte (1009 scenarios / 6323 total checkpoints).
+
+- [x] Expose native Option-as-Alt selection through `AppKitTerminalOptionAsAlt`
+      (`NONE`, `BOTH`, `LEFT`, `RIGHT`) on the standalone view and Kinetica host factory.
+      The existing `optionAsMeta` boolean remains the default-policy shorthand. Resolve
+      AppKit's device-side bits as in original `Ghostty.Input.swift`: right wins when both
+      are down, aggregate-only synthetic flags default to left. Translate the selected side
+      without Option while retaining Shift/CapsLock; leave the other side with AppKit's
+      text/IME path. Pass the resolved policy independently to shared encoding, including
+      release and modifier events. Functional-key modifiers are preserved on either side.
+      A native matrix checks 192 press/release pairs across policies, side combinations,
+      legacy/modifyOtherKeys/Kitty, Shift and repeat, plus functional keys and IME commits.
+      Expectations use the current AppKit layout without changing it; the passing run uses
+      Cyrillic layout translation and covers Ghostty's non-ASCII legacy unshifted fallback.
+      All five keyboard tests pass, all ten live-window/IME/PTY tests pass on the same
+      production implementation, and the actual Kinetica host test verifies left/right
+      forwarding. This macOS-only step does not change the shared or browser implementation.
 
 - [x] Route the original iTerm2 OSC 1337 `Copy=:base64` and `CurrentDir=value` keys to
       the existing clipboard policy/queue and working-directory observers. Match ASCII
