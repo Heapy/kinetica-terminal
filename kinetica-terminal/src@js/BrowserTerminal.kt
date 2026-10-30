@@ -64,6 +64,17 @@ public class BrowserTerminalView(
     })
     private val resizeObserver: dynamic = newResizeObserver { resize() }
     private val sizeRefreshObservation = session.onSizeRefreshRequested { resize(force = true) }
+    private val dragAndDrop = BrowserTerminalDnd(session, root, { event, operations ->
+        if (disposed || root.isConnected != true || cellWidth <= 0 || cellHeight <= 0) null else {
+            val rect = canvas.getBoundingClientRect()
+            val x = (event.clientX as Number).toDouble() - (rect.left as Number).toDouble()
+            val y = (event.clientY as Number).toDouble() - (rect.top as Number).toDouble()
+            val scale = (window.devicePixelRatio as Number).toDouble()
+            TerminalDndPosition(floor(x / cellWidth).toInt().coerceIn(0, session.columns - 1).toLong(),
+                floor(y / cellHeight).toInt().coerceIn(0, session.rows - 1).toLong(),
+                floor(x * scale).toInt(), floor(y * scale).toInt(), operations)
+        }
+    }) { viewport.followOutput(); viewport.clearSelection(); input.focus(js("({preventScroll:true})")) }
     private val windowResizeBinding = TerminalWindowResizeBinding(session, TerminalScheduler { delay, action ->
         val timer = window.setTimeout({ action() }, delay)
         TerminalDisposable { window.clearTimeout(timer) }
@@ -78,7 +89,7 @@ public class BrowserTerminalView(
     private val intersectionObserver: dynamic = newTerminalIntersectionObserver { value ->
         intersecting = value; updateVisibility()
     }
-    private val visibilityObserver: dynamic = newTerminalVisibilityObserver(root, { windowResizeBinding.cancelPending() }) { updateVisibility() }
+    private val visibilityObserver: dynamic = newTerminalVisibilityObserver(root, { windowResizeBinding.cancelPending(); dragAndDrop.cancel() }) { updateVisibility() }
     private val pointerObservation = session.onPointerShape { root.style.cursor = it.cssName }
     private val progressPresentation = TerminalProgressPresentation(session, TerminalScheduler { delay, action ->
         val timer = window.setTimeout({ action() }, delay)
@@ -448,6 +459,7 @@ public class BrowserTerminalView(
         disposed = true; mouseReporter.reset(); cancelMouse(); viewport.dispose(); resizeObserver.disconnect()
         sizeRefreshObservation.dispose()
         windowResizeBinding.dispose()
+        dragAndDrop.dispose()
         visibilityBinding.dispose()
         intersectionObserver.disconnect(); visibilityObserver.disconnect()
         pointerObservation.dispose()

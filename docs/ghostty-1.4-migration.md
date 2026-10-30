@@ -86,11 +86,12 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       436 checkpoints, including 28 scenarios through the original `TerminalStream`.
       It handles registration, chunked acceptance, move/drop/leave, indexed data requests and
       conclusion, including the original refusal of drag-out and remote data transfer.
-      Raw wire parsing and bounded transport delivery are connected. Browser/AppKit drag
-      callbacks and host negotiation remain open; session support does not yet route OS drops.
+      Raw wire parsing and bounded transport delivery are connected. Browser drag events
+      and string/file representations are connected; AppKit protocol routing remains open.
       A shared host coordinator now owns per-view gestures, client/source operation feedback,
-      bounded pending actions and stale-reader cancellation. Platform event adapters remain
-      the next required integration step.
+      bounded pending actions and stale-reader cancellation. Chromium checks cover trusted
+      text/file drags, source/client operations, binary data, budgets, backpressure and disposal
+      on both renderers. Native callbacks and isolated AppKit checks are the next step.
 - [x] Title report (`CSI 21 t`) with explicit `configureTitleReporting` host opt-in,
       disabled by default and preserved across resets. Original-library cases also align
       OSC 0/2 validation and limits: 2047 captured bytes, valid UTF-8, then a 1024-byte

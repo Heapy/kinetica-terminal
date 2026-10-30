@@ -874,6 +874,29 @@ including all original-library core/wire checkpoints. A reply already in progres
 its own data snapshot when a view is disposed; later requests cannot access that view's
 discarded drop state. No browser or AppKit drag interaction is claimed by this increment.
 
+The browser host now connects trusted `dragenter`/`dragover`/`dragleave`/`drop` and drag-end
+events to that coordinator. It offers up to sixteen ordered string/file representations,
+including multiple files with the same MIME type. It captures strings while the browser's
+drop data store is readable and retains immutable File objects for sequential, abortable
+FileReader reads. Files are size-checked before reading, strings are checked after browser
+exposure and UTF-8 encoding, and the aggregate admitted payload is at most 16 MiB. Cells use
+CSS geometry; pixel coordinates use device scale. Source permissions intersect the client's
+copy/move choice. Unregistered text drops use normal bracketed-paste handling; browser file
+drops never invent local shell paths. Arbitrary untrusted scripted drag events are ignored.
+
+The new browser verifier passes on Canvas and WebGL at device scale two. Pointer-driven
+HTML text drags verify trusted events, MIME order, Unicode/NUL content, physical coordinates,
+partial/final acceptance, rejection, new gestures, leave and conclusion. Playwright's normal
+drag path converts programmatically offered File objects to text, so file verification uses
+trusted Chromium CDP drag input with isolated temporary files. Actual FileReader results
+match the binary source bytes; an over-budget file starts no read. Separate controlled
+FileReader completion tests verify abort and stale-callback guards after unregister/re-register,
+DOM removal/reinsertion and view disposal. A blocked real stream adapter coalesces 100 moves,
+then delivers the queued drop and exact data after recovery. These controlled read delays
+test lifecycle ordering, not slow filesystem timing. The full fresh JS suite, general browser
+regression verifier and existing OSC 72 transport verifier also pass. AppKit drag integration
+and its native tests remain open.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than

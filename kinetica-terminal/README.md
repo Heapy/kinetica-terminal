@@ -499,9 +499,18 @@ acceptance, support queries and data requests. Commands preserve raw bytes with 
 capture cap. Data replies use delivery-tracked chunks of at most 32 KiB, so asynchronous
 hosts must use `writeAvailable` or the bounded transport adapters. RIS preserves registration
 and held drop data while clearing incomplete command continuation, matching Ghostty.
-Browser/AppKit drag-event routing is still pending; ordinary file drops retain their existing
-shell-path paste behavior. `node scripts/verify-terminal-dnd.mjs` checks the browser session
-and transport, not OS drag handling.
+Browser surfaces route trusted drag events to registered clients. They offer up to sixteen
+string/file representations, capture strings during drop and read immutable browser `File`
+objects sequentially through an abortable `FileReader`. Aggregate retained payloads are capped
+at 16 MiB; files exceeding the remaining budget are rejected before reading. Cells use CSS
+geometry and pixel coordinates use the device scale. Source permissions constrain client
+copy/move feedback. Unregistering, a new gesture, detachment, disposal and transport
+failure cancel stale pending reads. Without OSC 72 registration, plain text uses ordinary
+paste; browsers do not expose dropped files as local shell paths. AppKit protocol routing
+is still pending and its existing shell-path paste behavior remains in place.
+`node scripts/verify-terminal-dnd.mjs` checks the browser session and transport;
+`node scripts/verify-terminal-dnd-host.mjs` checks trusted text drags and native Chromium
+file-drop events, binary replies, operation feedback, limits, backpressure and lifecycle.
 
 Color commands accept X11 names, `rgb:`/`rgbi:`, and 3/6/9/12-digit `#` forms, plus bare
 3/6-digit hex. Queries preserve BEL versus ST and report 16-bit channels. Chained requests,
