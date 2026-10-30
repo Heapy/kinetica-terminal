@@ -205,7 +205,7 @@ local text can still use `session.write(String)`. The library does not start a s
 network connection, or choose an authentication or WebSocket framing protocol.
 
 Keyboard input uses a textarea with IME composition support. Drag to select, use the platform
-copy shortcut to copy, and paste normally. Shift bypasses application mouse reporting for
+copy shortcut to copy, and paste normally. By default, Shift bypasses application mouse reporting for
 local selection; Shift+PageUp/PageDown and the wheel navigate scrollback. Hidden text exposes
 the visible output to assistive technology, without announcing every output chunk.
 
@@ -320,10 +320,18 @@ Shift+PageUp/PageDown, and accessibility text are available.
   and releases outside the viewport. Cell formats suppress repeated motion within one cell;
   pixel mode retains every motion event, including subcell movement.
   Legacy reports preserve raw 8-bit coordinates through both transports; coordinates above 223
-  cannot be represented in that format. Shift starts local selection; its release does not leak
+  cannot be represented in that format. Shift starts local selection unless the application
+  requests capture with XTSHIFTESCAPE; a local gesture's release does not leak
   an application button release. Each view owns its motion/gesture state. The browser handles
   pointer capture and chorded buttons; AppKit registers and disposes its own tracking area.
   Both views supply physical pixels, accounting for browser DPR or AppKit backing scale.
+  XTSHIFTESCAPE (`CSI > 1 s`) lets an application capture Shift-modified mouse input;
+  `CSI > 0 s` and `CSI > s` restore local Shift selection. RIS clears the application request;
+  DECSTR and screen switches preserve it. `configureMouseShiftCapture(defaultCapture,
+  allowApplication)` sets the host's default and whether applications may override it.
+  Both host settings survive resets. Passing `allowApplication = false` forces the chosen
+  default, allowing a host to guarantee local selection or always capture Shift. Captured
+  Shift adds the mouse modifier bit except in X10 press-only mode, which ignores modifiers.
   Custom hosts use `sendMousePixels` with `TerminalMouseGeometry`; the cell-only `sendMouse`
   API emits no report in pixel mode because it cannot reconstruct a pointer position.
   Pixel coordinates are zero-based, rounded with the original encoder's f32 precision and
@@ -843,7 +851,8 @@ asynchronously for all owned PTYs to reap their children before AppKit terminate
   Settings for the installed monospace font, size and theme; settings apply to every window
   and persist across launches. Window position and size are also saved.
 - Cmd+click opens OSC 8 links and detected HTTP(S) URLs. Cmd+A selects retained output;
-  right-click provides Copy, Paste, Select All and clearing actions. Shift bypasses TUI mouse reporting.
+  right-click provides Copy, Paste, Select All and clearing actions. Shift bypasses TUI mouse reporting
+  unless application capture is enabled.
 - Cmd+K clears the screen while retaining the current prompt line; Cmd+Shift+K clears scrollback.
   Neither resets the shell or VT modes. Dropping files pastes shell-quoted paths without executing them.
 - Control shortcuts fall back to physical Latin key positions with a non-Latin input layout,

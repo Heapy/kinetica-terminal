@@ -530,6 +530,22 @@ try {
   await page.keyboard.down("Shift"); await moveCell(1, 1); await page.mouse.down();
   await page.keyboard.up("Shift"); await moveCell(4, 1); await page.mouse.up();
   assert.deepEqual(await readMouse(), []);
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[>1s"));
+  await page.keyboard.down("Shift"); await moveCell(1, 1); await readMouse();
+  await page.mouse.down(); await moveCell(2, 1); await page.mouse.up();
+  await page.keyboard.up("Shift");
+  assert.equal(Buffer.from(await readMouse()).toString(), "\x1b[<4;2;2M\x1b[<36;3;2M\x1b[<4;3;2m");
+  assert.equal(await page.locator("[data-terminal]").evaluate(element => {
+    const event = new MouseEvent("contextmenu", { shiftKey: true, cancelable: true, bubbles: true });
+    element.dispatchEvent(event); return event.defaultPrevented;
+  }), true, "Captured Shift right-click belongs to the application");
+  await page.locator("[data-terminal]").evaluate(element => {
+    const rect = element.getBoundingClientRect();
+    element.dispatchEvent(new WheelEvent("wheel", { clientX: rect.left + 1, clientY: rect.top + 1,
+      bubbles: true, cancelable: true, shiftKey: true, deltaY: -1 }));
+  });
+  assert.equal(Buffer.from(await readMouse()).toString(), "\x1b[<68;1;1M", "Captured Shift wheel reaches the application");
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[>0s"));
   await page.locator("[data-terminal]").evaluate(element => {
     const rect = element.getBoundingClientRect();
     const options = { clientX: rect.left + 1, clientY: rect.top + 1, bubbles: true, cancelable: true };

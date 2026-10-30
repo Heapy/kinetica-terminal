@@ -243,7 +243,8 @@ public class BrowserTerminalView(
         listen(root, "lostpointercapture") { event ->
             if (activePointer == (event.pointerId as Number).toInt() && root.hasPointerCapture(event.pointerId) != true) cancelMouse()
         }
-        listen(root, "contextmenu") { event -> if (viewport.scrollOffset == 0 && session.mouseTracking != 0 && event.shiftKey != true) event.preventDefault() }
+        listen(root, "contextmenu") { event -> if (viewport.scrollOffset == 0 && session.mouseTracking != 0 &&
+            (event.shiftKey != true || session.mouseShiftCapture)) event.preventDefault() }
         listen(root, "wheel", passive = false) { event ->
             val dy = (event.deltaY as Number).toDouble()
             val dx = (event.deltaX as Number).toDouble()

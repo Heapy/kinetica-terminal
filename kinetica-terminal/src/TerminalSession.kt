@@ -65,6 +65,20 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     /** Host opt-in to ANSI KAM, disabled by default as in Ghostty. Survives terminal resets. */
     public var keyboardLockAllowed: Boolean = false
     public val keyboardInputBlocked: Boolean get() = keyboardLockAllowed && keyboardDisabled
+    /** Application XTSHIFTESCAPE request; null means the host's default applies. */
+    public var mouseShiftCaptureRequested: Boolean? = null
+        private set
+    private var mouseShiftCaptureDefault = false
+    private var mouseShiftCaptureApplicationAllowed = true
+    public val mouseShiftCapture: Boolean get() =
+        (if (mouseShiftCaptureApplicationAllowed) mouseShiftCaptureRequested else null) ?: mouseShiftCaptureDefault
+
+    /** Defaults to local Shift selection until requested by an application. With application
+     * changes disabled, [defaultCapture] forces capture on/off. Host policy survives resets. */
+    public fun configureMouseShiftCapture(defaultCapture: Boolean = false, allowApplication: Boolean = true) {
+        mouseShiftCaptureDefault = defaultCapture
+        mouseShiftCaptureApplicationAllowed = allowApplication
+    }
     public var reverseWrap: Boolean = false
         private set
     public var reverseWrapExtended: Boolean = false
@@ -965,6 +979,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         leftRightMarginMode = false; left = 0; right = columns - 1
         applicationKeypad = false; keypadNumericOverride = true; alternateScroll = true
         mouseTracking = 0; sgrMouse = false; mouseFormat = TerminalMouseFormat.X10
+        mouseShiftCaptureRequested = null
         mouseEpoch++; newlineMode = false; graphemeClustering = defaultGraphemeClustering
         parser.reset(); utfNeeded = 0; highSurrogate = null; title = ""; titleBytes = ByteArray(0)
         workingDirectoryUri = null
@@ -1117,6 +1132,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 if (final == 's') savedModes[number] = current
                 else mode(number, savedModes[number] ?: (number in listOf(7, 25, 1007, 1035)))
             }
+            return
+        }
+        if (prefix == '>'.code && intermediates == 0 && final == 's') {
+            if (parameterCount <= 1 && params[0] in 0..1) mouseShiftCaptureRequested = params[0] == 1
             return
         }
         if (prefix == '>'.code && intermediates == 0 && final in "mn") {

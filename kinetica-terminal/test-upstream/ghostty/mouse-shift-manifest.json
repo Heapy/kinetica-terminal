@@ -1,0 +1,15 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
+  "cases": 17,
+  "snapshots": 86,
+  "helperSha256": "ce6392423779db4ceba616d17cc2298087b8d2fc4600e35577294fe05e986f59",
+  "generatorSha256": "ce9779a0aaebc860852dbf4e1542590abe7bf43c3d5237ef36201b66aae6b94a",
+  "fixtureSha256": "35136e1308c0a76772410fd839596b1c5e0a9f2c40547df533e2e13fcc484811",
+  "sources": {
+    "src/terminal/Terminal.zig": "68b23d077e45ec680e158691409705bdfbf6d2fc45322cd30c7153265b8aad70",
+    "src/terminal/stream_terminal.zig": "1b58936b58f1b553e800fcd1390ed2c62f9ec600998c73ddabc71529131786fd",
+    "src/terminal/stream.zig": "084e0d3f5d10bd84f9eef31a97ceb976d2abb54e8b4fe139f403a5af91539055",
+    "src/terminal/Parser.zig": "92e0f0fe1939f2030c83a3d7e2f334d90fa6d5e4988760c4b465da54ef57c808"
+  }
+}

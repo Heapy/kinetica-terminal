@@ -38,13 +38,14 @@ private fun TerminalSession.cellPosition(column: Int, row: Int) = TerminalMouseP
 /**
  * Cell-coordinate mouse protocols. Pixel mode requires [sendMousePixels] and emits no guessed
  * coordinates through this API. Buttons: 0/1/2, no button: 3,
- * wheel up/down/left/right: 64..67, back/forward: 128/129. Shift bypasses reporting.
+ * wheel up/down/left/right: 64..67, back/forward: 128/129. Shift bypasses reporting unless
+ * [TerminalSession.mouseShiftCapture] permits application capture.
  * True means application mouse handling owns the event, including suppressed reports.
  */
 public fun TerminalSession.sendMouse(column: Int, row: Int, button: Int, release: Boolean = false,
     motion: Boolean = false, shift: Boolean = false, alt: Boolean = false, control: Boolean = false): Boolean {
-    if (shift || !handlesMouse(button, release, motion)) return false
-    encodeMouse(column, row, button, release, motion, alt, control)?.let(::sendProtocolBytes)
+    if (shift && !mouseShiftCapture || !handlesMouse(button, release, motion)) return false
+    encodeMouse(column, row, button, release, motion, alt, control, shift)?.let(::sendProtocolBytes)
     return true
 }
 
@@ -52,9 +53,9 @@ public fun TerminalSession.sendMouse(column: Int, row: Int, button: Int, release
 public fun TerminalSession.sendMousePixels(x: Double, y: Double, geometry: TerminalMouseGeometry,
     button: Int, release: Boolean = false, motion: Boolean = false, shift: Boolean = false,
     alt: Boolean = false, control: Boolean = false, anyButtonPressed: Boolean = button != 3 && !release): Boolean {
-    if (shift || !handlesMouse(button, release, motion)) return false
+    if (shift && !mouseShiftCapture || !handlesMouse(button, release, motion)) return false
     val position = geometry.position(x, y) ?: return false
-    encodeMouse(position, button, release, motion, alt, control, anyButtonPressed)?.let(::sendProtocolBytes)
+    encodeMouse(position, button, release, motion, alt, control, anyButtonPressed, shift)?.let(::sendProtocolBytes)
     return true
 }
 
@@ -65,14 +66,14 @@ internal fun TerminalSession.handlesMouse(button: Int, release: Boolean, motion:
         !(motion && (mouseTracking == 1000 || mouseTracking == 1002 && button == 3))
 
 internal fun TerminalSession.encodeMouse(column: Int, row: Int, button: Int, release: Boolean = false,
-    motion: Boolean = false, alt: Boolean = false, control: Boolean = false): ByteArray? =
-    encodeMouse(cellPosition(column, row), button, release, motion, alt, control, button != 3 && !release)
+    motion: Boolean = false, alt: Boolean = false, control: Boolean = false, shift: Boolean = false): ByteArray? =
+    encodeMouse(cellPosition(column, row), button, release, motion, alt, control, button != 3 && !release, shift)
 
 private fun TerminalSession.positionAllowed(position: TerminalMousePosition, release: Boolean, pressed: Boolean): Boolean =
     release || position.inside || (mouseTracking == 1002 || mouseTracking == 1003) && pressed
 
 private fun TerminalSession.encodeMouse(position: TerminalMousePosition, button: Int, release: Boolean,
-    motion: Boolean, alt: Boolean, control: Boolean, anyButtonPressed: Boolean): ByteArray? {
+    motion: Boolean, alt: Boolean, control: Boolean, anyButtonPressed: Boolean, shift: Boolean = false): ByteArray? {
     if (!handlesMouse(button, release, motion)) return null
     // Release outside the view must reach the TUI. Dragging outside is useful in motion modes.
     if (!positionAllowed(position, release, anyButtonPressed)) return null
@@ -81,7 +82,7 @@ private fun TerminalSession.encodeMouse(position: TerminalMousePosition, button:
     val sgr = mouseFormat == TerminalMouseFormat.SGR || mouseFormat == TerminalMouseFormat.SGR_PIXELS
     val code = (if (release && !sgr) 3 else button) +
         (if (motion) 32 else 0) + (if (alt && mouseTracking != 9) 8 else 0) +
-        (if (control && mouseTracking != 9) 16 else 0)
+        (if (control && mouseTracking != 9) 16 else 0) + (if (shift && mouseTracking != 9) 4 else 0)
     return when (mouseFormat) {
         TerminalMouseFormat.X10 -> if (x <= 223 && y <= 223)
             byteArrayOf(27, 91, 77, (code + 32).toByte(), (x + 32).toByte(), (y + 32).toByte()) else null
@@ -120,13 +121,14 @@ internal class TerminalMouseReporter(private val session: TerminalSession) {
             size = session.columns to session.rows
         }
         if (release && !pressed.remove(button)) return false
-        if (shift && !release || !session.handlesMouse(button, release, motion)) { lastCell = null; return false }
+        if (shift && !session.mouseShiftCapture && !release || !session.handlesMouse(button, release, motion)) { lastCell = null; return false }
         val anyPressed = pressed.isNotEmpty() || !release && button != 3 && button !in 64..67
         if (!session.positionAllowed(position, release, anyPressed)) return true
         val cell = position.column to position.row
         if (motion && session.mouseFormat != TerminalMouseFormat.SGR_PIXELS && lastCell == cell) return true
         lastCell = cell
-        val bytes = session.encodeMouse(position, button, release, motion, alt, control, anyPressed) ?: return true
+        val bytes = session.encodeMouse(position, button, release, motion, alt, control, anyPressed,
+            shift = shift && session.mouseShiftCapture) ?: return true
         if (!release && !motion && button !in 64..67) pressed.add(button)
         lastPosition = position
         session.sendProtocolBytes(bytes)

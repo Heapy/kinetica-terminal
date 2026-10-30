@@ -51,6 +51,13 @@ mirroring `Termio.visibilityReport`; it does not inject query bytes into the par
 Kotlin replays each case whole and bytewise. Platform tests separately verify host events.
 Regenerate with `python3 scripts/generate-terminal-visibility.py /path/to/ghostty /path/to/zig`.
 
+The [mouse Shift capture corpus](mouse-shift-manifest.json) contains 17 XTSHIFTESCAPE scenarios /
+86 checkpoints from the original terminal stream and tri-state input flag. It covers defaults,
+invalid parameters/headers, cancellation, partial sequences, screen switches, saves and resets.
+Kotlin replays each case whole and bytewise; host policy, encoded mouse modifiers and platform
+gestures are tested separately. Regenerate with
+`python3 scripts/generate-terminal-mouse-shift.py /path/to/ghostty /path/to/zig`.
+
 The [program-status corpus](program-status-manifest.json) contains 260 scenarios /
 290 checkpoints from the original OSC 7501 parser, typed effect callback and reply
 encoder. It covers optional handler installation, both query terminators, reset,

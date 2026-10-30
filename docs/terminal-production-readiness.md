@@ -921,6 +921,28 @@ sample tests pass; three sample tests time out waiting for a key window. The sys
 query confirms `CGSSessionScreenIsLocked=1`. These visibility/focus checks must be rerun in
 an unlocked desktop session; this increment does not claim a fully green desktop suite.
 
+XTSHIFTESCAPE (`CSI > 0/1 s`) now controls application Shift mouse capture. The terminal keeps
+the original tri-state request separately from host policy: omitted/zero disables capture,
+one enables it, and RIS restores the unspecified state. DECSTR, cursor saves and screen
+switches retain the request. Hosts can select a default or force capture on/off; policy
+survives terminal resets. Mouse encoders emit the Shift modifier in each reporting format,
+except X10 press-only mode, which ignores modifiers. Local selection remains the default.
+The per-view reporter retains ownership of an already reported press so disabling capture
+mid-drag cannot leave the application with a stuck button. Browser context menus and native
+wheel routing also honor the effective policy.
+
+The dedicated original-Ghostty parser/state oracle covers 17 scenarios / 86 checkpoints,
+including malformed parameters, partial/cancelled input and reset/screen behavior. Common
+tests replay whole and bytewise, verify host overrides and exact Shift mouse bytes in all
+formats, physical-pixel coordinates, wheel input and gesture completion. All 1222 JVM tests
+and the fresh JS suite pass. Native callback and real Chromium pointer checks verify captured
+Shift drags alongside the existing default local-selection path.
+Four AppKit mouse/PTY tests and eleven common mouse tests pass on Native. Both browser and
+AppKit wheel checks preserve Shift; AppKit converts a Shift-modified vertical line-wheel event
+to its horizontal axis, so the native report reflects that platform event. Browser capture
+also suppresses the shifted context menu. Generated fixtures and provenance reproduce
+byte-for-byte.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than

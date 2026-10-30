@@ -163,6 +163,11 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Browser/AppKit supply physical pixels with DPR/backing scale; pixel motion retains
       subcell events and outside drag/release coordinates. Persistent original-encoder
       comparisons cover cell deduplication, rounding and UTF-8 coordinate boundaries.
+- [x] XTSHIFTESCAPE (`CSI > 0/1 s`) controls whether applications capture Shift mouse input.
+      Omitted parameters disable capture; RIS clears the request, while DECSTR and screen
+      switches preserve it. Host defaults/forced policy survive resets. AppKit/browser paths
+      honor capture, including the encoded modifier, and preserve local selection otherwise.
+      Seventeen original-parser scenarios cover 86 states, including invalid/cancelled input.
 - [x] Legacy Alt-prefix mode 1036, with UTF-8/layout fallbacks, C0/fixterms and independent
       modified functional-key tables, connected to AppKit Option-as-Meta and browser layout input.
       ANSI SRM (12), DEC slow-scroll (4), autorepeat (8) and Alt mode 1039 retain queryable

@@ -40,9 +40,10 @@ class MacOsMouseTest {
                 assertEquals(intended, it.locationInWindow.useContents { this.x to this.y }, "Synthetic mouse location")
             }
         }
-        fun wheel(dy: Int, dx: Int) {
+        fun wheel(dy: Int, dx: Int, flags: ULong = 0u) {
             val cg = requireNotNull(CGEventCreateScrollWheelEvent2(null, kCGScrollEventUnitLine, 2u, dy, dx, 0))
             try {
+                CGEventSetFlags(cg, flags)
                 // An unposted CG wheel event has no window association. Give its NSEvent
                 // an explicit window-space point instead of inheriting the user's cursor.
                 val point = view.convertPoint(NSMakePoint(1.0, 1.0), toView = null)
@@ -77,6 +78,19 @@ class MacOsMouseTest {
             assertTrue(output.isEmpty())
             wheel(0, 1); wheel(0, -1); wheel(1, 0); wheel(-1, 0)
             assertEquals(listOf(66, 67, 64, 65), output.map { it.substringAfter('<').substringBefore(';').toInt() })
+            output.clear(); session.write("\u001b[>1s")
+            view.mouseDown(event(NSEventTypeLeftMouseDown, 1, 1, NSEventModifierFlagShift))
+            view.mouseDragged(event(NSEventTypeLeftMouseDragged, 2, 1, NSEventModifierFlagShift))
+            view.mouseUp(event(NSEventTypeLeftMouseUp, 2, 1, NSEventModifierFlagShift))
+            assertEquals(listOf("\u001b[<4;2;2M", "\u001b[<36;3;2M", "\u001b[<4;3;2m"), output)
+            output.clear(); wheel(1, 0, NSEventModifierFlagShift)
+            // NSEvent maps Shift + vertical line scrolling to its horizontal axis.
+            assertEquals(listOf("\u001b[<70;1;1M"), output, output.joinToString { it.encodeToByteArray().toHexString() })
+            output.clear(); session.configureMouseShiftCapture(allowApplication = false)
+            view.mouseDown(event(NSEventTypeLeftMouseDown, 1, 1, NSEventModifierFlagShift))
+            view.mouseDragged(event(NSEventTypeLeftMouseDragged, 2, 1, NSEventModifierFlagShift))
+            view.mouseUp(event(NSEventTypeLeftMouseUp, 2, 1, NSEventModifierFlagShift))
+            assertTrue(output.isEmpty(), "Host can force local Shift selection")
             val count = output.size
             view.dispose()
             assertTrue(view.trackingAreas.isEmpty())

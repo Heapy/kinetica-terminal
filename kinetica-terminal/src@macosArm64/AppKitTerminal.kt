@@ -591,7 +591,7 @@ public class AppKitTerminalView(
         val resetPhases = NSEventPhaseMayBegin or NSEventPhaseBegan or NSEventPhaseCancelled
         if (event.phase and resetPhases != 0uL) { verticalScroll.reset(); horizontalScroll.reset() }
         val shift = event.modifierFlags and NSEventModifierFlagShift != 0uL
-        val reporting = session.mouseTracking != 0 && viewport.scrollOffset == 0 && !shift
+        val reporting = session.mouseTracking != 0 && viewport.scrollOffset == 0 && (!shift || session.mouseShiftCapture)
         val alternateScroll = session.alternateScreen && session.alternateScroll && session.mouseTracking == 0 && !shift
         // Wheel reports and cursor keys carry no gesture phase or cancellation.
         // Forwarding a flick's inertial tail queues commands the next gesture cannot
