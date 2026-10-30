@@ -12,7 +12,8 @@ import { resolve, join } from "node:path";
 
 const require = createRequire(import.meta.url);
 const playwrightPath = process.env.PLAYWRIGHT_IMPORT ?? require.resolve("playwright");
-const { chromium } = await import(playwrightPath);
+const playwright = await import(playwrightPath);
+const chromium = playwright.chromium ?? playwright.default.chromium;
 const { wsServer: WebSocketServer } = createRequire(playwrightPath)("playwright-core/lib/utilsBundle");
 const baseUrl = process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173";
 const token = randomBytes(32).toString("hex");
@@ -78,11 +79,11 @@ try {
   await page.goto(`${baseUrl}/samples/browser-terminal/web/index.html?renderer=gpu&profile=1`);
   await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 0);
   await page.evaluate(() => {
+    if (kineticaTerminalDemo.fontMode !== "bundled") throw Error("Benchmark requires the bundled shaping fonts");
     const root = document.querySelector("[data-terminal]");
-    const context = document.createElement("canvas").getContext("2d");
-    context.font = "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-    root.style.flex = "none"; root.style.width = `${Math.ceil(context.measureText("M").width * 120)}px`;
-    root.style.height = `${Math.ceil(14 * 1.3) * 32}px`;
+    const metrics = kineticaTerminalDemo.cellMetrics();
+    root.style.flex = "none"; root.style.width = `${Math.ceil(metrics.width * 120)}px`;
+    root.style.height = `${metrics.height * 32}px`;
   });
   await page.waitForFunction(() => kineticaTerminalDemo.columns() === 120 && kineticaTerminalDemo.rows() === 32);
   await page.locator("textarea").focus();
@@ -90,7 +91,8 @@ try {
     const gl = document.querySelector("canvas").getContext("webgl2");
     const info = gl.getExtension("WEBGL_debug_renderer_info");
     return { renderer: info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
-      gpuTimer: !!gl.getExtension("EXT_disjoint_timer_query_webgl2"), ratio: devicePixelRatio, userAgent: navigator.userAgent };
+      gpuTimer: !!gl.getExtension("EXT_disjoint_timer_query_webgl2"), ratio: devicePixelRatio, userAgent: navigator.userAgent,
+      fontMode: kineticaTerminalDemo.fontMode, fontBytes: +document.querySelector("[data-terminal]").dataset.terminalFontBytes };
   });
   await page.evaluate(async url => {
     const api = kineticaTerminalDemo;

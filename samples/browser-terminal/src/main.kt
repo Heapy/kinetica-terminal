@@ -178,5 +178,26 @@ fun main() {
         checkNotNull(surface).configureShapingFonts(moduleUrl, fonts)
     }
     api.clearShapingFonts = { surface?.clearShapingFonts() }
-    js("globalThis").kineticaTerminalDemo = api
+    api.cellMetrics = {
+        val metrics: dynamic = js("({})")
+        metrics.width = surface?.cellWidth; metrics.height = surface?.cellHeight
+        metrics
+    }
+    val fontStatus = document.getElementById("font-status")?.asDynamic()
+    if (js("new URLSearchParams(globalThis.location.search).get('fonts')") == "system") {
+        api.fontMode = "system"; fontStatus?.hidden = true
+        js("globalThis").kineticaTerminalDemo = api
+    } else {
+        configureDemoFonts(api).then { _: dynamic ->
+            api.fontMode = "bundled"; fontStatus?.hidden = true
+            js("globalThis").kineticaTerminalDemo = api
+        }.catch { error: dynamic ->
+            api.fontMode = "system"; api.fontError = error.toString()
+            fontStatus?.textContent = "Fonts unavailable; using system fonts."
+            js("globalThis").kineticaTerminalDemo = api
+        }
+    }
 }
+
+private fun configureDemoFonts(api: dynamic): dynamic =
+    js("import(new URL('fonts.mjs', globalThis.document.baseURI).href).then(module => module.configureDemoFonts(api))")

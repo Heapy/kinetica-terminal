@@ -180,6 +180,8 @@ Give the mount element a definite width and height. The surface fits the termina
 that element, measures its monospace font, and scales the canvas for device pixel ratio.
 Each mounted view currently determines the dimensions of its session; use separate sessions
 for independently sized terminals.
+Read-only `cellWidth` and `cellHeight` report the measured grid size in CSS pixels
+for host interaction geometry; these values change after font or host resizing.
 
 To shape programming ligatures and whole graphemes in WebGL, serve the checked-in
 `web/harfbuzz/` directory (including licenses) and supply the actual SFNT font files:
@@ -1081,6 +1083,7 @@ node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-blocks.mjs
 node scripts/verify-terminal-glyphs.mjs
 node scripts/verify-terminal-shaping.mjs
+node scripts/verify-browser-demo-fonts.mjs
 node scripts/verify-terminal-selection.mjs
 node scripts/verify-terminal-links.mjs
 node scripts/verify-terminal-hover.mjs

@@ -32,6 +32,11 @@ python3 -m http.server 4173 --bind 127.0.0.1
 
 The browser demo provides local echo. For a real shell, connect its byte transport
 to a server-side PTY; the library does not start a public shell server.
+It enables HarfBuzz shaping with seven bundled font faces (37.1 MB before HTTP
+compression), including actual bold/italic faces, emoji and CJK. All assets are
+self-hosted with pinned hashes, integrity checks and licenses. `?fonts=system`
+selects the CSS/system-font path. Failed font downloads preserve a usable terminal.
+See the [font asset guide](samples/browser-terminal/web/fonts/README.md).
 
 ## Develop and verify
 

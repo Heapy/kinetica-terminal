@@ -147,8 +147,10 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       an isolated window presents its initial and restored frames. WebGL now accepts
       an explicitly loaded font set, maps HarfBuzz output to the grid and rasterizes
       outlines/color PNGs. Browser pixels and font lifecycle pass at DPR 1, 1.25 and 2.
-      Default font delivery, broader browser interaction coverage and the final glyph
-      fitting/color-format audit remain open; see the shaping reference.
+      The demo now enables a pinned local font set with real style, emoji and CJK faces.
+      Default-font checks cover pointer selection, 513-character runs, disposal and
+      failed/corrupt asset fallback. The final glyph fitting/color-format audit remains
+      open; see the shaping reference.
 - [x] Implement shared hover identity, range tracking and decorations. Reopened implicit
       OSC 8 links remain independent; explicit nonempty IDs match by ID plus URI across
       disjoint visible rows. Copies, reflow and frozen snapshots retain identity. The original

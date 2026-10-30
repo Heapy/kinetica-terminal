@@ -20,6 +20,7 @@ try {
   const url = `${process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173"}/samples/browser-terminal/web/index.html`;
   await page.goto(`${url}?renderer=gpu`);
   await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 80);
+  assert.equal(await page.evaluate(() => kineticaTerminalDemo.fontMode), "bundled");
   await page.waitForFunction(() => +document.querySelector("[data-terminal]")?.dataset.terminalGlyphs > 0);
   await page.evaluate(() => kineticaTerminalDemo.write("\x1b]9;No permission yet\x07"));
   assert.deepEqual(await page.evaluate(() => [notificationPermissionRequests, notificationCalls.length]), [0, 0]);
@@ -252,6 +253,7 @@ try {
   assert.deepEqual(errors, []);
   await page.goto(`${url}?renderer=software`);
   await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 80);
+  assert.equal(await page.evaluate(() => kineticaTerminalDemo.fontMode), "bundled");
   assert.equal(await page.locator("[data-terminal]").getAttribute("data-terminal-renderer"), "canvas2d");
   await page.evaluate(() => kineticaTerminalDemo.fontFamily("Courier New"));
   await painted();
@@ -279,6 +281,7 @@ try {
   });
   await page.goto(url);
   await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 80);
+  assert.equal(await page.evaluate(() => kineticaTerminalDemo.fontMode), "bundled");
   assert.equal(await page.locator("[data-terminal]").getAttribute("data-terminal-renderer"), "canvas2d");
   await page.locator("canvas").click();
   await page.keyboard.type("help"); await page.keyboard.press("Enter");
@@ -475,10 +478,9 @@ try {
   assert.equal(await page.evaluate(() => new TextDecoder().decode(new Uint8Array(keypadBytes))), expectedTheme);
   await page.evaluate(() => { keypadBytes.length = 0; });
   const expectedSizeReport = size => page.evaluate(size => {
-    const context = document.createElement("canvas").getContext("2d");
-    context.font = `${size}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
-    const width = Math.floor(context.measureText("M").width * devicePixelRatio);
-    const height = Math.floor(Math.ceil(size * 1.3) * devicePixelRatio);
+    const metrics = kineticaTerminalDemo.cellMetrics();
+    const width = Math.floor(metrics.width * devicePixelRatio);
+    const height = Math.floor(metrics.height * devicePixelRatio);
     const columns = kineticaTerminalDemo.columns(), rows = kineticaTerminalDemo.rows();
     return `\x1b[48;${rows};${columns};${rows * height};${columns * width}t`;
   }, size);
@@ -497,9 +499,7 @@ try {
   await page.waitForFunction(() => kineticaTerminalDemo.columns() > 100);
   const geometry = await page.evaluate(() => {
     const rect = document.querySelector("canvas").getBoundingClientRect();
-    const context = document.createElement("canvas").getContext("2d");
-    context.font = "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-    return { left: rect.left, top: rect.top, width: context.measureText("M").width, height: Math.ceil(14 * 1.3) };
+    return { left: rect.left, top: rect.top, ...kineticaTerminalDemo.cellMetrics() };
   });
   const moveCell = (x, y, fraction = 0.5) => page.mouse.move(geometry.left + (x + fraction) * geometry.width,
     geometry.top + (y + fraction) * geometry.height);

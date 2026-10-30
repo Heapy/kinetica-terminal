@@ -13,10 +13,9 @@ try {
     page.on("pageerror", error => report.errors.push(String(error)));
     await page.goto(`${process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173"}/samples/browser-terminal/web/index.html?renderer=${renderer}`);
     await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 20);
+    assert.equal(await page.evaluate(() => kineticaTerminalDemo.fontMode), "bundled");
     const geometry = await page.evaluate(() => {
-      const measure = document.createElement("canvas").getContext("2d");
-      measure.font = '14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-      const width = measure.measureText("M").width, height = Math.ceil(14 * 1.3);
+      const { width, height } = kineticaTerminalDemo.cellMetrics();
       const app = document.querySelector("#app");
       app.style.cssText = `flex:none;width:${Math.ceil(width * 20)}px;height:${height * 5}px`;
       const rect = document.querySelector("canvas").getBoundingClientRect();

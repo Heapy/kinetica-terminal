@@ -71,10 +71,25 @@ background/style/cursor run boundaries, failed and superseded loads, font size,
 hide/restore, context loss/recovery, clearing and view disposal. No test may pass
 by silently switching to the software painter.
 
-Still open: demo font delivery/default configuration, broader live selection and
-long-run coverage, and the final comparison of glyph fitting and color-font formats
-with Ghostty's renderer constraints. These are not established by the basic pixel
-and lifecycle checks above.
+The demo now installs seven local, unmodified faces by default: four JetBrains
+Mono Nerd Font styles, color/text Noto Emoji, and Noto Sans Mono CJK SC. The
+generator pins source commits and licenses; fetches enforce hashes through SRI
+and use content-hash URLs. Missing/corrupt assets preserve the CSS/system-font
+path, which can also be selected explicitly with `?fonts=system`.
+`verify-browser-demo-fonts.mjs` proves actual style/CJK/emoji face selection, pointer
+selection breaking/restoring a ligature run, a complete 513-character run with
+bounded atlas entries, cleanup, opt-out and missing/corrupt asset handling.
+Gesture and grid verifiers use the measured font metrics instead of assuming a
+host system font.
+Validation with the bundled set includes the general Canvas/WebGL integration,
+both platform modifier policies for selection/links/hover, block artwork and
+graphics layers/resource cleanup. The isolated live PTY run passes Vim, Neovim,
+less and tmux, including Unicode input, mouse targeting and resizing. The repeated
+glyph pixel test separately covers both bundled and system fonts at DPR 1/1.25/2.
+
+Still open: the final comparison of glyph fitting and color-font formats with
+Ghostty's renderer constraints. These are not established by the pixel and
+lifecycle checks above.
 
 ## Original reference
 

@@ -9,6 +9,7 @@ try {
     try {
       await page.goto(`${process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173"}/samples/browser-terminal/web/index.html?renderer=${renderer}`);
       await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() >= 32);
+      assert.equal(await page.evaluate(() => kineticaTerminalDemo.fontMode), "bundled");
       for (const fontSize of [14, 17]) {
         const result = await page.evaluate(async ({ renderer, fontSize }) => {
           const demo = globalThis.kineticaTerminalDemo;
@@ -17,9 +18,7 @@ try {
           const artwork = ["█".repeat(32), "█".repeat(32), " ▐▛███▛█", "▝▜██████▀", " ▝▝   ▝▝", "▘▝▖▗▚▞▙▟▀▄▌▐"];
           const quadrants = { " ": 0, "█": 15, "▐": 10, "▛": 7, "▜": 11, "▝": 2, "▀": 3,
             "▄": 12, "▌": 5, "▘": 1, "▖": 4, "▗": 8, "▚": 9, "▞": 6, "▙": 13, "▟": 14 };
-          const measure = document.createElement("canvas").getContext("2d");
-          measure.font = `${fontSize}px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`;
-          const cellWidth = measure.measureText("M").width, cellHeight = Math.ceil(fontSize * 1.3);
+          const { width: cellWidth, height: cellHeight } = demo.cellMetrics();
           const canvas = document.querySelector("canvas");
           const gl = renderer === "gpu" ? canvas.getContext("webgl2") : null;
           if (renderer === "gpu" && !gl) throw new Error("Expected WebGL renderer");

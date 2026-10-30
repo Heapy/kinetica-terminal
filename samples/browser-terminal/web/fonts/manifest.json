@@ -1,0 +1,85 @@
+{
+  "ghosttyCommit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "notoCjkTag": "Sans2.004",
+  "notoCjkCommit": "523d033d6cb47f4a80c58a35753646f5c3608a78",
+  "generatorSha256": "6ff49dde211b0fd3c48bbc01bbc184af5e6cde0bf5850bf136677b6e43a2d7fa",
+  "fonts": [
+    {
+      "file": "JetBrainsMonoNerdFont-Regular.ttf",
+      "family": "JetBrains Mono",
+      "style": 0,
+      "emoji": false,
+      "source": "https://github.com/ghostty-org/ghostty/blob/83fb95624b0439ee660c2679b43b38c8b63769cd/src/font/res/JetBrainsMonoNerdFont-Regular.ttf",
+      "bytes": 2285836,
+      "sha256": "a2f4268a1719b95d1f1448376173a42317919cb598423f18ea327eaca13dd916",
+      "integrity": "sha256-ovQmihcZuV0fFEg3YXOkIxeRnLWYQj8Y6jJ+rKE92RY="
+    },
+    {
+      "file": "JetBrainsMonoNerdFont-Bold.ttf",
+      "family": "JetBrains Mono",
+      "style": 1,
+      "emoji": false,
+      "source": "https://github.com/ghostty-org/ghostty/blob/83fb95624b0439ee660c2679b43b38c8b63769cd/src/font/res/JetBrainsMonoNerdFont-Bold.ttf",
+      "bytes": 2289604,
+      "sha256": "ece02baa478a98f3b6ea0c276c1a9207c6bbdcbde04b8010542f2b0671432438",
+      "integrity": "sha256-7OArqkeKmPO26gwnbBqSB8a73L3gS4AQVC8rBnFDJDg="
+    },
+    {
+      "file": "JetBrainsMonoNerdFont-Italic.ttf",
+      "family": "JetBrains Mono",
+      "style": 4,
+      "emoji": false,
+      "source": "https://github.com/ghostty-org/ghostty/blob/83fb95624b0439ee660c2679b43b38c8b63769cd/src/font/res/JetBrainsMonoNerdFont-Italic.ttf",
+      "bytes": 2287924,
+      "sha256": "7fab948d4bea3441d6dbff7f726b4fa1e27087e98286902b53ddf523be7a20fc",
+      "integrity": "sha256-f6uUjUvqNEHW2/9/cmtPoeJwh+mChpArU931I756IPw="
+    },
+    {
+      "file": "JetBrainsMonoNerdFont-BoldItalic.ttf",
+      "family": "JetBrains Mono",
+      "style": 5,
+      "emoji": false,
+      "source": "https://github.com/ghostty-org/ghostty/blob/83fb95624b0439ee660c2679b43b38c8b63769cd/src/font/res/JetBrainsMonoNerdFont-BoldItalic.ttf",
+      "bytes": 2290832,
+      "sha256": "a70e3862b5d186548b8cc0badc65016ac8040205cc9753f31329c4b51dd131e3",
+      "integrity": "sha256-pw44YrXRhlSLjMC63GUBasgEAgXMl1PzEynEtR3RMeM="
+    },
+    {
+      "file": "NotoColorEmoji.ttf",
+      "family": "Noto Color Emoji",
+      "style": 0,
+      "emoji": true,
+      "source": "https://github.com/ghostty-org/ghostty/blob/83fb95624b0439ee660c2679b43b38c8b63769cd/src/font/res/NotoColorEmoji.ttf",
+      "bytes": 10673480,
+      "sha256": "72a635cb3d2f3524c51620cdde406b217204e8a6a06c6a096ff8ed4b5fd6e27b",
+      "integrity": "sha256-cqY1yz0vNSTFFiDN3kBrIXIE6KagbGoJb/jtS1/W4ns="
+    },
+    {
+      "file": "NotoEmoji-Regular.ttf",
+      "family": "Noto Emoji",
+      "style": 0,
+      "emoji": false,
+      "source": "https://github.com/ghostty-org/ghostty/blob/83fb95624b0439ee660c2679b43b38c8b63769cd/src/font/res/NotoEmoji-Regular.ttf",
+      "bytes": 880860,
+      "sha256": "cd07743a4c93d8da929afdd28c1d368f11da478a1093146a13610081c2a58440",
+      "integrity": "sha256-zQd0OkyT2NqSmv3SjB02jxHaR4oQkxRqE2EAgcKlhEA="
+    },
+    {
+      "file": "NotoSansMonoCJKsc-Regular.otf",
+      "family": "Noto Sans Mono CJK SC",
+      "style": 0,
+      "emoji": false,
+      "source": "https://github.com/notofonts/noto-cjk/blob/523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/Mono/NotoSansMonoCJKsc-Regular.otf",
+      "bytes": 16393784,
+      "sha256": "ec04cc376b34887cedbdf84074e2e226ed2761eeabdcb9173fc1dd7bfd153ef7",
+      "integrity": "sha256-7ATMN2s0iHztvfhAdOLiJu0nYe6r3LkXP8Hde/0VPvc="
+    }
+  ],
+  "licenses": {
+    "licenses/Ghostty-fonts.md": "b3177ac25cc57c976ae9e2a458a23cf840b7d4c919e4f87fdc8cab7875c3ea17",
+    "licenses/OFL.txt": "fb755fa3280d1d215a20df2e64fe6a0f75f8208439b11671978214aae60d2997",
+    "licenses/MIT.txt": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1",
+    "licenses/BSD-2-Clause.txt": "3cb3f3f5a795547d329828df881c80d923bfc75f65065c44ffa703ad78c678bd",
+    "licenses/Noto-CJK-OFL.txt": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+  }
+}

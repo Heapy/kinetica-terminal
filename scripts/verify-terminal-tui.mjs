@@ -13,7 +13,8 @@ import { resolve, join } from "node:path";
 const run = promisify(execFile);
 const require = createRequire(import.meta.url);
 const playwrightPath = process.env.PLAYWRIGHT_IMPORT ?? require.resolve("playwright");
-const { chromium } = await import(playwrightPath);
+const playwright = await import(playwrightPath);
+const chromium = playwright.chromium ?? playwright.default.chromium;
 const { wsServer: WebSocketServer } = createRequire(playwrightPath)("playwright-core/lib/utilsBundle");
 const baseUrl = process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173";
 const tmux = process.env.KINETICA_TMUX ?? "/opt/homebrew/bin/tmux";
@@ -111,11 +112,10 @@ async function waitScreen(label, predicate) { await until(async () => predicate(
 const prompt = screen => !screen.alternate && screen.text.split("\n")[screen.row].startsWith("KINETICA>");
 async function resize(columns, rows) {
   await page.evaluate(({ columns, rows }) => {
-    const context = document.createElement("canvas").getContext("2d");
-    context.font = "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    const metrics = kineticaTerminalDemo.cellMetrics();
     const root = document.querySelector("[data-terminal]");
-    root.style.flex = "none"; root.style.width = `${Math.ceil(columns * context.measureText("M").width)}px`;
-    root.style.height = `${rows * Math.ceil(14 * 1.3)}px`;
+    root.style.flex = "none"; root.style.width = `${Math.ceil(columns * metrics.width)}px`;
+    root.style.height = `${rows * metrics.height}px`;
   }, { columns, rows });
   await page.waitForFunction(({ columns, rows }) => kineticaTerminalDemo.columns() === columns && kineticaTerminalDemo.rows() === rows, { columns, rows });
 }
@@ -131,6 +131,7 @@ async function open(name, files) {
   for (const [name, content] of Object.entries(files)) await writeFile(join(current.directory, name), content);
   await page.goto(`${baseUrl}/samples/browser-terminal/web/index.html?renderer=gpu`);
   await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 0);
+  assert.equal(await page.evaluate(() => kineticaTerminalDemo.fontMode), "bundled");
   await resize(80, 24);
   await page.locator("textarea").focus();
   await page.evaluate(async url => {
@@ -209,8 +210,8 @@ try {
   await send("40Gzt"); await waitScreen("Vim scroll", s => s.text.split("\n")[0] === "ROW 039");
   const point = await page.evaluate(() => {
     const rect = document.querySelector("canvas").getBoundingClientRect();
-    const context = document.createElement("canvas").getContext("2d"); context.font = "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-    return { x: rect.left + 2.5 * context.measureText("M").width, y: rect.top + 2.5 * Math.ceil(14 * 1.3) };
+    const metrics = kineticaTerminalDemo.cellMetrics();
+    return { x: rect.left + 2.5 * metrics.width, y: rect.top + 2.5 * metrics.height };
   });
   await page.mouse.click(point.x, point.y); await send("0iMOUSE:"); await key("Escape"); await send(":w\r");
   await until(async () => (await readFile(join(current.directory, "edit.txt"), "utf8")).includes("\nMOUSE:ROW 041\n"), "Vim mouse targets correct row");

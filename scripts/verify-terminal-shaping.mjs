@@ -36,7 +36,7 @@ try {
   const errors=[];page.on('pageerror', error=>errors.push(error.message));
   await page.route('**/terminal-shaper-instrumented.mjs', route=>route.fulfill({contentType:'text/javascript',body:instrumentation}));
   try {
-   await page.goto(`${base}/samples/browser-terminal/web/index.html?renderer=gpu`);
+   await page.goto(`${base}/samples/browser-terminal/web/index.html?renderer=gpu&fonts=system`);
    await page.waitForFunction(()=>globalThis.kineticaTerminalDemo);
    const result=await page.evaluate(async ({names})=>{
     const check=(condition,message)=>{if(!condition)throw new Error(message);};

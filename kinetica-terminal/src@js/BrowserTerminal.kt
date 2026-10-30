@@ -46,8 +46,11 @@ public class BrowserTerminalView(
     private var fontFamily: String? = null
     private var shapingFonts: BrowserTerminalFontSet? = null
     private var fontLoadGeneration = 0
-    private var cellWidth = 8.0
-    private var cellHeight = 18.0
+    /** Current grid dimensions in CSS pixels, after host/font measurement. */
+    public var cellWidth: Double = 8.0
+        private set
+    public var cellHeight: Double = 18.0
+        private set
     private var pixelRatio = 0.0
     private var frame: Int? = null
     private var accessibilityTimer: Int? = null

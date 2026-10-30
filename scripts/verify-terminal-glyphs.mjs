@@ -3,19 +3,18 @@ import assert from "node:assert/strict";
 const { chromium } = await import(process.env.PLAYWRIGHT_IMPORT ?? "playwright");
 const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE });
 try {
-  for (const ratio of [1, 1.25, 2]) {
+  for (const fontMode of ["bundled", "system"]) for (const ratio of [1, 1.25, 2]) {
     const page = await browser.newPage({ viewport: { width: 900, height: 500 }, deviceScaleFactor: ratio });
     try {
-      await page.goto(`${process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173"}/samples/browser-terminal/web/index.html?renderer=gpu`);
+      await page.goto(`${process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173"}/samples/browser-terminal/web/index.html?renderer=gpu${fontMode === "system" ? "&fonts=system" : ""}`);
       await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() >= 64);
+      assert.equal(await page.evaluate(() => kineticaTerminalDemo.fontMode), fontMode);
       for (const width of [900, 901]) {
         await page.setViewportSize({ width, height: 500 });
         const result = await page.evaluate(async () => {
           const demo = globalThis.kineticaTerminalDemo;
           demo.reset(); demo.fontSize(14);
-          const measure = document.createElement("canvas").getContext("2d");
-          measure.font = "14px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-          const cellWidth = measure.measureText("M").width, cellHeight = Math.ceil(14 * 1.3);
+          const { width: cellWidth, height: cellHeight } = demo.cellMetrics();
           const styles = ["0", "0;1", "0;2", "0;7"];
           const gl = document.querySelector("canvas").getContext("webgl2");
           const originalDraw = gl.drawArraysInstanced;
@@ -59,5 +58,5 @@ try {
       }
     } finally { await page.close(); }
   }
-  console.log("WebGL glyphs: identical repeated zeros in normal/bold/dim/inverse styles at DPR 1, 1.25 and 2, across window widths passed");
+  console.log("WebGL glyphs: identical repeated zeros in normal/bold/dim/inverse styles at DPR 1, 1.25 and 2, across window widths, with bundled shaping and system fonts passed");
 } finally { await browser.close(); }
