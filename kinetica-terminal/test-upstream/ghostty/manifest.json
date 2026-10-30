@@ -1333,7 +1333,17 @@
     "scroll_wrap_down_horizontal_margins": "5d86d2a04a12579440c9807d7d03aa46b5acee46ffdbc318f6b841ee2a23a802",
     "scroll_wrap_up_horizontal_margins": "6b3c70c1a9ae955d4ba6b6180bee67124b8a24609ee1f4fc86d790890dd409fb",
     "scroll_wrap_reverse_index_horizontal_margins": "900b0decfa2bb41c6c3914cd2f919218c492cc237cbc58d2fa2d9ddc07a01331",
-    "scroll_wrap_down_wide_cells": "a9d586b6c5c0d90f398d319bdf1efa950aa682033f7b58c968bffb81d196fc0d"
+    "scroll_wrap_down_wide_cells": "a9d586b6c5c0d90f398d319bdf1efa950aa682033f7b58c968bffb81d196fc0d",
+    "history_erase_alternate_47_47": "b5d141beabcd82df9653c24d1f8a8e0d93e154e0ffe6a9d1ae9eee26630a3b8a",
+    "history_erase_alternate_47_1047": "b5d141beabcd82df9653c24d1f8a8e0d93e154e0ffe6a9d1ae9eee26630a3b8a",
+    "history_erase_alternate_47_1049": "1aec99fc3d8b883adf86a147cd460d044415af1d68e9afaaa9cb1ed492cb2b6d",
+    "history_erase_alternate_1047_47": "b5d141beabcd82df9653c24d1f8a8e0d93e154e0ffe6a9d1ae9eee26630a3b8a",
+    "history_erase_alternate_1047_1047": "b5d141beabcd82df9653c24d1f8a8e0d93e154e0ffe6a9d1ae9eee26630a3b8a",
+    "history_erase_alternate_1047_1049": "1aec99fc3d8b883adf86a147cd460d044415af1d68e9afaaa9cb1ed492cb2b6d",
+    "history_erase_alternate_1049_47": "b5d141beabcd82df9653c24d1f8a8e0d93e154e0ffe6a9d1ae9eee26630a3b8a",
+    "history_erase_alternate_1049_1047": "b5d141beabcd82df9653c24d1f8a8e0d93e154e0ffe6a9d1ae9eee26630a3b8a",
+    "history_erase_alternate_1049_1049": "883d1119a2d257a5c538fae452f858ace1f9e489c84dc14dea405a2b57766682",
+    "history_erase_alternate_after_cursor_reflow": "0ef23475f9ddca9a5c086647dfcb988f5de1bdd0d394f5419fcbb1127cd901fd"
   },
   "keyboardMatrixSha256": "6c01e3dd0dee327b115ef73db2d811a5a3bef14194045bd7f81b3c9bc4e9c90e",
   "modifyOtherKeysMatrixSha256": "218a6d9d284746fe45e95d10f4b791db3116a9f902dd9d05c43e5949fb2fe764",

@@ -240,6 +240,24 @@ Validation passes 1528 JVM tests, the freshly built Release JS suite and 1055 Na
 (the full VT oracle, scroll-wrap behavior and original graphics anchor/geometry comparisons).
 Logs are `/tmp/kinetica-scroll-wrap-*`.
 
+Adding resize events to the state-sequence audit exposed an independent screen-isolation
+defect: ED 3 on the alternate screen cleared the inactive primary history and retired its
+graphics anchors. The pinned `Terminal.eraseDisplay(.scrollback)` calls
+`self.screens.active.eraseHistory(null)`. The protocol handler now touches primary history
+only while primary is active; the explicit host `clearHistory()` action still clears retained
+primary history from either screen. The alternate screen has no retained history under our
+existing quota policy, so the protocol request there has no primary-side effect.
+
+Ten new original scenarios cover all nine entry/exit combinations of modes 47/1047/1049,
+regular/selective ED 3, primary ED 3 after return, and the minimized cursor-reflow sequence.
+All ten failed before the fix, as did a common test checking retained text and anchor lifetime.
+A separate host-action control still passes. These scenarios compare the original history
+count exactly, without the strict-history adjustment. The corpus now contains 1052 scenarios /
+7317 checkpoints; all 1055 generated fixture/manifest artifacts reproduce byte-for-byte.
+Validation passes 1540 JVM tests, the freshly built Release JS suite and 1063 Native tests
+(all VT oracle cases, history isolation, graphics anchors and AppKit usability).
+Logs are `/tmp/kinetica-history-isolation-*`.
+
 The release behavior review uses the pinned `stream.zig` / `stream_terminal.zig` dispatch,
 keyboard/mouse encoders and graphics implementation as the reference. It checks the terminal
 capabilities and relevant input/state changes against executable regression families rather

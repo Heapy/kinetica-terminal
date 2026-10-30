@@ -825,6 +825,10 @@ an opt-in Settings choice, and the browser sample has an unchecked “Allow app 
 REP (`CSI Ps b`), scroll-and-clear (`CSI 22 J`) and DEC mode save/restore
 (`CSI ? Ps s` / `CSI ? Ps r`) are supported. Scroll-and-clear moves written rows into
 primary history, subject to its strict limits; alternate screens retain no history.
+Erase-history (`CSI 3 J`, including its selective form) affects only the active screen:
+programs in the alternate screen leave primary scrollback and its graphics anchors intact.
+The explicit host `clearHistory()` action clears primary history even while an alternate-screen
+application is active.
 X10 mouse mode 9 reports only left/middle/right presses, without modifiers, motion,
 releases or wheel events. The chosen legacy/SGR encoding remains independent of tracking.
 

@@ -1616,7 +1616,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                     eraseRows(0, rows, selective); pendingWrap = false
                     graphicsState.clearScreen()
                 }
-                3 -> { history.clear(); primaryGraphics.reapRetired(); damageAll() }
+                // ED 3 erases only the active screen's history. Unlike the explicit
+                // host clearHistory action, an alternate-screen program cannot erase primary history.
+                3 -> if (!alternateScreen) { history.clear(); primaryGraphics.reapRetired(); damageAll() }
                 22 -> if (parameterCount == 1) scrollAndClear()
             }
             'K' -> eraseLine(params[0], selective)
