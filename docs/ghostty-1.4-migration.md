@@ -21,7 +21,8 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
 - [x] Update Zig oracle helpers for the new language/library and upstream interfaces.
 - [x] Regenerate all affected fixtures and provenance through `scripts/`, review behavioral
       differences, and preserve the existing scenario coverage.
-- [ ] Add regressions for newly supported behavior; passing the old corpus alone is insufficient.
+- [x] Add original-reference and platform regressions for the implemented behavior listed below;
+      passing the old corpus alone is insufficient. The broader source audit remains open.
 - [x] Update the primary C-reference pin with regenerated evidence and corresponding implementation.
 - [x] Run shared JVM/JS checks, relevant Native tests and fresh browser rendering/input checks for the C-reference migration.
 - [ ] Complete the release-note/source audit for remaining emulation and input differences.
@@ -223,6 +224,33 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       platform checks cover lazy AppKit providers and real trusted Chromium paste. Scripted
       text and dropped paths keep their normal paste behavior. See the production-readiness
       log for validation and the module guide for host policy and bounded queue semantics.
+
+## Memory and lifecycle
+
+- [x] Hidden browser views release image caches and canvas backing storage; WebGL also releases
+      its atlas, buffers and program. AppKit clears software caches; Metal waits for submitted
+      commands before purging image/atlas/buffer resources and detaching its layer device.
+      Browser checks cover hidden ancestors, detachment, document visibility, context recovery
+      while hidden and held image generations. Nine native graphics tests include actual Metal
+      submission, disposal and showing the layer again before completion. Live window occlusion
+      is still a separate acceptance gate requiring an unlocked desktop.
+- [x] Idle scrollback compression with stable row identity and lazy cell restoration. The portable
+      implementation compresses cell planes, retaining grapheme/link metadata separately; it does
+      not reproduce Ghostty's OS-specific page-compression mechanism. One worker per session
+      excludes all attached visible ranges and bounds each callback to 16,384 cells. Input,
+      including held output, restarts the idle delay; disabling/disposal cancels work. Logical
+      history eviction charges remain unchanged. Seven common regressions cover integer bits,
+      metadata, budgets, multiple views, selection/graphics anchors, snapshots, reflow and reuse.
+      The implementation checkpoint passed 1382 JVM tests, fresh JS tests, all seven new Native
+      common tests, nine Native graphics tests and both browser integration verifiers.
+
+The host acceptance checks also run actual browser/AppKit timers. The browser history verifier
+compares exact WebGL/Canvas screenshots across compression, scroll-away/back and hide/show,
+including styled Unicode text. Its 400-row fixture at 1000×640 CSS pixels / DPR 2 reduces
+accounted row storage from 1,099,632 to 492,394 bytes while preserving the logical charge.
+These are accounting values, not heap/RSS measurements. AppKit verifies automatic compression,
+readback and cancellation on disposal for both native rendering backends, without opening a
+window. These checks supplement, rather than replace, the live window gates.
 
 ## Graphics and external media
 

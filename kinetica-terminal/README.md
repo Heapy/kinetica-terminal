@@ -1010,6 +1010,12 @@ Additional pixel checks exercise atomic updates, context recovery during a hold,
 and browser blinking. Deterministic common tests cover deadlines, paired callbacks, continuing
 input/replies, immediate repaint/scroll anchors, multiple views and timer cancellation; an AppKit
 run-loop test verifies recovery from an abandoned hold.
+`node scripts/verify-terminal-history.mjs` checks automatic idle compression in both browser
+renderers using the same Playwright/environment options. It compares exact canvas screenshots
+before/after compression, scrolling and hiding/showing styled Unicode history, verifies logical
+budget stability and checks that disposal cancels maintenance. The macOS
+`NativeHistoryCompressionTest` exercises real AppKit run-loop timers for both rendering backends,
+history text after readback and timer disposal; it does not require an unlocked desktop.
 The [native window pixel verifier](../docs/terminal-renderer-benchmarks.md#macos) additionally
 captures its isolated window after occlusion and during resize, including the interval before
 a new drawable arrives. It requires macOS Screen Recording permission and uses offline OCR

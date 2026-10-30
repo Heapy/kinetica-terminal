@@ -149,6 +149,7 @@ fun main() {
     api.screen = { (0 until session.rows).joinToString("\n") { session.screenLine(it).text() } }
     api.columns = { session.columns }; api.rows = { session.rows }; api.history = { session.historySize }
     api.historyStorageBytes = { session.historyStorageBytes.toDouble() }
+    api.historyResidentStorageBytes = { session.historyResidentStorageBytes.toDouble() }
     api.jumpToPrompt = { direction: Int -> surface?.jumpToPrompt(direction) ?: false }
     api.scrollOffset = { surface?.scrollOffset ?: 0 }
     api.historyByteLimit = { session.limits.historyBytes.toDouble() }
