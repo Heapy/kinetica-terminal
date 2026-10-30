@@ -5,6 +5,24 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class VtParserTest {
+    @Test fun delPrintsInGroundButIsIgnoredInsideDcsAndHeaders() {
+        val capture = Capture().apply {
+            parse("A\u007fB\u001b[1\u007fm\u001b(\u007fB\u001bP$\u007fq\u007fm\u007f\u001b\\C")
+        }
+        assertEquals("A\u007fBC", capture.printed.toString())
+        assertEquals(listOf(1), capture.commands.single().params)
+        assertEquals(listOf('B'.code to '('.code), capture.escapes.filter { it.second != 0 })
+        assertEquals(listOf(Triple(VtParser.DCS, "$" + "qm", 27)), capture.strings)
+    }
+
+    @Test fun oscPayloadKeepsDelAndRawC1WithoutPrintingTheirSuffix() {
+        val capture = Capture().apply {
+            parse("\u001b]2;A\u007fB\u0007X\u001b]2;bad\u009cinside\u001b\\Y")
+        }
+        assertEquals(listOf(Triple(VtParser.OSC, "2;A\u007fB", 7)), capture.strings)
+        assertEquals("XY", capture.printed.toString())
+    }
+
     @Test fun clipboardCaptureCountsUtf8BytesExcludesPrefixAndRecoversAfterOverflow() {
         for (prefix in listOf("52;", "5522;")) {
             val capture = Capture()

@@ -1358,7 +1358,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         // Width and grapheme decisions precede legacy charset mapping in Ghostty.
         val code = input
         if (code > 255 && graphemeClustering && cursorColumn > 0 && appendGrapheme(code)) return
-        val width = terminalCharacterWidth(code)
+        // Ghostty's print path treats Latin-1 (including printable DEL) as narrow,
+        // independently of the Unicode table's control-character width.
+        val width = if (code <= 0xff) 1 else terminalCharacterWidth(code)
         if (width == 0) {
             if (graphemeClustering) return
             var x = if (wrap && pendingWrap) cursorColumn else cursorColumn - 1

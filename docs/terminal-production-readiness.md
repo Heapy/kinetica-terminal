@@ -59,6 +59,15 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+The DEL parser checkpoint adds 17 original-libghostty scenarios / 40 checkpoints for
+ground output, escape/CSI/DCS states, OSC payloads, split UTF-8, REP, charsets and wrapping.
+Before the fix, 14 original scenarios and one parser unit test failed. DEL now prints as
+a narrow cell in ground, is ignored in DCS and remains payload in OSC/APC. The session
+matches Ghostty's Latin-1 width fast path without changing generated Unicode properties.
+This checkpoint passes all 1559 JVM tests, fresh Release JS tests and 1090 focused Native
+oracle/parser/Unicode tests. All 1072 VT fixture/manifest artifacts reproduce byte-for-byte.
+These tests cover this parser boundary; the broader completion gates remain open.
+
 The Ghostty feature-parity work remains in progress. Its requested scope is:
 
 - [x] Kitty keyboard negotiation and all five enhancements, common encoder and AppKit/browser input.

@@ -153970,5 +153970,261 @@
         "write": "\u001b[?47l"
       }
     ]
+  },
+  {
+    "name": "parser_del_ground",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "417f42"
+      },
+      {
+        "bytes": "1b5b3262"
+      },
+      {
+        "bytes": "1b5b313b38487f7f"
+      },
+      {
+        "bytes": "1b5b366e"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_ground_after_utf8",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "c27f"
+      },
+      {
+        "bytes": "e0a07f"
+      },
+      {
+        "bytes": "f09f987f"
+      },
+      {
+        "bytes": "7f41"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_ground_charset",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b28307f71"
+      },
+      {
+        "bytes": "1b28417f23"
+      },
+      {
+        "bytes": "1b28427f41"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_escape_entry",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b7f3741"
+      },
+      {
+        "bytes": "1b7f3842"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_escape_intermediate",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b287f30717f"
+      },
+      {
+        "bytes": "1b287f42317f"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_csi_entry",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b5b7f33316d417f"
+      },
+      {
+        "bytes": "1b5b7f6d42"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_csi_param",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b5b317f3b33326d417f"
+      },
+      {
+        "bytes": "1b5b33383a323a3a317f3a323a336d42"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_csi_intermediate",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b5b337f207f71417f"
+      },
+      {
+        "bytes": "1b50247120717f1b5c"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_csi_ignore",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b5b317f3f7f3248417f"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_dcs_entry",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b507f24716d1b5c7f"
+      },
+      {
+        "bytes": "1b507f2b7134337f36661b5c"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_dcs_param",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b50317f24716d1b5c7f"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_dcs_intermediate",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b50247f716d1b5c7f"
+      },
+      {
+        "bytes": "1b502b7f71343336661b5c"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_dcs_ignore",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b503a7f716d7f1b5c417f"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_dcs_payload",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b5024717f6d1b5c"
+      },
+      {
+        "bytes": "1b5024716d7f1b5c"
+      },
+      {
+        "bytes": "1b502b71347f337f367f661b5c"
+      },
+      {
+        "bytes": "1b5024716d7f18"
+      },
+      {
+        "bytes": "1b5024717f6d1a"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_osc_title",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b5d323b417f420758"
+      },
+      {
+        "bytes": "1b5d303b437f441b5c59"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_osc_palette",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b5d343b313b3f7f0758"
+      },
+      {
+        "bytes": "1b5d343b313b3f1b5c7f"
+      }
+    ]
+  },
+  {
+    "name": "parser_del_osc_c1_title_boundary",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "bytes": "1b5d323b6265666f726507"
+      },
+      {
+        "bytes": "1b5d323b419c581b5c59"
+      },
+      {
+        "bytes": "1b5d323b41c29c58075a"
+      }
+    ]
   }
 ]

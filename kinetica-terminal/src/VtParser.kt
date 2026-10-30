@@ -87,6 +87,8 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
             return
         }
         if (state == STRING) {
+            // DEL is ignored in DCS passthrough, but remains data in OSC/APC.
+            if (code == 127 && stringKind == DCS) return
             if (stringKind == APC) {
                 if (code in 0..0x7f) handler.apcPut(code)
                 return
@@ -139,7 +141,8 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
             if (state !in DCS_ENTRY..DCS_IGNORE) handler.execute(code)
             return
         }
-        if (code == 127) return
+        // Ghostty prints DEL in ground; escape and control-sequence headers ignore it.
+        if (code == 127 && state != GROUND) return
         when (state) {
             GROUND -> if (code !in 0x80..0x9f) handler.print(code)
             ESCAPE -> when (code) {
