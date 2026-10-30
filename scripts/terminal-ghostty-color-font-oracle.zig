@@ -13,8 +13,11 @@ test "kinetica color font oracle" {
     const alloc = std.testing.allocator;
     var library = try font.Library.init(alloc);
     defer library.deinit();
-    var face = try font.Face.init(library, @embedFile("kinetica-colrv0.ttf"),
-        .{ .size = .{ .points = 20, .xdpi = 72, .ydpi = 72 } });
+    const sizes = try std.json.parseFromSlice([]const f32, alloc, @embedFile("kinetica-color-font-sizes.json"), .{});
+    defer sizes.deinit();
+    for (sizes.value) |points| {
+    var face = try font.Face.init(library, @embedFile("kinetica-color-font.ttf"),
+        .{ .size = .{ .points = points, .xdpi = 72, .ydpi = 72 } });
     defer face.deinit();
     for ("ABCDEF") |code| {
         const glyph_id = face.glyphIndex(code).?;
@@ -23,7 +26,7 @@ test "kinetica color font oracle" {
         defer atlas.deinit(alloc);
         const glyph = face.renderGlyph(alloc, &atlas, glyph_id,
             .{ .grid_metrics = font.Metrics.calc(face.getMetrics()) }) catch |err| {
-            try emit(alloc, .{ .codepoint = code, .glyph = glyph_id, .color = color, .err = @errorName(err) });
+            try emit(alloc, .{ .points = points, .codepoint = code, .glyph = glyph_id, .color = color, .err = @errorName(err) });
             continue;
         };
         // u16 forces a JSON number array rather than interpreting RGBA as UTF-8.
@@ -36,8 +39,9 @@ test "kinetica color font oracle" {
                 pixels[dest..][0..4].* = .{ atlas.data[source + 2], atlas.data[source + 1], atlas.data[source], atlas.data[source + 3] };
             } else pixels[dest..][0..4].* = .{ atlas.data[source], atlas.data[source], atlas.data[source], atlas.data[source] };
         };
-        try emit(alloc, .{ .codepoint = code, .glyph = glyph_id,
+        try emit(alloc, .{ .points = points, .codepoint = code, .glyph = glyph_id,
             .color = color, .width = glyph.width, .height = glyph.height,
             .offset_x = glyph.offset_x, .offset_y = glyph.offset_y, .rgba_premultiplied = pixels });
+    }
     }
 }

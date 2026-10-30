@@ -3,16 +3,23 @@
 package io.heapy.kinetica.terminal
 
 import kotlinx.cinterop.*
+import platform.CoreFoundation.*
 import platform.CoreGraphics.*
 import platform.CoreText.*
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
+/** Read once per retained face; do not repeatedly request a large system sbix table. */
+internal fun terminalNativeFontHasSbix(font: CTFontRef): Boolean {
+    val table = CTFontCopyTable(font, 0x73626978u, 0u) ?: return false
+    return try { CFDataGetLength(table) > 0 } finally { CFRelease(table) }
+}
+
 /** Font size, baseline and returned bearings are device pixels, independent of the grid column. */
 internal fun terminalRasterizeNativeGlyph(font: CTFontRef, glyph: Int, baseline: Double, maxSize: Int,
     constraint: TerminalGlyphConstraint = TerminalGlyphConstraint.NONE, metrics: TerminalGlyphMetrics? = null,
-    columns: Int = 1): GlyphBitmap = memScoped {
+    columns: Int = 1, intrinsicColor: Boolean = terminalNativeFontHasSbix(font)): GlyphBitmap = memScoped {
     require(glyph in 0..65535 && baseline.isFinite() && maxSize > 0)
     val id = alloc<CGGlyphVar>(); id.value = glyph.toUShort()
     val bounds = CTFontGetBoundingRectsForGlyphs(font, kCTFontOrientationHorizontal, id.ptr, null, 1)
@@ -58,5 +65,9 @@ internal fun terminalRasterizeNativeGlyph(font: CTFontRef, glyph: Int, baseline:
             } finally { CGContextRelease(context) }
         }
     } finally { CGColorSpaceRelease(colorSpace) }
-    glyphBitmap(width, height, bytes, premultiplied = true).copy(left = left, top = baseline.roundToInt() - top)
+    // Like Ghostty's CoreText ColorState, sbix is intrinsic color even when every
+    // pixel happens to be gray. Pixel-channel equality cannot identify a text mask.
+    glyphBitmap(width, height, bytes, premultiplied = true).let {
+        it.copy(left = left, top = baseline.roundToInt() - top, colored = intrinsicColor || it.colored)
+    }
 }

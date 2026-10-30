@@ -155,7 +155,9 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       layers with alpha and current-foreground colors; independent pixel checks cover
       palette gray, empty base outlines and cache invalidation. Original desktop probes
       record the pinned backends' limitations on the same fixture. The remaining
-      COLRv1/SVG/sbix audit stays open; see the shaping reference.
+      COLRv1/SVG/non-PNG sbix audit stays open. PNG sbix now has independent
+      multi-strike, transparency, offset and dupe checks; Metal preserves intrinsic
+      gray bitmap colors instead of tinting them as text. See the shaping reference.
 - [x] Implement shared hover identity, range tracking and decorations. Reopened implicit
       OSC 8 links remain independent; explicit nonempty IDs match by ID plus URI across
       disjoint visible rows. Copies, reflow and frozen snapshots retain identity. The original

@@ -112,7 +112,7 @@ The WebGL verifier compares a fitted color emoji with an independent full-cell P
 reference at DPR 1/1.25/2. Both the intermediate PNG canvas and the atlas rasterizer
 use the CPU Canvas path to keep downsampling consistent before texture upload.
 
-Still open: the remaining color-font format audit, especially COLRv1/SVG and sbix coverage.
+Still open: the remaining color-font format audit, especially COLRv1/SVG and non-PNG sbix coverage.
 The configured browser rasterizer consumes outlines, COLRv0 layers and embedded PNGs;
 the CSS-only and software paths do not apply these shaped-atlas constraints.
 
@@ -160,6 +160,32 @@ build/color-font-tools/bin/python scripts/generate-terminal-color-fonts.py --che
 python3 scripts/generate-terminal-color-font-oracle.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig --check
 python3 scripts/generate-terminal-color-font-oracle.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig --backend coretext --check
 ```
+
+PNG sbix coverage uses a second original fixture with 20/40-pixel strikes, distinct
+gray levels to identify the selected strike, translucent colored pixels, a `dupe`
+reference and negative image offsets. Its fallback outlines match the image bounds
+because CoreText uses those outlines to measure the glyph. The generator writes the
+font, PNG bytes/pixels, source manifest and embedded Native fixture deterministically.
+The browser runtime returns the exact authored PNG at sizes below, between and above
+the available strikes. `verify-terminal-sbix.mjs` checks actual WebGL pixels at font
+sizes 20/30 and DPR 1/1.25/2 against an independent CPU reference with local image
+sampling, integer placement and explicit premultiplied source-over. All pixels match
+exactly; changing SGR leaves both gray and colored PNGs unchanged.
+
+The Native rasterizer now treats sbix as intrinsic color even when every pixel is
+gray, following Ghostty's CoreText table classification. Previously those pixels
+were classified as a text mask and tinted by the terminal foreground. A real Metal
+test reproduces that failure before the fix and proves unchanged pixels after SGR
+replacement and `dupe` substitution. Additional Native checks cover complete image
+bounds, fractional bearings and gray strike values at font sizes 20, 30 and 40.
+
+Original Ghostty FreeType and CoreText probes each record 18 sbix cases. The raw
+FreeType face chooses its largest bitmap strike, while CoreText selects 20 or 40
+according to size. These probes use the face's own metrics without the terminal's
+emoji constraints; they are not cross-backend pixel-equivalence assertions. Rebuild
+them with the commands above plus `--font sbix`; their output is recorded in
+`test-upstream/color-fonts/ghostty-sbix-{freetype,coretext}.json`. JPEG/TIFF sbix images
+remain outside this verified PNG coverage.
 
 ## Original reference
 

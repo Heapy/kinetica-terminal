@@ -10,7 +10,13 @@ import platform.CoreText.*
 import kotlin.io.encoding.Base64
 
 internal fun <T> withTerminalShapingFont(size: Double = 14.0, block: (NSFont) -> T): T {
-    val bytes = Base64.decode(terminalShapingFont())
+    return withTerminalFontBytes(Base64.decode(terminalShapingFont()), size, block)
+}
+
+internal fun <T> withTerminalSbixFont(size: Double = 20.0, block: (NSFont) -> T): T =
+    withTerminalFontBytes(Base64.decode(terminalSbixFont()), size, block)
+
+private fun <T> withTerminalFontBytes(bytes: ByteArray, size: Double, block: (NSFont) -> T): T {
     val data = bytes.usePinned { checkNotNull(CFDataCreate(null, it.addressOf(0).reinterpret(), bytes.size.toLong())) }
     try {
         val provider = checkNotNull(CGDataProviderCreateWithCFData(data))

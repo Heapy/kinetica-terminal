@@ -80,6 +80,7 @@ static server serving the repository root:
 ```sh
 KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-browser-harfbuzz.mjs
 KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-terminal-color-fonts.mjs
+KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-terminal-sbix.mjs
 ```
 
 Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` when using an existing Chromium installation.

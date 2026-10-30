@@ -367,7 +367,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
             cellHeight * scale - baseline.roundToInt() - (font.leading / 2 - font.descender),
             faceHeight, (2 * font.capHeight + faceHeight) / 3)
         val bitmap = terminalRasterizeNativeGlyph(shaper(key.style).face(key.font), key.glyph, baseline, atlas.size - 2,
-            key.constraint, metrics, key.columns)
+            key.constraint, metrics, key.columns, intrinsicColor = shaper(key.style).isSbixFont(key.font))
         rasterizations++
         return bitmap
     }

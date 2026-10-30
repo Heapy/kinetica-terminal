@@ -2,8 +2,8 @@
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
   "backend": "coretext",
   "zig": "0.17.0",
-  "generatorSha256": "18df305e6e7b5c4e8188f433f9f9d3a85a2e65ab1ae6a9f6aa2a01b317336622",
-  "helperSha256": "ea9214298f7f2d6ef2f9a1cc961c95ec57291bca38348480fce908f80ecf03bc",
+  "generatorSha256": "8d3f9006759e7ce9d70efcca0b349defe8423831fac1a6cb374adeb2d5a6f406",
+  "helperSha256": "ddb88d39630eda6cbaf9bdc643d7a5cf539b705002821d73953feddeecd829f6",
   "buildTemplateSha256": "9d887a3bfc304a1d8c443656844b01850dfd660103e98b69d8b26def1bbc09a2",
   "fontSha256": "b76fa2a0ccc8fc78864a5395dc6fa21ded66443c9902250aeaad453c192bc0e8",
   "sources": {
@@ -15,6 +15,7 @@
   },
   "results": [
     {
+      "points": 20,
       "codepoint": 65,
       "glyph": 4,
       "color": false,
@@ -90,6 +91,7 @@
       ]
     },
     {
+      "points": 20,
       "codepoint": 66,
       "glyph": 5,
       "color": false,
@@ -165,6 +167,7 @@
       ]
     },
     {
+      "points": 20,
       "codepoint": 67,
       "glyph": 6,
       "color": false,
@@ -240,6 +243,7 @@
       ]
     },
     {
+      "points": 20,
       "codepoint": 68,
       "glyph": 7,
       "color": false,
@@ -315,6 +319,7 @@
       ]
     },
     {
+      "points": 20,
       "codepoint": 69,
       "glyph": 8,
       "color": false,
@@ -325,6 +330,7 @@
       "rgba_premultiplied": []
     },
     {
+      "points": 20,
       "codepoint": 70,
       "glyph": 9,
       "color": false,
