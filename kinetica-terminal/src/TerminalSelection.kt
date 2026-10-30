@@ -65,10 +65,11 @@ internal class TerminalSelection(
         pointerX = x
     }
 
-    fun isPointerClick(position: TerminalCellPosition): Boolean {
+    fun isPointerOrigin(position: TerminalCellPosition): Boolean {
         reconcile()
-        return pointerX != null && !pointerDragged && clickAnchor?.position() == clamp(position)
+        return pointerX != null && clickAnchor?.position() == clamp(position)
     }
+    fun isPointerClick(position: TerminalCellPosition): Boolean = isPointerOrigin(position) && !pointerDragged
 
     /** True once the pointer moves cells or crosses the same-cell selection threshold. */
     fun extendPointer(position: TerminalCellPosition, x: Double, cellWidth: Int, rectangle: Boolean): Boolean {

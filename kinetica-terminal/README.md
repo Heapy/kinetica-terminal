@@ -984,6 +984,15 @@ terminal targets against the embedding page's base URL. Hosts can override `open
 handle local paths using their own policy; the callback receives the original target and
 returns whether it handled the action. A declined callback does not invoke the default opener.
 Browser confirmation rechecks view lifetime and the originating OSC 8 policy before opening.
+Holding the link modifier over a target shows a pointer cursor, underlines matching cells,
+and displays the destination along the bottom edge. Both views update on modifier, output,
+OSC 8 policy and TUI capture changes without requiring pointer movement. Preview overlays do
+not intercept selection or clicks; leaving the view or losing focus hides them. The cursor
+returns to the current OSC 22 shape after hover. Set either view's `linkPreviewMode` to
+`TerminalLinkPreviewMode.OSC8` for explicit-link previews only, or `NONE` to hide previews;
+`ALL` is the default. Highlighting and activation are independent of this preference.
+Control and invisible directional characters are escaped in preview text; opener callbacks
+still receive the original target.
 
 The common engine exposes `search`, `hyperlinkAt`, `configureTheme`, `clearScreen`, `clearHistory`,
 and viewport selection/reveal methods for hosts with their own controls.
@@ -1032,6 +1041,7 @@ node scripts/verify-terminal-blocks.mjs
 node scripts/verify-terminal-glyphs.mjs
 node scripts/verify-terminal-selection.mjs
 node scripts/verify-terminal-links.mjs
+node scripts/verify-terminal-hover.mjs
 node scripts/verify-terminal-transport.mjs
 node scripts/verify-terminal-tui.mjs
 node scripts/benchmark-terminal.mjs

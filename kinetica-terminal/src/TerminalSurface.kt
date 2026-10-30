@@ -316,6 +316,8 @@ public class TerminalViewport internal constructor(
         updateDragScroll(); markAll()
     }
     internal fun selectionModifiersChanged(rectangle: Boolean) { dragRectangle = rectangle }
+    internal fun linkHoverAllowedWhileDragging(pointer: TerminalSelectionPointer): Boolean =
+        !draggingSelection || activeSelection.isPointerOrigin(pointerPosition(pointer))
     internal fun pointerLinkAt(pointer: TerminalSelectionPointer): TerminalLinkTarget? {
         if (disposed || !draggingSelection || pointer.column !in 0 until columns || pointer.row !in 0 until rows ||
             !activeSelection.isPointerClick(pointerPosition(pointer))) return null

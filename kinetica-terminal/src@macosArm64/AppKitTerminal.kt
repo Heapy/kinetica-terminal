@@ -45,14 +45,13 @@ public class AppKitTerminalView(
     private val notificationObservation = session.onNotification { if (!disposed && notificationPolicy(it)) notificationDelivery().show(it) }
     private val clipboardBinding = session.attachClipboard(clipboard ?: TerminalNativeClipboard(), clipboardPolicy)
     private val mimeClipboardBinding = session.attachMimeClipboard(mimeClipboard ?: TerminalNativeMimeClipboard(), mimeClipboardPolicy)
+    private var protocolPointerCursor: NSCursor = nativePointerCursor(session.pointerShape) ?: NSCursor.IBeamCursor
     internal var pointerCursor: NSCursor = nativePointerCursor(session.pointerShape) ?: NSCursor.IBeamCursor
         private set
     private val pointerObservation = session.onPointerShape { shape ->
-        nativePointerCursor(shape)?.let { cursor ->
-            pointerCursor = cursor
-            window?.invalidateCursorRectsForView(this)
-        }
+        nativePointerCursor(shape)?.let { protocolPointerCursor = it; refreshLinkHover() }
     }
+    private val linkPolicyObservation = session.onLinkPolicyChanged { refreshLinkHover() }
     private val pressedKeys = mutableMapOf<UShort, TerminalKey>()
     private val pressedModifiers = mutableSetOf<UShort>()
     private var interpretingKey: Pair<UShort, TerminalKey>? = null
@@ -70,6 +69,13 @@ public class AppKitTerminalView(
     private val defaultOpenLink: (String) -> Boolean = { value -> links.open(value) { session.osc8LinksEnabled } }
     /** Override only with a host policy suitable for untrusted terminal-output targets. */
     public var openLink: (String) -> Boolean = defaultOpenLink
+    public var linkPreviewMode: TerminalLinkPreviewMode = TerminalLinkPreviewMode.ALL
+        set(value) { field = value; refreshLinkHover() }
+    internal val linkPreviewLabel = TerminalNativeLinkPreview()
+    private var hoverPoint: Pair<Double, Double>? = null
+    private var hoverModifiers = TerminalLinkModifiers()
+    private var refreshingLinkHover = false
+    private var hoverWindowObservation: NSObjectProtocol? = null
     public val scrollOffset: Int get() = viewport.scrollOffset
     public val scrollbackLines: Int get() = session.historySize
     private var ready = false
@@ -173,6 +179,7 @@ public class AppKitTerminalView(
         }
         ready = true
         addSubview(progressIndicator)
+        addSubview(linkPreviewLabel)
         bounds.useContents { progressIndicator.setFrameSize(NSMakeSize(size.width, 4.0)) }
         viewport.setFocused(false)
         measure()
@@ -183,15 +190,24 @@ public class AppKitTerminalView(
         super.viewDidMoveToWindow()
         if (!ready || disposed) return
         windowResizeBinding.cancelPending()
+        clearLinkPointer()
+        hoverWindowObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
+        hoverWindowObservation = window?.let { owner ->
+            NSNotificationCenter.defaultCenter.addObserverForName(NSWindowDidResignKeyNotification,
+                owner, NSOperationQueue.mainQueue) { clearLinkPointer() }
+        }
         dragAndDrop.cancel()
         visibilityObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         visibilityObservation = window?.let { owner ->
             NSNotificationCenter.defaultCenter.addObserverForName(NSWindowDidChangeOcclusionStateNotification,
-                owner, NSOperationQueue.mainQueue) { refreshVisibilityAfterTransition() }
+                owner, NSOperationQueue.mainQueue) {
+                    if (owner.occlusionState and NSWindowOcclusionStateVisible == 0uL) clearLinkPointer()
+                    refreshVisibilityAfterTransition()
+                }
         }
         refreshVisibilityAfterTransition()
     }
-    override fun viewDidHide() { super.viewDidHide(); if (ready) refreshVisibilityAfterTransition() }
+    override fun viewDidHide() { super.viewDidHide(); if (ready) { clearLinkPointer(); refreshVisibilityAfterTransition() } }
     override fun viewDidUnhide() { super.viewDidUnhide(); if (ready) refreshVisibilityAfterTransition() }
     private fun refreshVisibilityAfterTransition() {
         if (!ready || disposed) return
@@ -235,7 +251,7 @@ public class AppKitTerminalView(
     override fun becomeFirstResponder(): Boolean { viewport.setFocused(true); session.sendFocus(true); notifications?.clear(); return true }
     override fun resignFirstResponder(): Boolean {
         pressedKeys.clear(); pressedModifiers.clear()
-        if (!disposed) { mouseReporter.cancel(); selecting = false; viewport.setFocused(false); session.sendFocus(false) }
+        if (!disposed) { mouseReporter.cancel(); selecting = false; clearLinkPointer(); viewport.setFocused(false); session.sendFocus(false) }
         return true
     }
 
@@ -244,7 +260,7 @@ public class AppKitTerminalView(
         mouseTrackingArea?.let { removeTrackingArea(it) }; mouseTrackingArea = null
         if (ready && !disposed) {
             mouseTrackingArea = NSTrackingArea(NSMakeRect(0.0, 0.0, 0.0, 0.0),
-                NSTrackingMouseMoved or NSTrackingActiveInKeyWindow or NSTrackingInVisibleRect, this, null)
+                NSTrackingMouseMoved or NSTrackingMouseEnteredAndExited or NSTrackingActiveInKeyWindow or NSTrackingInVisibleRect, this, null)
                 .also { addTrackingArea(it) }
         }
     }
@@ -335,6 +351,7 @@ public class AppKitTerminalView(
 
     private fun invalidateRows() {
         if (!ready || disposed) return
+        refreshLinkHover()
         updateVisibility()
         onViewportChanged?.invoke()
         val first = viewport.firstDirtyRow
@@ -536,6 +553,7 @@ public class AppKitTerminalView(
     override fun flagsChanged(event: NSEvent) {
         if (disposed) return
         viewport.selectionModifiersChanged(event.modifierFlags and NSEventModifierFlagOption != 0uL)
+        hoverModifiers = linkEventModifiers(event); refreshLinkHover()
         val identity = when (event.keyCode.toInt()) {
             56 -> "ShiftLeft"; 60 -> "ShiftRight"; 59 -> "ControlLeft"; 62 -> "ControlRight"
             58 -> "AltLeft"; 61 -> "AltRight"; 55 -> "MetaLeft"; 54 -> "MetaRight"; 57 -> "CapsLock"
@@ -618,11 +636,13 @@ public class AppKitTerminalView(
             2 -> TerminalSelectionMode.WORD
             else -> if (event.modifierFlags and NSEventModifierFlagCommand != 0uL) TerminalSelectionMode.OUTPUT else TerminalSelectionMode.LINE
         }) else viewport.clearSelection()
+        updateLinkPointer(event)
     }
     override fun mouseDragged(event: NSEvent) {
         if (disposed) return
         if (selecting) viewport.extendPointerSelection(selectionPointer(event), event.modifierFlags and NSEventModifierFlagOption != 0uL)
         else mouse(event, 0, motion = true)
+        updateLinkPointer(event)
     }
     override fun pressureChangeWithEvent(event: NSEvent) {
         if (disposed) return
@@ -634,11 +654,40 @@ public class AppKitTerminalView(
             if (forceClickLookupEnabled()) quickLookWithEvent(event)
         }
     }
-    private fun linkModifiers(event: NSEvent): Boolean {
+    private fun linkEventModifiers(event: NSEvent): TerminalLinkModifiers {
         val flags = event.modifierFlags
-        val shift = flags and NSEventModifierFlagShift != 0uL && !(session.mouseTracking != 0 && !session.mouseShiftCapture)
-        return !shift && flags and NSEventModifierFlagCommand != 0uL &&
-            flags and (NSEventModifierFlagControl or NSEventModifierFlagOption) == 0uL
+        return TerminalLinkModifiers(flags and NSEventModifierFlagShift != 0uL, flags and NSEventModifierFlagControl != 0uL,
+            flags and NSEventModifierFlagOption != 0uL, flags and NSEventModifierFlagCommand != 0uL)
+    }
+    private fun linkModifiers(event: NSEvent): Boolean = linkEventModifiers(event).binding(true, session)
+    private fun updateLinkPointer(event: NSEvent) {
+        hoverPoint = convertPoint(event.locationInWindow, fromView = null).useContents { x to y }
+        hoverModifiers = linkEventModifiers(event); refreshLinkHover()
+    }
+    private fun clearLinkPointer() { hoverPoint = null; refreshLinkHover() }
+    private fun refreshLinkHover() {
+        if (!ready || refreshingLinkHover) return
+        refreshingLinkHover = true
+        try {
+            val point = hoverPoint
+            val pointer = if (point == null || disposed || hiddenOrHasHiddenAncestor || window == null ||
+                !hoverModifiers.hoverAllowed(true, session, viewport.scrollOffset)) null else
+                terminalSelectionPointer(point.first, point.second, cellWidth, cellHeight, window?.backingScaleFactor ?: 1.0)
+            val target = if (pointer != null && (!selecting || viewport.linkHoverAllowedWhileDragging(pointer)))
+                viewport.setLinkHover(pointer.column, pointer.row) else viewport.setLinkHover()
+            val cursor = if (target != null) NSCursor.pointingHandCursor else protocolPointerCursor
+            if (pointerCursor != cursor) { pointerCursor = cursor; window?.invalidateCursorRectsForView(this) }
+            val preview = terminalLinkPreview(target, linkPreviewMode)
+            linkPreviewLabel.hidden = preview == null
+            linkPreviewLabel.stringValue = preview.orEmpty()
+            if (preview != null) {
+                linkPreviewLabel.textColor = color(viewport.theme.foreground)
+                linkPreviewLabel.backgroundColor = color(viewport.theme.background)
+                val width = linkPreviewLabel.attributedStringValue.size().useContents { width } + 12.0
+                bounds.useContents { linkPreviewLabel.setFrame(NSMakeRect(0.0, (size.height - 20.0).coerceAtLeast(0.0),
+                    minOf(width, size.width), 20.0)) }
+            }
+        } finally { refreshingLinkHover = false }
     }
     private fun activateLink(link: TerminalLinkTarget): Boolean {
         if (openLink !== defaultOpenLink) return openLink(link.uri)
@@ -660,6 +709,7 @@ public class AppKitTerminalView(
             if (link != null && activateLink(link)) viewport.cancelSelectionDrag() else viewport.endPointerSelection(pointer)
         } else mouse(event, 0, release = true)
         selecting = false
+        updateLinkPointer(event)
     }
     override fun rightMouseDown(event: NSEvent) {
         if (!mouse(event, 2)) super.rightMouseDown(event)
@@ -669,7 +719,13 @@ public class AppKitTerminalView(
     override fun otherMouseDown(event: NSEvent) { nativeMouseButton(event)?.let { mouse(event, it) } }
     override fun otherMouseUp(event: NSEvent) { nativeMouseButton(event)?.let { mouse(event, it, release = true) } }
     override fun otherMouseDragged(event: NSEvent) { nativeMouseButton(event)?.let { mouse(event, it, motion = true) } }
-    override fun mouseMoved(event: NSEvent) { if (!selecting) mouse(event, 3, motion = true) }
+    override fun mouseMoved(event: NSEvent) {
+        if (disposed) return
+        if (!selecting) mouse(event, 3, motion = true)
+        updateLinkPointer(event)
+    }
+    override fun mouseEntered(event: NSEvent) { if (!disposed) updateLinkPointer(event) }
+    override fun mouseExited(event: NSEvent) { clearLinkPointer() }
     override fun scrollWheel(event: NSEvent) {
         if (disposed) return
         val resetPhases = NSEventPhaseMayBegin or NSEventPhaseBegan or NSEventPhaseCancelled
@@ -784,7 +840,8 @@ public class AppKitTerminalView(
     override fun accessibilityValue(): Any? = viewport.visibleText()
     override fun accessibilitySelectedText(): String? = viewport.selectedText()
     public fun dispose() { if (!disposed) {
-        disposed = true; selecting = false; mouseReporter.reset()
+        disposed = true; selecting = false; clearLinkPointer(); mouseReporter.reset()
+        hoverWindowObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; hoverWindowObservation = null
         visibilityBinding.dispose()
         visibilityObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; visibilityObservation = null
         mouseTrackingArea?.let { removeTrackingArea(it) }; mouseTrackingArea = null
@@ -792,7 +849,7 @@ public class AppKitTerminalView(
         sizeRefreshObservation.dispose()
         windowResizeBinding.dispose()
         dragAndDrop.dispose()
-        pointerObservation.dispose()
+        pointerObservation.dispose(); linkPolicyObservation.dispose()
         progressIndicator.dispose()
         notificationObservation.dispose(); notifications?.dispose(); notifications = null
         clipboardBinding.dispose()

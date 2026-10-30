@@ -142,7 +142,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     public val keyboardInputBlocked: Boolean get() = keyboardLockAllowed && keyboardDisabled
     /** Application XTSHIFTESCAPE request; null means the host's default applies. */
     public var mouseShiftCaptureRequested: Boolean? = null
-        private set
+        private set(value) {
+            if (field == value) return
+            field = value; linkPolicyObservers.toList().forEach { it() }
+        }
     private var mouseShiftCaptureDefault = false
     private var mouseShiftCaptureApplicationAllowed = true
     private var enquiryResponse: ByteArray? = null
@@ -166,6 +169,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     public fun configureMouseShiftCapture(defaultCapture: Boolean = false, allowApplication: Boolean = true) {
         mouseShiftCaptureDefault = defaultCapture
         mouseShiftCaptureApplicationAllowed = allowApplication
+        linkPolicyObservers.toList().forEach { it() }
     }
     public var reverseWrap: Boolean = false
         private set
@@ -220,7 +224,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     public var colorScheme: TerminalColorScheme = colorScheme
         private set
     public var mouseTracking: Int = 0
-        private set
+        private set(value) {
+            if (field == value) return
+            field = value; linkPolicyObservers.toList().forEach { it() }
+        }
     public var sgrMouse: Boolean = false
         private set
     /** Active wire format; format mode bits remain independently queryable. */

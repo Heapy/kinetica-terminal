@@ -24,6 +24,8 @@ public class BrowserTerminalView(
     /** Override only with a host policy suitable for untrusted terminal-output targets.
      * The default opens absolute web/mail URLs and confirms external application schemes. */
     public var openLink: (String) -> Boolean = defaultOpenLink
+    public var linkPreviewMode: TerminalLinkPreviewMode = TerminalLinkPreviewMode.ALL
+        set(value) { field = value; refreshLinkHover() }
     public val scrollOffset: Int get() = viewport.scrollOffset
     public fun jumpToPrompt(direction: Int): Boolean = viewport.jumpToPrompt(direction)
     private val document: dynamic = js("globalThis.document")
@@ -36,6 +38,7 @@ public class BrowserTerminalView(
     private val input: dynamic = document.createElement("textarea")
     private val accessible: dynamic = document.createElement("pre")
     private val composition: dynamic = document.createElement("div")
+    private val linkPreview: dynamic = document.createElement("div")
     private val progressElement: dynamic = document.createElement("progress")
     private val measureContext: dynamic = document.createElement("canvas").getContext("2d")
     private var fontSize = 14.0
@@ -60,6 +63,9 @@ public class BrowserTerminalView(
     private var mouseButtons = 0
     private var activePointer: Int? = null
     private var focused = false
+    private var hoverClientPoint: Pair<Double, Double>? = null
+    private var hoverModifiers = TerminalLinkModifiers()
+    private var refreshingLinkHover = false
     private val mouseReporter = TerminalMouseReporter(session)
     private val listeners = mutableListOf<() -> Unit>()
     private val viewport = TerminalViewport(session, ::schedule, TerminalScheduler { delay, action ->
@@ -94,7 +100,8 @@ public class BrowserTerminalView(
         intersecting = value; updateVisibility()
     }
     private val visibilityObserver: dynamic = newTerminalVisibilityObserver(root, { windowResizeBinding.cancelPending(); dragAndDrop.cancel() }) { updateVisibility() }
-    private val pointerObservation = session.onPointerShape { root.style.cursor = it.cssName }
+    private val pointerObservation = session.onPointerShape { refreshLinkHover() }
+    private val linkPolicyObservation = session.onLinkPolicyChanged { refreshLinkHover() }
     private val progressPresentation = TerminalProgressPresentation(session, TerminalScheduler { delay, action ->
         val timer = window.setTimeout({ action() }, delay)
         TerminalDisposable { window.clearTimeout(timer) }
@@ -124,6 +131,16 @@ public class BrowserTerminalView(
         composition.style.cssText = "position:absolute;display:none;background:#1e1e1e;color:#d4d4d4;text-decoration:underline;white-space:pre;pointer-events:none;"
         composition.setAttribute("aria-hidden", "true")
         root.appendChild(canvas); root.appendChild(input); root.appendChild(accessible); root.appendChild(composition)
+        linkPreview.style.cssText = "position:absolute;bottom:0;left:0;max-width:95%;box-sizing:border-box;padding:2px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;unicode-bidi:plaintext;pointer-events:none;font:12px monospace;z-index:3;"
+        linkPreview.setAttribute("data-terminal-link-preview", "")
+        linkPreview.setAttribute("aria-label", "Link destination")
+        linkPreview.hidden = true
+        root.appendChild(linkPreview)
+        for (type in listOf("keydown", "keyup")) listen(window, type, capture = true) { event ->
+            hoverModifiers = linkEventModifiers(event); refreshLinkHover()
+        }
+        listen(root, "pointerenter") { event -> updateLinkPointer(event) }
+        listen(root, "pointerleave") { clearLinkPointer() }
         progressElement.max = 100
         progressElement.style.cssText = "position:absolute;top:0;left:0;width:100%;height:4px;margin:0;border:0;pointer-events:none;z-index:2;"
         progressElement.hidden = true
@@ -225,6 +242,7 @@ public class BrowserTerminalView(
             if (event.pointerType != "mouse") event.preventDefault()
             updateMouseButtons(event)
             root.setPointerCapture(event.pointerId)
+            updateLinkPointer(event)
         }
         // Cancel compatibility mouse events that would start native selection/autoscroll.
         listen(root, "mousedown") { event ->
@@ -245,12 +263,14 @@ public class BrowserTerminalView(
             updateMouseButtons(event)
             if (selecting) viewport.extendPointerSelection(selectionPointer(event), rectangleSelection(event))
             else if (previous == mouseButtons) mouse(event, pressedMouseButton(), motion = true)
+            updateLinkPointer(event)
         }
         listen(root, "pointerup") { event ->
             if (activePointer != (event.pointerId as Number).toInt()) return@listen
             updateMouseButtons(event)
             activePointer = null
             if (root.hasPointerCapture(event.pointerId) == true) root.releasePointerCapture(event.pointerId)
+            updateLinkPointer(event)
         }
         listen(root, "pointercancel") { event -> if (activePointer == (event.pointerId as Number).toInt()) cancelMouse() }
         listen(root, "lostpointercapture") { event ->
@@ -334,7 +354,7 @@ public class BrowserTerminalView(
         drawing.setVisible(value)
         updateDrawingDiagnostics()
         visibilityBinding.setVisible(value)
-        if (!value) { frame?.let { window.cancelAnimationFrame(it) }; frame = null }
+        if (!value) { clearLinkPointer(); frame?.let { window.cancelAnimationFrame(it) }; frame = null }
         viewport.setVisible(value)
     }
 
@@ -343,6 +363,7 @@ public class BrowserTerminalView(
         updateVisibility()
         if (!graphicsVisible || frame != null) return
         frame = window.requestAnimationFrame { _: Double ->
+            refreshLinkHover()
             frame = null
             updateVisibility()
             if (!disposed && graphicsVisible) {
@@ -408,11 +429,37 @@ public class BrowserTerminalView(
     }
     private fun rectangleSelection(event: dynamic): Boolean = event.altKey == true &&
         (window.navigator.platform.startsWith("Mac") || event.ctrlKey == true)
-    private fun linkModifiers(event: dynamic): Boolean {
-        val mac = window.navigator.platform.startsWith("Mac")
-        val shift = event.shiftKey == true && !(session.mouseTracking != 0 && !session.mouseShiftCapture)
-        return !shift && event.altKey != true && if (mac) event.metaKey == true && event.ctrlKey != true
-            else event.ctrlKey == true && event.metaKey != true
+    private fun linkEventModifiers(event: dynamic) = TerminalLinkModifiers(event.shiftKey == true,
+        event.ctrlKey == true, event.altKey == true, event.metaKey == true)
+    private fun linkModifiers(event: dynamic): Boolean = linkEventModifiers(event).binding(window.navigator.platform.startsWith("Mac"), session)
+    private fun updateLinkPointer(event: dynamic) {
+        if (event.pointerType == "touch") { clearLinkPointer(); return }
+        hoverClientPoint = (event.clientX as Number).toDouble() to (event.clientY as Number).toDouble()
+        hoverModifiers = linkEventModifiers(event)
+        refreshLinkHover()
+    }
+    private fun clearLinkPointer() { hoverClientPoint = null; refreshLinkHover() }
+    private fun refreshLinkHover() {
+        if (refreshingLinkHover) return
+        refreshingLinkHover = true
+        try {
+            val point = hoverClientPoint
+            val pointer = if (point == null || disposed || !graphicsVisible ||
+                !hoverModifiers.hoverAllowed(window.navigator.platform.startsWith("Mac"), session, viewport.scrollOffset)) null else {
+                val rect = canvas.getBoundingClientRect()
+                terminalSelectionPointer(point.first - (rect.left as Number).toDouble(), point.second - (rect.top as Number).toDouble(),
+                    cellWidth, cellHeight, (window.devicePixelRatio as Number).toDouble())
+            }
+            val target = if (pointer != null && (mouseButtons and 1 == 0 || viewport.linkHoverAllowedWhileDragging(pointer)))
+                viewport.setLinkHover(pointer.column, pointer.row) else viewport.setLinkHover()
+            root.style.cursor = if (target != null) "pointer" else session.pointerShape.cssName
+            val preview = terminalLinkPreview(target, linkPreviewMode)
+            linkPreview.hidden = preview == null
+            linkPreview.textContent = preview.orEmpty()
+            linkPreview.title = preview.orEmpty()
+            linkPreview.style.background = terminalCssColor(viewport.theme.background)
+            linkPreview.style.color = terminalCssColor(viewport.theme.foreground)
+        } finally { refreshingLinkHover = false }
     }
     private fun selectionPointer(event: dynamic): TerminalSelectionPointer {
         val rect = canvas.getBoundingClientRect()
@@ -459,6 +506,7 @@ public class BrowserTerminalView(
         val pointer = activePointer
         activePointer = null; selecting = false; mouseButtons = 0
         viewport.cancelSelectionDrag()
+        clearLinkPointer()
         mouseReporter.cancel()
         if (pointer != null && root.hasPointerCapture(pointer) == true) root.releasePointerCapture(pointer)
     }
@@ -482,10 +530,10 @@ public class BrowserTerminalView(
             else -> "#3b82f6"
         }
     }
-    private fun listen(target: dynamic, name: String, passive: Boolean = true, action: (dynamic) -> Unit) {
-        val options: dynamic = js("({})"); options.passive = passive
+    private fun listen(target: dynamic, name: String, passive: Boolean = true, capture: Boolean = false, action: (dynamic) -> Unit) {
+        val options: dynamic = js("({})"); options.passive = passive; options.capture = capture
         // Only wheel needs an explicit passive option; other listeners may cancel native input.
-        val actualOptions: dynamic = if (name == "wheel") options else false
+        val actualOptions: dynamic = if (name == "wheel") options else capture
         target.addEventListener(name, action, actualOptions)
         listeners += { target.removeEventListener(name, action, actualOptions) }
     }
@@ -497,7 +545,7 @@ public class BrowserTerminalView(
         dragAndDrop.dispose()
         visibilityBinding.dispose()
         intersectionObserver.disconnect(); visibilityObserver.disconnect()
-        pointerObservation.dispose()
+        pointerObservation.dispose(); linkPolicyObservation.dispose()
         progressPresentation.dispose()
         notificationObservation.dispose(); notifications?.dispose(); notifications = null
         clipboardBinding.dispose()

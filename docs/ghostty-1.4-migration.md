@@ -148,10 +148,21 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       and browser link gestures on Canvas/WebGL with macOS/Linux modifiers. The browser
       verifier here covers existing activation; hover event wiring, pointer feedback and
       previews remain open below.
-- [ ] Add link hover feedback: pointer cursor, target preview and matching range highlighting,
-      respecting exact binding modifiers, mouse capture and frozen visible content.
-      Include Ghostty's all/OSC8-only/disabled preview modes (default: all) and a host
-      `link-url` policy for enabling/disabling detected links independently of OSC 8.
+- [x] Connect link hover feedback in browser and AppKit: pointer cursor, target preview and
+      shared range highlighting. Exact modifiers update even without mouse movement; TUI
+      capture, Shift escape and application/host Shift-capture changes immediately refresh
+      the result. Dragging to another cell suppresses hover; returning restores hover while
+      leaving click activation cancelled. Exit, lost focus, visibility and disposal clear it.
+      OSC 22 remains the underlying cursor and is restored when hover ends. Visible/frozen
+      contents and immediate OSC 8 revocation supply the preview target.
+      `linkPreviewMode` supports ALL (default), OSC8 and NONE independently of highlighting
+      and activation. A single-line status overlay is pointer-transparent, uses current theme
+      colors, and escapes invisible/control characters without changing the original target.
+      Validation: 1420 JVM tests, fresh Release JS tests, 93 focused Native tests and real
+      Chromium hover pixels/previews, activation and selection with Canvas/WebGL on both
+      macOS/Linux modifier policies. AppKit tests exercise event callbacks and overlay state;
+      the separately documented live GPU visibility gate remains unresolved.
+- [ ] Add a host `link-url` policy for enabling/disabling detected links independently of OSC 8.
 
 - [x] Native Force Click selects the original press's word, consumes further dragging and
       stops autoscroll. It bypasses the double-click URL override, honors current word
