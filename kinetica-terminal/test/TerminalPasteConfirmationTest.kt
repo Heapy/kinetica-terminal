@@ -100,4 +100,37 @@ class TerminalPasteConfirmationTest {
         paste.paste("hello\n", TerminalPastePolicy()); paste.dispose()
         assertEquals(listOf("hello\r"), output); assertEquals(1, disposals)
     }
+
+    @Test fun pendingReadsAreReplacedByReadsTextPastesCancellationAndDisposal() = with(Harness()) {
+        val reads = mutableListOf<(String?) -> Unit>()
+        fun read() = paste.read(TerminalPastePolicy()) { reads += it }
+        read(); read(); reads[0]("stale"); assertTrue(output.isEmpty())
+        reads[1]("current"); reads[1]("duplicate")
+        assertEquals(listOf("current"), output)
+        read(); request("direct"); reads[2]("stale")
+        read(); paste.cancel(); reads[3]("cancelled")
+        read(); available = false; reads[4]("detached")
+        available = true; read(); paste.dispose(); reads[5]("disposed")
+        read(); assertEquals(6, reads.size)
+        assertEquals(listOf("current", "direct"), output); assertEquals(2, accepted)
+    }
+
+    @Test fun readsAndConfirmationShareOnePendingRequestAndHonorMouseAcceptanceEffects() = with(Harness()) {
+        var mouseAccepted = 0
+        val reads = mutableListOf<(String?) -> Unit>()
+        fun read() = paste.read(TerminalPastePolicy(), { mouseAccepted++ }) { reads += it }
+        request("old\n"); read(); assertTrue(dialogs.single().disposed)
+        dialogs.single().answer(true); reads[0]("new\n")
+        reads[0]("duplicate"); assertTrue(output.isEmpty()); assertEquals(2, dialogs.size)
+        session.write("\u001b[?2004h"); dialogs.last().answer(true)
+        assertEquals(listOf("\u001b[200~new\n\u001b[201~"), output)
+        assertEquals(0, accepted); assertEquals(1, mouseAccepted)
+        session.write("\u001b[?2004l")
+        request("stale\n"); read(); dialogs.last().answer(true); reads[1](null)
+        assertEquals(1, output.size)
+        assertFailsWith<IllegalStateException> {
+            paste.read(TerminalPastePolicy()) { error("host failure") }
+        }
+        request("recovered"); assertEquals("recovered", output.last())
+    }
 }

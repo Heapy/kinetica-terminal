@@ -90,6 +90,7 @@ node scripts/verify-terminal.mjs
 node scripts/verify-terminal-paste.mjs
 node scripts/verify-terminal-editing.mjs
 node scripts/verify-terminal-copy-on-select.mjs
+node scripts/verify-terminal-mouse-clipboard.mjs
 node scripts/verify-terminal-selection-policy.mjs
 node scripts/verify-terminal-mime-clipboard.mjs
 node scripts/verify-terminal-terminfo.mjs

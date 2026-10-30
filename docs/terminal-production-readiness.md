@@ -60,6 +60,24 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Browser/AppKit now implement Ghostty's right-click actions (context menu, mixed copy,
+paste, copy-or-paste, ignore) and middle-click actions (selection paste, standard paste,
+ignore). Defaults remain context menu and selection paste; selection paste requires an
+explicit custom-host capability and targets `SELECTION`, not OSC 52's `PRIMARY`.
+Behavior follows pinned `Surface.mouseButtonCallback` and Config fields: reporting owns
+events before local actions, right copy clears unconditionally, right paste clears before
+the request, and middle paste retains selection. Local press ownership suppresses later
+drag/release reports even if the application enables reporting during the gesture.
+Mouse paste shares unsafe-text confirmation and mode-5522 handling; browser synthetic
+events cannot grant protocol reads. Pending text acquisition and confirmation share one
+cancellation identity, rejecting replaced, detached, disposed and duplicate completions.
+Validation passes 1661 JVM tests, fresh Release JS tests and 13 focused Native tests,
+including real AppKit button events, private pasteboards and isolated PTY paste regression.
+The mouse-clipboard browser verifier passes on macOS/Linux with Canvas/WebGL, as do the
+full browser verifier, paste confirmation and copy-on-select regressions. Evidence:
+`MacOsMouseClipboardTest`, `TerminalPasteConfirmationTest`,
+`scripts/verify-terminal-mouse-clipboard.mjs`, `/tmp/kinetica-mouse-clipboard-*`.
+
 Browser/AppKit now expose `selectionClearOnCopy` (default false) and `selectionClearOnTyping`
 (default true), following pinned `Surface.copy_to_clipboard`, `keyCallback`, `preeditCallback`
 and the corresponding Config fields. Explicit copies clear immediately after dispatch when

@@ -152,6 +152,8 @@ fun main() {
     api.copyTrimTrailingSpaces = { enabled: Boolean -> surface?.copyTrimTrailingSpaces = enabled }
     api.copyFormat = { format: String -> surface?.copyFormat = TerminalCopyFormat.valueOf(format) }
     api.copyOnSelect = { policy: String -> surface?.copyOnSelect = TerminalCopyOnSelect.valueOf(policy) }
+    api.rightClickAction = { action: String -> surface?.rightClickAction = TerminalRightClickAction.valueOf(action) }
+    api.middleClickAction = { action: String -> surface?.middleClickAction = TerminalMiddleClickAction.valueOf(action) }
     api.selectionClearOnCopy = { enabled: Boolean -> surface?.selectionClearOnCopy = enabled }
     api.selectionClearOnTyping = { enabled: Boolean -> surface?.selectionClearOnTyping = enabled }
     api.copyCodepointMap = { values: dynamic ->

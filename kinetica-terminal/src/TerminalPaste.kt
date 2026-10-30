@@ -38,11 +38,30 @@ internal class TerminalClipboardPaste(
         dialog?.dispose()
     }
 
-    fun paste(text: String, policy: TerminalPastePolicy) {
+    /** Acquire text under the same cancellation identity as confirmation. */
+    fun read(policy: TerminalPastePolicy, onAccepted: () -> Unit = accepted, acquire: ((String?) -> Unit) -> Unit) {
+        cancel()
+        if (disposed || !available()) return
+        val request = Pending("")
+        pending = request
+        try {
+            acquire { text ->
+                if (pending === request) {
+                    pending = null
+                    if (text != null) paste(text, policy, onAccepted)
+                }
+            }
+        } catch (error: Exception) {
+            if (pending === request) cancel()
+            throw error
+        }
+    }
+
+    fun paste(text: String, policy: TerminalPastePolicy, onAccepted: () -> Unit = accepted) {
         cancel()
         if (disposed || !available() || text.isEmpty()) return
         if (!policy.requiresConfirmation(text, session.bracketedPaste)) {
-            accepted(); session.paste(text)
+            onAccepted(); session.paste(text)
             return
         }
         val request = Pending(text)
@@ -53,7 +72,7 @@ internal class TerminalClipboardPaste(
                     val contents = request.text
                     cancel()
                     if (confirmed && !disposed && available()) {
-                        accepted(); session.paste(contents)
+                        onAccepted(); session.paste(contents)
                     }
                 }
             }

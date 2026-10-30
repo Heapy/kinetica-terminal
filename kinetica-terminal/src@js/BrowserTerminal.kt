@@ -63,6 +63,10 @@ public class BrowserTerminalView(
     public var copyFormat: TerminalCopyFormat = TerminalCopyFormat.MIXED
     public var selectionClearOnCopy: Boolean = false
     public var selectionClearOnTyping: Boolean = true
+    public var rightClickAction: TerminalRightClickAction = TerminalRightClickAction.CONTEXT_MENU
+    public var middleClickAction: TerminalMiddleClickAction = TerminalMiddleClickAction.PRIMARY_PASTE
+    /** Enable only when the custom MIME backend serves the distinct SELECTION clipboard. */
+    public var selectionClipboardSupported: Boolean = false
     public var copyOnSelect: TerminalCopyOnSelect = if (window.navigator.platform.startsWith("Linux"))
         TerminalCopyOnSelect.PRIMARY else TerminalCopyOnSelect.NONE
     public var copyCodepointMap: List<TerminalClipboardCodepointMap> = emptyList()
@@ -85,6 +89,7 @@ public class BrowserTerminalView(
     private var suppressComposition: String? = null
     private var selecting = false
     private var mouseButtons = 0
+    private val localMouseButtons = mutableSetOf<Int>()
     private var activePointer: Int? = null
     private var focused = false
     private var hoverClientPoint: Pair<Double, Double>? = null
@@ -317,7 +322,8 @@ public class BrowserTerminalView(
             if (activePointer == (event.pointerId as Number).toInt() && root.hasPointerCapture(event.pointerId) != true) cancelMouse()
         }
         listen(root, "contextmenu") { event ->
-            if (viewport.scrollOffset == 0 && session.mouseTracking != 0 &&
+            if (event.button == 2 && rightClickAction != TerminalRightClickAction.CONTEXT_MENU ||
+                viewport.scrollOffset == 0 && session.mouseTracking != 0 &&
                 (event.shiftKey != true || session.mouseShiftCapture)) event.preventDefault()
             else if (event.button == 2) {
                 val pointer = selectionPointer(event)
@@ -589,6 +595,10 @@ public class BrowserTerminalView(
             (window.devicePixelRatio as Number).toDouble())
     }
     private fun mouse(event: dynamic, button: Int, release: Boolean = false, motion: Boolean = false): Boolean {
+        if ((release || motion) && button in localMouseButtons) {
+            if (release) localMouseButtons.remove(button)
+            return false
+        }
         if (viewport.scrollOffset != 0 || canvas.width <= 0 || canvas.height <= 0) return false
         val rect = canvas.getBoundingClientRect()
         val scale = (window.devicePixelRatio as Number).toDouble()
@@ -603,10 +613,17 @@ public class BrowserTerminalView(
         for ((mask, button) in mouseButtonMasks) {
             if ((mouseButtons and mask) == (next and mask)) continue
             if (next and mask != 0) {
+                localMouseButtons.remove(button)
                 val reported = mouse(event, button)
+                if (reported) viewport.clearSelection()
                 if (button == 0) {
                     selecting = !reported
                     if (selecting) viewport.beginPointerSelection(selectionPointer(event)) else viewport.clearSelection()
+                } else if (!reported && button in 1..2) {
+                    localMouseButtons.add(button)
+                    terminalMouseClick(button, rightClickAction, middleClickAction, selectionClipboardSupported,
+                        viewport.hasSelection, { copySelection(TerminalCopyFormat.MIXED, clearAfter = false) },
+                        { viewport.clearSelection() }, { pasteMouseClipboard(it, event.isTrusted == true) })
                 }
             } else {
                 if (button == 0 && selecting) {
@@ -627,6 +644,7 @@ public class BrowserTerminalView(
     private fun cancelMouse() {
         val pointer = activePointer
         activePointer = null; selecting = false; mouseButtons = 0
+        localMouseButtons.clear()
         viewport.cancelSelectionDrag()
         clearLinkPointer()
         mouseReporter.cancel()
@@ -650,6 +668,22 @@ public class BrowserTerminalView(
     }
     private fun clearSelectionForPreedit() { if (selectionClearOnTyping) viewport.clearSelection() }
     private fun copySelectionAutomatically() = copySelection(TerminalCopyFormat.MIXED, copyOnSelect.locations, clearAfter = false)
+    private fun pasteMouseClipboard(location: TerminalClipboardLocation, trusted: Boolean) {
+        if (disposed || root.isConnected != true) return
+        clipboardPaste.cancel()
+        if (trusted && session.pasteClipboard(location)) { viewport.followOutput(); return }
+        runCatching {
+            clipboardPaste.read(pastePolicy, { viewport.followOutput() }) { complete ->
+                val clipboard = window.navigator.clipboard
+                if (ownedMimeClipboard != null && location == TerminalClipboardLocation.STANDARD &&
+                    clipboard?.read == null && clipboard?.readText != null) {
+                    clipboard.readText().then({ text: String ->
+                        complete(if (text.length <= 8 * 1024 * 1024 && text.encodeToByteArray().size <= 8 * 1024 * 1024) text else null)
+                    }, { _: dynamic -> complete(null) })
+                } else copyClipboard.readPasteText(location, complete)
+            }
+        }
+    }
     private fun copySelection(format: TerminalCopyFormat = copyFormat,
         locations: List<TerminalClipboardLocation> = listOf(TerminalClipboardLocation.STANDARD),
         clearAfter: Boolean = selectionClearOnCopy) {

@@ -336,7 +336,8 @@ wrapper/VT theme header rather than exposing Ghostty's internal page boundaries 
 policies. AppKit defaults to `NONE`; the browser defaults to `PRIMARY` on Linux and `NONE`
 elsewhere. Built-in macOS/browser backends do not provide a primary-selection clipboard:
 `PRIMARY` has no effect there and `BOTH` writes only the standard clipboard. A custom MIME
-backend can implement `TerminalClipboardLocation.PRIMARY`; it is never silently redirected.
+backend can implement `TerminalClipboardLocation.SELECTION`; it is never silently redirected.
+This destination is distinct from OSC 52's `TerminalClipboardLocation.PRIMARY` (`p`).
 Automatic copies always use MIXED with the current trimming/mapping policies, independently
 of `copyFormat`. They run on local left-button release (including word/line/rectangle selection),
 Select All shortcuts, AppKit menu actions and a new context-menu word/link selection. Pointer moves,
@@ -348,6 +349,22 @@ menu selects the detected URL/path or only the clicked OSC 8 cell; without it, i
 Custom hosts can call `viewport.selectForContextMenu(column, row, linkModifiers)`;
 its Boolean result says whether a new selection was committed. Clipboard failure does not clear
 the selection or prevent attempting the other destination under `BOTH`.
+
+`view.rightClickAction` defaults to `TerminalRightClickAction.CONTEXT_MENU`; other options
+are `COPY`, `PASTE`, `COPY_OR_PASTE` and `IGNORE`. Copy uses MIXED, then clears the selection
+regardless of `selectionClearOnCopy`. Paste clears it before reading the clipboard, including
+when permission or confirmation is denied. `COPY_OR_PASTE` chooses based on selection presence.
+`view.middleClickAction` defaults to `TerminalMiddleClickAction.PRIMARY_PASTE`; alternatives
+are `CLIPBOARD_PASTE` and `IGNORE`. Primary paste requires `selectionClipboardSupported = true`
+and a custom MIME backend that can read `SELECTION`; built-in adapters leave it disabled.
+Middle paste retains selection. These actions run once on press, after application mouse
+reporting and Shift capture policy. A local press cannot later become an application drag/release.
+Mouse paste uses the existing unsafe-text confirmation and current bracketed-paste encoding;
+trusted mouse gestures honor mode 5522. A newer paste, detachment or disposal invalidates pending
+text reads and confirmation callbacks. Ordinary mouse paste reads `text/plain` with an 8 MiB
+limit; unsupported selection clipboards never fall back to standard. Browsers with only the
+text clipboard API can use `readText` for ordinary standard paste; permission denial does not
+trigger a fallback. Browser context-menu events do not repeat pointer-down actions.
 
 `view.selectionClearOnCopy` defaults to `false`. When enabled, explicit keyboard/menu/DOM
 copy clears the selection immediately after dispatching the copy attempt, including when the

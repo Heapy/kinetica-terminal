@@ -63,6 +63,10 @@ public class AppKitTerminalView(
     public var copyFormat: TerminalCopyFormat = TerminalCopyFormat.MIXED
     public var selectionClearOnCopy: Boolean = false
     public var selectionClearOnTyping: Boolean = true
+    public var rightClickAction: TerminalRightClickAction = TerminalRightClickAction.CONTEXT_MENU
+    public var middleClickAction: TerminalMiddleClickAction = TerminalMiddleClickAction.PRIMARY_PASTE
+    /** Enable only when the custom MIME backend serves the distinct SELECTION clipboard. */
+    public var selectionClipboardSupported: Boolean = false
     public var copyOnSelect: TerminalCopyOnSelect = TerminalCopyOnSelect.NONE
     public var copyCodepointMap: List<TerminalClipboardCodepointMap> = emptyList()
         set(value) { field = value.toList() }
@@ -137,6 +141,7 @@ public class AppKitTerminalView(
         showDefinitionForAttributedString(text, atPoint = point)
     }
     private val mouseReporter = TerminalMouseReporter(session)
+    private val localMouseButtons = mutableSetOf<Int>()
     private val verticalScroll = TerminalScrollAccumulator()
     private val horizontalScroll = TerminalScrollAccumulator()
     private var mouseTrackingArea: NSTrackingArea? = null
@@ -300,6 +305,7 @@ public class AppKitTerminalView(
     }
     override fun resignFirstResponder(): Boolean {
         pressedKeys.clear(); pressedModifiers.clear()
+        localMouseButtons.clear()
         if (!disposed) { mouseReporter.cancel(); selecting = false; clearLinkPointer(); viewport.setFocused(false); session.sendFocus(false) }
         return true
     }
@@ -825,11 +831,11 @@ public class AppKitTerminalView(
         updateLinkPointer(event)
     }
     override fun rightMouseDown(event: NSEvent) {
-        if (!mouse(event, 2)) super.rightMouseDown(event)
+        if (!secondaryMouseDown(event, 2)) super.rightMouseDown(event)
     }
     override fun rightMouseUp(event: NSEvent) { mouse(event, 2, release = true) }
     override fun rightMouseDragged(event: NSEvent) { mouse(event, 2, motion = true) }
-    override fun otherMouseDown(event: NSEvent) { nativeMouseButton(event)?.let { mouse(event, it) } }
+    override fun otherMouseDown(event: NSEvent) { nativeMouseButton(event)?.let { secondaryMouseDown(event, it) } }
     override fun otherMouseUp(event: NSEvent) { nativeMouseButton(event)?.let { mouse(event, it, release = true) } }
     override fun otherMouseDragged(event: NSEvent) { nativeMouseButton(event)?.let { mouse(event, it, motion = true) } }
     override fun mouseMoved(event: NSEvent) {
@@ -874,6 +880,10 @@ public class AppKitTerminalView(
         terminalSelectionPointer(x, y, cellWidth, cellHeight, window?.backingScaleFactor ?: 1.0)
     }
     private fun mouse(event: NSEvent, button: Int, release: Boolean = false, motion: Boolean = false): Boolean {
+        if ((release || motion) && button in localMouseButtons) {
+            if (release) localMouseButtons.remove(button)
+            return false
+        }
         if (disposed || viewport.scrollOffset != 0) return false
         val scale = window?.backingScaleFactor ?: 1.0
         val geometry = bounds.useContents {
@@ -898,6 +908,23 @@ public class AppKitTerminalView(
     }
     private fun clearSelectionForPreedit() { if (selectionClearOnTyping) viewport.clearSelection() }
     private fun copySelectionAutomatically() = copySelection(TerminalCopyFormat.MIXED, copyOnSelect.locations, clearAfter = false)
+    private fun secondaryMouseDown(event: NSEvent, button: Int): Boolean {
+        if (disposed) return true
+        localMouseButtons.remove(button)
+        if (mouse(event, button)) { viewport.clearSelection(); return true }
+        if (button in 1..2) localMouseButtons.add(button)
+        return terminalMouseClick(button, rightClickAction, middleClickAction, selectionClipboardSupported,
+            viewport.hasSelection, { copySelection(TerminalCopyFormat.MIXED, clearAfter = false) },
+            { viewport.clearSelection() }, ::pasteMouseClipboard)
+    }
+    private fun pasteMouseClipboard(location: TerminalClipboardLocation) {
+        if (disposed || window == null) return
+        clipboardPaste.cancel()
+        if (session.pasteClipboard(location)) { viewport.followOutput(); return }
+        runCatching {
+            clipboardPaste.read(pastePolicy, { viewport.followOutput() }) { complete -> copyClipboard.readPasteText(location, complete) }
+        }
+    }
     private fun copySelection(format: TerminalCopyFormat = copyFormat,
         locations: List<TerminalClipboardLocation> = listOf(TerminalClipboardLocation.STANDARD),
         clearAfter: Boolean = selectionClearOnCopy) {
@@ -937,8 +964,8 @@ public class AppKitTerminalView(
     @ObjCAction public fun clearHistory(sender: NSObject?) { viewport.clearSelection(); session.clearHistory(); viewport.followOutput() }
 
     override fun menuForEvent(event: NSEvent): NSMenu = NSMenu().apply {
-        if (viewport.scrollOffset != 0 || session.mouseTracking == 0 ||
-            event.modifierFlags and NSEventModifierFlagShift != 0uL && !session.mouseShiftCapture) {
+        if (rightClickAction == TerminalRightClickAction.CONTEXT_MENU && (viewport.scrollOffset != 0 || session.mouseTracking == 0 ||
+            event.modifierFlags and NSEventModifierFlagShift != 0uL && !session.mouseShiftCapture)) {
             val pointer = selectionPointer(event)
             if (viewport.selectForContextMenu(pointer.column, pointer.row, linkModifiers(event))) copySelectionAutomatically()
         }
