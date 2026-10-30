@@ -61,6 +61,7 @@ public class AppKitTerminalView(
     public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
     public var copyTrimTrailingSpaces: Boolean = true
     public var copyFormat: TerminalCopyFormat = TerminalCopyFormat.MIXED
+    public var copyOnSelect: TerminalCopyOnSelect = TerminalCopyOnSelect.NONE
     public var copyCodepointMap: List<TerminalClipboardCodepointMap> = emptyList()
         set(value) { field = value.toList() }
     public var pasteConfirmation: TerminalPasteConfirmation = TerminalPasteConfirmation { text, complete ->
@@ -556,7 +557,7 @@ public class AppKitTerminalView(
                 !control && flags and NSEventModifierFlagOption == 0uL && (!shift || it == "k")
             }
             when (localCommand) {
-                "c" -> copySelection(); "v" -> pasteClipboard(); "a" -> viewport.selectAll()
+                "c" -> copySelection(); "v" -> pasteClipboard(); "a" -> selectAll(null)
                 "k" -> if (shift) clearHistory(null) else clearScreen(null)
                 else -> if (session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2) {
                     val terminalKey = terminalKey(event)
@@ -809,6 +810,7 @@ public class AppKitTerminalView(
             val pointer = selectionPointer(event)
             val link = if (linkModifiers(event)) viewport.pointerLinkAt(pointer) else null
             if (link != null && activateLink(link)) viewport.cancelSelectionDrag() else viewport.endPointerSelection(pointer)
+            copySelectionAutomatically()
         } else mouse(event, 0, release = true)
         selecting = false
         updateLinkPointer(event)
@@ -875,9 +877,13 @@ public class AppKitTerminalView(
                 event.modifierFlags and NSEventModifierFlagControl != 0uL)
         }
     }
-    private fun copySelection() {
-        viewport.copyData(copyFormat, copyTrimTrailingSpaces, copyCodepointMap)?.let {
-            copyClipboard.write(TerminalClipboardLocation.STANDARD, it.contents()) {}
+    private fun copySelectionAutomatically() = copySelection(TerminalCopyFormat.MIXED, copyOnSelect.locations)
+    private fun copySelection(format: TerminalCopyFormat = copyFormat,
+        locations: List<TerminalClipboardLocation> = listOf(TerminalClipboardLocation.STANDARD)) {
+        if (locations.isEmpty()) return
+        viewport.copyData(format, copyTrimTrailingSpaces, copyCodepointMap)?.let {
+            val contents = it.contents()
+            for (location in locations) runCatching { copyClipboard.write(location, contents) {} }
         }
     }
     private fun pasteClipboard() {
@@ -904,11 +910,16 @@ public class AppKitTerminalView(
     public fun clearSelection() { viewport.clearSelection() }
     @ObjCAction public fun copy(sender: NSObject?) { copySelection() }
     @ObjCAction public fun paste(sender: NSObject?) { pasteClipboard() }
-    @ObjCAction public fun selectAll(sender: NSObject?) { viewport.selectAll() }
+    @ObjCAction public fun selectAll(sender: NSObject?) { if (viewport.trySelectAll()) copySelectionAutomatically() }
     @ObjCAction public fun clearScreen(sender: NSObject?) { viewport.clearSelection(); session.clearScreen(); viewport.followOutput() }
     @ObjCAction public fun clearHistory(sender: NSObject?) { viewport.clearSelection(); session.clearHistory(); viewport.followOutput() }
 
     override fun menuForEvent(event: NSEvent): NSMenu = NSMenu().apply {
+        if (viewport.scrollOffset != 0 || session.mouseTracking == 0 ||
+            event.modifierFlags and NSEventModifierFlagShift != 0uL && !session.mouseShiftCapture) {
+            val pointer = selectionPointer(event)
+            if (viewport.selectForContextMenu(pointer.column, pointer.row, linkModifiers(event))) copySelectionAutomatically()
+        }
         fun item(title: String, action: String, enabled: Boolean = true) {
             addItem(NSMenuItem(title, NSSelectorFromString(action), "").also {
                 it.target = this@AppKitTerminalView; it.enabled = enabled

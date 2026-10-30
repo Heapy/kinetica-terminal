@@ -446,11 +446,30 @@ public class TerminalViewport internal constructor(
     }
 
     /** Select retained output without synthesizing a mouse drag or starting autoscroll. */
-    public fun selectAll() {
-        if (disposed || !activeSelection.selectAll()) return
+    public fun selectAll() { trySelectAll() }
+
+    internal fun trySelectAll(): Boolean {
+        if (disposed || !activeSelection.selectAll()) return false
         cancelSelectionDrag()
         frozen?.let { liveSelection.clear(); it.clearInheritedSelection() }
         markAll()
+        return true
+    }
+
+    /** Select a detected link or word for a local context menu. Returns true only when
+     * a new selection is committed; clicking inside the current selection preserves it. */
+    public fun selectForContextMenu(column: Int, row: Int, linkModifiers: Boolean = false): Boolean {
+        if (disposed || column !in 0 until columns || row !in 0 until rows) return false
+        val point = TerminalCellPosition(firstLine + row, column)
+        selection()?.let { range ->
+            if (if (range.rectangle) point.line in range.start.line..range.end.line &&
+                point.column in range.start.column until range.end.column else point >= range.start && point < range.end) return false
+        }
+        if (!activeSelection.selectContextWord(point, linkModifiers, session.osc8LinksEnabled)) return false
+        cancelSelectionDrag()
+        frozen?.let { liveSelection.clear(); it.clearInheritedSelection() }
+        markAll()
+        return true
     }
 
     public fun scrollTo(offset: Int) { scroll(offset.coerceIn(0, session.historySize) - scrollOffset) }

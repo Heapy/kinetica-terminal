@@ -60,6 +60,25 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Copy-on-select now implements Ghostty 1.4's none/primary/clipboard/both policies in Browser
+and AppKit views. Left gestures copy only at release; Select All and newly committed context-menu
+selections also copy. Automatic copies always use mixed format, independently of explicit-copy
+format. Cancelled gestures, pointer motion and application-owned mouse reports cannot write the
+clipboard. Existing selections containing a context click and unwritten cells preserve the
+selection/clipboard. Context-link matching respects Cmd/Ctrl: detected URLs select their matched
+range, while OSC 8 takes precedence and selects the clicked cell, including wide-cell normalization.
+Context menus and Select All use the presented frame during synchronized output. These behaviors
+were traced through pinned `Surface.setSelectionAndCopy`, `mouseButtonCallback`, `linkAtPos` and
+the select-all binding, plus `Config.copy-on-select`. Default macOS policy is none; Linux browser
+policy is primary. The built-in macOS/browser adapters cannot provide primary selection and never
+redirect it to standard; custom MIME backends can handle the primary destination. Both attempts
+remain independent if one backend call throws, and clipboard failures preserve the selection.
+Validation passes 1657 JVM tests, fresh Release JS tests and 52 focused Native tests, including
+private-pasteboard destination routing, native mouse/menu events and injected host failure.
+The dedicated browser copy-on-select verifier and existing editing/selection regressions pass
+on macOS/Linux shortcuts with Canvas/WebGL. Evidence: `TerminalContextSelectionTest`,
+`MacOsCopyTest`, `scripts/verify-terminal-copy-on-select.mjs` and `/tmp/kinetica-copy-on-select-*`.
+
 Browser/AppKit user copy now supports plain, VT, HTML and mixed formats; mixed is the
 default and publishes plain text plus styled HTML as one item. VT/HTML preserve explicit
 cell colors, SGR attributes, underline styles/colors and OSC 8 links. Standalone VT/HTML

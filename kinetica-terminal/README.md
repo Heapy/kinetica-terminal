@@ -332,6 +332,23 @@ browser also handles DOM copy events, replaces their representations, and falls 
 Browser permissions and HTML sanitization still apply. Copying a long selection uses one HTML
 wrapper/VT theme header rather than exposing Ghostty's internal page boundaries in the output.
 
+`view.copyOnSelect` implements Ghostty 1.4's `NONE`, `PRIMARY`, `CLIPBOARD` and `BOTH`
+policies. AppKit defaults to `NONE`; the browser defaults to `PRIMARY` on Linux and `NONE`
+elsewhere. Built-in macOS/browser backends do not provide a primary-selection clipboard:
+`PRIMARY` has no effect there and `BOTH` writes only the standard clipboard. A custom MIME
+backend can implement `TerminalClipboardLocation.PRIMARY`; it is never silently redirected.
+Automatic copies always use MIXED with the current trimming/mapping policies, independently
+of `copyFormat`. They run on local left-button release (including word/line/rectangle selection),
+Select All shortcuts, AppKit menu actions and a new context-menu word/link selection. Pointer moves,
+cancelled gestures, application mouse reporting, selection invalidation and programmatic viewport
+selection do not copy. Right-clicking inside an existing selection preserves it and the clipboard;
+an unwritten cell leaves the selection alone. Context-menu selection and copying use the retained
+frame during synchronized output. With the link modifier (Cmd on macOS, Ctrl elsewhere), a context
+menu selects the detected URL/path or only the clicked OSC 8 cell; without it, it selects the word.
+Custom hosts can call `viewport.selectForContextMenu(column, row, linkModifiers)`;
+its Boolean result says whether a new selection was committed. Clipboard failure does not clear
+the selection or prevent attempting the other destination under `BOTH`.
+
 Cmd+J on macOS scrolls back to the current selection in both browser and AppKit surfaces.
 It preserves the selected text and puts its first retained row at the top (or returns to the
 bottom viewport when the selection is in the active screen), following Ghostty's

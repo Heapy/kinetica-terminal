@@ -61,6 +61,8 @@ public class BrowserTerminalView(
     public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
     public var copyTrimTrailingSpaces: Boolean = true
     public var copyFormat: TerminalCopyFormat = TerminalCopyFormat.MIXED
+    public var copyOnSelect: TerminalCopyOnSelect = if (window.navigator.platform.startsWith("Linux"))
+        TerminalCopyOnSelect.PRIMARY else TerminalCopyOnSelect.NONE
     public var copyCodepointMap: List<TerminalClipboardCodepointMap> = emptyList()
         set(value) { field = value.toList() }
     public var pasteConfirmation: TerminalPasteConfirmation = TerminalPasteConfirmation { text, complete ->
@@ -193,7 +195,8 @@ public class BrowserTerminalView(
             if (clipboardShortcut && key.key.lowercase() == "v") return@listen
             val copyRequested = clipboardShortcut && key.key.lowercase() == "c" && viewport.hasSelection
             if (clipboardShortcut && key.key.lowercase() == "a") {
-                viewport.selectAll(); event.preventDefault()
+                if (viewport.trySelectAll()) copySelectionAutomatically()
+                event.preventDefault()
             } else if (copyRequested) {
                 copySelection(); event.preventDefault()
             } else if (navigateViewport(key)) {
@@ -311,8 +314,14 @@ public class BrowserTerminalView(
         listen(root, "lostpointercapture") { event ->
             if (activePointer == (event.pointerId as Number).toInt() && root.hasPointerCapture(event.pointerId) != true) cancelMouse()
         }
-        listen(root, "contextmenu") { event -> if (viewport.scrollOffset == 0 && session.mouseTracking != 0 &&
-            (event.shiftKey != true || session.mouseShiftCapture)) event.preventDefault() }
+        listen(root, "contextmenu") { event ->
+            if (viewport.scrollOffset == 0 && session.mouseTracking != 0 &&
+                (event.shiftKey != true || session.mouseShiftCapture)) event.preventDefault()
+            else if (event.button == 2) {
+                val pointer = selectionPointer(event)
+                if (viewport.selectForContextMenu(pointer.column, pointer.row, linkModifiers(event))) copySelectionAutomatically()
+            }
+        }
         listen(root, "wheel", passive = false) { event ->
             val dy = (event.deltaY as Number).toDouble()
             val dx = (event.deltaX as Number).toDouble()
@@ -605,6 +614,7 @@ public class BrowserTerminalView(
                         openBrowserTerminalLink(link.uri) { !disposed && link.enabled(session) })) viewport.cancelSelectionDrag()
                     else viewport.endPointerSelection(pointer)
                     selecting = false
+                    copySelectionAutomatically()
                 }
                 else mouse(event, button, release = true)
             }
@@ -626,11 +636,18 @@ public class BrowserTerminalView(
         focused = value; viewport.setFocused(value); session.sendFocus(value)
         if (value) notifications?.clear()
     }
-    private fun copySelection() {
-        val data = viewport.copyData(copyFormat, copyTrimTrailingSpaces, copyCodepointMap) ?: return
-        copyClipboard.write(TerminalClipboardLocation.STANDARD, data.contents()) { result ->
-            if (!disposed && ownedMimeClipboard != null && result == TerminalClipboardResult.UNSUPPORTED && data.text != null) {
-                window.navigator.clipboard?.writeText(data.text)?.catch { _: dynamic -> Unit }
+    private fun copySelectionAutomatically() = copySelection(TerminalCopyFormat.MIXED, copyOnSelect.locations)
+    private fun copySelection(format: TerminalCopyFormat = copyFormat,
+        locations: List<TerminalClipboardLocation> = listOf(TerminalClipboardLocation.STANDARD)) {
+        if (locations.isEmpty()) return
+        val data = viewport.copyData(format, copyTrimTrailingSpaces, copyCodepointMap) ?: return
+        val contents = data.contents()
+        for (location in locations) runCatching {
+            copyClipboard.write(location, contents) { result ->
+                if (!disposed && location == TerminalClipboardLocation.STANDARD && ownedMimeClipboard != null &&
+                    result == TerminalClipboardResult.UNSUPPORTED && data.text != null) {
+                    runCatching { window.navigator.clipboard?.writeText(data.text)?.catch { _: dynamic -> Unit } }
+                }
             }
         }
     }

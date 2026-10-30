@@ -71,6 +71,22 @@ internal class TerminalSelection(
         return true
     }
 
+    fun selectContextWord(position: TerminalCellPosition, linkModifiers: Boolean, osc8Enabled: Boolean): Boolean {
+        val point = clamp(position)
+        val row = line(point.line)
+        val x = if (row.width(point.column) == 0) (point.column - 1).coerceAtLeast(0) else point.column
+        // Surface.linkAtPos gives OSC 8 precedence and selects only the clicked cell.
+        val linkedCell = if (linkModifiers && osc8Enabled && row.hyperlink(x) != null)
+            TerminalSelectionRange(point.copy(column = x), point.copy(column = x + row.width(x))) else null
+        val link = if (linkModifiers && linkedCell == null && detectedLinksEnabled())
+            terminalDetectedLinkAt(point.line, x, firstLine(), lastLine(), line) else null
+        val range = linkedCell ?: link?.range ?: terminalWordRange(point, firstLine(), lastLine(), line, wordBoundaries()) ?: return false
+        clear()
+        mode = TerminalSelectionMode.WORD
+        setRange(normalize(range))
+        return true
+    }
+
     fun beginPointer(position: TerminalCellPosition, mode: TerminalSelectionMode, x: Double) {
         begin(clamp(position), mode)
         pointerX = x
