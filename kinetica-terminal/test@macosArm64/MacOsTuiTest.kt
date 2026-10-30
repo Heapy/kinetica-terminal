@@ -197,7 +197,12 @@ class MacOsTuiTest {
             shell.send("/ROW 100\r")
             shell.await("Neovim search") { shell.session.screenLine(shell.session.cursorRow).text() == "ROW 100" }
             shell.session.resize(100, 32); shell.key("l", control = true)
-            shell.await("Neovim redraw after resize") { shell.session.screenLine(30).text().contains("KINETICA_NVIM") }
+            // Neovim draws the status line before restoring the editing cursor.
+            // Capturing that intermediate cursor makes the ArrowUp assertion race redraw.
+            shell.await("Neovim redraw after resize") {
+                !shell.session.synchronizedOutput && shell.session.screenLine(30).text().contains("KINETICA_NVIM") &&
+                    shell.session.cursorRow > 0 && shell.session.screenLine(shell.session.cursorRow).text() == "ROW 100"
+            }
             // A non-text key after resize must reach the application without leaking an escape suffix.
             val row = shell.session.cursorRow
             shell.key("ArrowUp")
