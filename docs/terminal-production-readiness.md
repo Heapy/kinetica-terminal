@@ -59,6 +59,18 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+The next mixed-state probe found styled wide-character spacer heads surviving DCH
+after a bottom-row wrap outside vertical margins. DCH/ECH now follow the original
+`Screen.splitCellBoundary`: clear a wrapped row's ending spacer before shifting, clear
+the previous row/history spacer when editing its continued wide glyph, and split ECH
+boundaries before applying ISO protection. ICH/rectangular-scroll semantics remain distinct.
+Fifty-four original scenarios / 270 checkpoints cover both screens, protection, row/history
+boundaries, out-of-margin cursors and ICH preservation controls; 24 failed before the fix.
+Two shared tests verify style/link cleanup and repaint notifications for previous/history
+rows. Validation passes 1635 JVM tests, fresh Release JS tests and 1150 Native
+oracle/wide-edit/history-compression tests. All 1144 VT artifacts reproduce byte-for-byte.
+Logs are `/tmp/kinetica-wide-edit-*`.
+
 The screen-state audit exposed active OSC 8 links leaking across alternate-screen
 switches. Ghostty ends the old screen's hyperlink before copying the cursor/pen. Kinetica
 now does the same only when the screen actually changes, retaining other pen attributes

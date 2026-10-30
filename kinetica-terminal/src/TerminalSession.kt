@@ -1578,6 +1578,28 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         }
     }
 
+    // DCH/ECH use Ghostty Screen.splitCellBoundary, including cross-row spacer heads.
+    // ICH and rectangular scrolling have different boundary rules and keep their own path.
+    private fun splitCharacterBoundary(row: Int, column: Int) {
+        val line = screen[row]
+        if (column == columns) {
+            if (line.wrapped && line.isSpacerHead(columns - 1)) {
+                line.clear(columns - 1, columns, -1, bg, 0)
+                damage(row)
+            }
+            return
+        }
+        if (column <= 1 && line.wrapContinuation && line.width(0) == 2) {
+            val previous = if (row > 0) screen[row - 1]
+                else if (!alternateScreen && history.size > 0) history[history.size - 1] else null
+            if (previous?.isSpacerHead(columns - 1) == true) {
+                previous.clear(columns - 1, columns, -1, bg, 0)
+                if (row > 0) damage(row - 1) else damageAll()
+            }
+        }
+        splitCellBoundary(row, column)
+    }
+
     private fun csi(final: Char) {
         // Reject the whole command before changing cursor, cells or pending wrap.
         // A trailing empty slot is already excluded by VtParser's parameter count.
@@ -1625,16 +1647,18 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             }
             'K' -> eraseLine(params[0], selective)
             'X' -> {
-                eraseCells(cursorRow, cursorColumn, (cursorColumn + p()).coerceAtMost(columns),
-                    protectionMode == PROTECTION_ISO, splitBoundary = true)
+                var end = (cursorColumn + p()).coerceAtMost(columns)
+                if (end < columns && screen[cursorRow].width(end - 1) == 2) end++
+                splitCharacterBoundary(cursorRow, cursorColumn); splitCharacterBoundary(cursorRow, end)
                 resetCursorWrap()
+                eraseCells(cursorRow, cursorColumn, end, protectionMode == PROTECTION_ISO)
             }
             '@' -> insertCharacters(p())
             'P' -> if (count > 0 && cursorColumn in left..right) {
                 val n = count.coerceAtMost(right + 1 - cursorColumn)
                 val line = screen[cursorRow]
-                splitCellBoundary(cursorRow, cursorColumn); splitCellBoundary(cursorRow, cursorColumn + n)
-                splitCellBoundary(cursorRow, right + 1)
+                splitCharacterBoundary(cursorRow, cursorColumn); splitCharacterBoundary(cursorRow, cursorColumn + n)
+                splitCharacterBoundary(cursorRow, right + 1)
                 for (x in cursorColumn until right + 1 - n) line.copyCell(line, x + n, x)
                 line.clear(right + 1 - n, right + 1, -1, bg, 0)
                 resetCursorWrap(); damage(cursorRow)
@@ -1738,16 +1762,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         damage(cursorRow)
     }
 
-    private fun eraseCells(y: Int, start: Int, end: Int, selective: Boolean, splitBoundary: Boolean = false) {
+    private fun eraseCells(y: Int, start: Int, end: Int, selective: Boolean) {
         val line = screen[y]
         if (start >= end) return
         val first = if (line.width(start) == 0) start - 1 else start
         val last = if (line.width(end - 1) == 2) minOf(end + 1, columns) else end
         for (x in first until last) if (!selective || !line.isProtected(x)) line.clear(x, x + 1, -1, bg, 0)
-        if (splitBoundary && first == 0 && y > 0 && screen[y - 1].isSpacerHead(columns - 1) && !line.isProtected(0)) {
-            screen[y - 1].clear(columns - 1, columns, -1, bg, 0)
-            damage(y - 1)
-        }
         damage(y)
     }
 

@@ -1,6 +1,6 @@
 # Ghostty differential oracle
 
-The main VT corpus currently contains 1087 scenarios / 7665 checkpoints, each replayed
+The main VT corpus currently contains 1141 scenarios / 7935 checkpoints, each replayed
 as whole writes and bytewise writes. The `scroll_wrap_*` cases distinguish SD/RI/IL and
 in-place SU (which break full-width row wraps) from LF, scrollback-producing SU and
 partial-width scrolling (which preserve them). They compare cells and row flags before
@@ -18,6 +18,10 @@ XTGETTCAP cases check raw-byte key isolation and valid keys after malformed fiel
 The `hyperlink_screen_*` cases cover all 47/1047/1049 entry/exit combinations and
 repeated requests on the active screen. Actual switches end the OSC 8 pen without
 erasing existing linked cells or changing other pen attributes.
+The `wide_edit_boundary_*` cases distinguish DCH/ECH spacer-head cleanup from ICH
+preservation, across primary/alternate screens, ISO protection, history boundaries
+and a cursor outside vertical margins. Cells retain only the current background
+after cleanup; styles, links and wide-cell markers are removed.
 
 ## Default URL/path matcher oracle
 
