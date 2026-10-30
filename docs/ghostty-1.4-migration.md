@@ -135,7 +135,10 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       original Ghostty `renderer/generic.zig` uses a font-shaper run iterator and cluster mapping.
       The [font shaping reference](terminal-font-shaping.md) records original run boundaries,
       font identities, glyph substitutions and terminal-grid offsets using embedded fonts.
-      This reference preparation does not close the renderer implementation requirement.
+      Shared cluster-to-grid positioning and an independent Native CoreText shaper now
+      match original glyph/offset expectations. The Native checks use a separate original
+      CoreText corpus because it differs from HarfBuzz for some marking-glyph offsets.
+      Connecting these layers to the GPU frame and glyph atlas remains open.
 - [x] Implement shared hover identity, range tracking and decorations. Reopened implicit
       OSC 8 links remain independent; explicit nonempty IDs match by ID plus URI across
       disjoint visible rows. Copies, reflow and frozen snapshots retain identity. The original

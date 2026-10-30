@@ -1,0 +1,42 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
+  "backend": "coretext",
+  "points": 12,
+  "cases": 77,
+  "runs": 191,
+  "glyphs": 1146,
+  "helperSha256": "3a67599d62ec1f46d6f1aa940d50b72005d4688fe0109a8b63b03c8f63bae7cd",
+  "generatorSha256": "9d887a3bfc304a1d8c443656844b01850dfd660103e98b69d8b26def1bbc09a2",
+  "fixtureSha256": "79d0d56d1e686b9a227cda0721de865a9ba5454d32b765bc4a5d1d51fc32c713",
+  "testArtifacts": {
+    "kinetica-terminal/test@macosArm64/generated/TerminalCoreTextShapingFixtures.kt": "b13898a9b2910008a25ca4a2492d23198b74934b4384058f14dc099a90534ac0",
+    "kinetica-terminal/test@macosArm64/generated/TerminalShapingFont.kt": "9663bce7a07e5e96c5050adebbe2e86f4359c9856542e5dd230ae4d1d33be0be",
+    "kinetica-terminal/test-upstream/ghostty/fonts/README.md": "b3177ac25cc57c976ae9e2a458a23cf840b7d4c919e4f87fdc8cab7875c3ea17",
+    "kinetica-terminal/test-upstream/ghostty/fonts/OFL.txt": "fb755fa3280d1d215a20df2e64fe6a0f75f8208439b11671978214aae60d2997"
+  },
+  "sources": {
+    "src/font/shaper/run.zig": "db733c86a1c4454ee17bb838f6af889d3bffa0d693b6e09f22ab3765695462b7",
+    "src/font/shaper/harfbuzz.zig": "cce3a6e6ac8492f4c402401aafe2c1ea2b078c0faf7b900bc7d54659cb6480fc",
+    "src/font/shaper/coretext.zig": "51c00cec8ca1fc50a5a5bf15f9715e1f4be7ce1c1d370c12744618b4b89f0a14",
+    "src/font/shaper/feature.zig": "d46a11fdde224f0d036a56238e92511f4c0e59395e08657c99fb659f2fb87e32",
+    "src/font/CodepointResolver.zig": "898b7742b0a871e214e72279cf498bd301ac3a16fc9ab0da79ff8c9a62522d93",
+    "src/font/SharedGrid.zig": "772d83dd1203ff60a2244f218108f58e52e51f5793eacdfa3d7d9b90395765be",
+    "src/font/Collection.zig": "a4986b62c585edc55924f9a78baae35a403f924a6ecd338cbf01662a3a571b9e",
+    "src/font/face/freetype.zig": "5d0d125a2d7ef02302d5ceaab918bbeb01a11cbbae66340170ba7e654b15c7a3",
+    "src/font/face/coretext.zig": "2a6fcf777c893facc1addf9ab6bac69137d6b3c24c89a8b6221c0982f81ee5ed",
+    "src/terminal/render.zig": "813c385b4282728d26c37f2a3ddf3c988909f0b437f5dab3ba4b3a0542d4d9c0",
+    "build.zig.zon": "195967ceee17309c61737edb8ed0565746a02814a4d3dd1881ef0c39b9e947a4",
+    "pkg/freetype/build.zig.zon": "46ce4eb4a795e07ac2b89fd2a648fa23e651aedf940e28c9c4e57f9e0afce325",
+    "pkg/harfbuzz/build.zig.zon": "44a91d0e5b1dde44f39bd5b76ce19ec2edb82160cf4a889f1a6d378c990274a8",
+    "pkg/libpng/build.zig.zon": "4546494e09ee5459dca7caf363521545d96aaff65d07d84ab22b74ee80a9e4de",
+    "pkg/zlib/build.zig.zon": "ec984b740c5bc72bdb6e4afe45130bd3fe1d5a83eada1c36ece319b48883b69b",
+    "src/font/res/JetBrainsMonoNoNF-Regular.ttf": "a0bf60ef0f83c5ed4d7a75d45838548b1f6873372dfac88f71804491898d138f",
+    "src/font/res/Inconsolata-Regular.ttf": "12b440cdc81f2582dc87dc1ade098919f608d7c72f5ef7829b76d171fddc426f",
+    "src/font/res/MonaspaceNeon-Regular.otf": "9e3c617497419fbf2d39f449d1a16ce98ef31c88acdca535ed4c3eff548f0c0a",
+    "src/font/res/KawkabMono-Regular.ttf": "e16e63326d6827e5d3cf23b9dbf021c24568bf27be2ba8c642af124b030e982a",
+    "src/font/res/NotoColorEmoji.ttf": "72a635cb3d2f3524c51620cdde406b217204e8a6a06c6a096ff8ed4b5fd6e27b",
+    "src/font/res/NotoEmoji-Regular.ttf": "cd07743a4c93d8da929afdd28c1d368f11da478a1093146a13610081c2a58440"
+  },
+  "macOS": "27.0.1"
+}
