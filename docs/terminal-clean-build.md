@@ -6,6 +6,11 @@ Kotlin Toolchain wrapper and existing machine compiler/dependency caches. It is 
 first-install test with empty caches and does not build the external Kinetica application
 framework or the sample applications.
 
+The October 31 follow-up passes all 1635 JVM tests, the fresh Release JS suite and all
+1773 native tests without IP networking. All 1732 tracked files in the tested export
+match `007c49cc2ab923c218b0b6e9fec878e4dd4014e8` before and after native verification.
+The current machine-readable result is `build/reports/terminal-clean-engine/retry/report.json`.
+
 The October 30, 2026 run uses macOS 27.0.1 (26A434), Apple Silicon, Neovim 0.12.5 and tmux 3.8.
 Neovim is copied outside the exported source as an explicit live-TUI prerequisite. Native
 TUI tests use their own PTYs, temporary files and tmux sockets; no installed terminal app
@@ -84,9 +89,9 @@ modes. Hashing honors the committed text/EOL attributes, including CRLF for `kot
 Only the native TUI test changed after the second export's JVM/JS runs; shared and JS sources
 are unchanged. No existing project artifacts were imported into either export.
 
-## Current result and remaining failure
+## Animation and presentation failures found during verification
 
-The final full native run at the verified exported source passes 1770 tests and fails
+The next full native run at the verified exported source passes 1770 tests and fails
 `NativeGraphicsTimingTest.automaticPlaybackStopsForHiddenDetachedAndDisposedNativeViews`.
 Its GPU window remains ordered on screen (`visible=true`) with frame index 0 and one
 image upload; the step waiting for the next automatic frame times out. Earlier complete
@@ -155,9 +160,26 @@ placement, explicitly uses regular application activation, and reports actual oc
 attachment and hidden state on failure. Both drawable tests then pass all 30 repetitions
 (60 cases), retaining the same failure injection, recovery and cancellation assertions.
 Logs are `/tmp/kinetica-drawable-window-{after,repeat}.log`.
-The timeout is not relaxed and the clean-export native gate remains open.
+The original per-step deadlines and no-work intervals are retained.
 
-`build/reports/terminal-clean-engine/report.json` retains the source hashes, individual run
-results and hashes of all copied logs. `final-native.log` contains the remaining failure;
-`native.log` and `native-before-tui-fix.log` retain the earlier failures. JVM/JS verification
-is complete for the exported engine sources, but a passing whole native suite is still required.
+## Verified result
+
+A new export starts at `ed40bf3f0ccd555680ad7ef661582c259b63ccf0`, with no project outputs,
+upstream clones or `node_modules`. JVM and fresh Release JS pass with all networking denied.
+The two native-test corrections and their documentation are then copied from committed
+source; shared and JS sources remain unchanged. All 1732 tracked files, including Git's
+text/EOL attributes and executable modes, match
+`007c49cc2ab923c218b0b6e9fec878e4dd4014e8`. No native test artifact exists before its build.
+The complete native build/test command passes all 1773 tests with IP networking denied,
+including the explicitly provisioned Neovim and tmux live-TUI cases. All tracked hashes
+and modes are verified again after the run.
+
+The host is macOS 27.0.1 (26A434), arm64, Node v24.21.0, Neovim 0.12.5 and tmux 3.8.
+Existing compiler/dependency caches are retained. The independent profile probe confirms
+that IP connections are denied and local Unix sockets work.
+
+`build/reports/terminal-clean-engine/retry/report.json` records this successful gate,
+source verification, test results, tool versions and SHA-256 hashes of the binaries and
+logs. The corresponding `native.log`, `jvm.log`, `js-build.log` and `js-test.log` are copied
+beside it. The older `build/reports/terminal-clean-engine/report.json`, its failing logs,
+and the focused drawable/idle reports remain available as historical evidence.

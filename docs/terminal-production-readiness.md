@@ -1,7 +1,8 @@
 # Terminal production readiness
 
-Migration note: measurements below were recorded in the original Kinetica worktree.
-Untracked `build/reports` evidence remains there and is not included in this source repository.
+Migration note: older measurements below were recorded in the original Kinetica worktree.
+Their untracked `build/reports` evidence remains there and is not included in this source
+repository. Current checks also generate local reports under this repository's `build/reports`.
 
 Status: **in progress; not production-ready**. The target is a shared Kotlin VT
 engine used by the browser and native macOS surfaces, with reliable application
@@ -59,14 +60,20 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
-An offline clean-export check now builds the independent engine without project artifacts
-or upstream clones. All 1635 JVM tests and fresh Release JS tests pass with networking
-denied. The full Native run exposed stale empty-selection assertions and a media fixture
-whose supposedly non-temporary path was inside `/tmp`; both are corrected. A Neovim
-resize test now waits for the editing cursor instead of an intermediate status-line draw;
-all six live TUI tests and ten Neovim repetitions pass. The latest full Native run still
-has one intermittent GPU animation failure (1770 pass), so this verification remains open.
-See [clean build evidence and reproduction](terminal-clean-build.md).
+Offline clean-export verification now passes all 1635 JVM tests, fresh Release JS tests
+and all 1773 Native tests, including live TUI cases. The export contains no imported
+project artifacts or upstream clones; IP networking is denied, and existing compiler/
+dependency caches are retained. All 1732 tracked files match `007c49c` before and after
+the native run. This closes the independent clean-engine gate; application builds and
+empty-cache provisioning retain their separate scope.
+
+The investigation also fixes retrying an unavailable Metal drawable and corrects native
+test assumptions about occlusion and delayed presentation callbacks. The idle lifecycle
+test passes 30 repetitions, the two drawable tests pass 60 cases across 30 repetitions,
+and the independent WindowServer/OCR verifier passes initial, uncovered and reordered
+window contents plus lifecycle assertions. See [clean build evidence and reproduction](terminal-clean-build.md)
+and `build/reports/terminal-clean-engine/retry/report.json` for exact scope and retained
+failure/success logs. The broader readiness checklist above remains open.
 
 The next mixed-state probe found styled wide-character spacer heads surviving DCH
 after a bottom-row wrap outside vertical margins. DCH/ECH now follow the original
