@@ -42,6 +42,17 @@ the image. The expected pixels and error-side state come from the original execu
 guards are separate Kotlin tests because our temporary-buffer strategy intentionally differs.
 Regenerate with `python3 scripts/generate-terminal-graphics-animation.py /path/to/ghostty /path/to/zig`.
 
+The [graphics accounting corpus](graphics-accounting-manifest.json) contains 27 scenarios /
+197 checkpoints from the original `TerminalStream` and `ImageStorage`. It reads the actual
+resident-byte counter, nominal limit, pending-transfer state, image/placement counts and
+every stored frame's pixels. RGB-root conversion is observed before failed append admission
+and during composition, including the resulting over-limit resident state. Subsequent edits,
+same-limit reapplication, changed limits, eviction, incomplete APC/transfer payloads and
+screen changes are compared whole and bytewise. Host-limit events use the same `setLimit`
+operation on every existing screen as the original C API. No expected counter is computed
+from Kinetica's output or inferred from only the displayed frame.
+Regenerate with `python3 scripts/generate-terminal-graphics-accounting.py /path/to/ghostty /path/to/zig`.
+
 The [visibility corpus](visibility-manifest.json) contains 11 scenarios / 92 checkpoints
 for mode 2033, one-shot queries, repeat enables, mode save/restore, RIS/DECSTR, screen
 switches, synchronized output and malformed or incomplete sequences. The helper uses

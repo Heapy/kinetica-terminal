@@ -233,6 +233,12 @@ and lifetime regressions cover single/chunked loads, caller mutation and retaine
 This does not combine encoded-input, resident-image, composition and held-frame budgets;
 the original's RGB-root conversion can still exceed the nominal resident limit.
 
+The resident-accounting oracle now reads actual original storage counters and every frame,
+covering 27 scenarios / 197 checkpoints. It confirms the conversion overrun and fixes two
+host-limit differences: reapplying the same limit must evict an over-limit image, and changing
+a positive limit must preserve an unfinished APC command. Disabling graphics still releases
+capture/storage. Broader combined transient and retained-frame accounting remains open.
+
 The native media corpus has 61 cases: 57 compare original-reader bytes/errors and cleanup.
 Four regular/temporary-file seeks past EOF with omitted size crash the original Zig 0.17
 safe build with integer overflow. Those crashes are recorded rather than treated as conformance

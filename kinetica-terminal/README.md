@@ -61,7 +61,9 @@ the completed image generation together with the text frame, including during We
 enabling a 64 MiB decoded image budget per screen by default; pass zero to disable command capture and replies. This setting
 belongs to the session, so views sharing a session should use the same value. As in Ghostty,
 converting an RGB root to RGBA can exceed this nominal limit, even if the subsequent frame
-append is rejected. Encoded transfers, decode/composition scratch and retained render snapshots
+append is rejected. Reapplying the same limit reconciles that excess by eviction. Changes to
+a positive limit preserve an unfinished APC command and chunked transfer; disabling graphics
+releases capture and storage. Encoded transfers, decode/composition scratch and retained render snapshots
 are separate from the resident counter. Complete raw transfers hand their owned buffer to the
 decoder without another full pixel copy; caller-owned input remains isolated. Each browser
 renderer separately owns a 64 MiB LRU cache of bounded image tiles with sampling gutters.

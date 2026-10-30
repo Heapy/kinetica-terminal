@@ -289,8 +289,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     internal val retainedGraphicsCommandBytes: Int get() = graphicsApc.retainedPayloadBytes
     internal fun setGraphicsStorageLimit(bytes: Int) {
         require(bytes >= 0)
-        if (primaryGraphics.storage.limit == bytes && alternateGraphics.storage.limit == bytes) return
-        graphicsApc.reset()
+        // RGB-to-RGBA conversion may exceed the nominal limit before frame admission.
+        // Reapplying that same host limit must still reconcile resident storage.
+        if (primaryGraphics.storage.limit == bytes && alternateGraphics.storage.limit == bytes &&
+            primaryGraphics.storage.totalBytes <= bytes && alternateGraphics.storage.totalBytes <= bytes) return
+        // A positive limit change does not cancel an in-flight APC or chunked transfer.
+        if (bytes == 0) graphicsApc.reset()
         primaryGraphics.setLimit(bytes); alternateGraphics.setLimit(bytes)
         flushDamage()
     }

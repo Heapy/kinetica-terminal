@@ -1055,6 +1055,23 @@ renderers pass. Existing original-library oracles remain unchanged. This removes
 copy without claiming a combined peak-memory bound; RGB-root conversion still follows the
 original admission order and can exceed the nominal resident limit.
 
+The resident-storage audit now reads the original Ghostty counter directly, alongside all
+stored animation frames, image/placement counts, pending-transfer state and exact replies.
+Twenty-seven scenarios / 197 checkpoints cover RGB conversion at admission boundaries,
+composition, repeated limits, later eviction, both screens and host changes during incomplete
+APCs and chunked frame uploads. For example, a three-byte RGB root under a three-byte limit
+becomes a four-byte RGBA root even when the attempted frame append fails; reapplying the
+three-byte host limit then evicts it. These are observed upstream states, not inferred bounds.
+
+The new comparisons exposed two host-policy mismatches: a same-limit fast path skipped that
+eviction, and changing a positive limit discarded the active APC parser. The fast path now
+requires both screens to be within the requested limit, and only disabling graphics clears
+APC capture. The existing disable/reset resource-release contract remains covered by the
+full suite. All three new comparison groups failed before the fix and pass afterward on
+JVM, JS and Native. All 1355 JVM tests and the fresh JS suite pass; the new original-library
+fixtures and provenance reproduce byte-for-byte. Combined transient/held-frame accounting
+remains a separate open gate.
+
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
 - [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
 - [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.
