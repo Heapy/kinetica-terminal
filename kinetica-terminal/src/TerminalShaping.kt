@@ -30,6 +30,62 @@ internal data class TerminalRawGlyph(val font: Int, val glyph: Int, val index: I
 internal data class TerminalShapedGlyph(val font: Int, val glyph: Int, val column: Int,
     val xOffset: Int, val yOffset: Int)
 
+internal data class TerminalResolvedFontCell(val font: Int, val text: String)
+internal data class TerminalFontRun(val offset: Int, val style: Int, val font: Int, val input: TerminalShapingText)
+
+/** Original run boundaries, before platform shaping. Background and hover decorations are independent. */
+internal fun terminalFontRuns(line: TerminalLine, cursor: Int?, selected: BooleanArray,
+    resolve: (String, Int) -> TerminalResolvedFontCell): List<TerminalFontRun> {
+    require(selected.size == line.columns)
+    var end = line.columns
+    while (end > 0 && line.isEmpty(end - 1)) end--
+    val result = mutableListOf<TerminalFontRun>()
+    var start = 0
+    while (start < end) {
+        if (line.style(start) and TerminalStyle.HIDDEN != 0) { start++; continue }
+        val style = line.style(start)
+        val text = StringBuilder()
+        val clusters = mutableListOf<Int>()
+        var font: Int? = null
+        var column = start
+        while (column < end) {
+            // Ghostty only applies the end boundary when its inclusive column is
+            // greater than zero: selecting column zero alone keeps the run intact.
+            if (column > start && selected[column] != selected[column - 1] &&
+                !(column == 1 && selected[0])) break
+            if (line.width(column) == 0 || line.isSpacerHead(column)) { column++; continue }
+            if (column > start) {
+                val previous = column - 1
+                if (!line.isCombined(previous) && !line.isCombined(column)) {
+                    val before = line.codePoint(previous); val after = line.codePoint(column)
+                    if (before == 'f'.code && (after == 'i'.code || after == 'l'.code) || before == 's'.code && after == 't'.code) break
+                }
+                if (line.style(column) != style || line.rawForeground(column) != line.rawForeground(start) ||
+                    line.rawUnderlineColor(column) != line.rawUnderlineColor(start)) break
+            }
+            if (!line.isCombined(column) && cursor != null &&
+                (start == cursor && column == start + 1 || start < cursor && column == cursor)) break
+            val value = if (line.codePoint(column) == TERMINAL_GRAPHICS_PLACEHOLDER || line.codePoint(column) == 0) " " else line.text(column)
+            // Existing geometric block drawing stays outside the platform font atlas.
+            val resolved = if (!line.isCombined(column) && isTerminalBlockElement(line.codePoint(column)))
+                TerminalResolvedFontCell(-1, value) else resolve(value, style)
+            if (font != null && font != resolved.font) break
+            font = resolved.font
+            for (character in resolved.text) {
+                // Presentation selectors choose the face, but are not sent to the shaper.
+                if (character == '\ufe0e' || character == '\ufe0f') continue
+                text.append(character); clusters += column - start
+            }
+            column++
+        }
+        check(column > start)
+        result += TerminalFontRun(start, style, font ?: -1,
+            TerminalShapingText(text.toString(), clusters.toIntArray(), column - start))
+        start = column
+    }
+    return result
+}
+
 /**
  * Align starts of clusters to the terminal grid, retaining offsets of marks belonging to
  * multi-cell ligatures. Adapted from Ghostty 1.4 font/shaper/{coretext,harfbuzz}.zig (MIT).

@@ -1,8 +1,8 @@
 # Terminal font shaping
 
-Multi-cell shaping remains an open compatibility requirement. `TerminalGpuFrame`
-currently stores one terminal grapheme per `GlyphKey`, so neither the Metal nor the
-WebGL atlas can form a programming ligature across cells. Software text grouping
+Multi-cell shaping remains an open compatibility requirement. The Metal and WebGL
+backends currently use one terminal grapheme per `GlyphKey`, so neither active
+atlas path can form a programming ligature across cells. Software text grouping
 already passes some longer strings to the platform, but does not provide Ghostty's
 font selection, cluster mapping and alignment to terminal cells.
 
@@ -10,8 +10,20 @@ The shared `TerminalShapingText`/`terminalPositionGlyphs` layer now preserves te
 origins through platform shaping, including UTF-16 surrogate pairs, reordered marks,
 and marks attached to ligatures spanning several cells. `TerminalNativeShaper` uses
 CoreText with forced left-to-right embedding, records actual fallback font identities,
-and retains those faces until disposal. This layer is tested independently; connection
-to the GPU frame and glyph atlas remains open.
+and retains those faces until disposal. This layer is tested independently; platform
+font resolution and glyph rasterization still need to connect it to Metal.
+
+The common GPU frame accepts optional font-resolution and shaping callbacks. Its
+run planner preserves style, cursor, selection and fallback-font boundaries while
+allowing background changes, and excludes geometric block drawing from font glyphs.
+Shaped atlas entries identify a face and glyph, carry pixel bearings and offsets,
+and clip both geometry and UVs to the run and row without rescaling device pixels.
+Existing platform backends keep the per-cell path until they supply those callbacks.
+Common tests compare primary-font run boundaries and cluster inputs in 42 original
+Ghostty cases, and verify fallback substitution, clean-row retention and pixel clipping.
+Validation: 1429 JVM tests, fresh Release JS tests and the Chromium WebGL glyph
+regression at device-pixel ratios 1, 1.25 and 2 pass. This does not yet validate
+shaped glyph pixels in an active platform backend.
 
 ## Original reference
 

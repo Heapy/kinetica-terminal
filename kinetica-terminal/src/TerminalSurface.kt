@@ -41,6 +41,8 @@ public interface TerminalPainter {
 /** Cell boundaries are preserved for atlas rendering, including wide and combined glyphs. */
 internal interface TerminalGlyphPainter : TerminalPainter {
     fun beginRow(row: Int)
+    val shapesRows: Boolean get() = false
+    fun shapeRow(line: TerminalLine, row: Int, cursor: Int?, selected: BooleanArray, foreground: (Int) -> Int): Boolean = false
     fun glyph(value: String, x: Double, y: Double, columns: Int, color: Int, style: Int)
     fun background(x: Double, y: Double, width: Double, height: Double, color: Int, default: Boolean) = fill(x, y, width, height, color)
 }
@@ -514,6 +516,13 @@ public class TerminalViewport internal constructor(
             val cursor = cursorVisible && (cursorOn || !focused) && y == cursorRow
             val cursorX = if (line.width(cursorColumn) == 0) (cursorColumn - 1).coerceAtLeast(0) else cursorColumn
             val block = cursor && focused && cursorStyle == TerminalCursorStyle.BLOCK
+            val shaped = (painter as? TerminalGlyphPainter)?.takeIf { it.shapesRows }?.shapeRow(line, y, if (cursor) cursorX else null,
+                BooleanArray(columns) { selected(selection, index, it) }) { column ->
+                val flags = line.style(column)
+                val raw = if (flags and TerminalStyle.INVERSE != 0) line.background(column).let { if (it < 0) theme.background else it }
+                    else line.foreground(column).let { if (it < 0) theme.foreground else it }
+                if (block && column == cursorX) theme.background else if (flags and TerminalStyle.FAINT != 0) dim(raw) else raw
+            } == true
             var x = 0
             while (x < columns) {
                 val start = x
@@ -545,7 +554,7 @@ public class TerminalViewport internal constructor(
                 if (flags and TerminalStyle.HIDDEN == 0 && line.codePoint(start) != TERMINAL_GRAPHICS_PLACEHOLDER) {
                     if (blockElement) painter.blockElement(line.codePoint(start), start * cellWidth, y * cellHeight,
                         (x - start) * cellWidth, cellHeight, foreground)
-                    else if (painter is TerminalGlyphPainter) painter.glyph(text.toString(), start * cellWidth, y * cellHeight, x - start, foreground, flags)
+                    else if (painter is TerminalGlyphPainter) { if (!shaped) painter.glyph(text.toString(), start * cellWidth, y * cellHeight, x - start, foreground, flags) }
                     else painter.text(text.toString(), start * cellWidth, y * cellHeight, foreground, flags)
                 }
                 if (flags and TerminalStyle.HIDDEN == 0) {

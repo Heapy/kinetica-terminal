@@ -5,9 +5,11 @@ import kotlin.math.round
 /** AUTO selects the platform GPU renderer and falls back when it cannot be used. */
 public enum class TerminalRendering { AUTO, GPU, SOFTWARE }
 
-internal data class GlyphKey(val text: String, val columns: Int, val style: Int)
-internal data class GlyphBitmap(val width: Int, val height: Int, val rgba: ByteArray, val colored: Boolean)
-internal data class AtlasGlyph(val page: Int, val x: Int, val y: Int, val width: Int, val height: Int, val colored: Boolean)
+internal data class GlyphKey(val text: String, val columns: Int, val style: Int, val font: Int = -1, val glyph: Int = -1)
+internal data class GlyphBitmap(val width: Int, val height: Int, val rgba: ByteArray, val colored: Boolean,
+    val left: Int = 0, val top: Int = 0)
+internal data class AtlasGlyph(val page: Int, val x: Int, val y: Int, val width: Int, val height: Int, val colored: Boolean,
+    val left: Int = 0, val top: Int = 0)
 
 /** Bounded shelf atlas. A rollover rebuilds all visible keys before any draw uses the new atlas. */
 internal class TerminalGlyphAtlas(val size: Int = 1024, private val maxPages: Int = 4) {
@@ -50,7 +52,7 @@ internal class TerminalGlyphAtlas(val size: Int = 1024, private val maxPages: In
                     page.y += page.shelfHeight + 1; page.x = 1; page.shelfHeight = 0
                 }
                 if (page.y + bitmap.height + 1 > size) continue
-                placement = AtlasGlyph(index, page.x, page.y, bitmap.width, bitmap.height, bitmap.colored)
+                placement = AtlasGlyph(index, page.x, page.y, bitmap.width, bitmap.height, bitmap.colored, bitmap.left, bitmap.top)
                 page.x += bitmap.width + 1; page.shelfHeight = maxOf(page.shelfHeight, bitmap.height)
                 break
             }
@@ -78,7 +80,8 @@ internal fun glyphBitmap(width: Int, height: Int, rgba: ByteArray, premultiplied
     return GlyphBitmap(width, height, rgba, colored)
 }
 
-internal data class TerminalGlyph(val key: GlyphKey, val x: Double, val y: Double, val color: Int)
+internal data class TerminalGlyph(val key: GlyphKey, val x: Double, val y: Double, val color: Int,
+    val xOffset: Int = 0, val yOffset: Int = 0, val clipLeft: Double = x, val clipRight: Double = Double.NaN)
 internal data class TerminalRect(val x: Double, val y: Double, val width: Double, val height: Double, val color: Int, val defaultBackground: Boolean = false)
 internal class TerminalDrawRow {
     val backgrounds = mutableListOf<TerminalRect>()
@@ -88,7 +91,12 @@ internal class TerminalDrawRow {
 }
 
 /** Retains clean rows; neither platform backend has to reinterpret terminal cells. */
-internal class TerminalGpuFrame : TerminalGlyphPainter {
+internal class TerminalGpuFrame(
+    private val resolveFont: ((String, Int) -> TerminalResolvedFontCell)? = null,
+    private val shape: ((TerminalFontRun) -> List<TerminalShapedGlyph>)? = null,
+) : TerminalGlyphPainter {
+    init { require((resolveFont == null) == (shape == null)) }
+    override val shapesRows: Boolean get() = resolveFont != null
     val rows = mutableListOf<TerminalDrawRow>()
     val keys = linkedSetOf<GlyphKey>()
     var cellWidth: Double = 0.0
@@ -110,6 +118,20 @@ internal class TerminalGpuFrame : TerminalGlyphPainter {
     }
 
     override fun beginRow(row: Int) { current = rows[row]; current.clear() }
+    override fun shapeRow(line: TerminalLine, row: Int, cursor: Int?, selected: BooleanArray, foreground: (Int) -> Int): Boolean {
+        val resolve = resolveFont ?: return false
+        val shape = checkNotNull(shape)
+        for (run in terminalFontRuns(line, cursor, selected, resolve)) {
+            if (run.font < 0) continue
+            for (glyph in shape(run)) {
+                val column = run.offset + glyph.column
+                current.glyphs += TerminalGlyph(GlyphKey("", 0, run.style and (TerminalStyle.BOLD or TerminalStyle.ITALIC),
+                    glyph.font, glyph.glyph), column * cellWidth, row * cellHeight, foreground(column),
+                    glyph.xOffset, glyph.yOffset, run.offset * cellWidth, (run.offset + run.input.columns) * cellWidth)
+            }
+        }
+        return true
+    }
     override fun fill(x: Double, y: Double, width: Double, height: Double, color: Int) {
         appendRect(current.backgrounds, x, y, width, height, color)
     }
@@ -170,6 +192,20 @@ internal class TerminalGpuBatches {
             for (rect in row.decorations) addRect(decorations, rect, pixelRatio)
             for (glyph in row.glyphs) {
                 val entry = atlas[glyph.key]
+                if (glyph.key.glyph >= 0) {
+                    val left = round(glyph.x * pixelRatio) + glyph.xOffset + entry.left
+                    val top = round(glyph.y * pixelRatio) - glyph.yOffset + entry.top
+                    val x = maxOf(left, round(glyph.clipLeft * pixelRatio))
+                    val y = maxOf(top, round(glyph.y * pixelRatio))
+                    val right = minOf(left + entry.width, round(glyph.clipRight * pixelRatio))
+                    val bottom = minOf(top + entry.height, round((glyph.y + frame.cellHeight) * pixelRatio))
+                    if (right <= x || bottom <= y) continue
+                    pages[entry.page].add(x / pixelRatio, y / pixelRatio, (right - x) / pixelRatio, (bottom - y) / pixelRatio,
+                        if (entry.colored) 0xffffff else glyph.color,
+                        (entry.x + x - left).toFloat() / atlas.size, (entry.y + y - top).toFloat() / atlas.size,
+                        (entry.x + right - left).toFloat() / atlas.size, (entry.y + bottom - top).toFloat() / atlas.size)
+                    continue
+                }
                 // The atlas already contains antialiased device pixels. Squeezing its
                 // ceil-sized bitmap into a fractional cell drops different texel columns
                 // at different grid positions with nearest sampling. Preserve it 1:1.

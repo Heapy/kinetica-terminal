@@ -5,6 +5,84 @@ import kotlin.io.encoding.Base64
 import kotlin.test.*
 
 class TerminalShapingTest {
+    @Test fun textRunBoundariesMatchOriginalGhosttyWithoutPlatformFontFallback() {
+        var checked = 0
+        for (encoded in terminalShapingFixtures()) {
+            val case = Json.parseToJsonElement(Base64.decode(encoded).decodeToString()).jsonObject
+            val text = case.getValue("text").jsonPrimitive.content
+            // These characters use the primary JetBrains Mono face. Font fallback is
+            // a separate platform contract, not inferred from expected run boundaries.
+            if (case["font"]?.jsonPrimitive?.content?.let { it != "jetbrains_mono" } == true ||
+                text.any { it.code > 127 && it.code !in 0x300..0x36f }) continue
+            val columns = case["columns"]?.jsonPrimitive?.int ?: 80
+            val session = TerminalSession(columns, 3)
+            session.write(text)
+            val selected = BooleanArray(columns)
+            case["selection"]?.jsonArray?.let { bounds ->
+                for (column in bounds[0].jsonPrimitive.int..bounds[1].jsonPrimitive.int) selected[column] = true
+            }
+            val actual = terminalFontRuns(session.line(case["row"]?.jsonPrimitive?.int ?: 0),
+                case["cursor"]?.jsonPrimitive?.intOrNull, selected) { value, _ -> TerminalResolvedFontCell(0, value) }
+            val expected = case.getValue("expected").jsonObject.getValue("runs").jsonArray
+            val label = case.getValue("name").jsonPrimitive.content
+            assertEquals(expected.size, actual.size, label)
+            for ((entry, run) in expected.zip(actual)) {
+                val original = entry.jsonObject
+                assertEquals(original.int("offset"), run.offset, label)
+                assertEquals(original.int("cells"), run.input.columns, label)
+                val input = original.getValue("input").jsonArray
+                assertEquals(input.joinToString("") { codePointString(it.jsonObject.int("codepoint")) }, run.input.text, label)
+                assertContentEquals(input.flatMap { point ->
+                    List(codePointString(point.jsonObject.int("codepoint")).length) { point.jsonObject.int("cluster") }
+                }.toIntArray(), run.input.clusters, label)
+            }
+            checked++
+        }
+        assertTrue(checked >= 40, "Must cover styles, cursor, selection, wrapping and long runs")
+    }
+
+    @Test fun resolvedFontsSplitRunsAndSelectorsAreRemovedAfterResolution() {
+        val line = TerminalLine(8)
+        line.put(0, 'a'.code, 1, -1, -1, 0)
+        line.put(1, 0x2764, 2, -1, -1, 0)
+        line.combine(1, 0xfe0f)
+        line.put(2, 0, 0, -1, -1, 0)
+        line.put(3, 'b'.code, 1, -1, -1, 0)
+        line.put(4, 0x10fffd, 1, -1, -1, 0)
+        line.put(5, 'c'.code, 1, -1, -1, 0)
+        val seen = mutableSetOf<String>()
+        val runs = terminalFontRuns(line, null, BooleanArray(8)) { text, _ ->
+            seen += text
+            when (text) {
+                "❤️" -> TerminalResolvedFontCell(1, text)
+                codePointString(0x10fffd) -> TerminalResolvedFontCell(0, "�")
+                else -> TerminalResolvedFontCell(0, text)
+            }
+        }
+        assertTrue("❤️" in seen)
+        assertEquals(listOf(0, 1, 3), runs.map { it.offset })
+        assertEquals(listOf(1, 2, 3), runs.map { it.input.columns })
+        assertEquals(listOf("a", "❤", "b�c"), runs.map { it.input.text })
+        assertEquals(listOf(0, 1, 0), runs.map { it.font })
+        assertContentEquals(intArrayOf(0, 1, 2), runs.last().input.clusters)
+    }
+
+    @Test fun geometricBlocksStayOutsideFontRunsAndHiddenCellsAreNotResolved() {
+        val line = TerminalLine(6)
+        line.put(0, 'a'.code, 1, -1, -1, 0)
+        line.put(1, 0x2588, 1, -1, -1, 0)
+        line.put(2, 'b'.code, 1, -1, -1, 0)
+        line.put(3, 'x'.code, 1, -1, -1, TerminalStyle.HIDDEN)
+        line.put(4, 'c'.code, 1, -1, -1, 0)
+        val runs = terminalFontRuns(line, null, BooleanArray(6)) { text, _ ->
+            assertTrue(text != "x" && text != "█")
+            TerminalResolvedFontCell(0, text)
+        }
+        assertEquals(listOf("a", "█", "b", "c"), runs.map { it.input.text })
+        assertEquals(listOf(0, -1, 0, 0), runs.map { it.font })
+        assertEquals(listOf(0, 1, 2, 4), runs.map { it.offset })
+    }
+
     @Test fun originalHarfBuzzGlyphsMapToGhosttyTerminalColumns() {
         var checked = 0
         for (encoded in terminalShapingFixtures()) {

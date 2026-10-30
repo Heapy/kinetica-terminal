@@ -3,6 +3,60 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalGpuTest {
+    @Test fun shapedRunsReplaceCellGlyphsAndRetainCleanRows() {
+        val session = TerminalSession(8, 2)
+        session.write("\u001b[?25l==\r\nkeep\u001b[1;1H")
+        val viewport = TerminalViewport(session, {})
+        val inputs = mutableListOf<String>()
+        val frame = TerminalGpuFrame({ text, _ -> TerminalResolvedFontCell(2, text) }) { run ->
+            inputs += run.input.text
+            listOf(TerminalShapedGlyph(run.font, 42, 0, -1, 2))
+        }
+        frame.update(viewport, 7.25, 12.25)
+        assertEquals(listOf("==", "keep"), inputs)
+        assertEquals(1, frame.keys.size)
+        val first = frame.rows[0].glyphs.single()
+        assertEquals(GlyphKey("", 0, 0, 2, 42), first.key)
+        assertEquals(-1, first.xOffset)
+        assertEquals(2, first.yOffset)
+        assertEquals(0.0, first.clipLeft)
+        assertEquals(14.5, first.clipRight)
+        val retained = frame.rows[1].glyphs.single()
+        session.write("\u001b[1;1H>")
+        frame.update(viewport, 7.25, 12.25)
+        assertSame(retained, frame.rows[1].glyphs.single())
+        assertEquals(listOf("==", "keep", ">="), inputs)
+        viewport.dispose()
+        assertFailsWith<IllegalArgumentException> { TerminalGpuFrame(resolveFont = { text, _ -> TerminalResolvedFontCell(0, text) }) }
+    }
+
+    @Test fun shapedGlyphBearingsAndOffsetsCropTexelsWithoutRescaling() {
+        val session = TerminalSession(8, 1)
+        val viewport = TerminalViewport(session, {})
+        val frame = TerminalGpuFrame()
+        frame.update(viewport, 7.25, 12.25)
+        val key = GlyphKey("", 0, 0, 2, 42)
+        val outside = key.copy(glyph = 43)
+        frame.rows[0].glyphs.clear()
+        frame.rows[0].glyphs += TerminalGlyph(key, 7.25, 0.0, 0x123456,
+            xOffset = -2, yOffset = 2, clipLeft = 7.25, clipRight = 14.5)
+        frame.rows[0].glyphs += TerminalGlyph(outside, 7.25, 0.0, 0x123456,
+            xOffset = 100, clipLeft = 7.25, clipRight = 14.5)
+        val atlas = TerminalGlyphAtlas(64, 1)
+        atlas.prepare(setOf(key, outside), {
+            GlyphBitmap(20, 30, ByteArray(20 * 30 * 4), colored = true, left = -1, top = -2)
+        }, {}, { _, _ -> })
+        val batches = TerminalGpuBatches()
+        batches.build(frame, atlas, pixelRatio = 2.0)
+        val page = batches.pages.single()
+        assertEquals(1, page.count)
+        // Device bounds before clipping: (11, -4)..(31, 26).
+        // Run/row bounds: (14, 0)..(29, 24), with matching UV crops.
+        assertContentEquals(floatArrayOf(7f, 0f, 7.5f, 12f,
+            4f / 64, 5f / 64, 19f / 64, 29f / 64, 1f, 1f, 1f, 1f), page.data.copyOf(12))
+        viewport.dispose()
+    }
+
     @Test fun cleanRowsRetainGlyphsAndWideCombiningCellsStayWhole() {
         val session = TerminalSession(8, 2)
         session.write("界e\u0301\r\nkeep\u001b[1;1H")
