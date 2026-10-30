@@ -22,44 +22,92 @@ export function prepareTerminalNativeColorFont(input) {
     if (tables.has(tag)) throw new RangeError('Duplicate native glyph font table');
     tables.set(tag, {offset, length});
   }
-  const sbix = tables.get(0x73626978), maxp = tables.get(0x6d617870), head = tables.get(0x68656164);
-  if (!sbix) return null;
-  if (!maxp || maxp.length < 6 || !head || head.length < 12 || sbix.length < 8)
+  const sbix = tables.get(0x73626978), svg = tables.get(0x53564720), colr = tables.get(0x434f4c52);
+  const maxp = tables.get(0x6d617870), head = tables.get(0x68656164);
+  if (!sbix && !svg && !colr) return null;
+  if (!maxp || maxp.length < 6 || !head || head.length < 12)
     throw new RangeError('Incomplete native glyph font');
-  if (u16(sbix.offset) !== 1) return null;
   const glyphCount = u16(maxp.offset + 4), glyphs = new Uint8Array(glyphCount);
   if (!glyphCount) return null;
-  const end = sbix.offset + sbix.length, strikes = u32(sbix.offset + 4);
-  if (strikes > 4096) throw new RangeError('Native glyph font has too many bitmap strikes');
-  bounded(sbix.offset + 8, strikes * 4, end);
-  const starts = [...new Set(Array.from({length: strikes}, (_, s) => sbix.offset + u32(sbix.offset + 8 + s * 4)))].sort((a, b) => a - b);
-  for (let s = 0; s < starts.length; s++) {
-    const start = starts[s];
-    if (start < sbix.offset + 8 + strikes * 4) throw new RangeError('Invalid sbix strike offset');
-    const limit = starts[s + 1] ?? end;
-    if (limit > end || limit < start) throw new RangeError('Invalid sbix strike bounds');
-    bounded(start, 4 + (glyphCount + 1) * 4, limit);
-    const targets = new Int32Array(glyphCount).fill(-1), state = new Uint8Array(glyphCount);
-    for (let g = 0; g < glyphCount; g++) {
-      const first = start + u32(start + 4 + g * 4), last = start + u32(start + 8 + g * 4);
-      if (first < start + 4 + (glyphCount + 1) * 4 || last < first) throw new RangeError('Invalid sbix glyph offset');
-      bounded(first, last - first, limit);
-      if (first === last) { state[g] = 2; continue; }
-      bounded(first, 8, last);
-      const kind = u32(first + 4);
-      if (kind === 0x6a706720 || kind === 0x74696666) state[g] = 3; // jpg / tiff
-      else if (kind === 0x64757065) {
-        bounded(first + 8, 2, last); targets[g] = u16(first + 8);
-        if (targets[g] >= glyphCount) throw new RangeError('Invalid sbix dupe target');
-      } else state[g] = 2;
+  if (sbix) {
+    if (sbix.length < 8) throw new RangeError('Incomplete sbix header');
+    if (u16(sbix.offset) === 1) {
+      const end = sbix.offset + sbix.length, strikes = u32(sbix.offset + 4);
+      if (strikes > 4096) throw new RangeError('Native glyph font has too many bitmap strikes');
+      bounded(sbix.offset + 8, strikes * 4, end);
+      const starts = [...new Set(Array.from({length: strikes}, (_, s) => sbix.offset + u32(sbix.offset + 8 + s * 4)))].sort((a, b) => a - b);
+      for (let s = 0; s < starts.length; s++) {
+        const start = starts[s];
+        if (start < sbix.offset + 8 + strikes * 4) throw new RangeError('Invalid sbix strike offset');
+        const limit = starts[s + 1] ?? end;
+        if (limit > end || limit < start) throw new RangeError('Invalid sbix strike bounds');
+        bounded(start, 4 + (glyphCount + 1) * 4, limit);
+        const targets = new Int32Array(glyphCount).fill(-1), state = new Uint8Array(glyphCount);
+        for (let g = 0; g < glyphCount; g++) {
+          const first = start + u32(start + 4 + g * 4), last = start + u32(start + 8 + g * 4);
+          if (first < start + 4 + (glyphCount + 1) * 4 || last < first) throw new RangeError('Invalid sbix glyph offset');
+          bounded(first, last - first, limit);
+          if (first === last) { state[g] = 2; continue; }
+          bounded(first, 8, last);
+          const kind = u32(first + 4);
+          if (kind === 0x6a706720 || kind === 0x74696666) state[g] = 3; // jpg / tiff
+          else if (kind === 0x64757065) {
+            bounded(first + 8, 2, last); targets[g] = u16(first + 8);
+            if (targets[g] >= glyphCount) throw new RangeError('Invalid sbix dupe target');
+          } else state[g] = 2;
+        }
+        // Resolve each dupe edge once. Cycles cannot manufacture a native image.
+        for (let g = 0; g < glyphCount; g++) {
+          let next = g; const path = [];
+          while (state[next] === 0) { state[next] = 1; path.push(next); next = targets[next]; }
+          const result = state[next] === 3 ? 3 : 2;
+          for (const item of path) state[item] = result;
+          if (state[g] === 3) glyphs[g] = 1;
+        }
+      }
     }
-    // Resolve each dupe edge once. Cycles cannot manufacture a native image.
-    for (let g = 0; g < glyphCount; g++) {
-      let next = g; const path = [];
-      while (state[next] === 0) { state[next] = 1; path.push(next); next = targets[next]; }
-      const result = state[next] === 3 ? 3 : 2;
-      for (const item of path) state[item] = result;
-      if (state[g] === 3) glyphs[g] = 1;
+  }
+  // Vector paints can mix intrinsic colors and the current foreground. Mark
+  // them separately so the renderer includes foreground in the atlas key.
+  if (svg) {
+    const end = svg.offset + svg.length;
+    bounded(svg.offset, 10, end);
+    if (u16(svg.offset) === 0) {
+      const list = svg.offset + u32(svg.offset + 2);
+      if (list < svg.offset + 10) throw new RangeError('Invalid SVG document list');
+      bounded(list, 2, end);
+      const count = u16(list), documents = list + 2 + count * 12;
+      bounded(list + 2, count * 12, end);
+      let previous = -1;
+      for (let i = 0; i < count; i++) {
+        const record = list + 2 + i * 12, first = u16(record), last = u16(record + 2);
+        const offset = list + u32(record + 4), length = u32(record + 8);
+        if (first <= previous || first > last || last >= glyphCount || offset < documents || !length)
+          throw new RangeError('Invalid SVG glyph record');
+        bounded(offset, length, end); glyphs.fill(2, first, last + 1); previous = last;
+      }
+    }
+  }
+  if (colr) {
+    const end = colr.offset + colr.length;
+    bounded(colr.offset, 14, end);
+    if (u16(colr.offset) === 1) {
+      bounded(colr.offset, 34, end);
+      const relative = u32(colr.offset + 14);
+      if (relative) {
+        const list = colr.offset + relative;
+        if (relative < 34) throw new RangeError('Invalid COLRv1 base glyph list');
+        bounded(list, 4, end);
+        const count = u32(list), paints = list + 4 + count * 6;
+        if (count > glyphCount) throw new RangeError('Invalid COLRv1 glyph count');
+        bounded(list + 4, count * 6, end);
+        let previous = -1;
+        for (let i = 0; i < count; i++) {
+          const record = list + 4 + i * 6, glyph = u16(record), paint = list + u32(record + 2);
+          if (glyph <= previous || glyph >= glyphCount || paint < paints) throw new RangeError('Invalid COLRv1 glyph record');
+          bounded(paint, 1, end); glyphs[glyph] = 2; previous = glyph;
+        }
+      }
     }
   }
   if (!glyphs.some(Boolean)) return null;

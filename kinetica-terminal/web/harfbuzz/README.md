@@ -52,13 +52,17 @@ The runtime deliberately does not perform font fallback or terminal-cell layout.
 
 The companion `terminal-native-color-font.mjs` must be served alongside the main
 module. The browser integration uses its `prepareTerminalNativeColorFont(bytes)`
-helper for JPEG/TIFF sbix artwork that `colorPng` cannot expose. It returns `null`
+helper for JPEG/TIFF sbix, COLRv1 and SVG artwork. It returns `null`
 or an independent `{bytes, glyphs}` private face plus a glyph-membership byte array.
 The private face is used only to paint already-selected glyph IDs through Canvas;
 it does not replace the HarfBuzz shaping face. Its cmap uses supplementary PUA and
 its layout tables are removed. Bitmap codec support follows the host browser,
-and unsupported-codec outlines remain tintable text masks. Normal outline,
-COLRv0 and PNG fonts do not need an additional private face.
+and unsupported-codec outlines preserve the text foreground. Normal outline,
+COLRv0 and PNG-only fonts do not need an additional private face. Membership byte
+`1` denotes bitmap artwork; `2` denotes vector artwork that may use the current
+foreground. Vector paint cache entries include the effective foreground. This
+passes color choices into the browser font engine; it does not override its
+codec support or SVG currentColor policy.
 
 Ownership is explicit: disposing a font releases its HarfBuzz references; disposing
 the runtime also disposes remaining fonts and drops its WASM instance. Operations
@@ -97,6 +101,7 @@ KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-terminal-col
 KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-terminal-sbix.mjs
 node scripts/verify-terminal-native-color-font.mjs
 KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/probe-terminal-sbix-media.mjs --require-parity --require-native
+KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-terminal-vector-fonts.mjs --require-colrv1
 ```
 
 Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` when using an existing Chromium installation.

@@ -39,7 +39,27 @@ try {
  const selected=runtime.createFont(prepareTerminalNativeColorFont(await readFile(new URL('sbix-media-shaped.ttf',directory))).bytes);
  assert.equal(selected.shape(String.fromCodePoint(0xf0005))[0].glyph,5,'Private face does not apply ccmp a second time');
 } finally {runtime.dispose();}
-for(const name of ['colrv0','sbix','svg'])assert.equal(prepareTerminalNativeColorFont(await readFile(new URL(name+'.ttf',directory))),null);
+for(const name of ['colrv0','sbix'])assert.equal(prepareTerminalNativeColorFont(await readFile(new URL(name+'.ttf',directory))),null);
+for(const name of ['svg','svg-mixed','colrv1']){
+ const bytes=new Uint8Array(await readFile(new URL(name+'.ttf',directory))),p=prepareTerminalNativeColorFont(bytes),map=tables(bytes);
+ assert.deepEqual([...p.glyphs.entries()].filter(([,flag])=>flag),
+  (name==='svg'?[4,6]:[4,5,6,7,8]).map(glyph=>[glyph,2]),name+' vector foreground metadata');
+ const end=Math.max(...[...map.values()].map(table=>table.offset+table.length));
+ for(let length=0;length<end;length++)assert.throws(()=>prepareTerminalNativeColorFont(bytes.subarray(0,length)),RangeError);
+ const mutate=body=>{const data=bytes.slice();body(new DataView(data.buffer));return data;};
+ const view=new DataView(bytes.buffer);
+ if(name==='colrv1'){
+  const offset=map.get('COLR').offset,list=offset+view.getUint32(offset+14);
+  for(const [where,value]of [[offset+14,0xffffffff],[list,0xffffffff],[list+6,0xffffffff],[list+6,0]])
+   assert.throws(()=>prepareTerminalNativeColorFont(mutate(v=>v.setUint32(where,value))),RangeError);
+  assert.throws(()=>prepareTerminalNativeColorFont(mutate(v=>v.setUint16(list+10,4))),RangeError,'Unsorted/duplicate COLRv1 glyphs');
+ }else{
+  const offset=map.get('SVG ').offset,list=offset+view.getUint32(offset+2);
+  for(const [where,value]of [[offset+2,0xffffffff],[offset+2,0],[list+6,0xffffffff],[list+10,0]])
+   assert.throws(()=>prepareTerminalNativeColorFont(mutate(v=>v.setUint32(where,value))),RangeError);
+  assert.throws(()=>prepareTerminalNativeColorFont(mutate(v=>v.setUint16(list+4,65535))),RangeError,'SVG range beyond maxp');
+ }
+}
 const lastByte=Math.max(...[...before.values()].map(table=>table.offset+table.length));
 for(let length=0;length<lastByte;length++)assert.throws(()=>prepareTerminalNativeColorFont(source.subarray(0,length)),RangeError);
 const mutate=body=>{const data=source.slice(),view=new DataView(data.buffer);body(view,data);return data;};

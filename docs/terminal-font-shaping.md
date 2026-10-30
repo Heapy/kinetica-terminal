@@ -112,9 +112,10 @@ The WebGL verifier compares a fitted color emoji with an independent full-cell P
 reference at DPR 1/1.25/2. Both the intermediate PNG canvas and the atlas rasterizer
 use the CPU Canvas path to keep downsampling consistent before texture upload.
 
-Still open: the remaining color-font format audit, especially COLRv1/SVG and non-PNG sbix coverage.
-The configured browser rasterizer consumes outlines, COLRv0 layers and embedded PNGs;
-the CSS-only and software paths do not apply these shaped-atlas constraints.
+Color-format evidence and native browser codec limits are recorded below. The
+configured browser rasterizer consumes outlines, COLRv0 layers and PNGs directly,
+and uses private glyph-index faces for JPEG/TIFF, COLRv1 and SVG. CSS-only and
+software paths do not apply these shaped-atlas constraints.
 
 ## Color font formats
 
@@ -258,8 +259,58 @@ the 18 cases per backend with the commands above plus `--font svg`; results are 
 `test-upstream/color-fonts/ghostty-svg-{freetype,coretext}.json`. All three font
 fixtures and six desktop probe files regenerate byte-for-byte.
 
-Browser SVG rendering and COLRv1 remain open. The SVG Native checks do not
-establish browser support for embedded SVG documents.
+The browser now also uses the private glyph-index face for COLRv1 base paints
+and SVG document ranges. Unlike fixed bitmap images, vector paints conservatively
+include the effective foreground in their atlas key and receive it during native
+painting. This preserves mixtures of palette colors, alpha and current foreground
+without treating the entire image as a text mask. Native vector painting takes
+precedence over legacy COLRv0 layer extraction when a v1 base paint is present.
+The table reader bounds and validates the SVG document directory and COLRv1 base
+glyph records; browser font libraries own XML/gzip and paint-graph processing.
+
+`scripts/generate-terminal-vector-color-fonts.py` creates original COLRv1 and SVG
+fixtures with fixed gray, current foreground, linear gradients, translucent
+layers, source-in composition, translated glyph references, SVG clipping and
+plain/gzip documents. COLRv1 includes a paint on an empty monochrome base outline,
+and SVG descriptions extend beyond their monochrome fallback outlines. Native
+Canvas metrics preserve their actual paint bounds. The two fixtures reproduce
+byte-for-byte with the pinned FontTools environment and `--check`.
+
+`scripts/verify-terminal-vector-fonts.mjs` compares the complete A–E vector regions
+with native Canvas at font sizes 20/30 and DPR 1/1.25/2, including foreground
+changes and returning to cached colors. Ordinary F is still drawn with HarfBuzz
+outlines and is excluded from this native-hinting comparison. Chromium
+149.0.7827.55 renders COLRv1 with zero pixel difference and uses monochrome SVG
+fallback with at most one level of difference. Firefox 159.0 renders both COLRv1
+and SVG with at most one level of difference. `--require-colrv1` and `--require-svg`
+require native artwork in addition to matching pixels. A real Firefox WebGL run
+uses WebDriver BiDi in an isolated profile; it does not attach to user sessions:
+
+```sh
+mkdir -p /tmp/kinetica-firefox-vector-profile
+/Applications/Firefox.app/Contents/MacOS/firefox --headless --no-remote --profile /tmp/kinetica-firefox-vector-profile --remote-debugging-port 9237 about:blank
+# In another terminal, with the repository static server already running:
+KINETICA_BIDI_URL=ws://127.0.0.1:9237/session KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-terminal-vector-fonts.mjs --require-colrv1 --require-svg
+```
+
+The test records an actual host limitation: Firefox's SVG `currentColor` remains
+black when either Canvas `fillStyle` or the canvas element's CSS `color` changes.
+Our SVG output matches that behavior; COLRv1 current foreground does change.
+The [SVG specification](https://learn.microsoft.com/en-us/typography/opentype/spec/svg)
+allows the host to choose the initial currentColor and recommends text foreground.
+No claim is made that passing this integration test adds missing codecs or changes
+the host's SVG color policy. The target here is the native font painting used by
+Ghostty's browser face, with HarfBuzz glyph selection retained.
+
+Original Ghostty CoreText and FreeType probes each add 18 COLRv1 and 18 mixed-SVG
+cases. Both classify all COLRv1 fixture glyphs as non-color; the original CoreText
+alpha atlas discards paint colors, while FreeType uses fallback outlines. CoreText
+classifies SVG A–E as color; FreeType disables SVG and uses fallback outlines.
+These backend-specific records are retained in `ghostty-{colrv1,svg-mixed}-*.json`.
+All twelve desktop probe files regenerate byte-for-byte with the usual command
+and the corresponding `--font` / `--backend` / `--check` arguments. The existing
+eight probes change only their generator hash. Release JS tests, native-font
+table-reader checks and browser COLRv0, JPEG/TIFF and default-font regressions pass.
 
 ## Original reference
 
@@ -364,9 +415,10 @@ run/glyph expectations remain unchanged; the corpus adds raw shaping data.
 An isolated probe of installed Chromium 149 found only the standard Canvas
 `TextMetrics` fields, with no glyph-index or cluster-mapping API exposed. Passing a
 whole string to `fillText` alone cannot provide the required terminal-grid mapping.
-The original FreeType/HarfBuzz and CoreText corpora supply shaping evidence. Native and configured browser
-GPU integration now have real pixel coverage. The broader browser gates listed
-above remain open.
+The original FreeType/HarfBuzz and CoreText corpora supply shaping evidence. Native
+and configured browser GPU integration now have real pixel coverage; private cmap
+faces let Canvas paint individual selected glyph IDs without reshaping. Broader
+resource and release gates remain in the migration and production-readiness lists.
 
 The [browser HarfBuzz runtime](../kinetica-terminal/web/harfbuzz/README.md) supplies
 a reproducible full HarfBuzz 11.0.0 WASM build with explicit font ownership, bounded

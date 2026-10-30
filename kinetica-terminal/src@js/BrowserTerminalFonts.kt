@@ -132,7 +132,8 @@ internal class BrowserTerminalFontSet private constructor(
 }
 
 internal class BrowserTerminalNativeColorFont(val alias: String, private val glyphs: dynamic) {
-    operator fun contains(glyph: Int): Boolean = glyphs[glyph] == 1
+    operator fun contains(glyph: Int): Boolean = glyphs[glyph] == 1 || glyphs[glyph] == 2
+    fun usesForeground(glyph: Int): Boolean = glyphs[glyph] == 2
 }
 
 /** Only one shaper per drawing surface. Face IDs remain valid until its atlas is reset. */
@@ -200,6 +201,7 @@ internal class BrowserTerminalShaper(
     }
 
     private fun usesForeground(font: Int, glyph: Int): Boolean {
+        if (nativeColors[font]?.usesForeground(glyph) == true) return true
         if (faces[font].hasColorLayers != true) return false
         val key = font to glyph
         return foregroundGlyphs.getOrPut(key) {
@@ -212,9 +214,11 @@ internal class BrowserTerminalShaper(
     fun rasterize(key: GlyphKey, canvas: dynamic, context: dynamic, cellWidth: Double, cellHeight: Double, maxSize: Int): GlyphBitmap {
         check(!disposed)
         val face = faces[key.font]
-        val layers: dynamic = if (face.hasColorLayers == true) face.colorLayers(key.glyph) else null
-        val png: dynamic = if (layers == null) face.colorPng(key.glyph) else null
-        val native = if (layers == null && png == null) nativeColors[key.font]?.takeIf { key.glyph in it } else null
+        val candidate = nativeColors[key.font]?.takeIf { key.glyph in it }
+        val vector = candidate?.usesForeground(key.glyph) == true
+        val layers: dynamic = if (!vector && face.hasColorLayers == true) face.colorLayers(key.glyph) else null
+        val png: dynamic = if (!vector && layers == null) face.colorPng(key.glyph) else null
+        val native = if (layers == null && png == null) candidate else null
         val nativeText = if (native == null) "" else browserNativeGlyphText(key.glyph)
         fun nativeFont() {
             context.font = "${pixels}px \"${checkNotNull(native).alias}\""
@@ -294,14 +298,21 @@ internal class BrowserTerminalShaper(
                     x - left - original.x * scaleX, top - y + (original.y - baselineBottom) * scaleY)
                 context.fillStyle = color; context.fillText(nativeText, 0, 0)
             }
-            // Platforms without the bitmap codec may draw the ordinary outline.
-            // Compare fills so that fallback remains a tintable mask, while even
-            // an entirely white or gray intrinsic image keeps its own colors.
-            draw("black")
-            val black: dynamic = context.getImageData(0, 0, width, height).data
-            draw("white")
-            val white: dynamic = context.getImageData(0, 0, width, height).data
-            nativeIntrinsic = (0 until width * height * 4).all { black[it] == white[it] }
+            if (vector) {
+                // Vector paints may mix fixed and current colors. Bake the
+                // effective foreground into the bitmap and its cache key.
+                draw("#${checkNotNull(key.foreground).toString(16).padStart(6, '0')}")
+                nativeIntrinsic = true
+            } else {
+                // Platforms without the bitmap codec may draw the ordinary outline.
+                // Compare fills so fallback remains a tintable mask, while even
+                // entirely white or gray intrinsic images keep their own colors.
+                draw("black")
+                val black: dynamic = context.getImageData(0, 0, width, height).data
+                draw("white")
+                val white: dynamic = context.getImageData(0, 0, width, height).data
+                nativeIntrinsic = (0 until width * height * 4).all { black[it] == white[it] }
+            }
         } else if (layers != null) {
             outlineTransform()
             for (i in 0 until (layers.length as Number).toInt()) {

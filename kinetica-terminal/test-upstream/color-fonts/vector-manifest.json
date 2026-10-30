@@ -1,0 +1,153 @@
+{
+  "fonttools": "4.60.1",
+  "generatorSha256": "e18e7f32373bc1415349d7781d068bf346a9317b64414cac1605458f2eecbc27",
+  "baseGeneratorSha256": "83ff7ba002e808e8ccd4412d385189666a59e310828fb6d41fdcab2ccb9c9c29",
+  "glyphOrder": [
+    ".notdef",
+    "space",
+    "M",
+    "H",
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "outer",
+    "inner",
+    "band",
+    "letter",
+    "fallback"
+  ],
+  "colrv1Sha256": "edff04e17090b2a750a90acdc6e8600c0377d9d0e476df1769fd1060fb24d17c",
+  "svgMixedSha256": "f57b17cc06862387e4d3702637312e13927f98aafb3afa0b30f15c77e5410fdb",
+  "paints": {
+    "A": {
+      "Format": 1,
+      "Layers": [
+        {
+          "Format": 10,
+          "Glyph": "outer",
+          "Paint": {
+            "Format": 2,
+            "PaletteIndex": 0,
+            "Alpha": 1.0
+          }
+        },
+        {
+          "Format": 10,
+          "Glyph": "inner",
+          "Paint": {
+            "Format": 2,
+            "PaletteIndex": 1,
+            "Alpha": 1.0
+          }
+        },
+        {
+          "Format": 10,
+          "Glyph": "band",
+          "Paint": {
+            "Format": 2,
+            "PaletteIndex": 65535,
+            "Alpha": 1.0
+          }
+        }
+      ]
+    },
+    "B": {
+      "Format": 10,
+      "Glyph": "outer",
+      "Paint": {
+        "Format": 2,
+        "PaletteIndex": 2,
+        "Alpha": 1.0
+      }
+    },
+    "C": {
+      "Format": 10,
+      "Glyph": "outer",
+      "Paint": {
+        "Format": 4,
+        "x0": 50,
+        "y0": 0,
+        "x1": 550,
+        "y1": 0,
+        "x2": 50,
+        "y2": 700,
+        "ColorLine": {
+          "Extend": 0,
+          "ColorStop": [
+            {
+              "StopOffset": 0.0,
+              "PaletteIndex": 0,
+              "Alpha": 1.0
+            },
+            {
+              "StopOffset": 1.0,
+              "PaletteIndex": 3,
+              "Alpha": 1.0
+            }
+          ]
+        }
+      }
+    },
+    "D": {
+      "Format": 32,
+      "CompositeMode": 5,
+      "SourcePaint": {
+        "Format": 10,
+        "Glyph": "outer",
+        "Paint": {
+          "Format": 2,
+          "PaletteIndex": 3,
+          "Alpha": 1.0
+        }
+      },
+      "BackdropPaint": {
+        "Format": 10,
+        "Glyph": "inner",
+        "Paint": {
+          "Format": 2,
+          "PaletteIndex": 65535,
+          "Alpha": 1.0
+        }
+      }
+    },
+    "E": {
+      "Format": 14,
+      "dx": 40,
+      "dy": 30,
+      "Paint": {
+        "Format": 11,
+        "Glyph": "C"
+      }
+    }
+  },
+  "documents": [
+    {
+      "glyph": 4,
+      "svg": "<svg id=\"glyph4\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"50\" y=\"-700\" width=\"500\" height=\"700\" fill=\"#606060\"/></svg>",
+      "compressed": false
+    },
+    {
+      "glyph": 5,
+      "compressed": false,
+      "svg": "<svg id=\"glyph5\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"50\" y=\"-700\" width=\"500\" height=\"700\" fill=\"#f02010\"/><rect x=\"150\" y=\"-600\" width=\"300\" height=\"500\" fill=\"currentColor\" opacity=\"0.5\"/></svg>"
+    },
+    {
+      "glyph": 6,
+      "svg": "<svg id=\"glyph6\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"paint\"><stop offset=\"0\" stop-color=\"#f02010\"/><stop offset=\"1\" stop-color=\"#2040f0\" stop-opacity=\"0.5\"/></linearGradient></defs><rect x=\"50\" y=\"-700\" width=\"500\" height=\"700\" fill=\"url(#paint)\"/></svg>",
+      "compressed": true
+    },
+    {
+      "glyph": 7,
+      "compressed": true,
+      "svg": "<svg id=\"glyph7\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"50\" y=\"-700\" width=\"500\" height=\"700\" fill=\"currentColor\"/></svg>"
+    },
+    {
+      "glyph": 8,
+      "compressed": false,
+      "svg": "<svg id=\"glyph8\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\"><defs><clipPath id=\"cut\"><rect x=\"100\" y=\"-500\" width=\"300\" height=\"300\"/></clipPath></defs><g transform=\"translate(40,-30)\" clip-path=\"url(#cut)\"><rect x=\"50\" y=\"-700\" width=\"500\" height=\"700\" fill=\"#2040f0\"/></g></svg>"
+    }
+  ]
+}

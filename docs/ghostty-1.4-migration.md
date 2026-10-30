@@ -130,7 +130,7 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       denied schemes, declined/revoked approvals, disposal and host callback behavior.
       Hover feedback and multi-cell shaping remain separate open requirements below.
 
-- [ ] Shape multi-cell font runs in GPU renderers, including programming ligatures.
+- [x] Shape multi-cell font runs in GPU renderers, including programming ligatures.
       Browser configurations without loaded font bytes retain a per-cell path;
       original Ghostty `renderer/generic.zig` uses a font-shaper run iterator and cluster mapping.
       The [font shaping reference](terminal-font-shaping.md) records original run boundaries,
@@ -155,7 +155,12 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       layers with alpha and current-foreground colors; independent pixel checks cover
       palette gray, empty base outlines and cache invalidation. Original desktop probes
       record the pinned backends' limitations on the same fixture. The remaining
-      COLRv1/browser-SVG work stays open. Native JPEG/TIFF sbix now has
+      COLRv1 and browser SVG now use the native glyph-index face as well, with
+      foreground-aware atlas entries for vector paints. Chromium and Firefox
+      COLRv1 pixels and Firefox SVG pixels match their native Canvas references
+      at DPR 1/1.25/2. Browser codec/currentColor limitations are recorded in the
+      shaping reference; the integration does not claim to override them.
+      Native JPEG/TIFF sbix now has
       deterministic fixtures, original backend probes and Metal regressions.
       Shaped WebGL also paints JPEG/TIFF through a private glyph-index font,
       preserving HarfBuzz substitutions without a second shaping pass. Real

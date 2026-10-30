@@ -18,7 +18,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('upstream', type=Path); parser.add_argument('zig', type=Path)
     parser.add_argument('--backend', choices=['freetype', 'coretext'], default='freetype')
-    parser.add_argument('--font', choices=['colrv0', 'sbix', 'svg', 'sbix-media'], default='colrv0')
+    parser.add_argument('--font', choices=['colrv0', 'sbix', 'svg', 'sbix-media', 'colrv1', 'svg-mixed'], default='colrv0')
     parser.add_argument('--check', action='store_true'); args = parser.parse_args()
     upstream, zig = args.upstream.resolve(), args.zig.resolve()
     assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=upstream, text=True).strip() == SHA
