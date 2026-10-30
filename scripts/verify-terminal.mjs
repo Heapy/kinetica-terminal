@@ -93,10 +93,11 @@ try {
   });
   assert.deepEqual(promptNavigation, [true, true, true, true]);
   // Sustained output stays in the terminal surface and bounded history, not a growing DOM tree.
+  const fixedSurfaceElements = await page.locator("[data-terminal] *").count();
   await page.evaluate(() => kineticaTerminalDemo.write("line\r\n".repeat(12000)));
   assert.equal(await page.evaluate(() => kineticaTerminalDemo.history()), 10000);
   assert.equal(await page.locator("canvas").count(), 1);
-  assert.equal(await page.locator("[data-terminal] *").count(), 5); // Includes the fixed progress overlay.
+  assert.equal(await page.locator("[data-terminal] *").count(), fixedSurfaceElements);
   const painted = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const verifyDeccolm = async () => {
     const host = await page.evaluate(() => [kineticaTerminalDemo.columns(), kineticaTerminalDemo.rows()]);
