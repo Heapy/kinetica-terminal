@@ -102,6 +102,10 @@ internal fun checkGhostty(fixture: GhosttyFixture) {
                         unshiftedCodepoint = number("unshifted"),
                         baseCodepoint = number("base").takeIf { it != 0 },
                         consumedModifiers = number("consumed"),
+                        optionAsAlt = when (key["optionAsAlt"]?.jsonPrimitive?.int ?: 1) {
+                            0 -> false; 1 -> true; 2 -> number("altRight") == 0; 3 -> number("altRight") != 0
+                            else -> error("Unsupported oracle Option policy")
+                        },
                         physicalCode = key["physical"]?.jsonPrimitive?.content,
                         keypad = key["keypad"]?.jsonPrimitive?.content?.let(TerminalKeypadKey::valueOf))
                     assertTrue(session.sendKey(input), "Unencoded keyboard input $keyIndex: $key")

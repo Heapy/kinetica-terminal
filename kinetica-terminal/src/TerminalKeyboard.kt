@@ -57,7 +57,7 @@ internal fun encodeModifyOtherKey(event: TerminalKey): String? {
     }
     val codepoint = points.singleOrNull() ?: return null
     // macOS Option may produce text without acting as Alt. Shift stays in this protocol's mask.
-    val modifiers = if (event.consumedModifiers and 2 != 0) bits and 2.inv() else bits
+    val modifiers = if (event.optionActsAsAlt) bits else bits and 2.inv()
     if (modifiers == 0) return text
     if (codepoint in 0x40..0x7f || modifiers and 1.inv() != 0 || codepoint == 32) {
         return "\u001b[27;${modifiers + 1};$codepoint~"
@@ -173,7 +173,7 @@ internal fun encodeKittyKey(event: TerminalKey, flags: Int): String? {
         if (eventCode > 1) append(";${mods + 1}:$eventCode")
         else if (mods != 0) append(";${mods + 1}")
         if (flags and 16 != 0 && !release && mods and 12 == 0 &&
-            (mods and 2 == 0 || event.consumedModifiers and 2 != 0)) {
+            (mods and 2 == 0 || !event.optionActsAsAlt)) {
             val associated = points.filter(::terminalPrintable)
             if (associated.isNotEmpty()) {
                 if (!hasModifiers) append(';')

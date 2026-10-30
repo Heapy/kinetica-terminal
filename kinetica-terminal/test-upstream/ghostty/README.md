@@ -602,6 +602,17 @@ encoder's macOS Option-as-Alt policy independently of consumed modifiers (`optio
 fixtures, default 1). This matters for modifyOtherKeys and Kitty associated text; consumed Alt
 with Option-as-Alt disabled must be compared under the same host policy.
 
+The Option-policy extension adds 24 scenarios / 164 checkpoints from
+`option-policy-matrix.json`. The `E` command's optional final arguments now carry the original
+four-state Option-as-Alt policy (0 none, 1 both, 2 left, 3 right) and the right-Alt side bit
+(0 left/default, 1 right). The C encoder receives the actual policy and modifier-side bit;
+Kotlin replay resolves those into `TerminalKey.optionAsAlt`. Policy is independent of layout
+consumption: the matrix crosses both consumed-Alt states with both sides, text/missing text,
+shifted text, press/repeat/release, both mode-1036 states, legacy, modifyOtherKeys and four
+Kitty flag sets. Whole-stream and bytewise replay compare every resulting reply byte.
+This verifies shared encoding policy; AppKit side selection and translation require native
+adapter tests separately.
+
 Reverse-video scenarios enable `renderColors` (`O` in the C helper) to compare default
 foreground/background/cursor colors returned by the original RenderState, independently of
 stored terminal colors and OSC replies. Ten cases / 49 checkpoints cover palette and dynamic

@@ -27,6 +27,20 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
 - [x] Run shared JVM/JS checks, relevant Native tests and fresh browser rendering/input checks for the C-reference migration.
 - [ ] Complete the release-note/source audit for remaining emulation and input differences.
 
+- [x] Separate resolved macOS Option-as-Alt policy from layout-consumed modifiers in
+      shared key encoding. `TerminalKey.optionAsAlt` explicitly controls the legacy Alt
+      prefix, modifyOtherKeys modifier mask and Kitty associated-text eligibility; consumed
+      modifiers still control plain-text event ownership. An omitted policy preserves the
+      existing embedding convention. The original C encoder now accepts all four policies
+      plus the right-Alt modifier bit; replay passes the resolved policy independently.
+      Twenty-four new scenarios / 164 checkpoints cross both sides, consumed Alt, shifted
+      and missing text, actions, mode 1036 and legacy/modifyOtherKeys/Kitty. Fifteen scenarios
+      failed before the fix. Native left/right Option selection is the next adapter task;
+      these fixtures alone do not prove AppKit event translation.
+      Validation: 1476 JVM tests, fresh Release JS tests, 1021 Native oracle/keyboard tests
+      and the actual Chromium keyboard/IME verifier. All 1012 oracle fixture/manifest files
+      regenerate byte-for-byte (1009 scenarios / 6323 total checkpoints).
+
 - [x] Route the original iTerm2 OSC 1337 `Copy=:base64` and `CurrentDir=value` keys to
       the existing clipboard policy/queue and working-directory observers. Match ASCII
       case-insensitive keys and the original fixed capture: at most 2047 UTF-8 bytes after

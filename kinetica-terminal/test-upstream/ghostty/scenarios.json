@@ -149633,5 +149633,881 @@
         "write": "\u001b]1337;CurrentDir=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d\ude00\u0007"
       }
     ]
+  },
+  {
+    "name": "option_policy_legacy_0",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_legacy_1",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_legacy_2",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_legacy_3",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_modify2_0",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_modify2_1",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_modify2_2",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_modify2_3",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty1_0",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>1u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty1_1",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>1u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty1_2",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>1u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty1_3",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>1u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty3_0",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>3u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty3_1",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>3u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty3_2",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>3u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty3_3",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>3u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty17_0",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>17u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty17_1",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>17u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty17_2",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>17u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty17_3",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>17u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty31_0",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>31u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 0,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty31_1",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>31u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 1,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty31_2",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>31u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 2,
+        "altRight": 1
+      }
+    ]
+  },
+  {
+    "name": "option_policy_kitty31_3",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[>31u"
+      },
+      {
+        "write": "\u001b[?1036h"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      },
+      {
+        "write": "\u001b[?1036l"
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 0
+      },
+      {
+        "keyboardMatrix": "option-policy",
+        "optionAsAlt": 3,
+        "altRight": 1
+      }
+    ]
   }
 ]

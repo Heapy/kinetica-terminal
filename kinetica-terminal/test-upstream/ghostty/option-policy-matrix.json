@@ -1,0 +1,41 @@
+{
+  "keys": [
+    {
+      "key": "a",
+      "upstream": "A",
+      "text": "a",
+      "unshifted": 97,
+      "modifiers": 2
+    },
+    {
+      "key": "a",
+      "upstream": "A",
+      "text": "\u00e5",
+      "unshifted": 97,
+      "modifiers": 2
+    },
+    {
+      "key": "a",
+      "upstream": "A",
+      "text": "A",
+      "unshifted": 97,
+      "modifiers": 3
+    },
+    {
+      "key": "a",
+      "upstream": "A",
+      "text": "",
+      "unshifted": 97,
+      "modifiers": 2
+    }
+  ],
+  "actions": [
+    0,
+    1,
+    2
+  ],
+  "consumed": [
+    0,
+    2
+  ]
+}

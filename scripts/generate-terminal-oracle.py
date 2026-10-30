@@ -101,15 +101,20 @@ def main():
             for event in case["events"]:
                 if "keyboardMatrix" in event:
                     name = event.pop("keyboardMatrix")
-                    files = {"kitty": "keyboard-matrix.json", "modify-other": "modify-other-keys-matrix.json"}
+                    files = {"kitty": "keyboard-matrix.json", "modify-other": "modify-other-keys-matrix.json", "option-policy": "option-policy-matrix.json"}
                     if name not in files:
                         raise ValueError("Unknown keyboard matrix")
                     matrix_bytes = (ROOT / "kinetica-terminal/test-upstream/ghostty" / files[name]).read_bytes()
-                    hash_key = "keyboardMatrixSha256" if name == "kitty" else "modifyOtherKeysMatrixSha256"
+                    hash_key = {"kitty": "keyboardMatrixSha256", "modify-other": "modifyOtherKeysMatrixSha256", "option-policy": "optionPolicyMatrixSha256"}[name]
                     manifest[hash_key] = hashlib.sha256(matrix_bytes).hexdigest()
                     matrix = json.loads(matrix_bytes)
-                    event["keyboard"] = [dict(key, action=action, modifiers=mods) for key in matrix["keys"]
-                                         for action in matrix["actions"] for mods in matrix["modifiers"]] + matrix["additional"]
+                    if name == "option-policy":
+                        policy, side = event.pop("optionAsAlt"), event.pop("altRight")
+                        event["keyboard"] = [dict(key, action=action, consumed=consumed, optionAsAlt=policy, altRight=side)
+                                             for key in matrix["keys"] for consumed in matrix["consumed"] for action in matrix["actions"]]
+                    else:
+                        event["keyboard"] = [dict(key, action=action, modifiers=mods) for key in matrix["keys"]
+                                             for action in matrix["actions"] for mods in matrix["modifiers"]] + matrix["additional"]
         if source := case.get("tuiRecording"):
             recorded = (ROOT / "kinetica-terminal/test-upstream/tui" / source["path"]).read_bytes()
             if hashlib.sha256(recorded).hexdigest() != source["sha256"]:
@@ -160,7 +165,7 @@ def main():
                 for key in event["keyboard"]:
                     text = key.get("text", "").encode().hex() or "-"
                     commands.append(f"E {key['upstream']} {key['modifiers']} {key.get('consumed', 0)} "
-                                    f"{key['action']} {key.get('unshifted', 0)} {text} {key.get('optionAsAlt', 1)}")
+                                    f"{key['action']} {key.get('unshifted', 0)} {text} {key.get('optionAsAlt', 1)} {key.get('altRight', 0)}")
             elif "mousePixels" in event:
                 batch = event["mousePixels"]
                 commands.append("V " + " ".join(map(str, batch["geometry"])) + f" {int(batch['track'])}")

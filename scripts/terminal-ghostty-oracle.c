@@ -489,9 +489,9 @@ static void encode_keyboard(GhosttyTerminal terminal, const char *command) {
         KEY(SHIFT_LEFT), KEY(CONTROL_RIGHT), KEY(ALT_LEFT), KEY(META_LEFT), KEY(CAPS_LOCK), KEY(NUM_LOCK)
 #undef KEY
     };
-    char name[32], encoded[1025]; unsigned mods, consumed, action, codepoint, option_as_alt = 1;
-    if (sscanf(command, "%31s %u %u %u %u %1024s %u", name, &mods, &consumed, &action, &codepoint, encoded, &option_as_alt) < 6 ||
-        mods > 255 || consumed > 255 || action > 2 || codepoint > 0x10ffff || option_as_alt > 1) exit(2);
+    char name[32], encoded[1025]; unsigned mods, consumed, action, codepoint, option_as_alt = 1, alt_right = 0;
+    if (sscanf(command, "%31s %u %u %u %u %1024s %u %u", name, &mods, &consumed, &action, &codepoint, encoded, &option_as_alt, &alt_right) < 6 ||
+        mods > 255 || consumed > 255 || action > 2 || codepoint > 0x10ffff || option_as_alt > 3 || alt_right > 1) exit(2);
     size_t index = 0;
     for (; index < sizeof(keys) / sizeof(keys[0]); index++) if (!strcmp(name, keys[index].name)) break;
     if (index == sizeof(keys) / sizeof(keys[0])) exit(2);
@@ -505,11 +505,11 @@ static void encode_keyboard(GhosttyTerminal terminal, const char *command) {
     GhosttyKeyEncoder encoder; GhosttyKeyEvent event;
     check(ghostty_key_encoder_new(NULL, &encoder)); check(ghostty_key_event_new(NULL, &event));
     ghostty_key_encoder_setopt_from_terminal(encoder, terminal);
-    GhosttyOptionAsAlt option = option_as_alt ? GHOSTTY_OPTION_AS_ALT_TRUE : GHOSTTY_OPTION_AS_ALT_FALSE;
+    GhosttyOptionAsAlt option = (GhosttyOptionAsAlt)option_as_alt;
     ghostty_key_encoder_setopt(encoder, GHOSTTY_KEY_ENCODER_OPT_MACOS_OPTION_AS_ALT, &option);
     ghostty_key_event_set_key(event, keys[index].key);
     ghostty_key_event_set_action(event, actions[action]);
-    ghostty_key_event_set_mods(event, keyboard_mods(mods));
+    ghostty_key_event_set_mods(event, keyboard_mods(mods) | (alt_right ? GHOSTTY_MODS_ALT_SIDE : 0));
     ghostty_key_event_set_consumed_mods(event, keyboard_mods(consumed));
     ghostty_key_event_set_unshifted_codepoint(event, codepoint);
     ghostty_key_event_set_utf8(event, utf8, text_length);

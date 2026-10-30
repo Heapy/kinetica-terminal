@@ -31,7 +31,13 @@ public data class TerminalKey(
     val numLock: Boolean = false,
     /** Kitty modifier bits consumed while producing [text], e.g. Shift or macOS Option. */
     val consumedModifiers: Int = 0,
+    /** Resolved macOS Option policy, independent of layout-consumed modifiers.
+     * Null preserves the consumed-Alt convention used by existing embedding callers. */
+    val optionAsAlt: Boolean? = null,
 )
+
+internal val TerminalKey.optionActsAsAlt: Boolean
+    get() = optionAsAlt ?: (consumedModifiers and 2 == 0)
 
 /** Returns null for keys which should be handled by the platform's text/IME input system. */
 public fun TerminalSession.encodeKey(event: TerminalKey): String? {
@@ -108,7 +114,7 @@ public fun TerminalSession.encodeKey(event: TerminalKey): String? {
         }
     }
     if (event.alt) {
-        if (!altEscapePrefix || text.isNotEmpty() && event.consumedModifiers and 2 != 0) return text
+        if (!altEscapePrefix || event.optionAsAlt == false || text.isNotEmpty() && event.consumedModifiers and 2 != 0) return text
         // Ghostty's macOS Option-as-Alt path preserves single-byte shifted punctuation,
         // otherwise prefers the layout's unshifted scalar over Option-translated Unicode.
         if (text.length == 1 && text[0].code < 128) return "\u001b$text"

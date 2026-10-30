@@ -3,6 +3,22 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalKeyboardTest {
+    @Test fun explicitOptionPolicyIsIndependentOfLayoutConsumption() {
+        val session = TerminalSession()
+        val plainOption = TerminalKey("a", alt = true, text = "å", unshiftedCodepoint = 97, optionAsAlt = false)
+        assertEquals("å", session.encodeKey(plainOption))
+        assertEquals("", session.encodeKey(plainOption.copy(text = "")), "No text must not manufacture an Alt prefix")
+        val consumedAlt = plainOption.copy(consumedModifiers = 2, optionAsAlt = true)
+        assertEquals("å", session.encodeKey(consumedAlt), "Consumed text still owns the legacy event")
+        session.write("\u001b[>4;2m")
+        assertEquals("å", session.encodeKey(plainOption))
+        assertEquals("\u001b[27;3;229~", session.encodeKey(consumedAlt), "modifyOtherKeys uses host policy, not consumed Alt")
+        session.write("\u001b[>31u")
+        assertEquals("\u001b[97;3;229u", session.encodeKey(plainOption))
+        assertEquals("\u001b[97;3u", session.encodeKey(consumedAlt), "Alt policy suppresses associated text even if consumed")
+        assertEquals("\u001b[97;3:3u", session.encodeKey(plainOption.copy(action = TerminalKeyAction.RELEASE)))
+    }
+
     @Test fun altPrefixSupportsScalarFallbackAndRetainsHostTextOwnership() {
         val session = TerminalSession()
         assertNull(session.encodeKey(TerminalKey("a")), "Unmodified typing remains owned by IME")
