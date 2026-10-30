@@ -187,17 +187,22 @@ class MacOsTerminalTest {
             assertEquals(listOf("日本"), inputs)
             assertFalse(surface.hasMarkedText())
             session.write("\u001b[32mNative surface\u001b[0m")
-            window.orderFront(null)
-            surface.displayIfNeeded()
-            await { surface.submittedGpuFrames > 0 }
-            assertContains(surface.accessibilityValue().toString(), "Native surface")
-            surface.setMarkedText("に", NSMakeRange(1u, 0u), NSMakeRange(NSNotFound.toULong(), 0u))
-            surface.displayIfNeeded()
-            val metal = surface.layer as CAMetalLayer
-            val overlay = metal.sublayers!!.single() as CATextLayer
-            assertTrue(metal.geometryFlipped)
-            assertEquals("に", (overlay.string as NSAttributedString).string)
-            assertFalse(overlay.hidden)
+            runWindowSteps(NSApplication.sharedApplication(), {
+                "visible=${window.visible}, occlusion=${window.occlusionState}, frames=${surface.submittedGpuFrames}"
+            }, sequence {
+                window.orderFrontRegardless()
+                yield("Visible window" to { window.visible && window.occlusionState and NSWindowOcclusionStateVisible != 0uL })
+                surface.displayIfNeeded()
+                yield("Initial GPU frame" to { surface.submittedGpuFrames > 0 })
+                assertContains(surface.accessibilityValue().toString(), "Native surface")
+                surface.setMarkedText("に", NSMakeRange(1u, 0u), NSMakeRange(NSNotFound.toULong(), 0u))
+                surface.displayIfNeeded()
+                val metal = surface.layer as CAMetalLayer
+                val overlay = metal.sublayers!!.single() as CATextLayer
+                assertTrue(metal.geometryFlipped)
+                assertEquals("に", (overlay.string as NSAttributedString).string)
+                assertFalse(overlay.hidden)
+            })
         } finally { subscription.dispose(); surface.dispose(); window.close() }
     }
 
