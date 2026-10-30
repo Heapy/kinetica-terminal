@@ -2,6 +2,7 @@
 
 package io.heapy.kinetica.terminal
 
+import kotlinx.cinterop.useContents
 import platform.AppKit.*
 import platform.Foundation.*
 import platform.QuartzCore.*
@@ -10,6 +11,7 @@ import kotlin.test.*
 class NativeMetalDrawableTest {
     @Test fun resumesAnimationAfterDrawableTemporarilyUnavailable() {
         val app = NSApplication.sharedApplication()
+        app.setActivationPolicy(NSApplicationActivationPolicy.NSApplicationActivationPolicyRegular)
         val session = TerminalSession(20, 6)
         val view = AppKitTerminalView(session, rendering = TerminalRendering.GPU)
         var unavailable = false
@@ -20,9 +22,17 @@ class NativeMetalDrawableTest {
         val window = NSWindow(NSMakeRect(120.0, 120.0, 240.0, 120.0),
             NSWindowStyleMaskBorderless, NSBackingStoreBuffered, false)
         window.setReleasedWhenClosed(false)
+        // Recovery requires an actually visible surface, not merely an ordered window.
+        window.level = NSFloatingWindowLevel
+        val screen = NSScreen.screens.filterIsInstance<NSScreen>().first()
+        window.setFrameOrigin(screen.visibleFrame.useContents { NSMakePoint(origin.x + 40, origin.y + 40) })
         window.contentView = view
         try {
-            runWindowSteps(app, { "missed=$missed uploads=${view.imageUploads} submitted=${view.submittedGpuFrames}" }, sequence {
+            runWindowSteps(app, {
+                "missed=$missed uploads=${view.imageUploads} submitted=${view.submittedGpuFrames} " +
+                    "ordered=${window.visible} occluded=${window.occlusionState and NSWindowOcclusionStateVisible == 0uL} " +
+                    "hidden=${view.hiddenOrHasHiddenAncestor} attached=${view.window == window}"
+            }, sequence {
                 window.orderFrontRegardless()
                 yield("Visible window" to { window.occlusionState and NSWindowOcclusionStateVisible != 0uL })
                 session.write("\u001b[?25l\u001b_Ga=T,i=1,q=2,f=32,s=1,v=1,c=4,r=4,C=1;AQID/w==\u001b\\" +

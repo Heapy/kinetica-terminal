@@ -150,6 +150,11 @@ occlusion verifier passes all three phases plus lifecycle assertions
 117 passes / 3 failures: all three failures are in the neighbouring drawable-recovery
 fixture, whose window still uses the ordinary window level. Its visibility assumptions
 are the next check; this result is not reported as a wholly passing suite.
+The drawable fixture subsequently adopts the same floating-window level and visible-screen
+placement, explicitly uses regular application activation, and reports actual occlusion,
+attachment and hidden state on failure. Both drawable tests then pass all 30 repetitions
+(60 cases), retaining the same failure injection, recovery and cancellation assertions.
+Logs are `/tmp/kinetica-drawable-window-{after,repeat}.log`.
 The timeout is not relaxed and the clean-export native gate remains open.
 
 `build/reports/terminal-clean-engine/report.json` retains the source hashes, individual run
