@@ -100,6 +100,7 @@ public class BrowserTerminalView(
     private val mimeClipboardBinding = session.attachMimeClipboard(mimeClipboard ?: checkNotNull(ownedMimeClipboard), mimeClipboardPolicy)
 
     init {
+        drawing.setVisible(false)
         viewport.setVisible(false)
         session.setGraphicsStorageLimit(graphicsStorageBytes)
         root.style.cssText = "position:relative;width:100%;height:100%;min-width:80px;min-height:40px;overflow:hidden;background:#1e1e1e;flex:1;user-select:none;touch-action:none;"
@@ -318,6 +319,8 @@ public class BrowserTerminalView(
             (root.clientWidth as Number).toInt() > 0 && (root.clientHeight as Number).toInt() > 0
         if (graphicsVisible == value) return
         graphicsVisible = value
+        drawing.setVisible(value)
+        updateDrawingDiagnostics()
         visibilityBinding.setVisible(value)
         if (!value) { frame?.let { window.cancelAnimationFrame(it) }; frame = null }
         viewport.setVisible(value)
@@ -343,12 +346,7 @@ public class BrowserTerminalView(
                     root.replaceChild(canvas, previous)
                     viewport.markAll(); resize(); drawing.draw(viewport)
                 }
-                root.setAttribute("data-terminal-glyphs", drawing.glyphCount.toString())
-                root.setAttribute("data-terminal-rasterizations", drawing.rasterizations.toString())
-                root.setAttribute("data-terminal-draw-calls", drawing.drawCalls.toString())
-                root.setAttribute("data-terminal-image-bytes", drawing.imageCacheBytes.toString())
-                root.setAttribute("data-terminal-image-tiles", drawing.imageTileCount.toString())
-                root.setAttribute("data-terminal-image-uploads", drawing.imageUploads.toString())
+                updateDrawingDiagnostics()
                 if (!composing) { input.style.left = "${viewport.cursorColumn * cellWidth}px"; input.style.top = "${viewport.cursorRow * cellHeight}px" }
                 if (accessibilityTimer == null) accessibilityTimer = window.setTimeout({
                     accessibilityTimer = null
@@ -356,6 +354,15 @@ public class BrowserTerminalView(
                 }, 200)
             }
         } as Int
+    }
+
+    private fun updateDrawingDiagnostics() {
+        root.setAttribute("data-terminal-glyphs", drawing.glyphCount.toString())
+        root.setAttribute("data-terminal-rasterizations", drawing.rasterizations.toString())
+        root.setAttribute("data-terminal-draw-calls", drawing.drawCalls.toString())
+        root.setAttribute("data-terminal-image-bytes", drawing.imageCacheBytes.toString())
+        root.setAttribute("data-terminal-image-tiles", drawing.imageTileCount.toString())
+        root.setAttribute("data-terminal-image-uploads", drawing.imageUploads.toString())
     }
 
     private fun key(event: dynamic): TerminalKey {

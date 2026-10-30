@@ -62,6 +62,13 @@ mirroring `Termio.visibilityReport`; it does not inject query bytes into the par
 Kotlin replays each case whole and bytewise. Platform tests separately verify host events.
 Regenerate with `python3 scripts/generate-terminal-visibility.py /path/to/ghostty /path/to/zig`.
 
+The browser graphics verifier also checks resource reclamation when the terminal or an
+ancestor is hidden, the terminal is detached, or the document becomes hidden. Canvas
+backing stores and image caches are released; WebGL additionally releases its glyph atlas,
+buffers and shader program. Showing the terminal reconstructs the same pixels, including
+a synchronized-output frame holding an older image generation. Context restoration while
+hidden must not allocate those resources again.
+
 The [mouse Shift capture corpus](mouse-shift-manifest.json) contains 17 XTSHIFTESCAPE scenarios /
 86 checkpoints from the original terminal stream and tri-state input flag. It covers defaults,
 invalid parameters/headers, cancellation, partial sequences, screen switches, saves and resets.

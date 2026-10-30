@@ -47,6 +47,21 @@ try {
     const reset = async () => { await page.evaluate(() => kineticaTerminalDemo.reset()); await write("\x1b[?25l\x1b]11;#0a14c8\x07"); };
     const pixel = async (x = 2) => page.evaluate(({ renderer, x }) => renderer === "gpu" ? graphicsPixels.slice(x * 4, x * 4 + 4) : [...graphicsCanvas.getContext("2d").getImageData(x, graphicsSampleRow, 1, 1).data], { renderer, x });
     const metric = async key => +(await page.locator("[data-terminal]").getAttribute(`data-terminal-image-${key}`));
+    const expectReleased = async () => {
+      assert.equal(await metric("bytes"), 0, `${renderer}: hidden image payload released`);
+      assert.equal(await metric("tiles"), 0, `${renderer}: hidden image tiles released`);
+      assert.deepEqual(await page.evaluate(() => [graphicsCanvas.width, graphicsCanvas.height]), [0, 0], `${renderer}: hidden backing canvas released`);
+      assert.equal(await page.evaluate(renderer => renderer === "gpu" ? graphicsResources.size :
+        [...graphicsResources].filter(canvas => canvas.width !== 0 || canvas.height !== 0).length, renderer), 0,
+        `${renderer}: tracked native image resources released`);
+      if (renderer === "gpu") {
+        assert.equal(+(await page.locator("[data-terminal]").getAttribute("data-terminal-glyphs")), 0);
+        assert.deepEqual(await page.evaluate(() => {
+          const gl = graphicsCanvas.getContext("webgl2");
+          return [gl.CURRENT_PROGRAM, gl.ARRAY_BUFFER_BINDING, gl.VERTEX_ARRAY_BINDING, gl.TEXTURE_BINDING_2D].map(key => gl.getParameter(key) === null);
+        }), [true, true, true, true], "Hidden WebGL resources are unbound as well as deleted");
+      }
+    };
     const expectPixel = async (expected, message) => assert.deepEqual(await pixel(), expected, `${renderer}: ${message}`);
     await reset();
     await write(image(1, red.slice(0, 3), ",z=-2147483648"));
@@ -78,6 +93,13 @@ try {
     await write(image(1, red.slice(0, 3)));
     await write("\x1b[?2026h" + image(1, green.slice(0, 3)));
     await expectPixel(red, "synchronized output retains old pixels after ID replacement");
+    await page.evaluate(() => { document.querySelector("[data-terminal]").style.visibility = "hidden"; });
+    await painted(); await expectReleased();
+    const heldUploads = await metric("uploads");
+    await page.evaluate(() => { document.querySelector("[data-terminal]").style.visibility = ""; });
+    await painted();
+    assert((await metric("uploads")) > heldUploads, "Held images must be uploaded again after hidden resources are released");
+    await expectPixel(red, "visibility restoration preserves the held image generation");
     if (renderer === "gpu") {
       await page.evaluate(() => {
         const extension = graphicsCanvas.getContext("webgl2").getExtension("WEBGL_lose_context");
@@ -139,6 +161,7 @@ try {
       await page.evaluate(property => { document.querySelector("[data-terminal]").parentElement.style[property] = property === "display" ? "none" : "hidden"; }, property);
       await expectVisibility(false);
       await painted();
+      await expectReleased();
       const hiddenUploads = await metric("uploads");
       await page.waitForTimeout(300);
       assert.equal(await metric("uploads"), hiddenUploads, `${renderer}: hidden ancestor (${property}) must pause playback`);
@@ -152,6 +175,9 @@ try {
       detachedTerminal.remove();
     });
     await expectVisibility(false);
+    // The root is detached, so inspect its diagnostics without a document locator.
+    assert.equal(await page.evaluate(() => +detachedTerminal.getAttribute("data-terminal-image-bytes")), 0);
+    assert.deepEqual(await page.evaluate(() => [graphicsCanvas.width, graphicsCanvas.height]), [0, 0]);
     await page.evaluate(() => { terminalParent.append(detachedTerminal); });
     await expectVisibility(true);
     await page.evaluate(() => {
@@ -159,6 +185,17 @@ try {
       document.dispatchEvent(new Event("visibilitychange"));
     });
     await expectVisibility(false);
+    await expectReleased();
+    if (renderer === "gpu") {
+      await page.evaluate(() => {
+        const extension = graphicsCanvas.getContext("webgl2").getExtension("WEBGL_lose_context");
+        graphicsCanvas.addEventListener("webglcontextrestored", () => globalThis.hiddenGraphicsRestored = true, { once: true });
+        graphicsCanvas.addEventListener("webglcontextlost", () => setTimeout(() => extension.restoreContext(), 20), { once: true });
+        extension.loseContext();
+      });
+      await page.waitForFunction(() => globalThis.hiddenGraphicsRestored, null, { polling: 10 });
+      await expectReleased();
+    }
     await page.evaluate(() => { delete document.visibilityState; document.dispatchEvent(new Event("visibilitychange")); });
     await expectVisibility(true);
     assert.equal(await page.evaluate(() => String.fromCharCode(...graphicsReplies)),

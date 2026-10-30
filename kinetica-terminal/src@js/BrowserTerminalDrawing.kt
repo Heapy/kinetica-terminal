@@ -12,6 +12,7 @@ internal abstract class BrowserTerminalDrawing {
     open val imageCacheBytes: Long get() = 0
     open val imageTileCount: Int get() = 0
     open val imageUploads: Long get() = 0
+    abstract fun setVisible(visible: Boolean)
     abstract fun resize(width: Double, height: Double, ratio: Double, fontSize: Double, cellWidth: Double, cellHeight: Double, fontFamily: String? = null)
     abstract fun draw(viewport: TerminalViewport)
     abstract fun dispose()
@@ -42,6 +43,7 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
     private var size = 14.0; private var cellWidth = 0.0; private var cellHeight = 0.0
     private var family: String? = null
     private var clear = true
+    private var suspended = false
     private var imagesVisible = false
     private val imageFrame = TerminalGpuFrame()
     private val uploadBytes = TERMINAL_IMAGE_TILE_SIDE.toLong() * TERMINAL_IMAGE_TILE_SIDE * 4
@@ -52,17 +54,31 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
     override val imageTileCount: Int get() = imageCache.size
     override var imageUploads: Long = 0
         private set
+    override fun setVisible(visible: Boolean) {
+        if (suspended == !visible) return
+        suspended = !visible
+        if (suspended) {
+            imageCache.clear(); uploadData = null
+            canvas.width = 0; canvas.height = 0
+        }
+        clear = true
+    }
     override fun resize(width: Double, height: Double, ratio: Double, fontSize: Double, cellWidth: Double, cellHeight: Double, fontFamily: String?) {
-        if (this.width != width || this.height != height || this.ratio != ratio || size != fontSize || family != fontFamily) {
+        if (this.width != width || this.height != height || this.ratio != ratio || size != fontSize || family != fontFamily ||
+            !suspended && (canvas.width != (width * ratio).toInt() || canvas.height != (height * ratio).toInt())) {
             family = fontFamily
             this.width = width; this.height = height; this.ratio = ratio; size = fontSize
-            canvas.width = (width * ratio).toInt(); canvas.height = (height * ratio).toInt()
             canvas.style.width = "${width}px"; canvas.style.height = "${height}px"
-            context.setTransform(ratio, 0, 0, ratio, 0, 0); clear = true
+            if (!suspended) {
+                canvas.width = (width * ratio).toInt(); canvas.height = (height * ratio).toInt()
+                context.setTransform(ratio, 0, 0, ratio, 0, 0)
+            }
+            clear = true
         }
         this.cellWidth = cellWidth; this.cellHeight = cellHeight
     }
     override fun draw(viewport: TerminalViewport) {
+        if (suspended) return
         val measurement = probe.begin(viewport, name)
         val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, ratio, viewport.columns, viewport.rows) }
         if (images.isNotEmpty()) {
@@ -167,6 +183,7 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     private var size = 14.0; private var cellWidth = 0.0; private var cellHeight = 0.0
     private var family: String? = null
     private var lost = false; private var disposed = false; private var repaint = true
+    private var suspended = false
     private var restoreError: Exception? = null
     private var gpuTimer: BrowserGpuTimer? = null
     override val glyphCount: Int get() = atlas.entryCount
@@ -180,9 +197,17 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     private val onRestored: (dynamic) -> Unit = {
         if (!disposed) {
             lost = false; textures.clear(); atlas.clear()
-            try { initializeResources(); repaint = true } catch (error: Exception) { restoreError = error }
+            program = null; buffer = null; vao = null
+            try { if (!suspended) initializeResources(); repaint = true } catch (error: Exception) { restoreError = error }
             invalidate()
         }
+    }
+
+    override fun setVisible(visible: Boolean) {
+        if (disposed || suspended == !visible) return
+        suspended = !visible
+        if (suspended) releaseResources()
+        repaint = true
     }
 
     fun initialize() {
@@ -229,11 +254,12 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     }
 
     override fun resize(width: Double, height: Double, ratio: Double, fontSize: Double, cellWidth: Double, cellHeight: Double, fontFamily: String?) {
-        if (this.width != width || this.height != height || this.ratio != ratio) {
-            canvas.width = (width * ratio).toInt(); canvas.height = (height * ratio).toInt()
+        if (this.width != width || this.height != height || this.ratio != ratio ||
+            !suspended && (canvas.width != (width * ratio).toInt() || canvas.height != (height * ratio).toInt())) {
+            if (!suspended) { canvas.width = (width * ratio).toInt(); canvas.height = (height * ratio).toInt() }
             // Keep both WebGL and the CSS compositor at one device pixel per texel.
-            canvas.style.width = "${(canvas.width as Number).toDouble() / ratio}px"
-            canvas.style.height = "${(canvas.height as Number).toDouble() / ratio}px"; repaint = true
+            canvas.style.width = "${(width * ratio).toInt().toDouble() / ratio}px"
+            canvas.style.height = "${(height * ratio).toInt().toDouble() / ratio}px"; repaint = true
         }
         if (this.ratio != ratio || size != fontSize || family != fontFamily || this.cellWidth != cellWidth || this.cellHeight != cellHeight) {
             atlas.clear(); resetTextures(); repaint = true
@@ -245,7 +271,8 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
 
     override fun draw(viewport: TerminalViewport) {
         restoreError?.let { throw it }
-        if (lost || disposed || width <= 0 || height <= 0) return
+        if (lost || disposed || suspended || width <= 0 || height <= 0) return
+        if (program == null) initializeResources()
         val measurement = probe.begin(viewport, name)
         if (repaint) { viewport.markAll(); repaint = false }
         val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, ratio, viewport.columns, viewport.rows) }
@@ -329,7 +356,8 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     }
     private fun resetTextures() {
         if (gl == null || lost) { textures.clear(); return }
-        textures.forEach { gl.deleteTexture(it) }; textures.clear(); createTexture()
+        textures.forEach { gl.deleteTexture(it) }; textures.clear()
+        if (!suspended && program != null) createTexture()
     }
     private fun upload(entry: AtlasGlyph, bitmap: GlyphBitmap) {
         while (textures.size <= entry.page) createTexture()
@@ -350,18 +378,25 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         return glyphBitmap(width, height, bytes)
     }
 
+    private fun releaseResources() {
+        imageCache.clear()
+        // Finish glyph draws as well as image sampling before releasing their storage.
+        if (gl != null && !lost) gl.finish()
+        imageCache.completed()
+        gpuTimer?.dispose(); gpuTimer = null
+        if (gl != null && !lost) {
+            gl.useProgram(null); gl.bindVertexArray(null); gl.bindBuffer(gl.ARRAY_BUFFER, null); gl.bindTexture(gl.TEXTURE_2D, null)
+            textures.forEach { gl.deleteTexture(it) }; gl.deleteBuffer(buffer); gl.deleteVertexArray(vao); gl.deleteProgram(program)
+        }
+        program = null; buffer = null; vao = null; viewportUniform = null; texturedUniform = null
+        textures.clear(); atlas.clear(); raster.width = 0; raster.height = 0; canvas.width = 0; canvas.height = 0
+    }
+
     override fun dispose() {
         if (disposed) return
         disposed = true
-        imageCache.clear()
-        if (gl != null && !lost && imageCache.bytes > 0) gl.finish()
-        imageCache.completed()
-        gpuTimer?.dispose(); gpuTimer = null
+        releaseResources()
         canvas.removeEventListener("webglcontextlost", onLost); canvas.removeEventListener("webglcontextrestored", onRestored)
-        if (gl != null && !lost) {
-            textures.forEach { gl.deleteTexture(it) }; gl.deleteBuffer(buffer); gl.deleteVertexArray(vao); gl.deleteProgram(program)
-        }
-        textures.clear(); atlas.clear(); raster.width = 0; raster.height = 0; canvas.width = 0; canvas.height = 0
     }
 
     companion object {
