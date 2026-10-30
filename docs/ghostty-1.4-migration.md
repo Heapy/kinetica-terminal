@@ -199,6 +199,16 @@ on the original query families, not an original-Ghostty AX fixture comparison. F
 and browser screen-reader acceptance remains open in the production checklist.
 Logs are `/tmp/kinetica-accessibility-*`.
 
+The October 30 external AX acceptance probe reports `AXIsProcessTrusted=false` for the
+verification process; no system permission was requested or changed. The deprecated
+`accessibilityAttributeNames`/`accessibilityAttributeValue` methods are not a substitute for
+that cross-process check: a separate minimal Swift NSView with modern accessibility overrides
+also returns only legacy base-view attributes and no AXValue through those deprecated methods.
+The same result on Kinetica therefore does not establish a missing modern AX attribute. The
+temporary bridge assertion was discarded, rather than adding obsolete implementation solely
+to satisfy it. Independent control: `/tmp/kinetica-ax-bridge-probe.swift` and its `.log`.
+External AX delivery and VoiceOver acceptance remain unverified.
+
 The release behavior review uses the pinned `stream.zig` / `stream_terminal.zig` dispatch,
 keyboard/mouse encoders and graphics implementation as the reference. It checks the terminal
 capabilities and relevant input/state changes against executable regression families rather
