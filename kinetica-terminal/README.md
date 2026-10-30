@@ -82,6 +82,10 @@ Tile-cache keys retain a detached identity token, so caching a small crop does n
 full decoded source alive. Unchanged immutable pixels reuse the token across frame selection;
 replacement pixels get a new identity. Synchronized/resize snapshots still own the pixels
 they need until their hold ends or the viewport is disposed.
+JVM weak-reference regressions verify that intermediate replacements, released/expired holds,
+disposed viewports, PNG input buffers and rejected animation-frame buffers become collectable
+while their session or returned result remains alive. Caller-retained frame snapshots continue
+to own their immutable pixels until the caller releases them.
 The host
 still owns session image data after a view is disposed. Diagnostics expose
 `data-terminal-image-bytes`, `data-terminal-image-tiles` and cumulative

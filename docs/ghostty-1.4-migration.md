@@ -462,6 +462,27 @@ one-MiB source, verified with JVM weak references; cache reuse and held-image co
 remain covered on JS and Native. Viewport synchronized/resize holds share one frozen-frame
 slot, while caller-retained snapshots remain explicit owners of their pixels.
 
+The decoded-generation lifetime audit now has JVM weak-reference evidence in addition to
+byte-stability checks. A one-MiB image is uploaded through actual chunked APC input, frozen,
+replaced repeatedly and deleted from storage. Intermediate generations become collectable
+while the original remains readable. Explicit sync release, sync/resize timeouts, a resize
+followed by synchronized output, and viewport disposal all release the original object and
+byte array while the session, viewport and scheduler remain strongly reachable. An explicit
+caller-held frame remains a valid owner until the caller releases it.
+
+Separate weak-reference tests keep successful PNG pixels or a decoding exception alive while
+checking collection of compressed input and inflated encoded PNG buffers.
+The rejected-animation test keeps storage and its ENOSPC result alive: old RGB root bytes and
+the rejected decoded frame are released, while the required converted RGBA root remains.
+This preserves the original conversion-before-admission behavior, including its resident-limit
+overrun. These tests close the decoded-generation lifetime gap; they do not impose a new
+combined cap on storage, scratch space, explicit snapshots or host resources.
+Validation passes all 1413 JVM tests and 29 existing Native decoder/cache/software/Metal
+tests. The actual Canvas/WebGL graphics verifier also passes, including disposal, held pixels
+and frame-wide cache pressure. Measured application-accounted peaks are 66,434,104 bytes for
+Canvas and 66,356,416 bytes for WebGL, below their 67,108,864-byte budgets. These measurements
+exclude browser/driver internal copies and are not process RSS bounds.
+
 The native media corpus has 61 cases: 57 compare original-reader bytes/errors and cleanup.
 Four regular/temporary-file seeks past EOF with omitted size crash the original Zig 0.17
 safe build with integer overflow. Those crashes are recorded rather than treated as conformance
