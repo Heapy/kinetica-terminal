@@ -34,7 +34,7 @@ launching. Common/native/browser tests separately exercise link lookup and doubl
 The same snapshots now exercise original `SelectionGesture.deepPress` at every cell. Besides
 the selected range/text, the helper verifies that deep press clears the click count/time and
 tracked pin, marks the gesture as dragged, stops autoscroll, and makes repeated pressure and
-subsequent dragging return no replacement selection. There are 5451 original deep presses;
+subsequent dragging return no replacement selection. There are 5476 original deep presses;
 the Kotlin corpus runs them with whole-stream and bytewise input. Host tests separately cover
 existing drag/autoscroll cancellation, blank anchors, frozen text and custom word boundaries.
 AppKit tests deliver synthetic `NSEvent` subclasses to the actual pressure callback and use
@@ -54,8 +54,8 @@ python3 scripts/generate-terminal-semantic-line.py build/upstream/ghostty-1.4.0 
 bash scripts/engine.sh test -m kinetica-terminal -p jvm --include-classes='*TerminalSemanticLineTest'
 ```
 
-The 63 scenarios / 84 checkpoints compare 5451 untrimmed cell ranges, the corresponding
-trimmed line/word and command-output selections and 3780 gesture steps for each selection mode, replayed both
+The 64 scenarios / 85 checkpoints compare 5476 untrimmed cell ranges, the corresponding
+trimmed line/word and command-output selections and 3825 gesture steps for each selection mode, replayed both
 whole and bytewise.
 They cover every ordering of prompt/input/output, mid-row and soft-wrap boundaries, history,
 resize/reflow, wide cells, combining characters, wrap spacers, blank seams, erasure, input-until-EOL,
@@ -63,7 +63,7 @@ alternate screens, resets and explicit prompt redraw modes (`0`, `1`, `last`). I
 redraw is disabled, matching the original libghostty-vt C initializer and Kinetica's default;
 the standalone Zig terminal defaults to enabled. Per-cell semantic content and per-row prompt
 markers are compared before ranges, including after resize. Expected ranges come directly from original selections; the helper
-only converts inclusive end columns to exclusive ones. The manifest hashes the generator, helper,
+uses original top-left/bottom-right accessors to canonicalize drag direction and converts inclusive end columns to exclusive ones. The manifest hashes the generator, helper,
 fixtures and relevant original sources. Generation reproduces byte-for-byte.
 
 The helper also calls original `Screen.selectLine` with default whitespace trimming and
@@ -83,11 +83,16 @@ output before the first prompt, missing prompts, blank output, continuation prom
 same-row semantic changes, wide glyphs and written spaces. Output drags restore the original
 block when their target has no selectable output. The manifest pins `input/key_mods.zig`;
 AppKit and browser event tests separately verify the platform-specific modified triple-click.
-The same snapshots also compare 6804 original rectangular `Selection` ranges and their
+The same snapshots also compare 6885 original rectangular `Selection` ranges and their
 `selectionString(trim = false)` results. Each is replayed with all four corner orientations.
 This covers geometry and plain-text formatting, including wide tails, wrap spacers, soft
-wraps, blank cells and history. It does not yet cover rectangular pointer thresholds or
-platform modifier dispatch. Kotlin fixture literals are split below the JVM constant-size
+wraps, blank cells and history. A further 4000 original cell/rectangle drag results exercise same-cell thresholds, adjacent
+cells, vertical/diagonal and reverse movement, edge clamps, padding, and cell widths
+1, 2, 5, 10 and 17. These include null selections and copied text; each is replayed whole and
+bytewise. AppKit event tests and Chromium with macOS/Linux platform policies separately cover
+modifier changes, same-cell dragging, pointer release, Kitty modifier reports and highlight pixels.
+Fractional host cell widths are mapped to an aligned integer device-pixel grid before applying
+the original integer threshold calculation. Kotlin fixture literals are split below the JVM constant-size
 limit by the generator, then reassembled without changing their JSON contents.
 Common URL tests cover actual matching,
 frozen frames, explicit OSC 8 precedence and the disabled-OSC-8 fallback; the AppKit Cmd-click

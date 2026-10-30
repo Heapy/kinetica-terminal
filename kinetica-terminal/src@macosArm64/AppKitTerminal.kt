@@ -535,6 +535,7 @@ public class AppKitTerminalView(
 
     override fun flagsChanged(event: NSEvent) {
         if (disposed) return
+        viewport.selectionModifiersChanged(event.modifierFlags and NSEventModifierFlagOption != 0uL)
         val identity = when (event.keyCode.toInt()) {
             56 -> "ShiftLeft"; 60 -> "ShiftRight"; 59 -> "ControlLeft"; 62 -> "ControlRight"
             58 -> "AltLeft"; 61 -> "AltRight"; 55 -> "MetaLeft"; 54 -> "MetaRight"; 57 -> "CapsLock"
@@ -628,7 +629,7 @@ public class AppKitTerminalView(
             }
         }
         selecting = !mouse(event, 0)
-        if (selecting) viewport.beginSelection(x, y, when ((leftClickCount - forceClickCountOffset).coerceAtLeast(1).toInt()) {
+        if (selecting) viewport.beginPointerSelection(selectionPointer(event), when ((leftClickCount - forceClickCountOffset).coerceAtLeast(1).toInt()) {
             0, 1 -> TerminalSelectionMode.CHARACTER
             2 -> TerminalSelectionMode.WORD
             else -> if (event.modifierFlags and NSEventModifierFlagCommand != 0uL) TerminalSelectionMode.OUTPUT else TerminalSelectionMode.LINE
@@ -636,8 +637,8 @@ public class AppKitTerminalView(
     }
     override fun mouseDragged(event: NSEvent) {
         if (disposed) return
-        val (x, y) = cell(event)
-        if (selecting) viewport.extendSelection(x, y) else mouse(event, 0, motion = true)
+        if (selecting) viewport.extendPointerSelection(selectionPointer(event), event.modifierFlags and NSEventModifierFlagOption != 0uL)
+        else mouse(event, 0, motion = true)
     }
     override fun pressureChangeWithEvent(event: NSEvent) {
         if (disposed) return
@@ -652,8 +653,7 @@ public class AppKitTerminalView(
     override fun mouseUp(event: NSEvent) {
         if (disposed) return
         forceClickLookupFired = false
-        val (x, y) = cell(event)
-        if (selecting) viewport.endPointerSelection(x, y) else mouse(event, 0, release = true)
+        if (selecting) viewport.endPointerSelection(selectionPointer(event)) else mouse(event, 0, release = true)
         selecting = false
     }
     override fun rightMouseDown(event: NSEvent) {
@@ -695,6 +695,9 @@ public class AppKitTerminalView(
     }
     private fun cell(event: NSEvent): Pair<Int, Int> = convertPoint(event.locationInWindow, fromView = null).useContents {
         floor(x / cellWidth).toInt() to floor(y / cellHeight).toInt()
+    }
+    private fun selectionPointer(event: NSEvent): TerminalSelectionPointer = convertPoint(event.locationInWindow, fromView = null).useContents {
+        terminalSelectionPointer(x, y, cellWidth, cellHeight, window?.backingScaleFactor ?: 1.0)
     }
     private fun mouse(event: NSEvent, button: Int, release: Boolean = false, motion: Boolean = false): Boolean {
         if (disposed || viewport.scrollOffset != 0) return false

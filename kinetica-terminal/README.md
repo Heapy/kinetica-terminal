@@ -459,7 +459,11 @@ Shift+PageUp/PageDown, and accessibility text are available.
   the same column interval; wide glyphs intersecting either edge are copied and painted whole.
   Shape changes during a drag, history anchors, autoscroll and frozen frames are supported.
   Copy follows Ghostty's unwrapped formatter, including its treatment of soft wraps and
-  trailing unwritten cells. Platform modifier gestures are still being integrated.
+  trailing unwritten cells. Option+drag on macOS and Ctrl+Alt+drag on other browser platforms
+  use this shape. Modifiers can change during a drag, including while autoscrolling.
+  Pointer selection uses Ghostty's 60% cell threshold, including movements within one cell;
+  word/line/output gestures keep their granularity. Releasing the pointer does not create a
+  drag that was not delivered by movement events. Programmatic selection retains cell-boundary coordinates.
 - Double clicking a recognized URL or path selects its complete visible text, including matched
   parentheses, query punctuation and path spaces, across soft wraps. Releasing without moving retains that
   selection; dragging resumes word selection. OSC 8 labels still use their visible text and
@@ -917,8 +921,8 @@ This is an initial VT implementation, not complete xterm conformance. Known limi
   its SGR report omits underline color, matching the pinned Ghostty reference.
 - Mouse input surfaces support clicks, dragging, wheel and all-motion tracking.
   Local selection supports character/word/line/output dragging, configurable word separators
-  and autoscroll. Rectangular ranges are exposed through the viewport API; platform modifier
-  gestures are still being integrated.
+  and autoscroll. Rectangular ranges are exposed through the viewport API and platform
+  modifier gestures.
 - Accessibility exposes current screen text; it does not yet provide xterm.js-level navigation
   and announcement behavior.
 

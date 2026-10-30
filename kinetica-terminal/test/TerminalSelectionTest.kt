@@ -3,6 +3,46 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalSelectionTest {
+    @Test fun pointerThresholdsSelectWithinACellAndDoNotTurnDraggedPromptsIntoClicks() {
+        val session = TerminalSession(12, 3)
+        val viewport = TerminalViewport(session, {})
+        val replies = StringBuilder()
+        val subscription = session.onInput { replies.append(it.toByteArray().decodeToString()) }
+        fun point(x: Double, row: Int = 0) = terminalSelectionPointer(x * 10, row * 20.0 + 10, 10.0, 20.0, 1.0)
+        try {
+            session.write("\u001b]133;A;click_events=1\u0007$ \u001b]133;B\u0007hello")
+            viewport.beginPointerSelection(point(2.2))
+            viewport.extendPointerSelection(point(2.8), false)
+            assertEquals("h", viewport.selectedText())
+            viewport.extendPointerSelection(point(2.3), false)
+            assertEquals("", viewport.selectedText(), "Returning before the threshold clears the pointer selection")
+            viewport.endPointerSelection(point(2.3))
+            assertEquals("", replies.toString(), "A same-cell drag consumes the prompt click")
+            viewport.beginPointerSelection(point(2.2)); viewport.endPointerSelection(point(3.8))
+            assertEquals("", viewport.selectedText(), "Release alone does not synthesize a drag")
+            assertEquals("", replies.toString())
+        } finally { subscription.dispose(); viewport.dispose() }
+    }
+
+    @Test fun pointerRectanglesUseCurrentModifiersAndRetainHorizontalPositionDuringAutoscroll() {
+        val session = TerminalSession(8, 3).also { it.scrollbackCompression = false }
+        session.write((0..9).joinToString("\r\n") { "x${it}yz" })
+        val clock = Clock(); val viewport = TerminalViewport(session, {}, clock)
+        fun point(x: Double, y: Int) = terminalSelectionPointer(x * 10, y * 20.0 + 10, 10.0, 20.0, 1.0)
+        try {
+            viewport.beginPointerSelection(point(1.2, 1))
+            viewport.extendPointerSelection(point(3.8, -1), true)
+            assertEquals("7yz\n8yz", viewport.selectedText())
+            clock.advance(50)
+            assertEquals("6yz\n7yz\n8yz", viewport.selectedText())
+            viewport.selectionModifiersChanged(false)
+            clock.advance(50)
+            assertEquals("\nx6yz\nx7yz\nx", viewport.selectedText(), "The autoscroll tick reads updated modifiers")
+            viewport.endPointerSelection(point(3.8, -1))
+            assertEquals(0, clock.pending)
+        } finally { viewport.dispose() }
+    }
+
     @Test fun rectangleAutoscrollPreservesColumnsAndAnchorsThroughOutput() {
         val session = TerminalSession(8, 3).also { it.scrollbackCompression = false }
         session.write((0..9).joinToString("\r\n") { "x${it}yz" })

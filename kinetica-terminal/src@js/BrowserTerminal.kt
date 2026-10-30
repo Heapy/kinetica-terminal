@@ -136,6 +136,7 @@ public class BrowserTerminalView(
             }.catch { _: dynamic -> Unit }
         }
         listen(input, "keydown") { event ->
+            viewport.selectionModifiersChanged(rectangleSelection(event))
             event.stopPropagation()
             if (event.isComposing == true || composing || event.keyCode == 229) return@listen
             val key = key(event)
@@ -150,12 +151,16 @@ public class BrowserTerminalView(
                 viewport.scroll(1 - session.rows); event.preventDefault()
             } else if (session.sendKey(key)) {
                 pressedKeys.add((event.code as? String) ?: key.key)
-                viewport.followOutput(); viewport.clearSelection(); event.preventDefault()
+                if (key.key !in listOf("Shift", "Control", "Alt", "Meta", "CapsLock", "NumLock", "AltGraph")) {
+                    viewport.followOutput(); viewport.clearSelection()
+                }
+                event.preventDefault()
             } else {
                 pressedKeys.add((event.code as? String) ?: key.key)
             }
         }
         listen(input, "keyup") { event ->
+            viewport.selectionModifiersChanged(rectangleSelection(event))
             event.stopPropagation()
             val identity = (event.code as? String) ?: event.key as String
             if (pressedKeys.remove(identity) && !composing && event.isComposing != true) {
@@ -221,9 +226,8 @@ public class BrowserTerminalView(
         listen(root, "mousedown") { event ->
             event.preventDefault(); event.stopPropagation()
             if (selecting && activePointer != null && event.button == 0 && (event.detail as Number).toInt() >= 2) {
-                val (x, y) = coordinates(event)
                 val output = if (window.navigator.platform.startsWith("Mac")) event.metaKey == true else event.ctrlKey == true
-                viewport.beginSelection(x, y, when {
+                viewport.beginPointerSelection(selectionPointer(event), when {
                     (event.detail as Number).toInt() == 2 -> TerminalSelectionMode.WORD
                     output -> TerminalSelectionMode.OUTPUT
                     else -> TerminalSelectionMode.LINE
@@ -235,8 +239,7 @@ public class BrowserTerminalView(
             if (activePointer != null && activePointer != id || activePointer == null && event.buttons != 0) return@listen
             val previous = mouseButtons
             updateMouseButtons(event)
-            val (x, y) = coordinates(event)
-            if (selecting) viewport.extendSelection(x, y)
+            if (selecting) viewport.extendPointerSelection(selectionPointer(event), rectangleSelection(event))
             else if (previous == mouseButtons) mouse(event, pressedMouseButton(), motion = true)
         }
         listen(root, "pointerup") { event ->
@@ -399,10 +402,13 @@ public class BrowserTerminalView(
             capsLock = event.getModifierState("CapsLock") == true, numLock = event.getModifierState("NumLock") == true,
             consumedModifiers = if (text.isNotEmpty() && event.shiftKey == true) 1 else 0)
     }
-    private fun coordinates(event: dynamic): Pair<Int, Int> {
+    private fun rectangleSelection(event: dynamic): Boolean = event.altKey == true &&
+        (window.navigator.platform.startsWith("Mac") || event.ctrlKey == true)
+    private fun selectionPointer(event: dynamic): TerminalSelectionPointer {
         val rect = canvas.getBoundingClientRect()
-        return floor(((event.clientX as Number).toDouble() - (rect.left as Number).toDouble()) / cellWidth).toInt() to
-            floor(((event.clientY as Number).toDouble() - (rect.top as Number).toDouble()) / cellHeight).toInt()
+        return terminalSelectionPointer((event.clientX as Number).toDouble() - (rect.left as Number).toDouble(),
+            (event.clientY as Number).toDouble() - (rect.top as Number).toDouble(), cellWidth, cellHeight,
+            (window.devicePixelRatio as Number).toDouble())
     }
     private fun mouse(event: dynamic, button: Int, release: Boolean = false, motion: Boolean = false): Boolean {
         if (viewport.scrollOffset != 0 || canvas.width <= 0 || canvas.height <= 0) return false
@@ -416,17 +422,16 @@ public class BrowserTerminalView(
     }
     private fun updateMouseButtons(event: dynamic) {
         val next = (event.buttons as Number).toInt() and 31
-        val (x, y) = coordinates(event)
         for ((mask, button) in mouseButtonMasks) {
             if ((mouseButtons and mask) == (next and mask)) continue
             if (next and mask != 0) {
                 val reported = mouse(event, button)
                 if (button == 0) {
                     selecting = !reported
-                    if (selecting) viewport.beginSelection(x, y) else viewport.clearSelection()
+                    if (selecting) viewport.beginPointerSelection(selectionPointer(event)) else viewport.clearSelection()
                 }
             } else {
-                if (button == 0 && selecting) { viewport.endPointerSelection(x, y); selecting = false }
+                if (button == 0 && selecting) { viewport.endPointerSelection(selectionPointer(event)); selecting = false }
                 else mouse(event, button, release = true)
             }
         }

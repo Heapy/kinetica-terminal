@@ -73,6 +73,7 @@ def cases():
     for name, text in output_cases.items():
         for columns in [7, 30]:
             result.append(dict(name=name+"_"+str(columns), columns=columns, rows=8, events=[dict(text=text)]))
+    result.append(dict(name="pointer_geometry", columns=5, rows=4, pointer=True, events=[dict(text="A界bcdé f\r\nxx\r\n     \r\nYZ")]))
     return result
 
 
@@ -114,6 +115,7 @@ pub fn build(b: *std.Build) void {
         initialPromptRedraw=False,
         cases=len(corpus), snapshots=sum(len(c["snapshots"]) for c in corpus),
         ranges=sum(len(s["ranges"]) for c in corpus for s in c["snapshots"]),
+        pointerDrags=sum(len(s["pointerDrags"]) for c in corpus for s in c["snapshots"]),
         rectangles=sum(len(s["rectangles"]) for c in corpus for s in c["snapshots"]),
         outputSelections=sum(len(s["outputs"]) for c in corpus for s in c["snapshots"]),
         outputGestureSteps=sum(sum(len(g) for g in s["outputGestures"]) for c in corpus for s in c["snapshots"]),
@@ -121,7 +123,7 @@ pub fn build(b: *std.Build) void {
         wordGestureSteps=sum(sum(len(g) for g in s["wordGestures"]) for c in corpus for s in c["snapshots"]),
         gestureSteps=sum(sum(len(g) for g in s["gestures"]) for c in corpus for s in c["snapshots"]),
         helperSha256=digest(helper), generatorSha256=digest(Path(__file__)), fixtureSha256=digest(fixture),
-        sources={p:digest(upstream/p) for p in ["src/terminal/Terminal.zig", "src/terminal/c/terminal.zig", "src/terminal/stream_terminal.zig", "src/terminal/Screen.zig", "src/terminal/SelectionGesture.zig", "src/terminal/Selection.zig", "src/terminal/selection_codepoints.zig", "src/terminal/formatter.zig", "src/terminal/PageList.zig", "src/Surface.zig", "src/apprt/embedded.zig", "src/input/key_mods.zig", "macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift", "macos/Sources/Helpers/Extensions/UserDefaults+Extension.swift"]})
+        sources={p:digest(upstream/p) for p in ["src/terminal/Terminal.zig", "src/terminal/c/terminal.zig", "src/terminal/stream_terminal.zig", "src/terminal/Screen.zig", "src/terminal/SelectionGesture.zig", "src/terminal/Selection.zig", "src/terminal/selection_codepoints.zig", "src/terminal/formatter.zig", "src/terminal/PageList.zig", "src/Surface.zig", "src/apprt/embedded.zig", "src/input/key_mods.zig", "src/surface_mouse.zig", "macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift", "macos/Sources/Helpers/Extensions/UserDefaults+Extension.swift"]})
     (ROOT/"kinetica-terminal/test-upstream/ghostty/semantic-line-manifest.json").write_text(json.dumps(manifest, indent=2)+"\n")
     print(f'Generated {len(corpus)} cases / {manifest["snapshots"]} checkpoints / {manifest["ranges"]} cell ranges')
 

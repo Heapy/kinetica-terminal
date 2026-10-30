@@ -7,8 +7,9 @@ const report = { renderers: [], errors: [] };
 const directory = "build/reports/terminal-selection";
 await mkdir(directory, { recursive: true });
 try {
-  for (const renderer of ["gpu", "software"]) {
+  for (const platform of ["MacIntel", "Linux x86_64"]) for (const renderer of ["gpu", "software"]) {
     const page = await browser.newPage({ viewport: { width: 900, height: 600 }, deviceScaleFactor: 2 });
+    await page.addInitScript(platform => Object.defineProperty(navigator, "platform", { get: () => platform }), platform);
     page.on("pageerror", error => report.errors.push(String(error)));
     await page.goto(`${process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173"}/samples/browser-terminal/web/index.html?renderer=${renderer}`);
     await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 20);
@@ -38,8 +39,8 @@ try {
       return data.getData("text/plain");
     });
     // Sample above the glyph ink while the WebGL framebuffer is still valid.
-    await page.evaluate(({ width }) => {
-      globalThis.selectionPixel = null;
+    await page.evaluate(({ width, height }) => {
+      globalThis.selectionPixel = null; globalThis.rectanglePixels = null;
       const gl = document.querySelector("canvas").getContext("webgl2");
       if (!gl) return;
       const draw = gl.drawArraysInstanced.bind(gl);
@@ -48,9 +49,18 @@ try {
         const pixel = new Uint8Array(4);
         gl.readPixels(Math.floor((width + 1) * devicePixelRatio), gl.drawingBufferHeight - 3, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
         selectionPixel = [...pixel];
+        const sample = x => {
+          gl.readPixels(Math.floor((x * width + 1) * devicePixelRatio), gl.drawingBufferHeight - Math.floor(height * devicePixelRatio) - 3,
+            1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+          return [...pixel];
+        };
+        rectanglePixels = [sample(0), sample(2), sample(5)];
       };
     }, geometry);
     const pixel = () => page.evaluate(({ width }) => selectionPixel ?? [...document.querySelector("canvas").getContext("2d").getImageData(Math.floor((width + 1) * devicePixelRatio), 2, 1, 1).data], geometry);
+    const rectanglePixelsAt = () => page.evaluate(({ width, height }) => rectanglePixels ??
+      [0, 2, 5].map(x => [...document.querySelector("canvas").getContext("2d").getImageData(
+        Math.floor((x * width + 1) * devicePixelRatio), Math.floor(height * devicePixelRatio) + 2, 1, 1).data]), geometry);
     await reset("alpha-beta gamma\r\nnext");
     await click(2, 0, 2); await paint();
     assert.equal(await copy(), "alpha-beta");
@@ -98,6 +108,34 @@ try {
     await move(1, 3); await page.mouse.up({ clickCount: 3 });
     assert.equal(await copy(), "first\nsecond", "Dragging onto a prompt returns to the original block");
     await page.keyboard.up(outputModifier);
+
+    await reset("0123456\r\nabcdefg\r\nABCDEFG");
+    const moveFraction = (x, y) => page.mouse.move(geometry.x + x * geometry.width, geometry.y + (y + 0.5) * geometry.height);
+    if (platform.startsWith("Linux")) await page.keyboard.down("Control");
+    await page.keyboard.down("Alt");
+    await moveFraction(1.2, 0); await page.mouse.down(); await moveFraction(3.8, 2);
+    assert.equal(await copy(), "123\nbcd\nBCD", "Platform modifiers select a rectangle");
+    await paint();
+    assert.deepEqual(await rectanglePixelsAt(), [[30, 30, 30, 255], [38, 79, 120, 255], [30, 30, 30, 255]],
+      "Only rectangle columns are highlighted on its interior row");
+    await page.keyboard.up("Alt"); await moveFraction(3.8, 2);
+    assert.equal(await copy(), "123456\nabcdefg\nABCD", "Releasing Alt changes shape during a held drag");
+    // Modifier-only Kitty reports must not clear selection or its active gesture.
+    await write("\x1b[>8u");
+    await page.keyboard.down("Alt"); await moveFraction(3.8, 2); await page.mouse.up();
+    assert.equal(await copy(), "123\nbcd\nBCD");
+    await page.keyboard.up("Alt");
+    if (platform.startsWith("Linux")) await page.keyboard.up("Control");
+    await write("\x1b[<u");
+    await page.keyboard.down("Alt");
+    await moveFraction(1.2, 0); await page.mouse.down(); await moveFraction(3.8, 2); await page.mouse.up();
+    assert.equal(await copy(), platform.startsWith("Mac") ? "123\nbcd\nBCD" : "123456\nabcdefg\nABCD",
+      "Alt alone only selects rectangles on macOS");
+    await page.keyboard.up("Alt");
+    await moveFraction(2.2, 0); await page.mouse.down(); await moveFraction(2.8, 0);
+    assert.equal(await copy(), "2", "Crossing the threshold selects within one cell");
+    await moveFraction(2.3, 0); await page.mouse.up();
+    assert.equal(await copy(), "", "Returning before the threshold clears selection");
 
     const url = "https://e.test/a(b);q=1";
     await reset(`[${url}].`);
@@ -161,7 +199,7 @@ try {
     await page.evaluate(() => kineticaTerminalDemo.dispose());
     await page.waitForTimeout(180); await page.mouse.up();
     assert.equal(await page.locator("#app > *").count(), 0);
-    report.renderers.push({ renderer, selection: "passed", semanticLines: "passed", commandOutput: "passed", doubleClickUrls: "passed", detectedPaths: "passed", wordBoundaries: "passed", autoscroll: "passed", cancellation: "passed", pixels: "passed" });
+    report.renderers.push({ platform, renderer, rectangularSelection: "passed", pointerThresholds: "passed", selection: "passed", semanticLines: "passed", commandOutput: "passed", doubleClickUrls: "passed", detectedPaths: "passed", wordBoundaries: "passed", autoscroll: "passed", cancellation: "passed", pixels: "passed" });
     await page.close();
   }
   assert.deepEqual(report.errors, []);

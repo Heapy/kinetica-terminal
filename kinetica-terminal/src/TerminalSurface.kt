@@ -133,6 +133,7 @@ public class TerminalViewport internal constructor(
     private var promptClickCandidate: Pair<Int, Int>? = null
     private var dragColumn = 0
     private var dragRectangle = false
+    private var dragPointer: TerminalSelectionPointer? = null
     private var dragRow = 0
     private var dragTimer: TerminalDisposable? = null
     private var disposed = false
@@ -290,6 +291,28 @@ public class TerminalViewport internal constructor(
         markAll()
     }
     public fun extendSelection(column: Int, row: Int) { extendSelection(column, row, rectangle = false) }
+    internal fun beginPointerSelection(pointer: TerminalSelectionPointer, mode: TerminalSelectionMode = TerminalSelectionMode.CHARACTER) {
+        beginSelection(pointer.column, pointer.row, mode)
+        if (disposed) return
+        activeSelection.beginPointer(pointerPosition(pointer), mode, pointer.x)
+        dragPointer = pointer
+        markAll()
+    }
+    internal fun extendPointerSelection(pointer: TerminalSelectionPointer, rectangle: Boolean) {
+        if (disposed || !draggingSelection) return
+        dragPointer = pointer; dragRectangle = rectangle; dragColumn = pointer.column; dragRow = pointer.row
+        if (activeSelection.extendPointer(pointerPosition(pointer), pointer.x, pointer.cellWidth, rectangle)) promptClickCandidate = null
+        updateDragScroll(); markAll()
+    }
+    internal fun selectionModifiersChanged(rectangle: Boolean) { dragRectangle = rectangle }
+    internal fun endPointerSelection(pointer: TerminalSelectionPointer): Boolean {
+        // Ghostty releases without synthesizing a final drag. Moving cells still cancels click actions.
+        if (pointer.column != dragColumn || pointer.row != dragRow) promptClickCandidate = null
+        dragColumn = pointer.column; dragRow = pointer.row
+        return finishSelection(pointer.column, pointer.row, true)
+    }
+    private fun pointerPosition(pointer: TerminalSelectionPointer) = TerminalCellPosition(
+        firstLine + pointer.row.coerceIn(0, rows - 1), pointer.column.coerceIn(0, columns - 1))
     /** Extend by cell boundaries; rectangle applies only to CHARACTER gestures.
      * The shape may change during a drag. Word, line and output gestures keep their granularity. */
     public fun extendSelection(column: Int, row: Int, rectangle: Boolean) {
@@ -324,7 +347,7 @@ public class TerminalViewport internal constructor(
         return report && session.sendPromptClick(column, firstLine + row, row)
     }
     /** Pointer cancellation/focus loss ends autoscrolling but leaves the completed selection. */
-    public fun cancelSelectionDrag() { draggingSelection = false; promptClickCandidate = null; dragTimer?.dispose(); dragTimer = null }
+    public fun cancelSelectionDrag() { draggingSelection = false; promptClickCandidate = null; dragPointer = null; dragTimer?.dispose(); dragTimer = null }
     public fun clearSelection() {
         cancelSelectionDrag(); liveSelection.clear()
         frozen?.let { it.selection.clear(); it.inheritedRange = null; it.inheritedText = null }
@@ -430,7 +453,9 @@ public class TerminalViewport internal constructor(
             if (!disposed && draggingSelection && frozen == null) {
                 scrollOffset = (scrollOffset + dragScrollAmount()).coerceIn(0, session.historySize)
                 rememberScrollAnchor(); resetBlink()
-                activeSelection.extend(position(dragColumn, dragRow, dragRectangle), dragRectangle)
+                val pointer = dragPointer
+                if (pointer == null) activeSelection.extend(position(dragColumn, dragRow, dragRectangle), dragRectangle)
+                else if (activeSelection.extendPointer(pointerPosition(pointer), pointer.x, pointer.cellWidth, dragRectangle)) promptClickCandidate = null
                 if (!activeSelection.hasAnchor) cancelSelectionDrag() else updateDragScroll()
                 markAll()
             }

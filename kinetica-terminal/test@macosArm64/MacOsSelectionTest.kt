@@ -10,6 +10,38 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    @Test fun optionDragSelectsRectanglesAndModifiersCanChangeMidGesture() = withView { session, view, _ ->
+        session.write("0123456\r\nabcdefg\r\nABCDEFG")
+        fun mouse(type: NSEventType, x: Double, y: Int, flags: ULong = NSEventModifierFlagOption) {
+            val point = view.bounds.useContents { NSMakePoint(size.width / session.columns * x, size.height / session.rows * (y + 0.5)) }
+            val event = assertNotNull(NSEvent.mouseEventWithType(type, view.convertPoint(point, toView = null),
+                flags, 0.0, view.window!!.windowNumber, null, 0, 1, 1.0f))
+            when (type) {
+                NSEventTypeLeftMouseDown -> view.mouseDown(event)
+                NSEventTypeLeftMouseDragged -> view.mouseDragged(event)
+                else -> view.mouseUp(event)
+            }
+        }
+        mouse(NSEventTypeLeftMouseDown, 1.2, 0)
+        mouse(NSEventTypeLeftMouseDragged, 3.8, 2)
+        assertEquals("123\nbcd\nBCD", view.accessibilitySelectedText())
+        mouse(NSEventTypeLeftMouseDragged, 3.8, 2, 0uL)
+        assertEquals("123456\nabcdefg\nABCD", view.accessibilitySelectedText())
+        mouse(NSEventTypeLeftMouseDragged, 3.8, 2)
+        mouse(NSEventTypeLeftMouseUp, 3.8, 2)
+        assertEquals("123\nbcd\nBCD", view.accessibilitySelectedText())
+        mouse(NSEventTypeLeftMouseDown, 3.8, 2)
+        mouse(NSEventTypeLeftMouseDragged, 1.2, 0)
+        mouse(NSEventTypeLeftMouseUp, 1.2, 0)
+        assertEquals("123\nbcd\nBCD", view.accessibilitySelectedText())
+        mouse(NSEventTypeLeftMouseDown, 2.2, 0, 0uL)
+        mouse(NSEventTypeLeftMouseDragged, 2.8, 0, 0uL)
+        assertEquals("2", view.accessibilitySelectedText())
+        mouse(NSEventTypeLeftMouseDragged, 2.3, 0, 0uL)
+        mouse(NSEventTypeLeftMouseUp, 2.3, 0, 0uL)
+        assertEquals("", view.accessibilitySelectedText())
+    }
+
     @Test fun commandTripleClickSelectsAndDragsWholeCommandOutput() = withView { session, view, _ ->
         session.write("\u001b]133;A\u0007$ \u001b]133;B\u0007one\u001b]133;C\u0007\r\nfirst\r\nsecond\r\n" +
             "\u001b]133;A\u0007$ \u001b]133;B\u0007two\u001b]133;C\u0007\r\nthird")

@@ -46,15 +46,34 @@ internal class TerminalSelection(
     private var order = orderEpoch()
     private var invalid = false
     private var mode = TerminalSelectionMode.CHARACTER
+    private var pointerX: Double? = null
     val hasAnchor: Boolean get() = bounds != null
 
     fun clear() {
         watches.forEach { it.subscription.dispose() }; watches.clear()
         bounds = null; anchorStart = null; anchorEnd = null; clickAnchor = null; invalid = false
         reset = resetEpoch(); order = orderEpoch()
+        pointerX = null
     }
 
     fun range(): TerminalSelectionRange? { reconcile(); return bounds }
+
+    fun beginPointer(position: TerminalCellPosition, mode: TerminalSelectionMode, x: Double) {
+        begin(clamp(position), mode)
+        pointerX = x
+    }
+
+    /** True once the pointer moves cells or crosses the same-cell selection threshold. */
+    fun extendPointer(position: TerminalCellPosition, x: Double, cellWidth: Int, rectangle: Boolean): Boolean {
+        reconcile()
+        val click = clickAnchor?.position() ?: return false
+        val focus = clamp(position)
+        if (mode != TerminalSelectionMode.CHARACTER) { extend(focus); return focus != click }
+        val range = terminalPointerSelectionRange(click, focus, pointerX ?: return false, x,
+            line(focus.line).columns, cellWidth, firstLine(), lastLine(), rectangle)
+        setRange(if (range == null) TerminalSelectionRange(click, click) else if (rectangle) range else normalize(range))
+        return focus != click || range != null
+    }
 
     fun begin(position: TerminalCellPosition, mode: TerminalSelectionMode) {
         clear(); this.mode = mode
@@ -124,7 +143,7 @@ internal class TerminalSelection(
     fun text(): String {
         val range = range() ?: return ""
         if (range.start == range.end) return ""
-        if (range.rectangle || mode != TerminalSelectionMode.CHARACTER) return terminalSelectionText(range, line)
+        if (pointerX != null || range.rectangle || mode != TerminalSelectionMode.CHARACTER) return terminalSelectionText(range, line)
         return buildString {
             for (y in range.start.line..range.end.line) {
                 val row = line(y)

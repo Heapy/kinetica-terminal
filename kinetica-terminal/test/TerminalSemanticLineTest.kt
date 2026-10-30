@@ -50,6 +50,27 @@ class TerminalSemanticLineTest {
                     assertEquals(result.getValue("text").jsonPrimitive.content, selection.text(), context)
                 }
                 try {
+                    for ((dragIndex, item) in expected.getValue("pointerDrags").jsonArray.withIndex()) {
+                        val value = item.jsonObject
+                        fun point(key: String): TerminalCellPosition = value.getValue(key).jsonArray.let {
+                            TerminalCellPosition(it[1].jsonPrimitive.int, it[0].jsonPrimitive.int)
+                        }
+                        val rectangle = value.getValue("rectangle").jsonPrimitive.boolean
+                        val actual = terminalPointerSelectionRange(point("click"), point("drag"),
+                            value.getValue("clickX").jsonPrimitive.double, value.getValue("dragX").jsonPrimitive.double,
+                            session.columns, value.getValue("width").jsonPrimitive.int, 0, session.lineCount - 1,
+                            rectangle, value.getValue("padding").jsonPrimitive.int)
+                        val context = "$label pointer drag=$dragIndex $value"
+                        val selected = value.getValue("selected")
+                        if (selected == JsonNull) assertNull(actual, context)
+                        else {
+                            val p = selected.jsonObject.getValue("range").jsonArray.map { it.jsonPrimitive.int }
+                            assertEquals(TerminalSelectionRange(TerminalCellPosition(p[1], p[0]),
+                                TerminalCellPosition(p[3], p[2]), rectangle), actual, context)
+                            assertEquals(selected.jsonObject.getValue("text").jsonPrimitive.content,
+                                terminalSelectionText(assertNotNull(actual), session::line), context)
+                        }
+                    }
                     for ((rectangleIndex, rectangle) in expected.getValue("rectangles").jsonArray.withIndex()) {
                         val value = rectangle.jsonObject
                         val p = value.getValue("range").jsonArray.map { it.jsonPrimitive.int }

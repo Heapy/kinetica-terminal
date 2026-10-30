@@ -35,8 +35,18 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
       Validation: 1404 JVM tests, fresh Release JS tests and existing Canvas/WebGL gesture
       regressions. The rectangle corpus regenerates byte-for-byte. Browser gesture checks
       here cover existing modes; rectangular platform events remain the next gate.
-- [ ] Connect rectangular pointer gestures with original pixel thresholds and platform
-      modifier policy (Option on macOS; Ctrl+Alt elsewhere).
+- [x] Connect rectangular pointer gestures with original pixel thresholds and platform
+      modifier policy (Option on macOS; Ctrl+Alt elsewhere). Current modifiers also reach
+      autoscroll ticks. Same-cell movement can select text and consume a prompt click;
+      release alone does not synthesize a drag. Modifier-only Kitty key reports preserve
+      the active browser selection. Programmatic cell-boundary APIs retain their behavior.
+      The original oracle adds 4000 cell/rectangle drag expectations across threshold edges,
+      directions, padding and five cell widths. It canonicalizes original selection corners
+      through `topLeft`/`bottomRight`, preserving the inclusive-to-exclusive column conversion.
+      All fixtures regenerate byte-for-byte. Validation passes 1406 JVM tests, fresh Release
+      JS tests, 77 focused Native tests and actual Chromium gestures/pixels for both macOS
+      and Linux modifier policies with Canvas/WebGL. The known live GPU visibility gate
+      remains separate from these selection checks.
 
 - [x] Select complete command output with Cmd+triple-click on macOS and Ctrl+triple-click
       on other browser platforms, following original `Surface`, `Screen.selectOutput` and
