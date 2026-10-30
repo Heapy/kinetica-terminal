@@ -43,10 +43,12 @@ internal class TerminalGraphicsAnimation(root: TerminalGraphicsPixels,
         mutation = Any()
         if (content) contentGeneration = Any()
     }
-    private fun rgbaRoot() {
-        if (rootPixels.format == 32) return
+    /** True means the converted bytes are private to this mutation, not yet published. */
+    private fun rgbaRoot(): Boolean {
+        if (rootPixels.format == 32) return false
         frames[0].pixels = rootPixels.animationRgba(allocatePixels)
         changed(content = true)
+        return true
     }
     private fun failure(message: String): Nothing = throw TerminalGraphicsAnimationException(message)
     private fun copyPixels(bytes: ByteArray): ByteArray = allocatePixels(bytes.size).also { bytes.copyInto(it) }
@@ -57,7 +59,7 @@ internal class TerminalGraphicsAnimation(root: TerminalGraphicsPixels,
         require(command.action == 'f')
         if (source.width > rootPixels.width || source.height > rootPixels.height) failure("EINVAL: frame dimensions exceed image")
         require(source.format == 24 || source.format == 32)
-        rgbaRoot()
+        val convertedRoot = rgbaRoot()
         initialized = true
         val requested = command.unsigned('r')
         val number = if (requested == 0L || requested > frames.size + 1L) frames.size + 1 else requested.toInt()
@@ -76,7 +78,9 @@ internal class TerminalGraphicsAnimation(root: TerminalGraphicsPixels,
         } else {
             val target = frames[number - 1]
             if (signedGap != 0) target.gap = signedGap.toLong().coerceAtLeast(0)
-            val canvas = copyPixels(target.pixels.data)
+            // The conversion already copied the previously published RGB bytes.
+            // Later edits still copy every published RGBA generation.
+            val canvas = if (convertedRoot && number == 1) target.pixels.data else copyPixels(target.pixels.data)
             animationCompose(canvas, rootPixels.width, rootPixels.height, source.data, source.width, source.height,
                 command.unsigned('x'), command.unsigned('y'), sourceFormat = source.format, overwrite = command.unsigned('X') == 1L)
             target.pixels = TerminalGraphicsPixels(rootPixels.width,rootPixels.height,32,canvas)
@@ -122,10 +126,12 @@ internal class TerminalGraphicsAnimation(root: TerminalGraphicsPixels,
         if (sx + width > rootPixels.width || sy + height > rootPixels.height) failure("EINVAL: source rectangle out of bounds")
         if (sourceNumber == destinationNumber && maxOf(sx,dx) < minOf(sx,dx) + width && maxOf(sy,dy) < minOf(sy,dy) + height)
             failure("EINVAL: source and destination rectangles overlap")
-        rgbaRoot()
+        val convertedRoot = rgbaRoot()
         val source = frame(sourceNumber)!!
         val destination = frames[destinationNumber.toInt() - 1]
-        val canvas = copyPixels(destination.pixels.data)
+        // A self-composition has disjoint source/destination rectangles (validated
+        // above), so it can also use the fresh, unpublished root conversion.
+        val canvas = if (convertedRoot && destinationNumber == 1L) destination.pixels.data else copyPixels(destination.pixels.data)
         animationCompose(canvas,rootPixels.width,rootPixels.height,source.data,rootPixels.width,rootPixels.height,dx,dy,
             sourceX = sx.toInt(),sourceY = sy.toInt(),width = width.toInt(),height = height.toInt(),overwrite = command.unsigned('C') == 1L)
         destination.pixels = TerminalGraphicsPixels(rootPixels.width,rootPixels.height,32,canvas)

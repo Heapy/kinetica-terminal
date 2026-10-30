@@ -144,6 +144,51 @@ class TerminalGraphicsAnimationTest {
         assertEquals(1, animation.frameCount)
     }
 
+    @Test fun firstRgbRootEditReusesConversionButLaterEditsCopyPublishedPixels() {
+        for (format in listOf(24, 32)) for (overwrite in 0..1) {
+            val original = byteArrayOf(-1, 0, 0, 0, 0, -1)
+            val root = TerminalGraphicsPixels(2, 1, 24, original.copyOf())
+            val allocated = mutableListOf<ByteArray>()
+            val animation = TerminalGraphicsAnimation(root) { size -> ByteArray(size).also { allocated += it } }
+            val source = TerminalGraphicsPixels(1, 1, format,
+                if (format == 24) byteArrayOf(0, -1, 0) else byteArrayOf(0, -1, 0, -1))
+            animation.load(parse("a=f,r=1,x=1,X=$overwrite"), source) { fail("An edit does not reserve a new frame") }
+            assertEquals(listOf(8), allocated.map { it.size }, "RGB conversion is already a private destination")
+            val held = animation.rootPixels
+            assertSame(allocated.single(), held.data)
+            assertContentEquals(byteArrayOf(-1, 0, 0, -1, 0, -1, 0, -1), held.data)
+            assertContentEquals(original, root.data, "Previously published RGB bytes remain unchanged")
+
+            animation.load(parse("a=f,r=1,X=$overwrite"), source) { fail("An edit does not reserve a new frame") }
+            assertEquals(listOf(8, 8), allocated.map { it.size }, "Published RGBA destinations still require a copy")
+            assertNotSame(held.data, animation.rootPixels.data)
+            assertContentEquals(byteArrayOf(-1, 0, 0, -1, 0, -1, 0, -1), held.data)
+            assertContentEquals(byteArrayOf(0, -1, 0, -1, 0, -1, 0, -1), animation.rootPixels.data)
+        }
+    }
+
+    @Test fun firstRgbSelfCompositionReusesConversionWithoutAliasingHeldFrames() {
+        for (overwrite in 0..1) {
+            val original = byteArrayOf(-1, 0, 0, 0, -1, 0, 0, 0, -1)
+            val root = TerminalGraphicsPixels(3, 1, 24, original.copyOf())
+            val allocated = mutableListOf<ByteArray>()
+            val animation = TerminalGraphicsAnimation(root) { size -> ByteArray(size).also { allocated += it } }
+            animation.compose(parse("a=c,r=1,c=1,x=1,w=1,h=1,C=$overwrite"))
+            assertEquals(listOf(12), allocated.map { it.size }, "Disjoint self-composition can edit the new conversion")
+            val held = animation.rootPixels
+            val expected = byteArrayOf(-1, 0, 0, -1, -1, 0, 0, -1, 0, 0, -1, -1)
+            assertSame(allocated.single(), held.data)
+            assertContentEquals(expected, held.data)
+            assertContentEquals(original, root.data)
+
+            animation.compose(parse("a=c,r=1,c=1,X=2,w=1,h=1,C=$overwrite"))
+            assertEquals(listOf(12, 12), allocated.map { it.size })
+            assertNotSame(held.data, animation.rootPixels.data)
+            assertContentEquals(expected, held.data)
+            assertContentEquals(byteArrayOf(0, 0, -1, -1, -1, 0, 0, -1, 0, 0, -1, -1), animation.rootPixels.data)
+        }
+    }
+
     @Test fun clockSaturatesAndGaplessAnimationsDoNotScheduleBusyLoops() {
         val root = TerminalGraphicsPixels(1,1,32,byteArrayOf(1,2,3,-1))
         val animation = TerminalGraphicsAnimation(root)

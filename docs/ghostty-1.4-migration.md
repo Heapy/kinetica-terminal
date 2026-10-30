@@ -533,6 +533,15 @@ and lifetime regressions cover single/chunked loads, caller mutation and retaine
 This does not combine encoded-input, resident-image, composition and held-frame budgets;
 the original's RGB-root conversion can still exceed the nominal resident limit.
 
+The first RGB-root edit or disjoint self-composition now reuses its fresh RGBA conversion
+as the destination, removing one further full `width * height * 4` temporary allocation.
+Later edits still copy published RGBA pixels, and new-frame admission retains the original
+conversion-before-reservation order. Allocation regressions failed before the fix and now
+check both blend/overwrite modes, RGB/RGBA sources and unchanged caller-held generations.
+Validation passes all 1442 JVM tests, the freshly built Release JS suite, 25 focused Native
+animation/accounting/software/Metal tests and the actual browser Canvas/WebGL graphics
+verifier. This reduces transient memory without closing the combined resource audit.
+
 The resident-accounting oracle now reads actual original storage counters and every frame,
 covering 27 scenarios / 197 checkpoints. It confirms the conversion overrun and fixes two
 host-limit differences: reapplying the same limit must evict an over-limit image, and changing
