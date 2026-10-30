@@ -909,7 +909,13 @@ asynchronously for all owned PTYs to reap their children before AppKit terminate
 - Cmd+plus (or Cmd+=), Cmd+minus and Cmd+0 zoom/reset the current terminal. Cmd+comma opens
   Settings for the installed monospace font, size and theme; settings apply to every window
   and persist across launches. Window position and size are also saved.
-- Cmd+click opens OSC 8 links and detected HTTP(S) URLs. Cmd+A selects retained output;
+- Cmd+click opens OSC 8 links and detected HTTP(S) URLs using Ghostty 1.4's macOS policy:
+  web/mail targets are validated, local paths are canonicalized and checked for executable
+  or active content, and custom URL schemes require confirmation. Blocked targets can only
+  be copied as normalized, escaped text. Pending confirmations are cancelled on view disposal
+  or replacement; disabling OSC 8 prevents subsequent approval. Embedders overriding
+  `AppKitTerminalView.openLink` take responsibility for their own target policy.
+  Cmd+A selects retained output;
   right-click provides Copy, Paste, Select All and clearing actions. Shift bypasses TUI mouse reporting
   unless application capture is enabled.
 - Cmd+K clears the screen while retaining the current prompt line; Cmd+Shift+K clears scrollback.

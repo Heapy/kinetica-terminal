@@ -1,5 +1,31 @@
 # Ghostty differential oracle
 
+## Native link-policy oracle
+
+`native-links-manifest.json` pins the original macOS `UntrustedURL.swift` from Ghostty
+1.4.0. The Swift helper only classifies targets and reads their display strings: it never
+opens a URL or invokes a handler. Regenerate on macOS with:
+
+```sh
+python3 scripts/generate-terminal-native-links.py build/upstream/ghostty-1.4.0
+bash scripts/engine.sh test -m kinetica-terminal -p macosArm64 --include-classes='*NativeTerminalLinksTest'
+```
+
+The 83 cases compare decisions, denial reasons, canonical allowed URLs and normalized,
+escaped display strings. Thirty-two isolated resources exercise safe files/directories,
+all explicitly blocked extensions, script UTIs, executable bits, symlinks, directory URL
+slash hints and a FIFO.
+Temporary paths are represented by placeholders, including Foundation's `/tmp` spelling
+of `/private/tmp` for relative paths. Tests recreate the same resources and restore their
+working directory afterward. The manifest records the unmodified upstream source, helper,
+generator and fixture hashes plus the Swift toolchain version. Local UTI classification
+uses the host's system type registry, as the original policy does.
+
+Separate native tests cover deferred confirmation, cancellation, replaced requests,
+disposal, policy revocation, dialog defaults and selectable plain target text, sanitized
+copying of blocked links, and Cmd-click routing. They inject the URL launcher and do not
+open external applications or show modal dialogs.
+
 ## Native external-media oracle
 
 `native-media-manifest.json` pins a separate macOS-only Zig oracle that invokes the original

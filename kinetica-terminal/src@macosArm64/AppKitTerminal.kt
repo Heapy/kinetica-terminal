@@ -57,10 +57,14 @@ public class AppKitTerminalView(
     private var interpretingKey: Pair<UShort, TerminalKey>? = null
     public var onViewportChanged: (() -> Unit)? = null
     internal var onScrollActivity: (() -> Unit)? = null
-    public var openLink: (String) -> Boolean = { value ->
-        val url = NSURL.URLWithString(value)
-        url != null && url.scheme?.lowercase() in setOf("http", "https", "mailto", "file") && NSWorkspace.sharedWorkspace.openURL(url)
-    }
+    private val links = NativeTerminalLinkOpener(TerminalScheduler { delay, action ->
+        val timer = NSTimer.timerWithTimeInterval(delay / 1000.0, repeats = false) { action() }
+        NSRunLoop.mainRunLoop.addTimer(timer, NSRunLoopCommonModes)
+        TerminalDisposable { timer.invalidate() }
+    }, { decision, display, complete -> presentNativeLinkDecision(window, decision, display, complete) },
+        { NSWorkspace.sharedWorkspace.openURL(it) }, { !disposed && window != null && session.osc8LinksEnabled })
+    /** Override only with a host policy suitable for untrusted terminal-output targets. */
+    public var openLink: (String) -> Boolean = links::open
     public val scrollOffset: Int get() = viewport.scrollOffset
     public val scrollbackLines: Int get() = session.historySize
     private var ready = false
@@ -724,6 +728,7 @@ public class AppKitTerminalView(
         notificationObservation.dispose(); notifications?.dispose(); notifications = null
         clipboardBinding.dispose()
         mimeClipboardBinding.dispose()
+        links.dispose()
         onViewportChanged = null; onScrollActivity = null
         viewport.dispose(); softwareImages.clear(); releaseGpu(); inputContext()?.discardMarkedText()
     } }
