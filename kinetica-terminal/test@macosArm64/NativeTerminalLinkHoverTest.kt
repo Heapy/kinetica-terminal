@@ -64,10 +64,16 @@ class NativeTerminalLinkHoverTest {
         try {
             session.write("https://example.org")
             view.mouseMoved(h.mouse()); assertEquals("https://example.org", view.linkPreviewLabel.stringValue)
+            session.detectedLinksEnabled = false
+            assertTrue(view.linkPreviewLabel.hidden); assertEquals(NSCursor.IBeamCursor, view.pointerCursor)
+            session.detectedLinksEnabled = true
+            assertFalse(view.linkPreviewLabel.hidden)
             view.linkPreviewMode = TerminalLinkPreviewMode.OSC8
             assertTrue(view.linkPreviewLabel.hidden); assertEquals(NSCursor.pointingHandCursor, view.pointerCursor)
             session.reset(); session.write("\u001b]8;;https://hidden.example\u001b\\click\u001b]8;;\u001b\\")
             assertFalse(view.linkPreviewLabel.hidden)
+            session.detectedLinksEnabled = false
+            assertFalse(view.linkPreviewLabel.hidden, "Explicit OSC 8 preview is independent of detection")
             view.linkPreviewMode = TerminalLinkPreviewMode.NONE
             assertTrue(view.linkPreviewLabel.hidden); assertEquals(NSCursor.pointingHandCursor, view.pointerCursor)
             view.linkPreviewMode = TerminalLinkPreviewMode.ALL

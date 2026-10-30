@@ -492,7 +492,7 @@ public class BrowserTerminalView(
                     val pointer = selectionPointer(event)
                     val link = if (linkModifiers(event)) viewport.pointerLinkAt(pointer) else null
                     if (link != null && (if (openLink !== defaultOpenLink) openLink(link.uri) else
-                        openBrowserTerminalLink(link.uri) { !disposed && (!link.osc8 || session.osc8LinksEnabled) })) viewport.cancelSelectionDrag()
+                        openBrowserTerminalLink(link.uri) { !disposed && link.enabled(session) })) viewport.cancelSelectionDrag()
                     else viewport.endPointerSelection(pointer)
                     selecting = false
                 }

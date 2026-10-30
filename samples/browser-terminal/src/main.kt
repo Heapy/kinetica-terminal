@@ -145,6 +145,7 @@ fun main() {
     api.terminfoName = { name: String? -> session.terminfoName = name }
     api.allowKeyboardLock = { allowed: Boolean -> session.keyboardLockAllowed = allowed }
     api.linkPreviewMode = { mode: String -> surface?.linkPreviewMode = TerminalLinkPreviewMode.valueOf(mode) }
+    api.detectedLinksEnabled = { enabled: Boolean -> session.detectedLinksEnabled = enabled }
     api.osc8LinksEnabled = { enabled: Boolean -> session.osc8LinksEnabled = enabled }
     api.openLink = { handler: (String) -> Boolean -> surface?.openLink = handler }
     api.selectionWordChars = { value: String -> session.selectionWordChars = value }

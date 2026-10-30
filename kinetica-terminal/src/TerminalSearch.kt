@@ -29,19 +29,23 @@ public fun TerminalSession.search(query: String, caseSensitive: Boolean = false,
 
 public fun TerminalSession.hyperlinkAt(line: Int, column: Int): String? {
     if (line !in 0 until lineCount || column !in 0 until columns) return null
-    return terminalHyperlinkAt(line, column, 0, lineCount - 1, this::line, osc8LinksEnabled)
+    return terminalHyperlinkAt(line, column, 0, lineCount - 1, this::line, osc8LinksEnabled, detectedLinksEnabled)
 }
 
 internal fun terminalHyperlinkAt(row: Int, column: Int, first: Int, last: Int, line: (Int) -> TerminalLine,
-    osc8Enabled: Boolean = true): String? = terminalLinkTargetAt(row, column, first, last, line, osc8Enabled)?.uri
+    osc8Enabled: Boolean = true, detectedEnabled: Boolean = true): String? =
+    terminalLinkTargetAt(row, column, first, last, line, osc8Enabled, detectedEnabled)?.uri
 
-internal data class TerminalLinkTarget(val uri: String, val osc8: Boolean)
+internal data class TerminalLinkTarget(val uri: String, val osc8: Boolean) {
+    fun enabled(session: TerminalSession): Boolean = if (osc8) session.osc8LinksEnabled else session.detectedLinksEnabled
+}
 
 internal fun terminalLinkTargetAt(row: Int, column: Int, first: Int, last: Int, line: (Int) -> TerminalLine,
-    osc8Enabled: Boolean): TerminalLinkTarget? {
+    osc8Enabled: Boolean, detectedEnabled: Boolean = true): TerminalLinkTarget? {
     val cell = line(row)
     val x = if (cell.width(column) == 0) (column - 1).coerceAtLeast(0) else column
     if (osc8Enabled) cell.hyperlink(x)?.let { return TerminalLinkTarget(it.uri, osc8 = true) }
+    if (!detectedEnabled) return null
     return terminalDetectedLinkAt(row, x, first, last, line)?.let { TerminalLinkTarget(it.uri, osc8 = false) }
 }
 

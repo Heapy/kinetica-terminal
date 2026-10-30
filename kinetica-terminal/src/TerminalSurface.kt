@@ -127,7 +127,7 @@ public class TerminalViewport internal constructor(
     private var selectionEpoch = session.selectionEpoch
     private var scrollAnchor: ScrollAnchor? = null
     private val liveSelection = TerminalSelection({ 0 }, { session.lineCount - 1 }, session::line, session::indexOfLine,
-        { session.selectionEpoch }, { session.lineOrderEpoch }, { session.selectionWordBoundaries })
+        { session.selectionEpoch }, { session.lineOrderEpoch }, { session.selectionWordBoundaries }, { session.detectedLinksEnabled })
     private val activeSelection: TerminalSelection get() = frozen?.selection ?: liveSelection
     private var draggingSelection = false
     private var promptClickCandidate: Pair<Int, Int>? = null
@@ -212,7 +212,7 @@ public class TerminalViewport internal constructor(
         }
         val selection = TerminalSelection({ first }, { first + lines.lastIndex }, { lines[it - first] }, { row ->
             val index = lines.indexOfFirst { it === row }; if (index < 0) -1 else first + index
-        }, wordBoundaries = { session.selectionWordBoundaries })
+        }, wordBoundaries = { session.selectionWordBoundaries }, detectedLinksEnabled = { session.detectedLinksEnabled })
         frozen = FrozenFrame(lines, first, session.renderTheme, session.cursorColumn, session.cursorRow,
             capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText,
             if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList())
@@ -453,8 +453,8 @@ public class TerminalViewport internal constructor(
     private fun refreshLinkHover(): Boolean {
         val next = if (disposed || hoverRow !in 0 until rows || hoverColumn !in 0 until columns) null
             else if (frozen == null) terminalLinkHoverAt(hoverColumn, hoverRow, firstLine, rows,
-                session.lineCount - 1, session::line, session.osc8LinksEnabled)
-            else terminalLinkHoverAt(hoverColumn, hoverRow, 0, rows, rows - 1, ::visibleLine, session.osc8LinksEnabled)
+                session.lineCount - 1, session::line, session.osc8LinksEnabled, session.detectedLinksEnabled)
+            else terminalLinkHoverAt(hoverColumn, hoverRow, 0, rows, rows - 1, ::visibleLine, session.osc8LinksEnabled, session.detectedLinksEnabled)
         if (next == linkHover) return false
         linkHover = next
         return true
@@ -465,8 +465,8 @@ public class TerminalViewport internal constructor(
     internal fun linkTargetAt(column: Int, row: Int): TerminalLinkTarget? {
         if (row !in 0 until rows || column !in 0 until columns) return null
         return if (frozen == null) terminalLinkTargetAt(firstLine + row, column, 0, session.lineCount - 1,
-            session::line, session.osc8LinksEnabled)
-        else terminalLinkTargetAt(row, column, 0, rows - 1, ::visibleLine, session.osc8LinksEnabled)
+            session::line, session.osc8LinksEnabled, session.detectedLinksEnabled)
+        else terminalLinkTargetAt(row, column, 0, rows - 1, ::visibleLine, session.osc8LinksEnabled, session.detectedLinksEnabled)
     }
 
     private fun rememberScrollAnchor() {

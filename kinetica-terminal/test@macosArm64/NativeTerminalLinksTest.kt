@@ -125,6 +125,14 @@ class NativeTerminalLinksTest {
             session.reset(); session.osc8LinksEnabled = false; session.write("ssh://visible.example")
             click(); assertIs<NativeLinkDecision.Confirm>(decisions.last()); assertNotNull(answer).invoke(true)
             assertEquals("ssh://visible.example", opened.single().absoluteString); opened.clear()
+            click(); session.detectedLinksEnabled = false; assertNotNull(answer).invoke(true)
+            assertTrue(opened.isEmpty(), "Disabling detection revokes a pending detected-link approval")
+            session.reset(); session.osc8LinksEnabled = true
+            session.write("\u001b]8;;ssh://explicit.example\u001b\\click\u001b]8;;\u001b\\")
+            click(); assertNotNull(answer).invoke(true)
+            assertEquals("ssh://explicit.example", opened.single().absoluteString,
+                "Detection policy does not disable explicit OSC 8 approval")
+            opened.clear(); session.detectedLinksEnabled = true
             session.reset(); session.osc8LinksEnabled = true
             session.write("\u001b]8;;ssh://hidden.example\u001b\\click\u001b]8;;\u001b\\")
             click(); session.osc8LinksEnabled = false; assertNotNull(answer).invoke(true)

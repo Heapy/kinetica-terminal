@@ -38,7 +38,7 @@ try {
     const write = text => page.evaluate(text => kineticaTerminalDemo.write(text), text);
     const reset = async text => {
       await page.evaluate(() => {
-        kineticaTerminalDemo.reset(); kineticaTerminalDemo.osc8LinksEnabled(true);
+        kineticaTerminalDemo.reset(); kineticaTerminalDemo.osc8LinksEnabled(true); kineticaTerminalDemo.detectedLinksEnabled(true);
         linkLog.opened = []; linkLog.alerts = []; linkLog.confirmations = []; linkLog.accept = true; linkLog.onConfirm = null;
       });
       await write(text);
@@ -113,6 +113,23 @@ try {
     await reset("ssh://example.org");
     await page.evaluate(() => { linkLog.onConfirm = () => kineticaTerminalDemo.osc8LinksEnabled(false); }); await click();
     assert.equal((await log()).opened[0]?.[0], "ssh://example.org", "OSC 8 policy does not revoke detected text links");
+
+    await reset("https://example.org/path");
+    await page.evaluate(() => kineticaTerminalDemo.detectedLinksEnabled(false)); await click();
+    assert.deepEqual((await log()).opened, [], "Detection can be disabled without altering the text");
+    await page.mouse.click(...point(), { clickCount: 2 });
+    const copiedWord = await page.evaluate(() => {
+      const data = new DataTransfer();
+      document.querySelector("[data-terminal]").dispatchEvent(new ClipboardEvent("copy", { clipboardData: data, bubbles: true, cancelable: true }));
+      return data.getData("text/plain");
+    });
+    assert.equal(copiedWord, "https", "Disabled detection restores ordinary double-click word selection");
+    await reset("ssh://example.org");
+    await page.evaluate(() => { linkLog.onConfirm = () => kineticaTerminalDemo.detectedLinksEnabled(false); }); await click();
+    assert.deepEqual((await log()).opened, [], "Detection revocation during confirmation cancels launch");
+    await reset(osc8("ssh://example.org"));
+    await page.evaluate(() => { linkLog.onConfirm = () => kineticaTerminalDemo.detectedLinksEnabled(false); }); await click();
+    assert.equal((await log()).opened[0]?.[0], "ssh://example.org", "Detection revocation does not revoke OSC 8");
 
     // Check disposal before overriding the opener; reload to create a fresh view.
     await reset(osc8("ssh://example.org"));

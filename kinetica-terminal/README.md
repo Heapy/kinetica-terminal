@@ -998,10 +998,17 @@ The common engine exposes `search`, `hyperlinkAt`, `configureTheme`, `clearScree
 and viewport selection/reveal methods for hosts with their own controls.
 `session.osc8LinksEnabled = false` disables OSC 8 activation through session/viewport
 `hyperlinkAt`, including existing history, alternate-screen rows and synchronized snapshots.
-Visible URL/path detection remains available. Raw `TerminalLine.hyperlink` metadata is
+Visible URL/path detection remains available when `session.detectedLinksEnabled` is true. Raw `TerminalLine.hyperlink` metadata is
 retained, so re-enabling the setting restores explicit links; terminal resets preserve this
 host policy. Hosts implementing link previews, highlighting or link-specific copying should
 use `hyperlinkAt` to respect the setting.
+`session.detectedLinksEnabled = false` is the independent Ghostty `link-url` policy. It disables
+recognition of plain-text URLs and paths for lookup, hover, activation and double-click URL
+selection; double-click then uses ordinary word boundaries. Explicit OSC 8 links remain
+available when `osc8LinksEnabled` is true. Both settings apply immediately to existing history,
+alternate screens and frozen synchronized frames, preserve stored text/metadata, and survive
+terminal resets. Deferred default opener approvals recheck the originating setting before
+launching; hosts supplying their own opener continue to own that policy.
 Detected URLs stop at every OSC 133 prompt/input/output boundary, including across soft wraps
 and in synchronized snapshots. Adjacent command text cannot become part of a prompt URL.
 Explicit OSC 8 targets retain priority, and ordinary literal search continues across semantic

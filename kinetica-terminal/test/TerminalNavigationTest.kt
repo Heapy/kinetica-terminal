@@ -3,6 +3,38 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalNavigationTest {
+    @Test fun detectedLinkPolicyIsIndependentAndAppliesToFrozenLookupAndNewWordSelections() {
+        for (frozen in listOf(false, true)) {
+            val session = TerminalSession(80, 4)
+            val viewport = TerminalViewport(session, {})
+            try {
+                val url = "https://visible.example/path"
+                session.write(url + "\r\n\u001b]8;;ssh://hidden.example\u001b\\label\u001b]8;;\u001b\\")
+                if (frozen) session.write("\u001b[?2026h\u001b[H\u001b[2Kchanged")
+                for (detected in listOf(true, false)) for (explicit in listOf(true, false)) {
+                    session.detectedLinksEnabled = detected; session.osc8LinksEnabled = explicit
+                    assertEquals(if (detected) url else null, viewport.hyperlinkAt(2, 0))
+                    assertEquals(if (explicit) "ssh://hidden.example" else null, viewport.hyperlinkAt(2, 1))
+                    if (!frozen) {
+                        assertEquals(if (detected) url else null, session.hyperlinkAt(0, 2))
+                        assertEquals(if (explicit) "ssh://hidden.example" else null, session.hyperlinkAt(1, 2))
+                    }
+                    viewport.beginSelection(2, 0, TerminalSelectionMode.WORD); viewport.endSelection(2, 0)
+                    assertEquals(if (detected) url else "https", viewport.selectedText())
+                    assertNotNull(session.screenLine(1).hyperlink(2), "Policy changes preserve explicit metadata")
+                }
+                session.detectedLinksEnabled = true; viewport.setLinkHover(2, 0)
+                assertNotNull(viewport.linkHover)
+                session.detectedLinksEnabled = false
+                assertNull(viewport.linkHover, "Host policy revokes frozen hover immediately")
+                session.write("\u001b[!p\u001b[?1049h\u001b[?1049l\u001bc")
+                assertFalse(session.detectedLinksEnabled); assertFalse(session.osc8LinksEnabled)
+                session.write(url); assertNull(session.hyperlinkAt(0, 2))
+                session.detectedLinksEnabled = true; assertEquals(url, session.hyperlinkAt(0, 2))
+            } finally { viewport.dispose() }
+        }
+    }
+
     @Test fun linkOriginsFollowVisibleFramesAndCurrentOsc8Policy() {
         val session = TerminalSession(80, 3)
         val viewport = TerminalViewport(session, {})

@@ -698,7 +698,7 @@ public class AppKitTerminalView(
             }
             nativeDetectedLinkTarget(link.uri, directory)
         }
-        return links.open(target) { !link.osc8 || session.osc8LinksEnabled }
+        return links.open(target) { link.enabled(session) }
     }
     override fun mouseUp(event: NSEvent) {
         if (disposed) return

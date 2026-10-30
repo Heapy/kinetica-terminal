@@ -282,6 +282,13 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
     /** Accounted primary scrollback storage, including while the alternate screen is active. */
     public val historyStorageBytes: Long get() = history.storageBytes
+    /** Ghostty link-url policy: detect visible URLs/paths independently of explicit OSC 8 links. */
+    public var detectedLinksEnabled: Boolean = true
+        set(value) {
+            if (field == value) return
+            field = value; damageAll(); flushDamage()
+            linkPolicyObservers.toList().forEach { it() }
+        }
     /** Host policy for OSC 8 activation; stored metadata and detection of plain URLs remain available. */
     public var osc8LinksEnabled: Boolean = true
         set(value) {

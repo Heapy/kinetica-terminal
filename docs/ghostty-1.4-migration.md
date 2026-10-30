@@ -162,7 +162,14 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Chromium hover pixels/previews, activation and selection with Canvas/WebGL on both
       macOS/Linux modifier policies. AppKit tests exercise event callbacks and overlay state;
       the separately documented live GPU visibility gate remains unresolved.
-- [ ] Add a host `link-url` policy for enabling/disabling detected links independently of OSC 8.
+- [x] Add the independent `link-url` host policy as `session.detectedLinksEnabled` (default true).
+      Disabled detection removes plain URL/path lookup, hover and activation and restores
+      ordinary word selection on double-click. Explicit OSC 8 links retain their own setting;
+      existing/frozen content uses current policy without deleting metadata. Settings survive
+      resets. Browser/native default opener confirmations recheck the setting for their origin,
+      so detection revocation cannot accidentally revoke an explicit OSC 8 approval.
+      Validation: 1421 JVM tests, fresh Release JS tests, 94 focused Native tests and browser
+      hover/activation/word-copy checks on Canvas/WebGL with macOS/Linux modifier policies.
 
 - [x] Native Force Click selects the original press's word, consumes further dragging and
       stops autoscroll. It bypasses the double-click URL override, honors current word

@@ -25,6 +25,7 @@ internal class TerminalSelection(
     private val resetEpoch: () -> Long = { 0L },
     private val orderEpoch: () -> Long = { 0L },
     private val wordBoundaries: () -> IntArray = { terminalDefaultWordBoundaries },
+    private val detectedLinksEnabled: () -> Boolean = { true },
 ) {
     private data class Anchor(val row: TerminalLine, val column: Int, val recycle: Long = row.recycleEpoch)
     private inner class Watch(val row: TerminalLine) {
@@ -99,7 +100,7 @@ internal class TerminalSelection(
             else TerminalSelectionRange(point, point)
         anchorStart = anchor(origin.start); anchorEnd = anchor(origin.end)
         val x = position.column.coerceIn(0, line(y).columns - 1)
-        val link = if (mode == TerminalSelectionMode.WORD) terminalDetectedLinkAt(y, x, firstLine(), lastLine(), line) else null
+        val link = if (mode == TerminalSelectionMode.WORD && detectedLinksEnabled()) terminalDetectedLinkAt(y, x, firstLine(), lastLine(), line) else null
         setRange(link?.range ?: unit ?: TerminalSelectionRange(origin.start, origin.start))
     }
 

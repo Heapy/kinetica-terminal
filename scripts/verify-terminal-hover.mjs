@@ -38,7 +38,7 @@ try {
     const write = text => page.evaluate(text => kineticaTerminalDemo.write(text), text);
     const reset = async text => {
       await page.evaluate(() => {
-        kineticaTerminalDemo.reset(); kineticaTerminalDemo.osc8LinksEnabled(true);
+        kineticaTerminalDemo.reset(); kineticaTerminalDemo.osc8LinksEnabled(true); kineticaTerminalDemo.detectedLinksEnabled(true);
         linkLog.opened = []; linkLog.alerts = []; linkLog.confirmations = []; linkLog.accept = true; linkLog.onConfirm = null;
       });
       await write(text);
@@ -97,9 +97,15 @@ try {
 
     await reset("https://example.org/path"); await move(); await page.keyboard.down(modifier); await paint();
     assert.equal((await preview()).text, "https://example.org/path");
+    await page.evaluate(() => kineticaTerminalDemo.detectedLinksEnabled(false)); await paint();
+    assert.equal((await preview()).hidden, true); assert.equal((await preview()).cursor, "crosshair", "Restore the current OSC 22 cursor");
+    await page.evaluate(() => kineticaTerminalDemo.detectedLinksEnabled(true)); await paint();
+    assert.equal((await preview()).hidden, false);
     await page.evaluate(() => kineticaTerminalDemo.linkPreviewMode("OSC8"));
     assert.equal((await preview()).hidden, true); assert.equal((await preview()).cursor, "pointer");
     await reset(osc8("https://hidden.example")); await paint(); assert.equal((await preview()).hidden, false);
+    await page.evaluate(() => kineticaTerminalDemo.detectedLinksEnabled(false)); await paint();
+    assert.equal((await preview()).hidden, false, "Detection policy leaves OSC 8 previews enabled");
     await page.evaluate(() => kineticaTerminalDemo.linkPreviewMode("NONE"));
     assert.equal((await preview()).hidden, true); assert.equal((await preview()).cursor, "pointer");
     await page.evaluate(() => kineticaTerminalDemo.linkPreviewMode("ALL"));
