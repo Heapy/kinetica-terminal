@@ -35,7 +35,8 @@ blocks and quadrant artwork join without seams. GPU and software painters snap r
 edges to physical pixels. Shaded blocks and blocks with combining marks still use the font.
 
 Both backends reuse packed instance arrays, with 12 floats per rectangle, and draw backgrounds,
-one glyph batch per atlas page, then cursor/decorations (at most six draw calls for text-only frames). They redraw the
+underline/overline decorations, one glyph batch per atlas page, then cursor/strike decorations
+(at most seven draw calls for text-only frames). They redraw the
 visible framebuffer and upload the visible instance batches each frame; partial GPU buffer
 uploads and scroll-only transforms are future optimizations. Only changed rows are rebuilt on
 the CPU. This is cell-based terminal rendering, not a general shaping/layout engine for editors.
@@ -996,7 +997,8 @@ notifications. AppKit progress pixels and browser progress state/expiry are chec
 
 This is an initial VT implementation, not complete xterm conformance. Known limits:
 
-- No sixel, ligatures or blinking text. Hyperlink activation and search controls
+- No sixel or blinking text. Metal shapes font runs with CoreText; WebGL ligatures require
+  configured shaping fonts as described above. Hyperlink activation and search controls
   are currently provided by the native host; browser hosts can use the shared search/link APIs.
   DECRQSS supports cursor style, SGR attributes and vertical/horizontal margins;
   its SGR report omits underline color, matching the pinned Ghostty reference.
