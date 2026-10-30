@@ -1360,7 +1360,13 @@
     "parser_del_dcs_payload": "aa9ca66c50b6acc35968ce33c9575b58df1eec96ff3b2e9da6d048797299b38f",
     "parser_del_osc_title": "383ce6fd3a8106707d7fbd22d8cd9cc1cbab79bf5e8246d0990798ca3e2ead78",
     "parser_del_osc_palette": "9f93907fc8947e3ddff14f96b35a0d0329cf55ebc2be2e202026ffc6d0a0bdeb",
-    "parser_del_osc_c1_title_boundary": "5f1937bbda3bb15a4d0ee3957db881abc188ae5fa9c635bab4958d29c451a276"
+    "parser_del_osc_c1_title_boundary": "5f1937bbda3bb15a4d0ee3957db881abc188ae5fa9c635bab4958d29c451a276",
+    "dcs_raw_bytes_st": "c4a85e64f445ea3a8f614ae6c2381d22ca229ecc658985053e3307278856236a",
+    "dcs_raw_bytes_can": "c4a85e64f445ea3a8f614ae6c2381d22ca229ecc658985053e3307278856236a",
+    "dcs_raw_bytes_sub": "c4a85e64f445ea3a8f614ae6c2381d22ca229ecc658985053e3307278856236a",
+    "dcs_raw_bytes_osc": "a4d9ed7a9774d55add8ac9e925f4c6335228b394798ecb8f47be26c3bb13f2fe",
+    "dcs_raw_bytes_fragmented": "26ac322b287922d1c543a1c09e0cd4772f41802c347505046ee2b89fe6a8bebf",
+    "dcs_raw_bytes_capability": "db5f1ca046542bedea34223c1cb1490b5a9cc723d513c8ad481c7d4744db6547"
   },
   "keyboardMatrixSha256": "6c01e3dd0dee327b115ef73db2d811a5a3bef14194045bd7f81b3c9bc4e9c90e",
   "modifyOtherKeysMatrixSha256": "218a6d9d284746fe45e95d10f4b791db3116a9f902dd9d05c43e5949fb2fe764",

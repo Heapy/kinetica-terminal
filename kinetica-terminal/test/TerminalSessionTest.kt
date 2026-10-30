@@ -3,6 +3,22 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalSessionTest {
+    @Test fun statusRequestLimitCountsWireBytesForTextAndByteWrites() {
+        for (payload in listOf("é", "€", "😀", "\u009c", "éa")) {
+            for (textWrite in listOf(false, true)) {
+                val terminal = TerminalSession(20, 2)
+                val replies = StringBuilder()
+                terminal.onInput { replies.append(it.toByteArray().decodeToString()) }
+                val input = "\u001bP\$q$payload\u001b\\X"
+                if (textWrite) terminal.write(input)
+                else input.encodeToByteArray().forEach { terminal.write(byteArrayOf(it)) }
+                assertEquals(if (payload.encodeToByteArray().size <= 2) "\u001bP0\$r\u001b\\" else "",
+                    replies.toString(), "payload=$payload, textWrite=$textWrite")
+                assertEquals("X", terminal.screenLine(0).text())
+            }
+        }
+    }
+
     @Test fun chunksHaveTheSameMeaningAsOneWrite() {
         val input = "hello\r\n\u001b[31;1m世界e\u0301😀\u001b[0m\u001b[2;4H!\u001b]2;my shell\u001b\\"
         val expected = TerminalSession(20, 4).apply { write(input) }

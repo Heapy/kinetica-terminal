@@ -47,9 +47,9 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
     private var dndBytes = ByteArray(0)
     private var dndLength = 0
 
-    // UTF-8 is decoded for printable text and most supported string payloads. Escape/CSI/DCS
-    // headers and APC/SOS/PM follow byte transitions; OSC titles keep bytes for strict validation.
-    val rawByteState: Boolean get() = state != GROUND && (state != STRING || stringKind == IGNORED || stringKind == APC || titleCapture || dndCapture)
+    // UTF-8 is decoded for printable text and ordinary OSC payloads. Headers, DCS and
+    // APC/SOS/PM consume bytes; OSC titles keep bytes for strict validation.
+    val rawByteState: Boolean get() = state != GROUND && (state != STRING || stringKind == DCS || stringKind == IGNORED || stringKind == APC || titleCapture || dndCapture)
 
     fun reset() {
         if (state == STRING && stringKind == APC) handler.apcEnd(-1)
@@ -69,7 +69,8 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
             state = ESCAPE; clear(); return
         }
         if (state == DCS_IGNORE && code >= 32) return
-        if (rawByteState && !titleCapture && !dndCapture && code in 0x80..0x9f) {
+        // C1 bytes are data in DCS passthrough, including raw ST and UTF-8 continuations.
+        if (rawByteState && !(state == STRING && stringKind == DCS) && !titleCapture && !dndCapture && code in 0x80..0x9f) {
             if (state == STRING && stringKind == APC) {
                 // All three introducers share one VT state. Re-entering that same
                 // state does not unhook/restart it in Ghostty's transition table.
@@ -116,7 +117,7 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
                         // Ghostty's allocating capture includes its trailing NUL, not the OSC number.
                         if (clipboardBytes >= clipboardLimit) overflow = true
                     } else if (capabilityCapture) {
-                        capabilityBytes += when { code < 0x80 -> 1; code < 0x800 -> 2; code < 0x10000 -> 3; else -> 4 }
+                        capabilityBytes++ // DCS payload is already byte-oriented.
                         if (capabilityBytes > CAPABILITY_LIMIT) overflow = true
                     } else if (payload.length + (if (code > 0xffff) 2 else 1) > STRING_LIMIT) overflow = true
                     if (!overflow) {

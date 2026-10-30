@@ -59,6 +59,14 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+The next malformed-input probe exposed DCS payload decoding before DECRQSS byte-limit
+validation. DCS now consumes original bytes, preserving C1 bytes as payload and counting
+XTGETTCAP storage without UTF-8 expansion. Six new original scenarios / 191 checkpoints
+cover valid/malformed UTF-8, two-byte status-request limits, ST/CAN/SUB/OSC exits, NUL,
+DEL and capability-query recovery. Five scenarios and the String/byte write-parity unit
+failed before the fix. All 1566 JVM tests, fresh Release JS tests and 1113 focused Native
+oracle/parser/session/terminfo tests pass; all 1078 VT artifacts reproduce byte-for-byte.
+
 The DEL parser checkpoint adds 17 original-libghostty scenarios / 40 checkpoints for
 ground output, escape/CSI/DCS states, OSC payloads, split UTF-8, REP, charsets and wrapping.
 Before the fix, 14 original scenarios and one parser unit test failed. DEL now prints as

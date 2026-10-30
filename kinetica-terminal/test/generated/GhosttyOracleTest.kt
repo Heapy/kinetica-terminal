@@ -1072,4 +1072,10 @@ class GhosttyOracleTest {
     @Test fun parser_del_osc_title() = checkGhostty(ghostty_parser_del_osc_title())
     @Test fun parser_del_osc_palette() = checkGhostty(ghostty_parser_del_osc_palette())
     @Test fun parser_del_osc_c1_title_boundary() = checkGhostty(ghostty_parser_del_osc_c1_title_boundary())
+    @Test fun dcs_raw_bytes_st() = checkGhostty(ghostty_dcs_raw_bytes_st())
+    @Test fun dcs_raw_bytes_can() = checkGhostty(ghostty_dcs_raw_bytes_can())
+    @Test fun dcs_raw_bytes_sub() = checkGhostty(ghostty_dcs_raw_bytes_sub())
+    @Test fun dcs_raw_bytes_osc() = checkGhostty(ghostty_dcs_raw_bytes_osc())
+    @Test fun dcs_raw_bytes_fragmented() = checkGhostty(ghostty_dcs_raw_bytes_fragmented())
+    @Test fun dcs_raw_bytes_capability() = checkGhostty(ghostty_dcs_raw_bytes_capability())
 }

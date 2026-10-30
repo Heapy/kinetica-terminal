@@ -1,6 +1,6 @@
 # Ghostty differential oracle
 
-The main VT corpus currently contains 1069 scenarios / 7357 checkpoints, each replayed
+The main VT corpus currently contains 1075 scenarios / 7548 checkpoints, each replayed
 as whole writes and bytewise writes. The `scroll_wrap_*` cases distinguish SD/RI/IL and
 in-place SU (which break full-width row wraps) from LF, scrollback-producing SU and
 partial-width scrolling (which preserve them). They compare cells and row flags before
@@ -12,6 +12,9 @@ The `parser_del_*` cases cover DEL in ground, escape/CSI/DCS headers and payload
 OSC title/palette data, incomplete UTF-8, charset mapping, REP and wrapping. Ghostty
 prints DEL as a narrow cell in ground, ignores it in DCS, and preserves it in OSC.
 Raw C1 bytes inside an OSC title remain subject to strict UTF-8 validation.
+The `dcs_raw_bytes_*` cases compare byte-counted DECRQSS limits for valid/malformed
+UTF-8, raw C1/ST, NUL and DEL, with ST/CAN/SUB/OSC termination and subsequent recovery.
+XTGETTCAP cases check raw-byte key isolation and valid keys after malformed fields.
 
 ## Default URL/path matcher oracle
 
