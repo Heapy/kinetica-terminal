@@ -5,6 +5,7 @@ package io.heapy.kinetica.terminal
 import kotlinx.cinterop.*
 import platform.AppKit.*
 import platform.CoreGraphics.*
+import platform.CoreText.*
 import platform.Foundation.*
 import platform.Metal.*
 import platform.QuartzCore.*
@@ -13,7 +14,9 @@ import kotlin.math.ceil
 
 /** All mutable state is main-thread confined. One asynchronous frame owns the reusable buffers. */
 internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = TerminalRenderProbe(null),
-    imageBudget: Long = 64L * 1024 * 1024, private val invalidate: () -> Unit) {
+    imageBudget: Long = 64L * 1024 * 1024,
+    private val fontProvider: (String?, Double, Int) -> NSFont = ::terminalNativeFont,
+    private val invalidate: () -> Unit) {
     private val device = checkNotNull(MTLCreateSystemDefaultDevice()) { "Metal is unavailable" }
     private val queue = checkNotNull(device.newCommandQueue())
     val layer = CAMetalLayer().apply {
@@ -50,7 +53,15 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
             ?: error("Terminal Metal pipeline: ${error.value?.localizedDescription}")
     }
     private val atlas = TerminalGlyphAtlas()
-    private val frame = TerminalGpuFrame()
+    private val shapers = mutableMapOf<Int, TerminalNativeShaper>()
+    private fun shaper(style: Int): TerminalNativeShaper = shapers.getOrPut(style and (TerminalStyle.BOLD or TerminalStyle.ITALIC)) {
+        TerminalNativeShaper(fontProvider(fontFamily, fontSize * scale, style and (TerminalStyle.BOLD or TerminalStyle.ITALIC)))
+    }
+    private fun clearShapers() { shapers.values.forEach { it.dispose() }; shapers.clear() }
+    internal val shapingFontCount: Int get() = shapers.values.sumOf { it.fontCount }
+    private val frame = TerminalGpuFrame({ text, style -> shaper(style).resolve(text) }) { run ->
+        shaper(run.style).shape(run.input, run.font)
+    }
     private val batches = TerminalGpuBatches()
     private val textures = mutableListOf<MTLTextureProtocol>()
     private var drainImages: (() -> Unit)? = null
@@ -82,7 +93,6 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     private var submittedWidth = 0.0; private var submittedHeight = 0.0; private var submittedScale = 0.0
     private var fontSize = 14.0; private var cellWidth = 0.0; private var cellHeight = 0.0
     private var fontFamily: String? = null
-    private val attributes = mutableMapOf<Int, Map<Any?, *>>()
     val glyphCount: Int get() = atlas.entryCount
     var rasterizations: Int = 0
         private set
@@ -116,7 +126,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         imageCache.clear(); imageCache.completed()
         textures.forEach { it.setPurgeableState(MTLPurgeableStateEmpty) }; textures.clear()
         buffers.forEach { it.setPurgeableState(MTLPurgeableStateEmpty) }; buffers.clear()
-        atlas.clear(); attributes.clear(); resetAtlas = true
+        atlas.clear(); clearShapers(); resetAtlas = true
         if (!visible || disposed) {
             // CAMetalLayer owns its contents. Assigning null disables drawable presentation
             // on macOS even after its device and drawable size are restored.
@@ -217,7 +227,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
 
     private fun prepare(viewport: TerminalViewport, measurement: TerminalFrameMeasurement? = null): List<TerminalImageQuad> {
         if (resetAtlas) {
-            atlas.clear(); textures.clear(); attributes.clear()
+            atlas.clear(); textures.clear(); clearShapers()
             viewport.markAll(); resetAtlas = false
         }
         val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, scale, viewport.columns, viewport.rows) }
@@ -348,29 +358,11 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     }
 
     private fun rasterize(key: GlyphKey): GlyphBitmap {
-        val width = ceil(cellWidth * key.columns * scale).toInt().coerceAtLeast(1)
-        val height = ceil(cellHeight * scale).toInt().coerceAtLeast(1)
-        val bytes = ByteArray(width * height * 4)
-        val colorSpace = checkNotNull(CGColorSpaceCreateDeviceRGB())
-        try {
-            bytes.usePinned { pinned ->
-                val context = checkNotNull(CGBitmapContextCreate(pinned.addressOf(0), width.toULong(), height.toULong(), 8u,
-                    (width * 4).toULong(), colorSpace, CGImageAlphaInfo.kCGImageAlphaPremultipliedLast.value or kCGBitmapByteOrder32Big))
-                NSGraphicsContext.saveGraphicsState()
-                try {
-                    CGContextTranslateCTM(context, 0.0, height.toDouble())
-                    CGContextScaleCTM(context, scale, -scale)
-                    NSGraphicsContext.setCurrentContext(NSGraphicsContext.graphicsContextWithCGContext(context, true))
-                    val attrs = attributes.getOrPut(key.style) {
-                        val font = terminalNativeFont(fontFamily, fontSize, key.style)
-                        mapOf(NSFontAttributeName to font, NSForegroundColorAttributeName to NSColor.whiteColor)
-                    }
-                    NSAttributedString.create(string = key.text, attributes = attrs).drawAtPoint(NSMakePoint(0.0, 0.0))
-                } finally { NSGraphicsContext.restoreGraphicsState(); CGContextRelease(context) }
-            }
-        } finally { CGColorSpaceRelease(colorSpace) }
+        val font = fontProvider(fontFamily, fontSize * scale, 0)
+        val baseline = (cellHeight * scale + font.ascender + font.descender) / 2.0
+        val bitmap = terminalRasterizeNativeGlyph(shaper(key.style).face(key.font), key.glyph, baseline, atlas.size - 2)
         rasterizations++
-        return glyphBitmap(width, height, bytes, premultiplied = true)
+        return bitmap
     }
 
     /** Readback for native pixel tests only; normal presentation only waits under image-budget pressure. */

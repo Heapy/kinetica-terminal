@@ -131,7 +131,7 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Hover feedback and multi-cell shaping remain separate open requirements below.
 
 - [ ] Shape multi-cell font runs in GPU renderers, including programming ligatures.
-      The active per-cell GPU paths cannot form a ligature across cells;
+      The browser's active per-cell GPU path cannot form a ligature across cells;
       original Ghostty `renderer/generic.zig` uses a font-shaper run iterator and cluster mapping.
       The [font shaping reference](terminal-font-shaping.md) records original run boundaries,
       font identities, glyph substitutions and terminal-grid offsets using embedded fonts.
@@ -140,8 +140,12 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       CoreText corpus because it differs from HarfBuzz for some marking-glyph offsets.
       The common GPU frame now accepts optional run shaping, retains face/glyph identities
       and clips device-pixel glyph bearings/offsets to run and row bounds. Primary-font
-      boundaries and cluster inputs match the original corpus; platform font resolution,
-      individual-glyph rasterization and enabling the backends remain open.
+      boundaries and cluster inputs match the original corpus. Metal now resolves whole
+      graphemes, excludes LastResort, substitutes missing clusters and draws individual
+      CoreText glyphs through the atlas. Native pixel checks cover ligatures, selection,
+      cursor/style/background boundaries, color emoji, long runs and resource resets;
+      an isolated window presents its initial and restored frames. Browser integration
+      and corresponding shaped-pixel validation remain open.
 - [x] Implement shared hover identity, range tracking and decorations. Reopened implicit
       OSC 8 links remain independent; explicit nonempty IDs match by ID plus URI across
       disjoint visible rows. Copies, reflow and frozen snapshots retain identity. The original

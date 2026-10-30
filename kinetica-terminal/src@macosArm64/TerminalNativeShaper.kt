@@ -12,7 +12,9 @@ import platform.Foundation.*
 /** Main-thread confined. Retained fallback faces keep glyph IDs valid until disposal. */
 internal class TerminalNativeShaper(font: NSFont) {
     private var primaryFont: NSFont? = font
+    private val primaryFace: CTFontRef = checkNotNull(CFBridgingRetain(font)).reinterpret()
     private val faces = mutableListOf<CTFontRef>()
+    private val resolved = linkedMapOf<String, TerminalResolvedFontCell>()
     private var disposed = false
     val fontCount: Int get() = faces.size
 
@@ -21,11 +23,75 @@ internal class TerminalNativeShaper(font: NSFont) {
         return faces[index]
     }
 
-    fun shape(text: TerminalShapingText): List<TerminalShapedGlyph> {
+    /** Resolve one complete terminal grapheme before run boundaries are chosen. */
+    fun resolve(text: String): TerminalResolvedFontCell {
+        check(!disposed)
+        require(text.isNotEmpty())
+        resolved[text]?.let { return it }
+        val result = resolveFace(text)?.let { TerminalResolvedFontCell(it, text) }
+            ?: resolveFace("�")?.let { TerminalResolvedFontCell(it, "�") }
+            ?: TerminalResolvedFontCell(checkNotNull(resolveFace(" ")), " ")
+        // Cell text is bounded by the terminal's grapheme limit. Do not retain an
+        // unbounded vocabulary as a long-running shell emits new combinations.
+        if (resolved.size == 512) resolved.remove(resolved.keys.first())
+        resolved[text] = result
+        return result
+    }
+
+    private fun resolveFace(text: String): Int? = memScoped {
+        val characters = allocArray<UShortVar>(text.length)
+        for (i in text.indices) characters[i] = text[i].code.toUShort()
+        val string = checkNotNull(CFStringCreateWithCharacters(null, characters, text.length.toLong()))
+        try {
+            fun candidate(first: Int, length: Int): Int? {
+                val font = CTFontCreateForString(primaryFace, string, CFRangeMake(first.toLong(), length.toLong())) ?: return null
+                try {
+                    // Ghostty discovery also rejects CoreText's LastResort: its
+                    // boxes claim coverage for unsupported Unicode scalars.
+                    if (interpretObjCPointer<NSFont>(font.rawValue).fontName == "LastResort") return null
+                    return if (supports(font, text)) retainFace(font) else null
+                }
+                finally { CFRelease(font) }
+            }
+            // CoreText considers variation selectors when resolving the full text.
+            candidate(0, text.length)?.let { return@memScoped it }
+            // The first base may use the primary face even when a later mark needs
+            // another face. Try each scalar's fallback, accepting only whole-cluster coverage.
+            var index = 0
+            while (index < text.length) {
+                val length = if (text[index].isHighSurrogate() && index + 1 < text.length && text[index + 1].isLowSurrogate()) 2 else 1
+                candidate(index, length)?.let { return@memScoped it }
+                index += length
+            }
+            null
+        } finally { CFRelease(string) }
+    }
+
+    private fun supports(font: CTFontRef, text: String): Boolean = memScoped {
+        val characters = allocArray<UShortVar>(2)
+        val glyphs = allocArray<CGGlyphVar>(2)
+        var index = 0
+        while (index < text.length) {
+            val first = text[index]
+            val length = if (first.isHighSurrogate() && index + 1 < text.length && text[index + 1].isLowSurrogate()) 2 else 1
+            val code = if (length == 2) 0x10000 + ((first.code - 0xd800) shl 10) + text[index + 1].code - 0xdc00 else first.code
+            // Joiners and presentation selectors affect shaping; they need no visible glyph.
+            if (code !in 0xfe00..0xfe0f && code !in 0xe0100..0xe01ef && code != 0x200c && code != 0x200d) {
+                characters[0] = first.code.toUShort()
+                if (length == 2) characters[1] = text[index + 1].code.toUShort()
+                if (!CTFontGetGlyphsForCharacters(font, characters, glyphs, length.toLong())) return@memScoped false
+            }
+            index += length
+        }
+        true
+    }
+
+    fun shape(text: TerminalShapingText, font: Int? = null): List<TerminalShapedGlyph> {
         check(!disposed)
         if (text.text.isEmpty()) return emptyList()
         val attributed = NSAttributedString.create(string = text.text,
-            attributes = mapOf(NSFontAttributeName to checkNotNull(primaryFont), NSLigatureAttributeName to 1))
+            attributes = mapOf(NSFontAttributeName to (if (font == null) checkNotNull(primaryFont)
+                else interpretObjCPointer<NSFont>(face(font).rawValue)), NSLigatureAttributeName to 1))
         val retained = checkNotNull(CFBridgingRetain(attributed))
         try {
             return memScoped {
@@ -91,6 +157,8 @@ internal class TerminalNativeShaper(font: NSFont) {
         disposed = true
         faces.forEach { CFRelease(it) }
         faces.clear()
+        resolved.clear()
+        CFRelease(primaryFace)
         primaryFont = null
     }
 }

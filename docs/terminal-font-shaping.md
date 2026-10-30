@@ -1,29 +1,52 @@
 # Terminal font shaping
 
-Multi-cell shaping remains an open compatibility requirement. The Metal and WebGL
-backends currently use one terminal grapheme per `GlyphKey`, so neither active
-atlas path can form a programming ligature across cells. Software text grouping
-already passes some longer strings to the platform, but does not provide Ghostty's
-font selection, cluster mapping and alignment to terminal cells.
+The Metal renderer shapes multi-cell runs and rasterizes individual glyphs. WebGL
+still uses one terminal grapheme per `GlyphKey`, so browser programming ligatures
+remain an open compatibility requirement. Software text grouping passes some longer
+strings to the platform, but does not provide Ghostty's font selection, cluster
+mapping and alignment to terminal cells.
 
 The shared `TerminalShapingText`/`terminalPositionGlyphs` layer now preserves terminal
 origins through platform shaping, including UTF-16 surrogate pairs, reordered marks,
 and marks attached to ligatures spanning several cells. `TerminalNativeShaper` uses
 CoreText with forced left-to-right embedding, records actual fallback font identities,
-and retains those faces until disposal. This layer is tested independently; platform
-font resolution and glyph rasterization still need to connect it to Metal.
+and retains those faces until disposal. Metal connects this shaper to its frame and
+bounded atlas, with separate face collections for regular, bold and italic styles.
 
 The common GPU frame accepts optional font-resolution and shaping callbacks. Its
 run planner preserves style, cursor, selection and fallback-font boundaries while
 allowing background changes, and excludes geometric block drawing from font glyphs.
 Shaped atlas entries identify a face and glyph, carry pixel bearings and offsets,
 and clip both geometry and UVs to the run and row without rescaling device pixels.
-Existing platform backends keep the per-cell path until they supply those callbacks.
+WebGL keeps the per-cell path until it supplies those callbacks.
 Common tests compare primary-font run boundaries and cluster inputs in 42 original
 Ghostty cases, and verify fallback substitution, clean-row retention and pixel clipping.
 Validation: 1429 JVM tests, fresh Release JS tests and the Chromium WebGL glyph
-regression at device-pixel ratios 1, 1.25 and 2 pass. This does not yet validate
-shaped glyph pixels in an active platform backend.
+regression at device-pixel ratios 1, 1.25 and 2 pass.
+
+## Native GPU integration
+
+CoreText resolves a face covering the entire grapheme before choosing run boundaries.
+Presentation selectors participate in resolution and are removed from shaper input.
+Following original Ghostty discovery, the resolver rejects `LastResort` and substitutes
+U+FFFD (or space) when no candidate covers the complete grapheme. A 512-entry cell-text
+cache bounds retained resolution strings. Retained faces and atlas entries reset together
+on font/scale changes, hiding and disposal, after outstanding GPU work completes.
+
+The rasterizer draws each glyph into a tight bitmap with its bearings and the primary
+font's row baseline. It preserves color glyphs and antialiasing without scaling an
+atlas tile to a fractional cell. Long runs retain their shaping context while sharing
+individual glyph entries. Geometric block artwork stays outside the font atlas.
+
+Validation: 50 focused Native tests pass. These include original glyph/offset checks,
+whole-grapheme fallback and missing-glyph replacement, emoji presentation, exact raster
+comparison with direct CoreText lines for `F`, `g` and `é`, and real Metal pixels.
+The Metal checks prove that background changes preserve ligatures while selection,
+styles and cursor positions reshape them; they also cover a 513-character run, cache
+reuse, fractional metrics, color emoji, images, and font/visibility resets. A real
+isolated window presents output on its first show and again after being hidden.
+The additional window checks cover continuous resize, retained frames, occlusion,
+visibility reporting, window-size requests and existing navigation interactions.
 
 ## Original reference
 
@@ -129,4 +152,5 @@ An isolated probe of installed Chromium 149 found only the standard Canvas
 `TextMetrics` fields, with no glyph-index or cluster-mapping API exposed. Passing a
 whole string to `fillText` alone cannot provide the required terminal-grid mapping.
 The original FreeType/HarfBuzz and CoreText corpora supply shaping evidence. Native
-GPU integration, browser shaping and actual renderer pixels remain separate gates.
+GPU integration now has real pixel coverage; browser shaping and its renderer pixels
+remain open gates.

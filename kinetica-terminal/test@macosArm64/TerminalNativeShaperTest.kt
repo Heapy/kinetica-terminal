@@ -12,6 +12,41 @@ import kotlin.io.encoding.Base64
 import kotlin.test.*
 
 class TerminalNativeShaperTest {
+    @Test fun wholeGraphemesResolveBeforeShapingAndMissingGlyphsUseReplacement(): Unit = withTerminalShapingFont { font ->
+        val shaper = TerminalNativeShaper(font)
+        try {
+            for (text in listOf("a", "é", "👍🏽", "👩‍💻", "界")) {
+                val resolved = shaper.resolve(text)
+                assertEquals(text, resolved.text)
+                val shaped = shaper.shape(TerminalShapingText(text, IntArray(text.length), 2), resolved.font)
+                assertTrue(shaped.isNotEmpty())
+                assertTrue(shaped.all { it.font == resolved.font && it.glyph != 0 }, text)
+                val count = shaper.fontCount
+                assertEquals(resolved, shaper.resolve(text))
+                assertEquals(count, shaper.fontCount)
+            }
+            val replacement = shaper.resolve(codePointString(0x10fffd))
+            assertEquals("�", replacement.text)
+            val missingMark = shaper.resolve("a" + codePointString(0x10fffd))
+            assertEquals("�", missingMark.text, "Replace the entire unsupported cluster")
+        } finally { shaper.dispose() }
+        assertEquals(0, shaper.fontCount)
+        assertFailsWith<IllegalStateException> { shaper.resolve("a") }
+    }
+
+    @Test fun presentationSelectorsChooseColorOrTextFaceBeforeBeingRemoved() = withTerminalShapingFont { font ->
+        val shaper = TerminalNativeShaper(font)
+        try {
+            for ((text, colored) in listOf("❤︎" to false, "❤️" to true)) {
+                val resolved = shaper.resolve(text)
+                val glyph = shaper.shape(TerminalShapingText("❤", intArrayOf(0), 2), resolved.font).single()
+                val bitmap = terminalRasterizeNativeGlyph(shaper.face(glyph.font), glyph.glyph, 16.0, 1022)
+                assertTrue(bitmap.rgba.indices.any { it % 4 == 3 && bitmap.rgba[it] != 0.toByte() })
+                assertEquals(colored, bitmap.colored, text)
+            }
+        } finally { shaper.dispose() }
+    }
+
     @Test fun embeddedFontMatchesOriginalGlyphSubstitutionsAndGridOffsets() {
         val bytes = Base64.decode(terminalShapingFont())
         val data = bytes.usePinned { checkNotNull(CFDataCreate(null, it.addressOf(0).reinterpret(), bytes.size.toLong())) }
