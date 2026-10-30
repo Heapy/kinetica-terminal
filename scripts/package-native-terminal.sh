@@ -42,7 +42,7 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
   <key>CFBundleIdentifier</key><string>io.heapy.kinetica.terminal-demo</string>
   <key>CFBundleName</key><string>Kinetica Terminal</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleVersion</key><string>9</string>
+  <key>CFBundleVersion</key><string>10</string>
   <key>CFBundleShortVersionString</key><string>0.1.0</string>
   <key>NSPrincipalClass</key><string>NSApplication</string>
   <key>NSHighResolutionCapable</key><true/>
