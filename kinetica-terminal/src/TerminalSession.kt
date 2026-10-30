@@ -1203,7 +1203,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             damage(cursorRow)
             return
         }
-        if (final == 'p' && intermediates == '$'.code && paramIndex == 0 && (prefix == 0 || prefix == '?'.code)) {
+        if (final == 'p' && intermediates == '$'.code && parameterCount == 1 && (prefix == 0 || prefix == '?'.code)) {
             reportMode(params[0], prefix == '?'.code)
             return
         }

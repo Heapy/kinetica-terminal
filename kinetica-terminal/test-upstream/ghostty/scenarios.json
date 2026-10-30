@@ -146515,5 +146515,2807 @@
         "write": "X\u754c\u0301"
       }
     ]
+  },
+  {
+    "name": "mode_query_parameters_ansi_default",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[;0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0;;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[4$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[4;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[4;1$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0:1$p"
+      },
+      {
+        "write": "X"
+      }
+    ]
+  },
+  {
+    "name": "mode_query_parameters_ansi_enabled",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[0;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[;0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[0;;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[4$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[4;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[4;1$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[65535$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[0:1$p"
+      },
+      {
+        "write": "X"
+      }
+    ]
+  },
+  {
+    "name": "mode_query_parameters_ansi_alternate",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[0;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[;0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[0;;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[4$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[4;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[4;1$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[65535$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[4habcdefgh"
+      },
+      {
+        "write": "\u001b[0:1$p"
+      },
+      {
+        "write": "X"
+      }
+    ]
+  },
+  {
+    "name": "mode_query_parameters_dec_default",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[?$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[?0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[?;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[?0;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[?;0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[?0;;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[?7$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[?7;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[?7;1$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[?65535$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[?0:1$p"
+      },
+      {
+        "write": "X"
+      }
+    ]
+  },
+  {
+    "name": "mode_query_parameters_dec_enabled",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?0;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?;0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?0;;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?7$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?7;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?7;1$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?65535$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?0:1$p"
+      },
+      {
+        "write": "X"
+      }
+    ]
+  },
+  {
+    "name": "mode_query_parameters_dec_alternate",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?0;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?;0$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?0;;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?7$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?7;$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?7;1$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?65535$p"
+      },
+      {
+        "write": "X"
+      },
+      {
+        "write": "\u001bc\u001b[?1049h\u001b[?7habcdefgh"
+      },
+      {
+        "write": "\u001b[?0:1$p"
+      },
+      {
+        "write": "X"
+      }
+    ]
+  },
+  {
+    "name": "keyboard_negotiation_greater_m",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>0m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>;m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>0;m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>;1m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>1m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>4;2m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>1;0m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>1;2m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>16;3m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>31m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>32m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>65535m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>1;2;3m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>1:2m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>;;;m"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      }
+    ]
+  },
+  {
+    "name": "keyboard_negotiation_greater_n",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>0n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>;n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>0;n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>;1n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>1n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>4;2n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>1;0n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>1;2n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>16;3n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>31n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>32n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>65535n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>1;2;3n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>1:2n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m"
+      },
+      {
+        "write": "\u001b[>;;;n"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      }
+    ]
+  },
+  {
+    "name": "keyboard_negotiation_greater_u",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>0u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>0;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>;1u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>1u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>4;2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>1;0u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>1;2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>16;3u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>31u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>32u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>65535u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>1;2;3u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>1:2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[>;;;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      }
+    ]
+  },
+  {
+    "name": "keyboard_negotiation_less_u",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<0u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<0;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<;1u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<1u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<4;2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<1;0u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<1;2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<16;3u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<31u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<32u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<65535u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<1;2;3u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<1:2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[<;;;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      }
+    ]
+  },
+  {
+    "name": "keyboard_negotiation_equal_u",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=0u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=0;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=;1u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=1u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=4;2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=1;0u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=1;2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=16;3u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=31u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=32u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=65535u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=1;2;3u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=1:2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[=;;;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      }
+    ]
+  },
+  {
+    "name": "keyboard_negotiation_query_u",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?0u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?0;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?;1u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?1u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?4;2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?1;0u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?1;2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?16;3u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?31u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?32u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?65535u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?1;2;3u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?1:2u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      },
+      {
+        "write": "\u001bc\u001b[>4;2m\u001b[>3u\u001b[>7u"
+      },
+      {
+        "write": "\u001b[?;;;u"
+      },
+      {
+        "keyboard": [
+          {
+            "upstream": "C",
+            "key": "c",
+            "unshifted": 99,
+            "base": 99,
+            "text": "c",
+            "modifiers": 4,
+            "action": 0
+          }
+        ]
+      },
+      {
+        "write": "\u001b[?u"
+      }
+    ]
   }
 ]

@@ -252,6 +252,15 @@ CHT/CBT, DCH, IL/DL and SU/SD in the middle of lines, with margins and on altern
 The oracle distinguishes commands where zero is a no-op from positioning commands that
 still clear pending wrap. Whole-buffer and bytewise replay compare every intermediate state.
 
+The mode-query/keyboard-negotiation increment adds 12 scenarios / 582 checkpoints, bringing
+the main corpus to 979 scenarios / 6073 checkpoints. ANSI/DEC DECRQM queries distinguish a
+missing number from explicit zero and committed empty slots; extra/colon parameters are
+rejected without disturbing pending wrap. Primary/alternate screen states are covered.
+Six query cases failed before the fix, while the six keyboard cases and all prior cases
+passed. Kitty push/pop/set/query and modifyOtherKeys set/reset are checked with omitted,
+zero, out-of-range, extra and colon-separated parameters. Actual Ctrl+C encoding and flag
+queries observe the negotiated state after every command; each setup resets previous state.
+
 The tab/pending-wrap increment adds 59 scenarios / 342 checkpoints, bringing this corpus
 to 461 scenarios / 2615 checkpoints. It covers omitted/explicit/malformed tab-clear parameters,
 default/custom stops, HT/CHT/CBT pending-wrap preservation with DECAWM on/off, and narrow,

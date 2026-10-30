@@ -168,6 +168,10 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Ctrl+Backspace in legacy encoding; other modifier combinations and Kitty retain their
       own encodings. DECSTR preserves 67; RIS resets it. OSC 105 resets unsupported special
       colors in Ghostty and has no palette/dynamic-color effect; original fixtures verify this.
+- [x] DECRQM requires exactly one parsed parameter; a missing mode number produces no
+      reply, while explicit zero and a committed empty slot keep their original semantics.
+      Twelve original-library scenarios / 582 checkpoints cover ANSI/DEC query boundaries
+      and Kitty/modifyOtherKeys negotiation, including actual encoded Ctrl+C bytes.
 - [x] Mouse formats UTF-8 (1005), urxvt (1015) and SGR pixels (1016), including
       independent requested mode bits, last-command format selection and reset/save lifecycle.
       Browser/AppKit supply physical pixels with DPR/backing scale; pixel motion retains

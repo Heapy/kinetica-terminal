@@ -983,6 +983,16 @@ zero comparisons in the middle of lines, with margins and on alternate screens. 
 pass after it; regenerated fixtures and provenance reproduce byte-for-byte. The main C
 corpus now contains 967 cases / 5491 intermediate states, each replayed whole and bytewise.
 
+The input-protocol audit found that a DECRQM query without a mode number incorrectly emitted
+an unknown-mode-zero reply. Dispatch now requires exactly one parsed parameter, preserving
+the distinction between an absent number, explicit zero and a committed empty slot. Six
+original-library query cases reproduce the failure on primary/alternate screens and with
+pending wrap. Six additional negotiation cases already match Ghostty: Kitty push/pop/set/query
+and modifyOtherKeys set/reset are observed through actual Ctrl+C bytes and flag queries across
+omitted, zero, excessive, out-of-range and colon parameters. The increment adds 12 scenarios /
+582 checkpoints; the main corpus now contains 979 cases / 6073 states. All 1367 JVM tests and
+the fresh Release JS suite pass, and fixtures/provenance reproduce byte-for-byte.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than
