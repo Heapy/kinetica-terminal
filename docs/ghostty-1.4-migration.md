@@ -209,6 +209,17 @@ temporary bridge assertion was discarded, rather than adding obsolete implementa
 to satisfy it. Independent control: `/tmp/kinetica-ax-bridge-probe.swift` and its `.log`.
 External AX delivery and VoiceOver acceptance remain unverified.
 
+The cursor-reset audit adds two original-library scenarios with 46 checkpoints across primary
+and alternate screens. They cover all DECSCUSR styles, DECSTR, mode 12 queries, DECRQSS cursor
+reports, and saved blink-mode restoration after soft/hard reset. Reading only `reset_modes`
+would incorrectly suggest that DECSTR preserves blinking: its final `setCursorStyle(.default)`
+call resets both shape and mode 12 to the configured defaults. The original executable confirms
+that Kinetica's existing reset behavior is correct; no production reset change was needed.
+The corpus now contains 1024 scenarios / 7143 checkpoints, replayed whole and bytewise.
+All 1027 generated fixture/manifest files reproduce byte-for-byte. Validation passes 1507 JVM
+tests, the fresh Release JS suite and 1029 Native tests (the full VT oracle, soft-reset host
+defaults and AppKit accessibility). Logs are `/tmp/kinetica-cursor-reset-*`.
+
 The release behavior review uses the pinned `stream.zig` / `stream_terminal.zig` dispatch,
 keyboard/mouse encoders and graphics implementation as the reference. It checks the terminal
 capabilities and relevant input/state changes against executable regression families rather

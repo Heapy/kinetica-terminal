@@ -1025,4 +1025,6 @@ class GhosttyOracleTest {
     @Test fun sgr_color_separator_boundaries_48() = checkGhostty(ghostty_sgr_color_separator_boundaries_48())
     @Test fun sgr_color_component_bounds_58() = checkGhostty(ghostty_sgr_color_component_bounds_58())
     @Test fun sgr_color_separator_boundaries_58() = checkGhostty(ghostty_sgr_color_separator_boundaries_58())
+    @Test fun soft_reset_cursor_style_blink_primary() = checkGhostty(ghostty_soft_reset_cursor_style_blink_primary())
+    @Test fun soft_reset_cursor_style_blink_alternate() = checkGhostty(ghostty_soft_reset_cursor_style_blink_alternate())
 }

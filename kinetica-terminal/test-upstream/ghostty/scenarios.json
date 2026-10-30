@@ -152941,5 +152941,159 @@
         "write": "\u001b[H\u001b[0;31;42;4:3;58;5;100m\u001b[58;2;1:2:3;9mX\u001bP$qm\u001b\\"
       }
     ]
+  },
+  {
+    "name": "soft_reset_cursor_style_blink_primary",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[0 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[1 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[2 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[3 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[4 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[5 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[6 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12h\u001b[?12s\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12r\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12l\u001b[?12s\u001b[3 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12r\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12h\u001b[?12s\u001bc\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12r\u001b[?12$p\u001bP$q q\u001b\\"
+      }
+    ]
+  },
+  {
+    "name": "soft_reset_cursor_style_blink_alternate",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[0 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[1 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[2 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[3 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[4 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[5 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[6 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12h\u001b[?12s\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12r\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12l\u001b[?12s\u001b[3 q\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[!p\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12r\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12h\u001b[?12s\u001bc\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?12r\u001b[?12$p\u001bP$q q\u001b\\"
+      },
+      {
+        "write": "\u001b[?1049l\u001b[?12$p\u001bP$q q\u001b\\"
+      }
+    ]
   }
 ]

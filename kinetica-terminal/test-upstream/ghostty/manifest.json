@@ -1313,7 +1313,9 @@
     "sgr_color_component_bounds_48": "f82580ada815d02e7cc152a097493763836e3a1fd80433853d104e8b5e277ca1",
     "sgr_color_separator_boundaries_48": "27c23be47edbf3f2a895f6b40687fb3329cca106804fb0d1666747bfca75a6cb",
     "sgr_color_component_bounds_58": "6b77817e7a5fbdd870efadeff4de9654926cd4554f1d0d0529c8be1236489e00",
-    "sgr_color_separator_boundaries_58": "dd472ef130d9d3e6f3d591179d52e226a7ca1f5c61df4ef4f8452c85c2532659"
+    "sgr_color_separator_boundaries_58": "dd472ef130d9d3e6f3d591179d52e226a7ca1f5c61df4ef4f8452c85c2532659",
+    "soft_reset_cursor_style_blink_primary": "a5d48b09e5e7d38dc1bc32ddbd3b623f419e91787a868d72877e26676dbed1cf",
+    "soft_reset_cursor_style_blink_alternate": "2ce9f3578ee3398ce6117141f7ce6cc4aa27d7b041bb6f9456f1db08a9f01972"
   },
   "keyboardMatrixSha256": "6c01e3dd0dee327b115ef73db2d811a5a3bef14194045bd7f81b3c9bc4e9c90e",
   "modifyOtherKeysMatrixSha256": "218a6d9d284746fe45e95d10f4b791db3116a9f902dd9d05c43e5949fb2fe764",
