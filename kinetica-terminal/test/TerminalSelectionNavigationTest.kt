@@ -3,6 +3,29 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalSelectionNavigationTest {
+    @Test fun selectAllTrimsOuterCellsAndUsesThePresentedFrame() {
+        val session = TerminalSession(12, 5)
+        val viewport = TerminalViewport(session, {})
+        try {
+            session.write("\r\n  A界 \r\n \u00a0z\u3000 \r\n")
+            viewport.selectAll()
+            assertEquals("A界 \n \u00a0z\u3000", viewport.selectedText())
+            session.reset(); session.write("original")
+            session.write("\u001b[?2026h\u001b[H\u001b[2Khidden")
+            viewport.selectAll()
+            assertEquals("original", viewport.selectedText(), "Select all reads the frozen presentation")
+            session.write("\u001b[?2026l")
+            viewport.selectAll()
+            assertEquals("hidden", viewport.selectedText())
+            session.reset(); viewport.selectAll()
+            assertEquals("", viewport.selectedText())
+            session.write("  ")
+            viewport.beginSelection(0, 0); viewport.extendSelection(2, 0); viewport.endSelection(2, 0)
+            viewport.selectAll()
+            assertEquals("  ", viewport.selectedText(), "A screen without non-whitespace text leaves the prior selection alone")
+        } finally { viewport.dispose() }
+    }
+
     @Test fun revealUsesTheNormalizedStartAndTracksRetainedRows() {
         val session = TerminalSession(12, 4)
         val viewport = TerminalViewport(session, {})

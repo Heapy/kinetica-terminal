@@ -50,6 +50,9 @@ class TerminalSemanticLineTest {
                     assertEquals(result.getValue("text").jsonPrimitive.content, selection.text(), context)
                 }
                 try {
+                    selection.selectAll()
+                    checkSelected(expected.getValue("all"), "$label select all")
+                    selection.clear()
                     for ((dragIndex, item) in expected.getValue("pointerDrags").jsonArray.withIndex()) {
                         val value = item.jsonObject
                         fun point(key: String): TerminalCellPosition = value.getValue(key).jsonArray.let {

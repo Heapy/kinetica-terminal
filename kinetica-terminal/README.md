@@ -273,6 +273,16 @@ and consume no-op navigation at history boundaries. Hidden text exposes the visi
 assistive technology, without announcing every output chunk; the input advertises its navigation
 bindings through `aria-keyshortcuts`.
 
+In the browser, Cmd+A on macOS or Ctrl+Shift+A on other platforms selects all retained
+output, including scrollback. As in Ghostty, select-all omits outer empty cells, ASCII spaces,
+tabs and blank rows, while preserving interior whitespace and non-ASCII space characters.
+Copy/paste use Cmd+C/V or Ctrl+Shift+C/V respectively;
+only these exact modifiers invoke local editing. Extra Control/Option/Shift/Meta combinations
+remain available to the terminal application. Browser paste acquisition remains with the
+browser's normal paste event. Local select-all/copy do not emit Kitty key events and remain
+available under keyboard lock. During an atomic presentation hold, select-all operates on the
+presented frame; on the alternate screen it excludes primary history.
+
 Cmd+J on macOS scrolls back to the current selection in both browser and AppKit surfaces.
 It preserves the selected text and puts its first retained row at the top (or returns to the
 bottom viewport when the selection is in the active screen), following Ghostty's
@@ -347,7 +357,10 @@ Closing hangs up the PTY and reaps its
 child off the UI thread, escalating to termination after a bounded grace period.
 
 The native surface uses `NSTextInputClient` for marked text and committed input. Command+C/V
-copy and paste. Option supports macOS text input by default. `AppKitTerminalView` and
+copy and paste, and Command+A selects retained output. These commands require exact modifiers;
+extra Control/Option/Shift combinations follow normal terminal input handling instead of local
+editing (including Kitty repeat/release reports when enabled). Option supports macOS
+text input by default. `AppKitTerminalView` and
 `appKitTerminalHosts` accept `optionAsAlt = AppKitTerminalOptionAsAlt.NONE`, `BOTH`, `LEFT`
 or `RIGHT`; the selected side is translated without Option while retaining Shift/CapsLock.
 The other side keeps normal AppKit dead-key/IME text input. `optionAsMeta = true` remains a
@@ -1167,6 +1180,7 @@ node build/artifacts/CompiledWebArtifact/kinetica-terminaljsTestrelease/kotlin-o
 node scripts/verify-terminal.mjs
 node scripts/verify-terminal-accessibility.mjs
 node scripts/verify-terminal-navigation.mjs
+node scripts/verify-terminal-editing.mjs
 node scripts/verify-terminal-mime-clipboard.mjs
 node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-overline.mjs

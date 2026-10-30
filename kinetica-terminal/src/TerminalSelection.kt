@@ -49,6 +49,7 @@ internal class TerminalSelection(
     private var mode = TerminalSelectionMode.CHARACTER
     private var pointerX: Double? = null
     private var pointerDragged = false
+    private var preserveWrittenWhitespace = false
     val hasAnchor: Boolean get() = bounds != null
 
     fun clear() {
@@ -57,9 +58,18 @@ internal class TerminalSelection(
         reset = resetEpoch(); order = orderEpoch()
         pointerX = null
         pointerDragged = false
+        preserveWrittenWhitespace = false
     }
 
     fun range(): TerminalSelectionRange? { reconcile(); return bounds }
+
+    fun selectAll(): Boolean {
+        val range = terminalSelectAllRange(firstLine(), lastLine(), line) ?: return false
+        begin(range.start, TerminalSelectionMode.CHARACTER)
+        extend(range.end)
+        preserveWrittenWhitespace = true
+        return true
+    }
 
     fun beginPointer(position: TerminalCellPosition, mode: TerminalSelectionMode, x: Double) {
         begin(clamp(position), mode)
@@ -157,7 +167,7 @@ internal class TerminalSelection(
     fun text(): String {
         val range = range() ?: return ""
         if (range.start == range.end) return ""
-        if (pointerX != null || range.rectangle || mode != TerminalSelectionMode.CHARACTER) return terminalSelectionText(range, line)
+        if (preserveWrittenWhitespace || pointerX != null || range.rectangle || mode != TerminalSelectionMode.CHARACTER) return terminalSelectionText(range, line)
         return buildString {
             for (y in range.start.line..range.end.line) {
                 val row = line(y)
@@ -256,6 +266,23 @@ internal class TerminalSelection(
         val y = position.line.coerceIn(firstLine(), lastLine())
         return TerminalCellPosition(y, position.column.coerceIn(0, line(y).columns - 1))
     }
+}
+
+/** Screen.selectAll trims only NUL, ASCII space and tab at the outer cell boundaries. */
+internal fun terminalSelectAllRange(first: Int, last: Int, line: (Int) -> TerminalLine): TerminalSelectionRange? {
+    fun edge(reverse: Boolean): TerminalCellPosition? {
+        for (y in if (reverse) last downTo first else first..last) {
+            val row = line(y)
+            for (x in if (reverse) row.columns - 1 downTo 0 else 0 until row.columns) {
+                val code = row.codePoint(x)
+                if (!row.hasText(x) || row.isSpacerHead(x) || code == 0 || code == 32 || code == 9) continue
+                return TerminalCellPosition(y, x + if (reverse) row.width(x) else 0)
+            }
+        }
+        return null
+    }
+    val start = edge(false) ?: return null
+    return TerminalSelectionRange(start, checkNotNull(edge(true)))
 }
 
 // ScreenFormatter's plain, unwrapped, untrimmed output: written spaces survive;

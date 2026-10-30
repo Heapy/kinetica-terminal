@@ -133,8 +133,8 @@ public class BrowserTerminalView(
         input.style.cssText = "position:absolute;opacity:0;width:1px;height:1em;padding:0;border:0;resize:none;overflow:hidden;"
         input.setAttribute("aria-label", "Terminal input")
         input.setAttribute("aria-keyshortcuts", if (window.navigator.platform.startsWith("Mac"))
-            "Meta+Home Meta+End Meta+PageUp Meta+PageDown Meta+ArrowUp Meta+ArrowDown Meta+Shift+ArrowUp Meta+Shift+ArrowDown Meta+j"
-        else "Shift+Home Shift+End Shift+PageUp Shift+PageDown Control+Shift+ArrowUp Control+Shift+ArrowDown")
+            "Meta+a Meta+c Meta+v Meta+Home Meta+End Meta+PageUp Meta+PageDown Meta+ArrowUp Meta+ArrowDown Meta+Shift+ArrowUp Meta+Shift+ArrowDown Meta+j"
+        else "Control+Shift+a Control+Shift+c Control+Shift+v Shift+Home Shift+End Shift+PageUp Shift+PageDown Control+Shift+ArrowUp Control+Shift+ArrowDown")
         input.setAttribute("autocomplete", "off"); input.setAttribute("autocapitalize", "off")
         input.setAttribute("spellcheck", "false")
         accessible.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:pre;"
@@ -174,10 +174,13 @@ public class BrowserTerminalView(
             event.stopPropagation()
             if (event.isComposing == true || composing || event.keyCode == 229) return@listen
             val key = key(event)
-            val clipboardShortcut = key.meta || key.control && key.shift
+            val clipboardShortcut = !key.alt && if (window.navigator.platform.startsWith("Mac"))
+                key.meta && !key.control && !key.shift else key.control && key.shift && !key.meta
             if (clipboardShortcut && key.key.lowercase() == "v") return@listen
             val selection = if (clipboardShortcut && key.key.lowercase() == "c") viewport.selectedText() else ""
-            if (selection.isNotEmpty()) {
+            if (clipboardShortcut && key.key.lowercase() == "a") {
+                viewport.selectAll(); event.preventDefault()
+            } else if (selection.isNotEmpty()) {
                 copy(selection); event.preventDefault()
             } else if (navigateViewport(key)) {
                 event.preventDefault()

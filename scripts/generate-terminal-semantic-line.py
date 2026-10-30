@@ -23,6 +23,10 @@ def cases():
         result.append(dict(name="wrapped_" + "_".join(order), columns=5, rows=4,
             events=[dict(text=text), dict(resize=[8,4]), dict(resize=[4,4])]))
     setups = {
+        "select_all_empty": "",
+        "select_all_only_whitespace": " \t\r\n  \r\n\t ",
+        "select_all_outer_padding": "\r\n  界 \r\n é  \r\n\r\n",
+        "select_all_combined_space": " \u0301 x \u0301 ",
         "wide_and_combining": states["prompt"] + "界é" + states["input"] + "😀界abc" + states["output"] + "xyz",
         "spacer_head": states["prompt"] + "abcd" + states["input"] + "界abc" + states["output"] + "z",
         "hard_lines": states["prompt"] + "abc\r\n" + states["input"] + "def\r\n" + states["output"] + "ghi",
@@ -115,6 +119,7 @@ pub fn build(b: *std.Build) void {
         initialPromptRedraw=False,
         cases=len(corpus), snapshots=sum(len(c["snapshots"]) for c in corpus),
         ranges=sum(len(s["ranges"]) for c in corpus for s in c["snapshots"]),
+        selectAll=sum(len(c["snapshots"]) for c in corpus),
         pointerDrags=sum(len(s["pointerDrags"]) for c in corpus for s in c["snapshots"]),
         rectangles=sum(len(s["rectangles"]) for c in corpus for s in c["snapshots"]),
         outputSelections=sum(len(s["outputs"]) for c in corpus for s in c["snapshots"]),

@@ -535,7 +535,10 @@ public class AppKitTerminalView(
         if (command && !shift && !control && flags and NSEventModifierFlagOption == 0uL &&
             !hasMarkedText() && chars.lowercase() == "j" && scrollToSelection()) return
         if (command) {
-            when (chars.lowercase()) {
+            val localCommand = chars.lowercase().takeIf {
+                !control && flags and NSEventModifierFlagOption == 0uL && (!shift || it == "k")
+            }
+            when (localCommand) {
                 "c" -> copySelection(); "v" -> pasteClipboard(); "a" -> viewport.selectAll()
                 "k" -> if (shift) clearHistory(null) else clearScreen(null)
                 else -> if (session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2) {

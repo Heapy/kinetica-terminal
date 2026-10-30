@@ -7,7 +7,7 @@ const Case = struct { name: []const u8, columns: u16, rows: u16, events: []const
 const Selected = struct { range: [4]u32, text: []const u8 };
 const GestureStep = struct { position: [2]u32, selected: ?Selected };
 const PointerDrag = struct { click: [2]u32, drag: [2]u32, clickX: f64, dragX: f64, width: u32, padding: u32, rectangle: bool, selected: ?Selected };
-const Snapshot = struct { columns: u16, lines: u32, semantics: []const u32, markers: []const u32, ranges: []const [6]u32, selected: []const ?Selected, gestures: []const []const GestureStep, words: []const ?Selected, wordGestures: []const []const GestureStep, deepPress: []const ?Selected, outputs: []const ?Selected, outputGestures: []const []const GestureStep, rectangles: []const Selected, pointerDrags: []const PointerDrag };
+const Snapshot = struct { all: ?Selected, columns: u16, lines: u32, semantics: []const u32, markers: []const u32, ranges: []const [6]u32, selected: []const ?Selected, gestures: []const []const GestureStep, words: []const ?Selected, wordGestures: []const []const GestureStep, deepPress: []const ?Selected, outputs: []const ?Selected, outputGestures: []const []const GestureStep, rectangles: []const Selected, pointerDrags: []const PointerDrag };
 fn selected(screen: *vt.Screen, alloc: std.mem.Allocator, selection: ?vt.Selection) !?Selected {
     var sel = selection orelse return null;
     defer sel.deinit(screen);
@@ -148,7 +148,7 @@ pub fn main(init: std.process.Init) !void {
                 };
                 gesture_sets[mode] = gestures.items;
             }
-            try snapshots.append(alloc, .{ .columns = terminal.cols, .lines = @intCast(lines), .semantics = semantics.items, .markers = markers.items, .ranges = ranges.items, .selected = selections.items, .gestures = gesture_sets[0], .words = words.items, .wordGestures = gesture_sets[1], .deepPress = deep_presses.items, .outputs = outputs.items, .outputGestures = gesture_sets[2], .rectangles = rectangles.items, .pointerDrags = pointer_drags.items });
+            try snapshots.append(alloc, .{ .all = try selected(screen, alloc, screen.selectAll()), .columns = terminal.cols, .lines = @intCast(lines), .semantics = semantics.items, .markers = markers.items, .ranges = ranges.items, .selected = selections.items, .gestures = gesture_sets[0], .words = words.items, .wordGestures = gesture_sets[1], .deepPress = deep_presses.items, .outputs = outputs.items, .outputGestures = gesture_sets[2], .rectangles = rectangles.items, .pointerDrags = pointer_drags.items });
         }
         const result = try std.json.Stringify.valueAlloc(alloc, .{ .name = case.name, .snapshots = snapshots.items }, .{});
         if (write(1, result.ptr, result.len) != result.len or write(1, "\n", 1) != 1) return error.WriteFailed;

@@ -412,13 +412,9 @@ public class TerminalViewport internal constructor(
 
     /** Select retained output without synthesizing a mouse drag or starting autoscroll. */
     public fun selectAll() {
-        if (disposed) return
+        if (disposed || !activeSelection.selectAll()) return
         cancelSelectionDrag()
-        val first = frozen?.firstLine ?: 0
-        val last = frozen?.let { it.firstLine + it.lines.lastIndex } ?: (session.lineCount - 1)
         frozen?.let { liveSelection.clear(); it.inheritedRange = null; it.inheritedText = null }
-        activeSelection.begin(TerminalCellPosition(first, 0), TerminalSelectionMode.CHARACTER)
-        activeSelection.extend(TerminalCellPosition(last, columns))
         markAll()
     }
 

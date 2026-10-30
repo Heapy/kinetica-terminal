@@ -60,6 +60,24 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Browser select-all now uses Ghostty's platform defaults (Cmd+A / Ctrl+Shift+A), and browser/
+AppKit local editing requires exact modifiers rather than intercepting extra Control/Option/
+Shift/Meta combinations. Browser coverage includes retained Unicode history, local Kitty event
+isolation, copy/no-selection fallthrough, native paste-event delegation, keyboard lock, composition,
+held presentation frames and alternate screens in Mac/Linux × Canvas/WebGL. Native editing tests
+use an isolated MIME clipboard backend and verify extra modifiers do not acquire clipboard data.
+
+The new browser check exposed select-all including outer blank rows. Direct original
+`Screen.selectAll` comparisons also caught loss of written spaces inside the selection. The shared
+selection action now trims only the outer NUL/ASCII-space/tab cells, preserves interior written
+whitespace, and keeps the prior selection if the screen has no selectable text. The extended
+semantic-line oracle covers select-all at all 89 checkpoints in 68 scenarios, including empty/
+whitespace screens, combined spaces, wide glyphs, history and resize. Its generated fixtures and
+manifest reproduce byte-for-byte. Validation passes all 1638 JVM tests, fresh Release JS tests,
+46 focused Native tests, and browser editing/selection/navigation/accessibility/general integration.
+Evidence: `semantic-line-manifest.json`, `build/reports/terminal-browser-editing.json`, and
+`/tmp/kinetica-editing-*`. This does not close the remaining broader readiness gates.
+
 The standalone AppKit surface now handles Ghostty's macOS history/page/prompt defaults,
 matching the browser implementation: Cmd+Home/End, Cmd+PageUp/PageDown and Cmd+Up/Down
 (with Cmd+Shift+Up/Down aliases). This replaces the old broad Shift+PageUp/PageDown interception.
