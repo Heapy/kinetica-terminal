@@ -142,6 +142,7 @@ public class TerminalViewport internal constructor(
     private var dragColumn = 0
     private var dragRectangle = false
     private var dragPointer: TerminalSelectionPointer? = null
+    private var pointerPressTime: Double? = null
     private var dragRow = 0
     private var dragTimer: TerminalDisposable? = null
     private var disposed = false
@@ -324,12 +325,25 @@ public class TerminalViewport internal constructor(
         markAll()
     }
     public fun extendSelection(column: Int, row: Int) { extendSelection(column, row, rectangle = false) }
-    internal fun beginPointerSelection(pointer: TerminalSelectionPointer, mode: TerminalSelectionMode = TerminalSelectionMode.CHARACTER) {
+    internal fun beginPointerSelection(pointer: TerminalSelectionPointer, mode: TerminalSelectionMode = TerminalSelectionMode.CHARACTER,
+        timeMillis: Double? = null) {
         beginSelection(pointer.column, pointer.row, mode)
         if (disposed) return
         activeSelection.beginPointer(pointerPosition(pointer), mode, pointer.x)
+        pointerPressTime = timeMillis
         dragPointer = pointer
         markAll()
+    }
+    /** Shift-click continues the original gesture after the repeat-click interval.
+     * Keep its anchor, granularity and timestamp; a quick click may still become a multi-click. */
+    internal fun continuePointerSelection(pointer: TerminalSelectionPointer, timeMillis: Double,
+        repeatIntervalMillis: Double, rectangle: Boolean): Boolean {
+        val previous = pointerPressTime ?: return false
+        if (disposed || !timeMillis.isFinite() || !previous.isFinite() ||
+            timeMillis - previous <= repeatIntervalMillis || !activeSelection.canContinuePointer()) return false
+        draggingSelection = true; promptClickCandidate = null
+        extendPointerSelection(pointer, rectangle)
+        return true
     }
     internal fun extendPointerSelection(pointer: TerminalSelectionPointer, rectangle: Boolean) {
         if (disposed || !draggingSelection) return

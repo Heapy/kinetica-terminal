@@ -10,6 +10,44 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    @Test fun shiftClickContinuesSelectionAfterSystemRepeatIntervalAndRespectsCapture() = withView { session, view, _ ->
+        session.write("alpha beta gamma")
+        var time = 1.0
+        fun mouse(type: NSEventType, x: Double, shift: Boolean = false, count: Long = 1) {
+            val point = view.bounds.useContents { NSMakePoint(size.width / session.columns * x, size.height / session.rows * 0.5) }
+            val event = assertNotNull(NSEvent.mouseEventWithType(type, view.convertPoint(point, toView = null),
+                if (shift) NSEventModifierFlagShift else 0uL, time, view.window!!.windowNumber, null, 0, count, 1.0f))
+            when (type) {
+                NSEventTypeLeftMouseDown -> view.mouseDown(event)
+                NSEventTypeLeftMouseDragged -> view.mouseDragged(event)
+                else -> view.mouseUp(event)
+            }
+        }
+        mouse(NSEventTypeLeftMouseDown, 1.2, count = 2); mouse(NSEventTypeLeftMouseUp, 1.2, count = 2)
+        assertEquals("alpha", view.accessibilitySelectedText())
+        time += NSEvent.doubleClickInterval + 0.1
+        mouse(NSEventTypeLeftMouseDown, 7.2, shift = true); mouse(NSEventTypeLeftMouseUp, 7.2, shift = true)
+        assertEquals("alpha beta", view.accessibilitySelectedText())
+        time += 0.01
+        mouse(NSEventTypeLeftMouseDown, 12.2, shift = true, count = 2); mouse(NSEventTypeLeftMouseUp, 12.2, shift = true, count = 2)
+        assertEquals("alpha beta gamma", view.accessibilitySelectedText(), "Continuation does not replace the origin or restart the interval")
+        time += 1.0
+        mouse(NSEventTypeLeftMouseDown, 7.2, count = 2); mouse(NSEventTypeLeftMouseUp, 7.2, count = 2)
+        time += NSEvent.doubleClickInterval / 2
+        mouse(NSEventTypeLeftMouseDown, 12.2, shift = true, count = 2); mouse(NSEventTypeLeftMouseUp, 12.2, shift = true, count = 2)
+        assertEquals("gamma", view.accessibilitySelectedText(), "A quick Shift click still follows multi-click behavior")
+        val output = mutableListOf<String>()
+        val subscription = session.onInput { output += it.toByteArray().decodeToString() }
+        try {
+            time += 1.0; session.write("\u001b[?1000h\u001b[?1006h")
+            mouse(NSEventTypeLeftMouseDown, 1.2, shift = true); mouse(NSEventTypeLeftMouseUp, 1.2, shift = true)
+            assertEquals("alpha beta gamma", view.accessibilitySelectedText()); assertTrue(output.isEmpty())
+            session.write("\u001b[>1s")
+            mouse(NSEventTypeLeftMouseDown, 1.2, shift = true); mouse(NSEventTypeLeftMouseUp, 1.2, shift = true)
+            assertEquals(listOf("\u001b[<4;2;1M", "\u001b[<4;2;1m"), output)
+        } finally { subscription.dispose() }
+    }
+
     @Test fun optionDragSelectsRectanglesAndModifiersCanChangeMidGesture() = withView { session, view, _ ->
         session.write("0123456\r\nabcdefg\r\nABCDEFG")
         fun mouse(type: NSEventType, x: Double, y: Int, flags: ULong = NSEventModifierFlagOption) {

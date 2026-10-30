@@ -88,6 +88,7 @@ public class BrowserTerminalView(
     private var composing = false
     private var suppressComposition: String? = null
     private var selecting = false
+    private var continuingSelection = false
     private var mouseButtons = 0
     private val localMouseButtons = mutableSetOf<Int>()
     private var activePointer: Int? = null
@@ -292,13 +293,13 @@ public class BrowserTerminalView(
         // Cancel compatibility mouse events that would start native selection/autoscroll.
         listen(root, "mousedown") { event ->
             event.preventDefault(); event.stopPropagation()
-            if (selecting && activePointer != null && event.button == 0 && (event.detail as Number).toInt() >= 2) {
+            if (selecting && !continuingSelection && activePointer != null && event.button == 0 && (event.detail as Number).toInt() >= 2) {
                 val output = if (window.navigator.platform.startsWith("Mac")) event.metaKey == true else event.ctrlKey == true
                 viewport.beginPointerSelection(selectionPointer(event), when {
                     (event.detail as Number).toInt() == 2 -> TerminalSelectionMode.WORD
                     output -> TerminalSelectionMode.OUTPUT
                     else -> TerminalSelectionMode.LINE
-                })
+                }, (event.timeStamp as Number).toDouble())
             }
         }
         listen(root, "pointermove") { event ->
@@ -614,11 +615,15 @@ public class BrowserTerminalView(
             if ((mouseButtons and mask) == (next and mask)) continue
             if (next and mask != 0) {
                 localMouseButtons.remove(button)
-                val reported = mouse(event, button)
+                if (button == 0) continuingSelection = event.shiftKey == true && !session.mouseShiftCapture &&
+                    viewport.continuePointerSelection(selectionPointer(event), (event.timeStamp as Number).toDouble(), 500.0,
+                        rectangleSelection(event))
+                val reported = if (button == 0 && continuingSelection) false else mouse(event, button)
                 if (reported) viewport.clearSelection()
                 if (button == 0) {
                     selecting = !reported
-                    if (selecting) viewport.beginPointerSelection(selectionPointer(event)) else viewport.clearSelection()
+                    if (selecting && !continuingSelection) viewport.beginPointerSelection(selectionPointer(event),
+                        timeMillis = (event.timeStamp as Number).toDouble()) else if (!selecting) viewport.clearSelection()
                 } else if (!reported && button in 1..2) {
                     localMouseButtons.add(button)
                     terminalMouseClick(button, rightClickAction, middleClickAction, selectionClipboardSupported,
@@ -632,7 +637,7 @@ public class BrowserTerminalView(
                     if (link != null && (if (openLink !== defaultOpenLink) openLink(link.uri) else
                         openBrowserTerminalLink(link.uri) { !disposed && link.enabled(session) })) viewport.cancelSelectionDrag()
                     else viewport.endPointerSelection(pointer)
-                    selecting = false
+                    selecting = false; continuingSelection = false
                     copySelectionAutomatically()
                 }
                 else mouse(event, button, release = true)
@@ -643,7 +648,7 @@ public class BrowserTerminalView(
     private fun pressedMouseButton(): Int = mouseButtonMasks.firstOrNull { mouseButtons and it.first != 0 }?.second ?: 3
     private fun cancelMouse() {
         val pointer = activePointer
-        activePointer = null; selecting = false; mouseButtons = 0
+        activePointer = null; selecting = false; continuingSelection = false; mouseButtons = 0
         localMouseButtons.clear()
         viewport.cancelSelectionDrag()
         clearLinkPointer()

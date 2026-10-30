@@ -350,6 +350,14 @@ Custom hosts can call `viewport.selectForContextMenu(column, row, linkModifiers)
 its Boolean result says whether a new selection was committed. Clipboard failure does not clear
 the selection or prevent attempting the other destination under `BOTH`.
 
+Shift-click continues a completed pointer selection from its original anchor, keeping word/line
+granularity and using the current rectangle modifier. It can extend, shrink or reverse that
+selection, then keep dragging/autoscrolling. It applies after the repeat-click interval (the
+AppKit system interval, 500 ms in the browser); quicker clicks retain double/triple-click
+behavior. Application capture of Shift prevents local continuation. Cleared, invalidated or
+force-click-consumed origins cannot be resumed. Configurable repeat-click timing and transfer
+of gesture origins into inherited synchronized-output snapshots are still pending.
+
 `view.rightClickAction` defaults to `TerminalRightClickAction.CONTEXT_MENU`; other options
 are `COPY`, `PASTE`, `COPY_OR_PASTE` and `IGNORE`. Copy uses MIXED, then clears the selection
 regardless of `selectionClearOnCopy`. Paste clears it before reading the clipboard, including

@@ -60,6 +60,20 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Shift-click can now continue a completed local pointer selection after the repeat-click
+interval, following `Surface.mouseButtonCallback`'s continuation branch. The original anchor,
+timestamp and character/word/line/output granularity remain; current modifiers control
+rectangles, and continuation can shrink/reverse the selection or resume autoscroll. The
+interval boundary remains eligible for multi-click instead. Empty, invalidated, cleared and
+deep-press-consumed origins cannot continue; application Shift capture takes precedence.
+Validation passes 1664 JVM tests, fresh Release JS tests and 20 focused Native tests.
+Dedicated browser Shift-click, existing selection and mouse-clipboard verifiers pass on
+macOS/Linux with Canvas/WebGL. Evidence: `TerminalShiftSelectionTest`, `MacOsSelectionTest`,
+`scripts/verify-terminal-shift-selection.mjs`, `/tmp/kinetica-shift-selection-*`.
+Remaining mouse work includes replacing host click counters with Ghostty's timestamp/distance
+sequence and configurable interval, and transferring gesture origins into inherited frozen
+selections during synchronized output. Those gaps keep the input/selection gate open.
+
 Browser/AppKit now implement Ghostty's right-click actions (context menu, mixed copy,
 paste, copy-or-paste, ignore) and middle-click actions (selection paste, standard paste,
 ignore). Defaults remain context menu and selection paste; selection paste requires an
