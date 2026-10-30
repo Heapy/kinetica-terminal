@@ -25,7 +25,66 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
       passing the old corpus alone is insufficient. The broader source audit remains open.
 - [x] Update the primary C-reference pin with regenerated evidence and corresponding implementation.
 - [x] Run shared JVM/JS checks, relevant Native tests and fresh browser rendering/input checks for the C-reference migration.
-- [ ] Complete the release-note/source audit for remaining emulation and input differences.
+- [x] Complete the release-note/source audit for remaining emulation and input differences.
+      The behavior-to-regression map below records the reviewed families. Runtime acceptance
+      and performance requirements in the production checklist remain separate gates.
+
+The final capability review checks `TerminalSession`'s DA/DA2/DA3/XTVERSION dispatch and
+`TerminalTerminfoTest.queriesMatchEveryOriginalCapabilityAndParserBoundary`, including
+whole and bytewise original replies. Identity remains conservative and Kinetica-branded;
+graphics negotiation depends on a graphics host. The upstream `stream.zig` explicitly
+ignores OSC 66/99/3008 callbacks and `stream_terminal.zig` ignores DCS tmux control mode;
+CSI 22/23 t title stacks are also no-ops. The module's compatibility scope now lists these
+intentional ignores, separately from implemented OSC 9/777 and ordinary tmux TUI operation.
+This resolves the capability-documentation review without asserting every runtime gate is closed.
+
+The release behavior review uses the pinned `stream.zig` / `stream_terminal.zig` dispatch,
+keyboard/mouse encoders and graphics implementation as the reference. It checks the terminal
+capabilities and relevant input/state changes against executable regression families rather
+than treating matching handler names as sufficient evidence. The generated names below are
+registered in [GhosttyOracleTest](../kinetica-terminal/test/generated/GhosttyOracleTest.kt);
+separate corpora carry their own generator, source hashes and pinned commit under
+`kinetica-terminal/test-upstream/ghostty/`.
+
+| Reviewed behavior | Executable evidence in `kinetica-terminal/test/` |
+| --- | --- |
+| Image commands, IDs, chunks, errors, deletion, replacement and resets | `TerminalGraphicsExecutionTest.completeCommandStreamsMatchOriginalLibghostty`; storage and image fixtures |
+| Animation, relative placements, transient eviction, crops, scrolling and reflow | `TerminalGraphicsAnimationTest.animationCoreMatchesOriginalGhosttyExecutionAndClock`; geometry, anchor, Unicode-placeholder and accounting tests |
+| MIME clipboard and paste events | `TerminalKittyClipboardCoreTest`, `TerminalKittyClipboardResponseTest`, `TerminalKittyClipboardPasteTest`, `TerminalClipboardPasteSessionTest` and host binding tests |
+| iTerm2 clipboard/directory aliases | `TerminalClipboardTest`, `TerminalWorkingDirectoryTest`; generated `iterm2_copy*` / `iterm2_cwd*` cases |
+| Visibility, host resize and prompt clicks | `TerminalVisibilityTest`, `TerminalWindowResizeTest`, `TerminalPromptClickTest`, `TerminalSemanticPromptTest`; original visibility, resize and prompt corpora |
+| Soft reset, backarrow, checksums, extended cursor/screen reports, ANSI mode queries | `TerminalSoftResetTest`, `TerminalChecksumTest`, `TerminalProtocolReportsTest`; generated `soft_reset_*`, `backarrow_*`, `extended_cursor_*`, `size_queries` and mode-query cases |
+| Terminfo, decoration reports and configured cursor reset | `TerminalTerminfoTest`; generated SGR/report cases; `TerminalSession` resets DECSCUSR 0 to the constructor's cursor style/blink defaults |
+| Capture limits, cancellation and bounded combining clusters | `TerminalGraphicsApcTest`, `TerminalGraphicsExecutionTest`, `TerminalBackpressureTest`, `TerminalAdversarialTest`, `TerminalUnicodeTest`; original malformed/cancelled and Unicode cases |
+| Glyph registration and program status | `TerminalGlyphProtocolTest`, `TerminalGlyphConstraintTest`, `TerminalProgramStatusTest`; dedicated original corpora |
+| Prompt-aware clearing/history | Generated `erase_display_after_history`, `scroll_clear_*`, `semantic_blank_prompt_reflow`; `TerminalSemanticPromptTest` |
+| Legacy/modifyOtherKeys/Kitty encoding, consumed modifiers and Option policy | `TerminalModifyOtherKeysTest`, `TerminalKeyboardTest`; generated keyboard, `modify_other_keys_*`, `option_policy_*` and `backarrow_*` cases; native event matrices |
+| Mouse formats and Shift capture | `TerminalMouseTest`, `TerminalMouseShiftTest`; generated `mouse_formats_1005_*`, `1015_*`, `1016_*` and original Shift-capture corpus |
+| Palette/dynamic-color reset, theme notifications and pointer reset | `TerminalColorsTest`, `TerminalColorSchemeTest`, `TerminalKittyColorTest`; generated `soft_reset_palette_dynamic`, `color_scheme_notifications`, `pointer_shape*` cases |
+| UTF-8 effects, DCS and C0/C1 controls | `TerminalEffectsTest`, `TerminalProtocolDeliveryTest`, `VtParserTest`, `TerminalBackpressureTest`; generated malformed/cancelled, title/C1 and final-dispatch cases |
+| Erasure/wrap state, reflow and saved cursors | `TerminalSessionTest`, `TerminalViewportTest`, `TerminalSoftResetTest`; generated `resize_*`, `erase_*`, `reverse_wrap_*` cases |
+| Variation selectors, combining marks, charset invocation/single shifts | `TerminalUnicodeTest`; generated `unicode_*`, `charset_*`, `repeat_wide_combining` cases |
+| Tab clearing, autowrap, reverse wrap and margins | `TerminalSessionTest`, `TerminalViewportTest`; generated `tab_*`, `reverse_wrap_*`, `semantic_margins`, `margins_and_reports` cases |
+
+No reviewed family remains wholly absent from the implementation or regression coverage.
+This is a finite source/behavior audit, not a claim that arbitrary command sequences, host
+event combinations or fonts are exhaustively tested. The platform checks and outstanding
+production gates keep their own acceptance criteria. The detailed increments below retain
+the original-oracle counts, platform checks and intentional embedding differences.
+
+The final full engine Native run passes all 1608 tests, including the shared original
+corpora, actual files/shared memory, software/Metal pixels, native input and isolated live
+PTY/window tests. The first full run passed 1607 and timed out on the 20,000-reply XTGETTCAP
+exchange. That unchanged exchange passed alone in 19.1 seconds; its 20-second watchdog was
+too close to an observed successful run. A 60-second watchdog and queue-state diagnostics
+retain the same approximately 4.7 MiB exact comparison, zero rejection and child-exit checks.
+The entire suite then passes (`/tmp/kinetica-final-native-all-recheck.log`); the original
+failure remains in `/tmp/kinetica-final-native-all.log`. This is a test-watchdog correction,
+not a transport performance improvement. The current Release browser integration and real
+zsh/Vim/Neovim/less/tmux PTY workflows also pass, including Neovim undercurl pixels and
+post-resize navigation. Logs: `/tmp/kinetica-final-browser-main.log` and
+`/tmp/kinetica-final-browser-tui.log`. The unchanged shared implementation already passes
+1478 JVM tests and the fresh Release JS suite at the graphics-memory checkpoint.
 
 - [x] Separate resolved macOS Option-as-Alt policy from layout-consumed modifiers in
       shared key encoding. `TerminalKey.optionAsAlt` explicitly controls the legacy Alt

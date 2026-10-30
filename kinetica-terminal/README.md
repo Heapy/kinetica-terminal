@@ -541,6 +541,18 @@ Shift+PageUp/PageDown, and accessibility text are available.
 
 ## Compatibility scope
 
+Device attributes use a conservative VT100 identity (`CSI ? 1 ; 2 c`), zero DA2/DA3
+version fields and Kinetica's own XTVERSION name. XTGETTCAP answers the pinned static
+capability table and the host's configured terminal name; it does not enable a host effect.
+Kitty image queries remain disabled until a graphics-capable host enables image storage.
+
+The pinned Ghostty terminal handlers do not execute Kitty text sizing (OSC 66), Kitty
+desktop notifications (OSC 99), hierarchical context (OSC 3008), DCS tmux control mode
+or CSI 22/23 t title stacks. Kinetica likewise consumes these without implementing their
+effects. Ordinary tmux applications still run through the supported VT/PTY interface;
+desktop notifications use OSC 9/777. Upstream parsing of an extension is not a claim
+that its terminal or platform handler implements it.
+
 The experimental Glyph Protocol (`APC 25a1`) supports `s/q/r/c`: format discovery,
 glossary coverage, `glyf` registration and clearing. It follows Ghostty 1.4's current
 scope: validated outlines and metrics are retained, but neither rasterization nor cell-width

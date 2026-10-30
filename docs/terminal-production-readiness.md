@@ -28,7 +28,7 @@ fixture subset or a working shell demo does not close the goal.
       underline styles/colors, OSC 8, cursor styles, reports, synchronized output,
       application keypad and keyboard/mouse modes actually advertised by the terminal.
 - [x] Recorded and live shell, Vim/Neovim, tmux, less and full-screen TUI workflows.
-- [ ] Compatibility/capability documentation accurately describes unsupported image
+- [x] Compatibility/capability documentation accurately describes unsupported image
       protocols and other extensions; device reports do not advertise absent features.
 
 ## Browser and macOS behavior
@@ -73,10 +73,18 @@ The Ghostty feature-parity work remains in progress. Its requested scope is:
 - [x] Desktop notifications (OSC 9/777) and ConEmu progress (OSC 9;4).
 - [x] OSC 7 / OSC 1337 CurrentDir working directory, report observers and local-directory inheritance on macOS.
 - [x] OSC 133 prompt/command metadata, redraw semantics and prompt navigation APIs/menu.
-- [ ] Kitty graphics, including platform rendering and resource limits.
+- [x] Kitty graphics, including platform rendering and resource limits.
 - [x] OSC 22 pointer shape with browser CSS and Ghostty-equivalent AppKit mappings.
 
-Kitty graphics is now in progress. The shared parser has a byte-oriented APC lifecycle
+The graphics gates below are complete; the overall production gates above remain open.
+The original-library oracles compare image/frame bytes, replies, placement geometry and
+storage accounting. Separate Canvas/WebGL and AppKit/Metal tests verify our actual pixels,
+cache pressure and lifecycle; they do not compare font rasterization with Ghostty's GUI.
+See the [resource ownership audit](terminal-graphics-memory.md) for the distinct budgets,
+host-dependent presentation surfaces and retained snapshots. The following paragraphs retain
+the implementation history and the validation available at each earlier checkpoint.
+
+The first graphics increment added a byte-oriented APC lifecycle
 and an internal `G` command parser with fixed header storage, bounded Base64 capture,
 32-bit signed/unsigned fields and ownership-safe completion/reset. At that checkpoint all eight
 command actions were parsed, including animation commands, but the session still ignored image
@@ -1144,15 +1152,25 @@ tests now exercise ordinary and outer-zlib PNG crops through the real views; bro
 also includes ancillary padding that leaves spare capacity in the inflated collector.
 
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
-- [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
-- [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.
+- [x] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
+- [x] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.
 - [x] Unicode placeholders, run inheritance, aspect fitting and virtual-parent rendering.
 - [x] Animation frames/composition/timing.
-- [ ] Explicit host policy for file, temporary-file and shared-memory transmission media.
-- [ ] Browser Canvas/WebGL and AppKit/Metal images, cache disposal, context recovery and render holds.
+- [x] Explicit host policy for file, temporary-file and shared-memory transmission media.
+- [x] Browser Canvas/WebGL and AppKit/Metal images, cache disposal, context recovery and render holds.
 - [x] Bound WebGL/Metal RGBA tile payloads across distinct crops and unfinished commands, including resources retired from the LRU.
 - [x] Complete the decoded/transient-buffer and software-renderer backing-resource audit; see the [ownership report](terminal-graphics-memory.md). Tile payload accounting excludes driver overhead and glyph atlases; host geometry and caller-held snapshots remain separate owners, with no aggregate RSS promise.
-- [ ] Original-libghostty image/placement oracle and real platform pixel/resource regressions.
+- [x] Original-libghostty image/placement oracle and real platform pixel/resource regressions.
+
+Closure evidence: `TerminalGraphicsExecutionTest` replays 330 original cases / 2823 snapshots
+whole and bytewise. Geometry, anchor, animation, Unicode-placeholder and accounting oracles
+cover the independent rendering inputs and lifetimes; accounting now has 30 cases / 243
+checkpoints. `NativeGraphicsMediaTest` exercises actual isolated files and shared-memory
+objects, including access policy and cleanup. `NativeGraphicsRenderingTest` covers software
+and Metal pixels, holds, hidden-resource recovery and frame-wide pressure. The actual
+`verify-terminal-graphics.mjs` Canvas/WebGL run at `2f45267` passes image pixels, crop/layers,
+placeholders, holds, context recovery, pressure and disposal. These scopes satisfy the graphics
+gates without claiming a process-wide RSS bound or closing unrelated production gates.
 
 WebGL and Metal now charge both resident tiles and retired tiles referenced by unfinished
 commands to the same 64 MiB budget. Cache eviction cannot reclaim a pending texture. Under
