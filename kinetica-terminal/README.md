@@ -347,6 +347,7 @@ scrollback selections are clipped to that text. Rectangular selections expose on
 nonempty row through `accessibilitySelectedTextRanges`; the singular range encloses them.
 Selected text retains clipboard formatting, including soft-wrap joining and offscreen selected
 output. Wide/combined glyphs and synchronized-output snapshots preserve their cell mapping.
+Without a selection, `accessibilitySelectedText()` returns null and the range list is empty.
 Selection-change notifications debounce for 100 ms and are cancelled on disposal. This mirrors
 the query families in Ghostty's AppKit runtime, with consistent UTF-16 offsets for NSRange.
 

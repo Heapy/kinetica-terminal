@@ -39,7 +39,7 @@ class MacOsSelectionTest {
         assertEquals("2", view.accessibilitySelectedText())
         mouse(NSEventTypeLeftMouseDragged, 2.3, 0, 0uL)
         mouse(NSEventTypeLeftMouseUp, 2.3, 0, 0uL)
-        assertEquals("", view.accessibilitySelectedText())
+        assertNull(view.accessibilitySelectedText())
     }
 
     @Test fun commandTripleClickSelectsAndDragsWholeCommandOutput() = withView { session, view, _ ->
@@ -73,7 +73,7 @@ class MacOsSelectionTest {
     @Test fun nativeForceClickSelectsOriginalWordAndConsumesTheHeldGesture() = withView { session, view, mouse ->
         session.write("alpha-beta gamma")
         view.pressureChangeWithEvent(PressureEvent(2))
-        assertEquals("", view.accessibilitySelectedText(), "Pressure without a held press does nothing")
+        assertNull(view.accessibilitySelectedText(), "Pressure without a held press does nothing")
         mouse(NSEventTypeLeftMouseDown, 2, 0, 1)
         mouse(NSEventTypeLeftMouseDragged, 14, 0, 1)
         val dragged = view.accessibilitySelectedText()
@@ -86,7 +86,7 @@ class MacOsSelectionTest {
         // AppKit may continue its native click count, while Ghostty clears its selection sequence.
         mouse(NSEventTypeLeftMouseDown, 2, 0, 2)
         mouse(NSEventTypeLeftMouseUp, 2, 0, 2)
-        assertEquals("", view.accessibilitySelectedText())
+        assertNull(view.accessibilitySelectedText())
         mouse(NSEventTypeLeftMouseDown, 2, 0, 3)
         mouse(NSEventTypeLeftMouseUp, 2, 0, 3)
         assertEquals("alpha-beta", view.accessibilitySelectedText())
@@ -113,7 +113,7 @@ class MacOsSelectionTest {
             view.pressureChangeWithEvent(PressureEvent(2))
             mouse(NSEventTypeLeftMouseUp, 4, 0, 1)
             assertEquals("\u001b[<0;5;1M\u001b[<0;5;1m", replies.toString())
-            assertEquals("", view.accessibilitySelectedText())
+            assertNull(view.accessibilitySelectedText())
         } finally { subscription.dispose() }
     }
 
@@ -237,7 +237,7 @@ class MacOsSelectionTest {
         try {
             view.insertText("日", NSMakeRange(NSNotFound.toULong(), 0u))
             assertEquals(listOf("日"), sent)
-            assertEquals("", view.accessibilitySelectedText())
+            assertNull(view.accessibilitySelectedText())
         } finally { subscription.dispose() }
         session.reset(); session.write("x".repeat(30) + "\r\nend")
         mouse(NSEventTypeLeftMouseDown, 2, 1, 3)
@@ -273,7 +273,7 @@ class MacOsSelectionTest {
         val disposed = view.accessibilityValue()
         pump(180)
         assertEquals(disposed, view.accessibilityValue())
-        assertEquals("", view.accessibilitySelectedText())
+        assertNull(view.accessibilitySelectedText())
     }
 
     private fun withView(block: (TerminalSession, AppKitTerminalView, (NSEventType, Int, Int, Int) -> Unit) -> Unit) {
