@@ -11,6 +11,25 @@ import kotlin.math.ceil
 import kotlin.test.*
 
 class NativeGraphicsRenderingTest {
+    @Test fun nativePngCropPixelsMatchTheFixtureWithAndWithoutOuterZlib() {
+        NSApplication.sharedApplication()
+        val fixture = terminalGraphicsPngFixtures().first { Base64.decode(it.rgba)[3] == 255.toByte() }
+        val png = Base64.decode(fixture.png)
+        val expected = Base64.decode(fixture.rgba).take(4).map { it.toInt() and 255 }
+        for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                for (compressed in listOf(false, true)) with(surface) {
+                    reset()
+                    val payload = if (compressed) storedZlib(png) else png
+                    session.write(apc("a=T,q=2,i=1,f=100," + (if (compressed) "o=z," else "") +
+                        "w=1,h=1,c=4,r=4,C=1;" + Base64.encode(payload)))
+                    expect(expected, "PNG first-pixel crop, outer zlib=$compressed")
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
     @Test fun metalBudgetSplitsPreserveAllLayersAndPixelsAcrossRepeatedFrames() {
         NSApplication.sharedApplication()
         val session = TerminalSession(20, 6)

@@ -85,6 +85,52 @@ class TerminalGraphicsImageTest {
         }
     }
 
+    @Test fun outerZlibPngDoesNotCopyCollectorToAnExactSecondBuffer() {
+        val fixture = terminalGraphicsPngFixtures().first()
+        val original = Base64.decode(fixture.png)
+        val png = original.copyOfRange(0, original.size - 12) + pngChunk("vpAg", ByteArray(1001)) + original.takeLast(12)
+        val stream = storedZlib(png)
+        val allocations = mutableListOf<Int>()
+        val pixels = decodeTerminalGraphicsImage(100, 0, 0, true, stream, smallLimits,
+            allocateInflated = { size ->
+                assertTrue(size > (allocations.lastOrNull() ?: 0),
+                    "Only growth may allocate: the PNG decoder must consume the collector's valid prefix")
+                allocations += size
+                ByteArray(size) { 0x7f }
+            })
+        assertTrue(allocations.last() > png.size, "Exercise unused backing capacity")
+        assertContentEquals(Base64.decode(fixture.rgba), pixels.data)
+        for (bad in listOf(stream.copyOf(stream.size - 1), stream.copyOf().also {
+            it[it.lastIndex] = (it.last().toInt() xor 1).toByte()
+        }, stream + byteArrayOf(0))) failure(TerminalGraphicsDecodeError.DECOMPRESSION_FAILED) {
+            decode(100, bad, compressed = true)
+        }
+    }
+
+    @Test fun pngValidPrefixExcludesUnusedCapacityAtEveryParserBoundary() {
+        for (fixture in terminalGraphicsPngFixtures()) {
+            val png = Base64.decode(fixture.png)
+            val backing = png + ByteArray(57) { 0x7f }
+            val limits = TerminalGraphicsDecodeLimits(png.size, smallLimits.maxDecodedBytes)
+            val pixels = decodeTerminalGraphicsPng(backing, limits, png.size)
+            assertContentEquals(Base64.decode(fixture.rgba), pixels.data, fixture.name)
+            backing.fill(0)
+            assertContentEquals(Base64.decode(fixture.rgba), pixels.data, "Pixels must not borrow encoded PNG storage")
+        }
+        val png = Base64.decode(terminalGraphicsPngFixtures().first().png)
+        val backing = png + ByteArray(57) { 0x7f }
+        for (length in png.indices) failure(TerminalGraphicsDecodeError.INVALID_DATA) {
+            // The complete image remains in the backing buffer, but bytes after length are inaccessible.
+            decodeTerminalGraphicsPng(backing, smallLimits, length)
+        }
+        for (length in listOf(-1, backing.size + 1)) assertFailsWith<IllegalArgumentException> {
+            decodeTerminalGraphicsPng(backing, smallLimits, length)
+        }
+        failure(TerminalGraphicsDecodeError.RESOURCE_LIMIT) {
+            decodeTerminalGraphicsPng(backing, TerminalGraphicsDecodeLimits(png.size - 1), png.size)
+        }
+    }
+
     @Test fun pngRejectsTruncationCrcCorruptionAndOversizedHeaders() {
         val data = Base64.decode(terminalGraphicsPngFixtures().first().png)
         for (length in 0 until data.size) failure(TerminalGraphicsDecodeError.INVALID_DATA) { decode(100, data.copyOf(length)) }
@@ -239,7 +285,7 @@ private fun pngChunk(type: String, body: ByteArray): ByteArray {
     return data
 }
 
-private fun storedZlib(bytes: ByteArray): ByteArray {
+internal fun storedZlib(bytes: ByteArray): ByteArray {
     require(bytes.size <= 65535)
     val output = ByteArray(bytes.size + 11)
     output[0] = 0x78; output[1] = 0x01; output[2] = 0x01

@@ -131,7 +131,9 @@ transfer assembly, decoder scratch buffers and immutable held-frame generations 
 lifetimes. Compressed raw RGB/RGBA decoding retains only the declared pixel prefix and
 publishes that owned buffer without another full copy. Extra animation-frame bytes are
 discarded while still validating the whole zlib stream and its expansion limit. Compressed
-PNG retains its encoded PNG buffer for the second decoding stage. WebGL/Metal textures used
+PNG retains its encoded collector buffer for the second decoding stage. The PNG parser reads
+only the valid prefix, avoiding a second exact-size copy of that buffer; unused capacity is
+excluded from signature/chunk/CRC bounds. WebGL/Metal textures used
 by unfinished commands are included in their separate renderer budget described above.
 Run `node scripts/verify-terminal-graphics.mjs` against the built browser
 demo for actual Canvas/WebGL pixel, scroll, context-loss and resource-lifecycle checks.

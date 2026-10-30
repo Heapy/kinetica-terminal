@@ -321,6 +321,19 @@ host-limit differences: reapplying the same limit must evict an over-limit image
 a positive limit must preserve an unfinished APC command. Disabling graphics still releases
 capture/storage. Broader combined transient and retained-frame accounting remains open.
 
+The outer-zlib PNG path now passes the collector's valid prefix directly to the PNG parser,
+removing a second full encoded-PNG allocation when geometric growth leaves spare capacity.
+Every signature/chunk/CRC boundary uses the logical length, and pixels own their output.
+Inflation still validates the entire stream before PNG parsing, preserving checksum and
+expansion-limit behavior. A regression failed at the old trimming allocation; boundary tests
+cover truncated prefixes backed by a complete PNG, dirty unused capacity, all existing PNG
+color/depth/interlace fixtures, and mutation of borrowed encoded input after decoding.
+This removes one avoidable temporary; it does not merge the separate storage/transfer,
+decoder, held-frame and renderer budgets.
+Validation passes 1385 JVM tests, the freshly built Release JS suite, ten Native decoder
+tests and ten Native software/Metal rendering tests. Browser Canvas/WebGL and native pixel
+checks now explicitly include PNG cropping with and without outer zlib compression.
+
 The retained-generation audit found that tile-cache keys held entire decoded source images,
 even for tiny crops. Keys now retain a detached identity token owned by the immutable pixel
 buffer, with no reference back to it. A live four-byte cached crop no longer retains its

@@ -5,10 +5,14 @@ import kotlin.math.abs
 // PNG Third Edition: https://www.w3.org/TR/png-3/
 // Static default image, all standard color types/depths and Adam7. APNG animation is
 // separate from Kitty's frame protocol; ancillary animation/color-profile chunks are ignored.
-internal fun decodeTerminalGraphicsPng(data: ByteArray, limits: TerminalGraphicsDecodeLimits): TerminalGraphicsPixels =
-    GraphicsPng(data, limits).decode()
+/** Reads only the valid prefix of a borrowed buffer; spare collector capacity is not PNG data. */
+internal fun decodeTerminalGraphicsPng(data: ByteArray, limits: TerminalGraphicsDecodeLimits,
+    length: Int = data.size): TerminalGraphicsPixels {
+    require(length in 0..data.size)
+    return GraphicsPng(data, length, limits).decode()
+}
 
-private class GraphicsPng(private val data: ByteArray, private val limits: TerminalGraphicsDecodeLimits) {
+private class GraphicsPng(private val data: ByteArray, private val validLength: Int, private val limits: TerminalGraphicsDecodeLimits) {
     private var width = 0
     private var height = 0
     private var depth = 0
@@ -27,15 +31,15 @@ private class GraphicsPng(private val data: ByteArray, private val limits: Termi
     private fun type(offset: Int): Int = uint(offset).toInt()
 
     fun decode(): TerminalGraphicsPixels {
-        if (data.size > limits.maxEncodedBytes) graphicsDecodeFailure(TerminalGraphicsDecodeError.RESOURCE_LIMIT)
-        if (data.size < 8 || PNG_SIGNATURE.indices.any { byte(it) != PNG_SIGNATURE[it] }) graphicsDecodeFailure()
+        if (validLength > limits.maxEncodedBytes) graphicsDecodeFailure(TerminalGraphicsDecodeError.RESOURCE_LIMIT)
+        if (validLength < 8 || PNG_SIGNATURE.indices.any { byte(it) != PNG_SIGNATURE[it] }) graphicsDecodeFailure()
         var offset = 8
         var ended = false
         var idatClosed = false
-        while (offset < data.size) {
-            if (data.size - offset < 12) graphicsDecodeFailure()
+        while (offset < validLength) {
+            if (validLength - offset < 12) graphicsDecodeFailure()
             val lengthLong = uint(offset)
-            if (lengthLong > data.size - offset - 12) graphicsDecodeFailure()
+            if (lengthLong > validLength - offset - 12) graphicsDecodeFailure()
             val length = lengthLong.toInt()
             val start = offset + 8
             val end = start + length

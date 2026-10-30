@@ -1120,6 +1120,20 @@ keys from decoded-source ownership; viewport frozen frames and explicitly retain
 snapshots remain owners. Synchronized-output and resize holds share one viewport slot, cleared
 on release/disposal. Combined transient and host-resource accounting is not declared complete.
 
+Outer-zlib PNG decoding now lends the inflated collector buffer to the PNG parser together
+with its valid length. It no longer trims that buffer into a second full encoded-PNG copy
+while the original growth buffer remains live. Bounds for signatures, chunk headers, payloads
+and CRCs use the valid length. Decoded RGBA output remains independent of the borrowed input.
+The complete outer zlib stream is validated before PNG parsing, including its checksum,
+trailing-data and expansion-limit checks. A regression failed at the former trimming copy;
+additional tests cover every truncated prefix of a complete backing PNG, dirty spare capacity,
+the full PNG fixture matrix and encoded-buffer mutation after decoding. This is a reduction
+in temporary application-owned bytes, not a combined RSS or GPU/decoder storage bound.
+Validation passes all 1385 JVM tests, the fresh Release JS suite, ten Native decoder tests
+and ten Native software/Metal rendering tests. The Canvas/WebGL verifier and Native pixel
+tests now exercise ordinary and outer-zlib PNG crops through the real views; browser input
+also includes ancillary padding that leaves spare capacity in the inflated collector.
+
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
 - [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
 - [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.

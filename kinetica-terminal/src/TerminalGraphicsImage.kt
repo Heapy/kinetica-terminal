@@ -66,7 +66,7 @@ internal fun decodeTerminalGraphicsImage(
             inflatedSize++
         }
     } catch (_: TerminalGraphicsZlibException) { graphicsDecodeFailure(TerminalGraphicsDecodeError.DECOMPRESSION_FAILED) }
-    if (format == 100) return decodeTerminalGraphicsPng(bytes.take(), limits)
+    if (format == 100) return decodeTerminalGraphicsPng(bytes.data, limits, bytes.size)
     validateLength(inflatedSize)
     // The bounded collector already owns exactly the raw pixel prefix: no second full copy.
     return TerminalGraphicsPixels(width.toInt(), height.toInt(), format, bytes.take())
@@ -84,8 +84,10 @@ internal fun graphicsDecodeFailure(error: TerminalGraphicsDecodeError = Terminal
     throw TerminalGraphicsDecodeException(error)
 
 private class GraphicsBytes(private val limit: Int, private val allocate: (Int) -> ByteArray) {
-    private var data = ByteArray(0)
-    private var size = 0
+    var data: ByteArray = ByteArray(0)
+        private set
+    var size: Int = 0
+        private set
     fun add(value: Int) {
         if (size == limit) graphicsDecodeFailure(TerminalGraphicsDecodeError.RESOURCE_LIMIT)
         if (size == data.size) {
@@ -96,5 +98,10 @@ private class GraphicsBytes(private val limit: Int, private val allocate: (Int) 
         }
         data[size++] = value.toByte()
     }
-    fun take(): ByteArray = if (data.size == size) data else data.copyOf(size)
+    fun take(): ByteArray {
+        // Successful raw decoding fills the declared pixel prefix exactly. PNG uses the
+        // borrowed buffer plus size instead, so no path needs an exact-size trimming copy.
+        check(data.size == size)
+        return data
+    }
 }

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { deflateSync } from "node:zlib";
 
 const { chromium } = await import(process.env.PLAYWRIGHT_IMPORT ?? "playwright");
 const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE });
@@ -6,6 +7,22 @@ const url = `${process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173"}
 const apc = header => `\x1b_G${header}\x1b\\`;
 const image = (id, rgb, extra = "") => apc(`a=T,q=2,i=${id},f=24,s=1,v=1,c=4,r=4,C=1${extra};${Buffer.from(rgb).toString("base64")}`);
 const red = [240, 20, 30, 255], blue = [10, 20, 200, 255], green = [20, 210, 40, 255];
+const pngChunk = (type, payload) => {
+  const body = Buffer.concat([Buffer.from(type), payload]);
+  let crc = 0xffffffff;
+  for (const value of body) {
+    crc ^= value;
+    for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
+  }
+  const size = Buffer.alloc(4), checksum = Buffer.alloc(4);
+  size.writeUInt32BE(payload.length); checksum.writeUInt32BE((crc ^ 0xffffffff) >>> 0);
+  return Buffer.concat([size, body, checksum]);
+};
+const pngHeader = Buffer.alloc(13);
+pngHeader.writeUInt32BE(2, 0); pngHeader.writeUInt32BE(1, 4); pngHeader[8] = 8; pngHeader[9] = 6;
+const png = Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), pngChunk("IHDR", pngHeader),
+  pngChunk("IDAT", deflateSync(Buffer.from([0, ...red, ...green]))),
+  pngChunk("vpAg", Buffer.alloc(1001)), pngChunk("IEND", Buffer.alloc(0))]);
 try {
   for (const renderer of ["gpu", "software"]) {
     const page = await browser.newPage({ viewport: { width: 1100, height: 720 }, deviceScaleFactor: 2 });
@@ -89,6 +106,12 @@ try {
     await reset();
     await write(apc(`a=T,q=2,i=1,f=24,s=2,v=1,x=1,w=1,c=4,r=4,C=1;${Buffer.from([...red.slice(0, 3), ...green.slice(0, 3)]).toString("base64")}`));
     await expectPixel(green, "source crop");
+    for (const compressed of [false, true]) {
+      await reset();
+      const payload = compressed ? deflateSync(png) : png;
+      await write(apc(`a=T,q=2,i=1,f=100,${compressed ? "o=z," : ""}x=1,w=1,c=4,r=4,C=1;${payload.toString("base64")}`));
+      await expectPixel(green, `PNG crop with ancillary padding, outer zlib=${compressed}`);
+    }
     await reset();
     await write(image(1, red.slice(0, 3)));
     await write("\x1b[?2026h" + image(1, green.slice(0, 3)));
