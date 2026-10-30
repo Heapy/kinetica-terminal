@@ -122,6 +122,44 @@ try {
   await page.evaluate(() => kineticaTerminalDemo.mimeClipboardPolicy("deny"));
   assert.equal(await exchange(write([["text/plain", "denied"]]) + read("text/plain")), status("write", "EPERM") + status("read", "EPERM"));
   assert.equal(await page.evaluate(() => navigator.clipboard.readText()), "ordered");
+  // User copy is independent of the terminal-output policy. Exercise the actual
+  // Clipboard API, including browser HTML sanitization, before replacing it below.
+  for (const format of ["MIXED", "HTML", "VT", "PLAIN"]) {
+    const label = `copy-${format} Σ`;
+    await page.evaluate(({ format, label }) => {
+      kineticaTerminalDemo.copyFormat(format);
+      kineticaTerminalDemo.write(`\x1bc\x1b[38;2;1;2;3;4:3m\x1b]8;;https://example.org/copy\x07${label}\x1b]8;;\x07\x1b[0m`);
+    }, { format, label });
+    await page.getByRole("textbox", { name: "Terminal input" }).focus();
+    await page.keyboard.press(process.platform === "darwin" ? "Meta+a" : "Control+Shift+a");
+    await page.keyboard.press(process.platform === "darwin" ? "Meta+c" : "Control+Shift+c");
+    await page.waitForFunction(async ({ format, label }) => {
+      const items = await navigator.clipboard.read();
+      if (items.length !== 1) return false;
+      const type = format === "HTML" ? "text/html" : "text/plain";
+      return items[0].types.includes(type) && (await (await items[0].getType(type)).text()).includes(label);
+    }, { format, label });
+    const copied = await page.evaluate(async () => {
+      const items = await navigator.clipboard.read();
+      return Object.fromEntries(await Promise.all(items[0].types.map(async type => [type, await (await items[0].getType(type)).text()])));
+    });
+    const types = format === "MIXED" ? ["text/html", "text/plain"] : [format === "HTML" ? "text/html" : "text/plain"];
+    assert.deepEqual(Object.keys(copied).sort(), types);
+    if (format === "VT") {
+      assert.ok(copied["text/plain"].startsWith("\x1b]10;rgb:"));
+      assert.ok(copied["text/plain"].includes("\x1b[38;2;1;2;3m"));
+    } else if (format !== "HTML") assert.equal(copied["text/plain"], label);
+    if (format === "HTML" || format === "MIXED") {
+      const parsed = await page.evaluate(html => {
+        const document = new DOMParser().parseFromString(html, "text/html");
+        return { text: document.body.textContent, link: document.querySelector("a")?.getAttribute("href"),
+          color: [...document.querySelectorAll("[style]")].some(node => node.style.color === "rgb(1, 2, 3)") };
+      }, copied["text/html"]);
+      assert.equal(parsed.text.trim(), label);
+      assert.equal(parsed.link, "https://example.org/copy");
+      assert.equal(parsed.color, true);
+    }
+  }
   await page.evaluate(() => kineticaTerminalDemo.mimeClipboardPolicy("allow"));
 
   // Metadata listing must not ask any provider for data. Native wins over a web-custom

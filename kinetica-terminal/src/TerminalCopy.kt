@@ -46,9 +46,6 @@ internal class TerminalCopyContent(val text: String, private val mappable: IntAr
         }
     }
 
-    fun reuseText(value: String?): TerminalCopyContent = if (value != null && value == text)
-        TerminalCopyContent(value, mappable) else this
-
     companion object { val EMPTY = TerminalCopyContent("", intArrayOf()) }
 }
 

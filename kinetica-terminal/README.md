@@ -310,8 +310,27 @@ and only recorded cell characters (including individual combining/emoji codepoin
 The formatter's generated blanks/newlines are preserved. Views snapshot the assigned rule list;
 changing rules during synchronized output still copies the retained source text. Custom hosts
 can use `viewport.copyText(trimTrailingSpaces, codepointMap)`. Selected/accessibility text,
-URL copying and OSC/MIME clipboard writes are unaffected. VT/HTML/mixed copy formats are not
-yet implemented.
+URL copying and OSC/MIME clipboard writes are unaffected.
+
+Both views default to `copyFormat = TerminalCopyFormat.MIXED`: one clipboard item contains
+plain text and styled HTML. `PLAIN` emits only text, `VT` emits text with SGR/OSC 8 sequences,
+and `HTML` emits only HTML. VT and HTML include the terminal foreground/background; mixed
+HTML omits this global theme so the receiving document can supply its own. Explicit cell
+colors, underline kinds/colors, other SGR attributes and links are retained in styled output.
+As in Ghostty, styled formats preserve written spaces even with trimming enabled; codepoint
+mappings still apply to cell text, with HTML escaping after substitution. Palette colors are
+resolved at copy time. A synchronized-output hold retains selected rows, palette, links and
+theme, including history outside the visible frame; format and mapping policies can change
+without reading newer terminal contents.
+
+Custom hosts can use `viewport.copyData(format, trimTrailingSpaces, codepointMap)`, which returns
+null for no selection and a `TerminalCopyData` item otherwise. A null `text` or `html` means that
+representation is absent; an empty string is a real clipboard representation. Views use their
+MIME clipboard backend for explicit user copy independently of OSC authorization policy. The
+browser also handles DOM copy events, replaces their representations, and falls back to
+`writeText` only when its default MIME backend is unsupported and a text representation exists.
+Browser permissions and HTML sanitization still apply. Copying a long selection uses one HTML
+wrapper/VT theme header rather than exposing Ghostty's internal page boundaries in the output.
 
 Cmd+J on macOS scrolls back to the current selection in both browser and AppKit surfaces.
 It preserves the selected text and puts its first retained row at the top (or returns to the

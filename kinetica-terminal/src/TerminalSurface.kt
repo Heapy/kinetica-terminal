@@ -214,20 +214,22 @@ public class TerminalViewport internal constructor(
         val first = session.historySize - scrollOffset
         val selected = liveSelection.range()
         val selectedText = if (selected != null) liveSelection.text() else null
-        val copiedText = if (selected != null) {
-            val untrimmed = liveSelection.copyContent(false).reuseText(selectedText)
-            val trimmed = liveSelection.copyContent(true).reuseText(untrimmed.text)
-            untrimmed to trimmed
-        } else null
         // A newly mounted view has no completed frame to retain.
         val lines = Array(session.rows) {
             if (capture) session.line(first + it).snapshot(colors) else TerminalLine(session.columns, colors)
+        }
+        val copiedText = selected?.takeIf { it.start != it.end }?.let { range ->
+            TerminalCopySnapshot(range, Array(range.end.line - range.start.line + 1) { index ->
+                val y = range.start.line + index
+                if (y in first until first + lines.size) lines[y - first]
+                else session.line(y).snapshot(colors).also { it.compress() }
+            }, colors.theme)
         }
         val selection = TerminalSelection({ first }, { first + lines.lastIndex }, { lines[it - first] }, { row ->
             val index = lines.indexOfFirst { it === row }; if (index < 0) -1 else first + index
         }, wordBoundaries = { session.selectionWordBoundaries }, detectedLinksEnabled = { session.detectedLinksEnabled })
         frozen = FrozenFrame(lines, first, session.renderTheme, session.cursorColumn, session.cursorRow,
-            capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText, copiedText,
+            capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText, copiedText, colors.theme,
             if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList())
         blinkTimer?.dispose(); blinkTimer = null
     }
@@ -404,9 +406,21 @@ public class TerminalViewport internal constructor(
     /** Codepoint mappings apply after trimming, to source cell text only, in list order. */
     public fun copyText(trimTrailingSpaces: Boolean, codepointMap: List<TerminalClipboardCodepointMap>): String {
         if (disposed) return ""
-        frozen?.inheritedCopyText?.let { return (if (trimTrailingSpaces) it.second else it.first).format(codepointMap) }
+        frozen?.inheritedCopyText?.let { return it.text(trimTrailingSpaces, codepointMap) }
         return if (codepointMap.isEmpty()) activeSelection.copyText(trimTrailingSpaces)
         else activeSelection.copyContent(trimTrailingSpaces).format(codepointMap)
+    }
+
+    /** A user-copy item. Mixed matches Ghostty's default: plain text plus styled HTML.
+     * A null result means there is no selection and the clipboard should remain unchanged. */
+    public fun copyData(format: TerminalCopyFormat = TerminalCopyFormat.MIXED, trimTrailingSpaces: Boolean = true,
+        codepointMap: List<TerminalClipboardCodepointMap> = emptyList()): TerminalCopyData? {
+        if (!hasSelection) return null
+        val frame = frozen
+        frame?.inheritedCopyText?.let { return it.data(format, trimTrailingSpaces, codepointMap) }
+        val range = selection() ?: return null
+        return if (frame == null) terminalCopyData(range, session::line, session.theme, format, trimTrailingSpaces, codepointMap)
+        else terminalCopyData(range, { frame.lines[it - frame.firstLine] }, frame.copyTheme, format, trimTrailingSpaces, codepointMap)
     }
 
     /** A lookup reads visible cells without changing the user's selection or gesture. */
@@ -672,7 +686,7 @@ public class TerminalViewport internal constructor(
     private data class FrozenFrame(val lines: Array<TerminalLine>, val firstLine: Int, val theme: TerminalTheme,
         val cursorColumn: Int, val cursorRow: Int, val cursorVisible: Boolean, val cursorStyle: TerminalCursorStyle,
         val selection: TerminalSelection, var inheritedRange: TerminalSelectionRange?, var inheritedText: String?,
-        var inheritedCopyText: Pair<TerminalCopyContent, TerminalCopyContent>?, val graphics: List<TerminalGraphicsFrameEntry>) {
+        var inheritedCopyText: TerminalCopySnapshot?, val copyTheme: TerminalTheme, val graphics: List<TerminalGraphicsFrameEntry>) {
         fun clearInheritedSelection() { inheritedRange = null; inheritedText = null; inheritedCopyText = null }
     }
 }

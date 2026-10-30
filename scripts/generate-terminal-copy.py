@@ -26,6 +26,7 @@ def main():
         "graphemes": [mapping(0x301, 0x301, "<accent>"), mapping(0xfe0f, 0xfe0f, ""), mapping(0x200d, 0x200d, "+"), mapping(0x1f000, 0x1ffff, "emoji")],
         "empty": [mapping(0, 0x10ffff, "")],
         "no_recursion": [mapping(ord("a"), ord("a"), "b\n"), mapping(ord("b"), ord("b"), "c"), mapping(10, 10, "X")],
+        "html_escape": [mapping(ord("a"), ord("a"), "<&\"'😀")],
     }
     texts = {
         "ascii": "a  bcd  \r\n ef  \r\nlast",
@@ -39,8 +40,20 @@ def main():
         "wrap": "abc   defghi  jk lmno   pqrstuvwxyz",
         "spacer_head": "1234567界ab😀c\r\nz",
         "styled": "\x1b[31;4ma b \x1b[0m\r\n\x1b[44m\x1b[2K\x1b[0m\r\nc",
+        "flags": "\x1b[1;2;3;5;7;8;9;53;4:3ma b\x1b[0mc\r\n\x1b[4:2md\x1b[4:4me\x1b[4:5mf",
+        "colors": "\x1b[38;2;1;2;3;48;2;4;5;6;58;2;7;8;9ma\x1b[0m\x1b[31mb\x1b[32mc\x1b[0md",
+        "palette": "\x1b]4;1;#112233\x07\x1b[31;44;58;5;1ma b\x1b[0m",
+        "theme": "\x1b]10;#ffeedd\x07\x1b]11;#001122\x07abc",
+        "links": '\x1b]8;id=a;https://example.org/?x=1&y="\x07\x1b[31ma b\x1b[32mc\x1b]8;;\x07d\r\n\x1b]8;;https://example.org/界\x07é\x1b]8;;\x07z',
+        "background_only": "a\r\n\x1b[44m\x1b[2K\x1b[0m\r\nz",
+        "blank_steps": "\x1b[31ma\x1b[5Gb\r\n\x1b[0m\x1b[3Gc",
+        "linked_blanks": "\x1b]8;id=a;https://example.org\x07a\x1b[5Gb\r\n\x1b[3Gc\x1b]8;;\x07d",
+        "wrapped_link_blanks": "\x1b]8;id=a;https://example.org\x07a\x1b[8Gbcd\x1b]8;;\x07e",
+        "styled_spaces": "\x1b[31ma  \x1b[0m  \r\n\x1b[4:3m \u0301  \x1b[0mb",
+        "indexed_and_rgb": "\x1b[31ma\x1b[38;2;17;35;53mb\x1b[31mc",
     }
-    cases = [dict(name=f"{name}_{map_name}", columns=8, rows=4, text=text, mappings=values)
+    palette_setup = "".join(f"\x1b]4;{i};#{(0x102030 + i * 0x010305) & 0xffffff:06x}\x07" for i in range(256))
+    cases = [dict(name=f"{name}_{map_name}", columns=8, rows=4, text=text, paletteSetup=palette_setup, mappings=values)
              for name, text in texts.items() for map_name, values in maps.items()]
     build = ROOT / "build/terminal-copy-oracle"
     build.mkdir(parents=True, exist_ok=True)
@@ -72,9 +85,9 @@ pub fn build(b: *std.Build) void {
     manifest = dict(commit=SHA, zig=subprocess.check_output([str(zig), "version"], text=True).strip(),
         cases=len(cases), selections=sum(len(case["selections"]) for case in cases),
         helperSha256=digest(helper), generatorSha256=digest(Path(__file__)), fixtureSha256=digest(fixture),
-        sources={path: digest(upstream / path) for path in ["src/terminal/formatter.zig", "src/terminal/Screen.zig", "src/config/Config.zig", "src/Surface.zig"]})
+        sources={path: digest(upstream / path) for path in ["src/terminal/formatter.zig", "src/terminal/style.zig", "src/terminal/Screen.zig", "src/config/Config.zig", "src/Surface.zig"]})
     (ROOT / "kinetica-terminal/test-upstream/ghostty/copy-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    print(f'Generated {len(cases)} cases / {manifest["selections"]} selections / {manifest["selections"] * 4} formatted outputs')
+    print(f'Generated {len(cases)} cases / {manifest["selections"]} selections / {manifest["selections"] * 16} formatted outputs')
 
 
 if __name__ == "__main__":

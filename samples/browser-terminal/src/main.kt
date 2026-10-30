@@ -150,6 +150,7 @@ fun main() {
     api.openLink = { handler: (String) -> Boolean -> surface?.openLink = handler }
     api.selectionWordChars = { value: String -> session.selectionWordChars = value }
     api.copyTrimTrailingSpaces = { enabled: Boolean -> surface?.copyTrimTrailingSpaces = enabled }
+    api.copyFormat = { format: String -> surface?.copyFormat = TerminalCopyFormat.valueOf(format) }
     api.copyCodepointMap = { values: dynamic ->
         surface?.copyCodepointMap = (0 until (values.length as Number).toInt()).map { index ->
             val item = values[index]

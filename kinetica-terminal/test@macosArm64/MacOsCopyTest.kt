@@ -11,12 +11,11 @@ class MacOsCopyTest {
         NSApplication.sharedApplication()
         val board = NSPasteboard.pasteboardWithUniqueName()
         val session = TerminalSession()
-        val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE)
+        val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE, mimeClipboard = TerminalNativeMimeClipboard(board))
         val window = NSWindow(NSMakeRect(0.0, 0.0, 640.0, 320.0), NSWindowStyleMaskTitled, NSBackingStoreBuffered, false)
         window.setReleasedWhenClosed(false); window.contentView = view
         val output = mutableListOf<String>()
         val subscription = session.onInput { output += it.toByteArray().decodeToString() }
-        view.writeCopyText = { board.clearContents(); assertTrue(board.setString(it, NSPasteboardTypeString)) }
         fun copied() = board.stringForType(NSPasteboardTypeString)
         fun commandC() {
             window.sendEvent(assertNotNull(NSEvent.keyEventWithType(NSEventTypeKeyDown, NSMakePoint(0.0, 0.0),
@@ -29,6 +28,15 @@ class MacOsCopyTest {
             val selected = assertNotNull(view.accessibilitySelectedText())
             assertEquals("first  \n second\u00a0  \nthird", selected)
             commandC(); assertEquals("first\n second\u00a0\nthird", copied())
+            assertNotNull(board.stringForType(NSPasteboardTypeHTML), "Default mixed copy publishes plain and HTML together")
+            assertEquals(1, board.pasteboardItems?.size)
+            view.copyFormat = TerminalCopyFormat.HTML; view.copy(null)
+            assertNull(copied()); assertContains(assertNotNull(board.stringForType(NSPasteboardTypeHTML)), "background-color:")
+            view.copyFormat = TerminalCopyFormat.VT; view.copy(null)
+            assertContains(assertNotNull(copied()), "\u001b]10;rgb:"); assertNull(board.stringForType(NSPasteboardTypeHTML))
+            view.copyFormat = TerminalCopyFormat.PLAIN; view.copy(null)
+            assertEquals("first\n second\u00a0\nthird", copied()); assertNull(board.stringForType(NSPasteboardTypeHTML))
+            view.copyFormat = TerminalCopyFormat.MIXED
             assertEquals(selected, view.accessibilitySelectedText()); assertTrue(output.isEmpty())
             view.copyTrimTrailingSpaces = false; view.copy(null)
             assertEquals(selected, copied())

@@ -1,10 +1,16 @@
 # Upstream terminal test corpus
 
-The clipboard mapping corpus executes the original `ScreenFormatter` for 88 cases / 1656
-selections / 6624 formatted outputs, with/without trimming and mappings. It covers overlapping
+The clipboard corpus executes the original `ScreenFormatter` for 198 cases / 3744
+selections / 59904 formatted outputs, with/without trimming and mappings: plain text, VT,
+HTML with the theme and HTML without the theme (mixed copy). Both engines receive the same
+explicit palette; the original runner asserts the palette setup before each case. It covers overlapping
 Unicode ranges, expansions, empty replacements, non-recursive replacement, graphemes/emoji,
-written versus synthetic whitespace, tabs, styles, wrap boundaries and rectangles. Generated
-data is compared after whole-stream and bytewise input on each shared-engine target.
+written versus synthetic whitespace, tabs, style flags, indexed/RGB/underline colors, theme
+changes, OSC 8 links, linked blank cells, background-only rows, wrap boundaries and rectangles.
+Plain data is compared after whole-stream and bytewise input; rich data is compared after
+whole-stream input on each shared-engine target. Exact rich byte comparisons use small screens;
+they do not assert Ghostty's internal page framing for long history. A separate 600-row test
+checks VT replay's text/styles/links and retained copies across a synchronized-output hold.
 Regenerate with `python3 scripts/generate-terminal-copy.py /path/to/ghostty /path/to/zig`;
 `ghostty/copy-manifest.json` records the source pin and hashes.
 

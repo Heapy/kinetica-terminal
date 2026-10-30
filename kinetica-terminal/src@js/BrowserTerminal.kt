@@ -60,6 +60,7 @@ public class BrowserTerminalView(
     private var disposed = false
     public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
     public var copyTrimTrailingSpaces: Boolean = true
+    public var copyFormat: TerminalCopyFormat = TerminalCopyFormat.MIXED
     public var copyCodepointMap: List<TerminalClipboardCodepointMap> = emptyList()
         set(value) { field = value.toList() }
     public var pasteConfirmation: TerminalPasteConfirmation = TerminalPasteConfirmation { text, complete ->
@@ -129,7 +130,8 @@ public class BrowserTerminalView(
     }, ::updateProgress)
     private val clipboardBinding = session.attachClipboard(clipboard ?: BrowserTerminalClipboard(), clipboardPolicy)
     private val ownedMimeClipboard = if (mimeClipboard == null) BrowserTerminalMimeClipboard() else null
-    private val mimeClipboardBinding = session.attachMimeClipboard(mimeClipboard ?: checkNotNull(ownedMimeClipboard), mimeClipboardPolicy)
+    private val copyClipboard = mimeClipboard ?: checkNotNull(ownedMimeClipboard)
+    private val mimeClipboardBinding = session.attachMimeClipboard(copyClipboard, mimeClipboardPolicy)
 
     init {
         drawing.setVisible(false)
@@ -250,7 +252,11 @@ public class BrowserTerminalView(
         }
         listen(root, "copy") { event ->
             if (viewport.hasSelection) {
-                event.clipboardData?.setData("text/plain", viewport.copyText(copyTrimTrailingSpaces, copyCodepointMap))
+                viewport.copyData(copyFormat, copyTrimTrailingSpaces, copyCodepointMap)?.let { data ->
+                    event.clipboardData?.clearData()
+                    data.text?.let { event.clipboardData?.setData("text/plain", it) }
+                    data.html?.let { event.clipboardData?.setData("text/html", it) }
+                }
                 event.preventDefault(); event.stopPropagation()
             }
         }
@@ -620,7 +626,14 @@ public class BrowserTerminalView(
         focused = value; viewport.setFocused(value); session.sendFocus(value)
         if (value) notifications?.clear()
     }
-    private fun copySelection() { window.navigator.clipboard?.writeText(viewport.copyText(copyTrimTrailingSpaces, copyCodepointMap))?.catch { _: dynamic -> Unit } }
+    private fun copySelection() {
+        val data = viewport.copyData(copyFormat, copyTrimTrailingSpaces, copyCodepointMap) ?: return
+        copyClipboard.write(TerminalClipboardLocation.STANDARD, data.contents()) { result ->
+            if (!disposed && ownedMimeClipboard != null && result == TerminalClipboardResult.UNSUPPORTED && data.text != null) {
+                window.navigator.clipboard?.writeText(data.text)?.catch { _: dynamic -> Unit }
+            }
+        }
+    }
     private fun updateProgress() {
         val report = progressPresentation.report
         progressElement.hidden = report == null

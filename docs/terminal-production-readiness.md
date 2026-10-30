@@ -60,6 +60,29 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Browser/AppKit user copy now supports plain, VT, HTML and mixed formats; mixed is the
+default and publishes plain text plus styled HTML as one item. VT/HTML preserve explicit
+cell colors, SGR attributes, underline styles/colors and OSC 8 links. Standalone VT/HTML
+include the terminal theme; mixed HTML inherits the destination's default colors. Styled
+written spaces and codepoint mappings follow the original formatter, including its URI-byte
+escaping. Copy policies can change during a synchronized-output hold: selected rows, palette,
+theme and links survive history erasure and later output. User actions write through the MIME
+backend independently of OSC policy. Browser DOM copy replaces stale representations; the
+default asynchronous backend falls back to plain text only for an unsupported MIME API.
+
+The expanded original `ScreenFormatter` oracle checks 198 cases / 3744 selections / 59904
+outputs. An explicitly identical palette is asserted in the original runner, avoiding accidental
+comparison of different application defaults. Cases cover both trimming policies and mappings,
+style transitions, colors, links through blank cells, background-only rows and Unicode.
+Small-screen rich output matches byte-for-byte; long selections deliberately use a continuous
+HTML wrapper/VT theme header rather than Ghostty's internal page framing. A separate 600-row
+replay verifies text, colors, underline styles, links and retained-frame copying. Validation:
+1654 JVM tests, fresh Release JS tests, 40 focused Native tests (private pasteboard and PTY),
+browser editing/selection across macOS/Linux shortcuts and Canvas/WebGL, and real Chromium
+Clipboard API checks for all four formats, including sanitized HTML text/color/link content.
+Fixtures and manifest reproduce byte-for-byte. Evidence: `test-upstream/ghostty/copy-manifest.json`,
+`TerminalStyledCopyTest`, `MacOsCopyTest`, browser verifiers and `/tmp/kinetica-rich-copy-*`.
+
 Clipboard codepoint mappings now support inclusive Unicode ranges, last-match priority,
 multi-codepoint/empty replacements and non-recursive replacement in Browser/AppKit plain copy.
 Each view snapshots its configured rule list. The formatter retains which text spans came from
@@ -73,9 +96,9 @@ bytewise. Fixture/manifest hashes reproduce exactly. All 1651 JVM tests, fresh R
 36 focused Native tests (private pasteboard), and browser editing/selection checks pass across
 macOS/Linux shortcuts and Canvas/WebGL. Evidence: `test-upstream/ghostty/copy-manifest.json`,
 `scripts/verify-terminal-editing.mjs`, and `/tmp/kinetica-copy-map-*`.
-VT/HTML/mixed clipboard formatting remains open. When adding it, use original formatter output:
-`formatter.zig`'s styled-format mapping test applies mappings to VT text, despite the contrary
-comments in `Surface.copySelectionToClipboards`.
+The subsequent styled-copy increment above uses original formatter output:
+`formatter.zig` applies mappings to VT text, despite the contrary comments in
+`Surface.copySelectionToClipboards`.
 
 Plain clipboard copy now uses Ghostty's cell formatter separately from selection/accessibility
 text. Browser shortcuts/DOM copy and AppKit shortcuts/menu actions trim trailing ASCII spaces
@@ -89,8 +112,7 @@ rectangles, tabs, styled/combining spaces and resize/history. Fixtures regenerat
 Validation passes 1648 JVM tests, fresh Release JS tests, 33 focused Native tests (with a private
 pasteboard), and browser editing/selection checks on macOS/Linux shortcuts and Canvas/WebGL.
 Evidence: `test-upstream/ghostty/semantic-line-manifest.json`, `scripts/verify-terminal-editing.mjs`,
-and `/tmp/kinetica-copy-*`. VT/HTML/mixed copy formats remain
-separate open work; plain-text formatting does not establish those capabilities.
+and `/tmp/kinetica-copy-*`. Styled-format evidence is recorded separately above.
 
 Ordinary text paste now matches original Ghostty `input/paste.zig`: the fixed xterm control-byte
 set is replaced by spaces, bracketed mode preserves CR/LF, and unbracketed mode maps each LF to

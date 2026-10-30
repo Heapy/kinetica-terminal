@@ -13,9 +13,21 @@ try {
     try {
       await page.addInitScript(platform => {
         Object.defineProperty(navigator, "platform", { get: () => platform });
-        globalThis.editCopies = [];
+        globalThis.editCopies = []; globalThis.richCopies = []; globalThis.pendingCopies = 0;
         // Keep clipboard writes entirely inside this isolated test page.
-        Object.defineProperty(navigator, "clipboard", { value: { writeText(text) { editCopies.push(text); return Promise.resolve(); } } });
+        Object.defineProperty(navigator, "clipboard", { value: {
+          writeText(text) { editCopies.push(text); return Promise.resolve(); },
+          async write(items) {
+            pendingCopies++;
+            try {
+              if (items.length !== 1) throw Error("Copy must publish one item");
+              const representations = {};
+              for (const type of items[0].types) representations[type] = await (await items[0].getType(type)).text();
+              richCopies.push(representations);
+              if ("text/plain" in representations) editCopies.push(representations["text/plain"]);
+            } finally { pendingCopies--; }
+          },
+        } });
       }, platform);
       await page.goto(`${base}/samples/browser-terminal/web/index.html?renderer=${renderer}&fonts=system`);
       await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 40);
@@ -24,12 +36,16 @@ try {
       const mac = platform === "MacIntel";
       const modifiers = mac ? { metaKey: true } : { ctrlKey: true, shiftKey: true };
       const write = value => page.evaluate(value => kineticaTerminalDemo.write(value), value);
-      const key = (key, mods = modifiers, extra = {}) => input.evaluate((element, options) => {
-        return [["keydown", false], ["keydown", true], ["keyup", false]].map(([type, repeat]) => {
-          const event = new KeyboardEvent(type, { bubbles: true, cancelable: true, ...options, repeat });
-          element.dispatchEvent(event); return event.defaultPrevented;
-        });
-      }, { key, code: `Key${key.toUpperCase()}`, ...mods, ...extra });
+      const key = async (key, mods = modifiers, extra = {}) => {
+        const result = await input.evaluate((element, options) => {
+          return [["keydown", false], ["keydown", true], ["keyup", false]].map(([type, repeat]) => {
+            const event = new KeyboardEvent(type, { bubbles: true, cancelable: true, ...options, repeat });
+            element.dispatchEvent(event); return event.defaultPrevented;
+          });
+        }, { key, code: `Key${key.toUpperCase()}`, ...mods, ...extra });
+        await page.waitForFunction(() => pendingCopies === 0);
+        return result;
+      };
       const selection = () => page.evaluate(() => {
         const data = new DataTransfer();
         document.querySelector("[data-terminal]").dispatchEvent(new ClipboardEvent("copy", { clipboardData: data, bubbles: true, cancelable: true }));
@@ -103,6 +119,20 @@ try {
       await write("\x1bcfirst  \r\n second\u00a0  \r\nthird");
       await key("a"); assert.equal(await selection(), trimmedCopy);
       await key("c"); assert.deepEqual(await page.evaluate(() => editCopies.splice(0)), [trimmedCopy, trimmedCopy]);
+      const mixedCopy = await page.evaluate(() => richCopies.at(-1));
+      assert.equal(mixedCopy["text/plain"], trimmedCopy);
+      assert.equal(mixedCopy["text/html"], '<div style="font-family: monospace; white-space: pre;">first  \n second&#160;  \nthird</div>');
+      for (const format of ["HTML", "VT", "PLAIN", "MIXED"]) {
+        await page.evaluate(format => kineticaTerminalDemo.copyFormat(format), format);
+        const contents = await page.evaluate(() => {
+          const data = new DataTransfer(); data.setData("application/stale", "stale");
+          document.querySelector("[data-terminal]").dispatchEvent(new ClipboardEvent("copy", { clipboardData: data, bubbles: true, cancelable: true }));
+          return Object.fromEntries(data.types.map(type => [type, data.getData(type)]));
+        });
+        assert.deepEqual(Object.keys(contents).sort(), format === "MIXED" ? ["text/html", "text/plain"] : [format === "HTML" ? "text/html" : "text/plain"]);
+        if (format === "HTML") assert.ok(contents["text/html"].includes("background-color:"));
+        if (format === "VT") assert.ok(contents["text/plain"].startsWith("\x1b]10;rgb:"));
+      }
       await page.evaluate(() => kineticaTerminalDemo.copyTrimTrailingSpaces(false));
       assert.equal(await selection(), rawCopy);
       await key("c"); assert.deepEqual(await page.evaluate(() => editCopies.splice(0)), [rawCopy, rawCopy]);
@@ -140,6 +170,17 @@ try {
       assert.deepEqual(blank, { text: "", consumed: true }, "Selected empty cells replace the clipboard with empty text");
       await key("c"); assert.deepEqual(await page.evaluate(() => editCopies.splice(0)), ["", ""]);
       assert.deepEqual(await drain(), []);
+      // Unsupported rich clipboard APIs can fall back to the available text
+      // representation, including empty text. Permission denial cannot.
+      await page.evaluate(() => { delete navigator.clipboard.write; });
+      await key("c"); assert.deepEqual(await page.evaluate(() => editCopies.splice(0)), ["", ""]);
+      await page.evaluate(() => kineticaTerminalDemo.copyFormat("HTML"));
+      await key("c"); assert.deepEqual(await page.evaluate(() => editCopies.splice(0)), []);
+      await page.evaluate(() => {
+        kineticaTerminalDemo.copyFormat("MIXED");
+        navigator.clipboard.write = () => Promise.reject(new DOMException("Denied", "NotAllowedError"));
+      });
+      await key("c"); assert.deepEqual(await page.evaluate(() => editCopies.splice(0)), []);
       assert.deepEqual(errors, []);
       results.push({ platform, renderer, passed: true });
     } finally { await page.close(); }

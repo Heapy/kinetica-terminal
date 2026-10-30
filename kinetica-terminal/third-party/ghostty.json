@@ -12,6 +12,7 @@
     "src/terminal/Selection.zig",
     "src/terminal/selection_codepoints.zig",
     "src/terminal/formatter.zig",
+    "src/terminal/style.zig",
     "src/config/url.zig",
     "src/terminal/PageList.zig",
     "src/terminal/Terminal.zig",

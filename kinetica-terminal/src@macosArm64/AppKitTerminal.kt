@@ -60,12 +60,9 @@ public class AppKitTerminalView(
     private var disposed = false
     public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
     public var copyTrimTrailingSpaces: Boolean = true
+    public var copyFormat: TerminalCopyFormat = TerminalCopyFormat.MIXED
     public var copyCodepointMap: List<TerminalClipboardCodepointMap> = emptyList()
         set(value) { field = value.toList() }
-    internal var writeCopyText: (String) -> Unit = {
-        NSPasteboard.generalPasteboard.clearContents()
-        NSPasteboard.generalPasteboard.setString(it, NSPasteboardTypeString)
-    }
     public var pasteConfirmation: TerminalPasteConfirmation = TerminalPasteConfirmation { text, complete ->
         presentNativePaste(window, text, complete)
     }
@@ -80,7 +77,8 @@ public class AppKitTerminalView(
     }
     private val notificationObservation = session.onNotification { if (!disposed && notificationPolicy(it)) notificationDelivery().show(it) }
     private val clipboardBinding = session.attachClipboard(clipboard ?: TerminalNativeClipboard(), clipboardPolicy)
-    private val mimeClipboardBinding = session.attachMimeClipboard(mimeClipboard ?: TerminalNativeMimeClipboard(), mimeClipboardPolicy)
+    private val copyClipboard = mimeClipboard ?: TerminalNativeMimeClipboard()
+    private val mimeClipboardBinding = session.attachMimeClipboard(copyClipboard, mimeClipboardPolicy)
     private var protocolPointerCursor: NSCursor = nativePointerCursor(session.pointerShape) ?: NSCursor.IBeamCursor
     internal var pointerCursor: NSCursor = nativePointerCursor(session.pointerShape) ?: NSCursor.IBeamCursor
         private set
@@ -878,7 +876,9 @@ public class AppKitTerminalView(
         }
     }
     private fun copySelection() {
-        if (viewport.hasSelection) writeCopyText(viewport.copyText(copyTrimTrailingSpaces, copyCodepointMap))
+        viewport.copyData(copyFormat, copyTrimTrailingSpaces, copyCodepointMap)?.let {
+            copyClipboard.write(TerminalClipboardLocation.STANDARD, it.contents()) {}
+        }
     }
     private fun pasteClipboard() {
         if (disposed) return

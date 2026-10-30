@@ -1,13 +1,14 @@
 {
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
   "zig": "0.17.0",
-  "cases": 88,
-  "selections": 1656,
-  "helperSha256": "7ca71f88a3f64b450d1f54c315f5d6b602b409de6454445eef3355850ac83e3f",
-  "generatorSha256": "fcc1718567ea74baa9268da2bc390c8d7882698505f12f7870928feff8fe313a",
-  "fixtureSha256": "3b99a78b1aa08192227b39ba537262954f516a9a378656b42fbdc86cf03887de",
+  "cases": 198,
+  "selections": 3744,
+  "helperSha256": "06dd818bc1647865e7a43e1de1df4da8943d757392c4f274aee6ea90b62e50ea",
+  "generatorSha256": "f9f430d2ec272edae83945afdff711955d8b4b5e7bda0026bf81089d8b169bd7",
+  "fixtureSha256": "b159c0a66f0cbc0742b2b38027d471b24163495c47213c5c5ecb66dd5df93221",
   "sources": {
     "src/terminal/formatter.zig": "3bed482d7c69decd1c308f13cb4c08fc92b04c90e120a2a11942c89e748f5643",
+    "src/terminal/style.zig": "5310c0442dcf812e5d4cd804132d56ed30992a3a0e4320a4cc316ec53b8a770a",
     "src/terminal/Screen.zig": "33e5bd5515e96a059cbb2c438fb2634333c0a712f29134ffdd2509923f97aa1f",
     "src/config/Config.zig": "9074944c1de5e06031cc6f099ee5f9a5ef7d9343727f768220e2dedb78cd12d4",
     "src/Surface.zig": "a63a77a8c01598366d82498661cfbb9244391036578422e7b3b37cbdc737b318"
