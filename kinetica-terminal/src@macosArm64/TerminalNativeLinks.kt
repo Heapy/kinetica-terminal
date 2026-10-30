@@ -1,12 +1,15 @@
-@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
 
-// Policy adapted from Ghostty 1.4 macos/Sources/Helpers/UntrustedURL.swift (MIT).
+// Policy/path conversion adapted from Ghostty 1.4 UntrustedURL.swift, Ghostty.App.swift
+// and Surface.resolvePathForOpening (MIT).
 // Copyright (c) 2024 Mitchell Hashimoto, Ghostty contributors.
 // Pinned revision and license: ../third-party/ghostty.json and GHOSTTY-LICENSE.
 package io.heapy.kinetica.terminal
 
 import platform.AppKit.*
 import platform.Foundation.*
+import platform.posix.F_OK
+import platform.posix.access
 
 internal enum class NativeLinkDenial(val message: String) {
     MALFORMED("The target is not a valid absolute URL."),
@@ -47,6 +50,31 @@ internal fun nativeLinkDisplay(value: String): String {
         if (url.fileURL) canonicalNativeFileURL(url)?.path ?: value else value
     } else NSURL.fileURLWithPath(value.ifEmpty { "." }).URLByStandardizingPath?.path ?: value
     return escapeNativeLinkDisplay(normalized)
+}
+
+/** Ghostty Surface.resolvePathForOpening followed by the macOS unknown-link conversion. */
+internal fun nativeDetectedLinkTarget(value: String, workingDirectory: String?): String {
+    if (value.any(::unsafeLinkCharacter)) return value
+    var target = value
+    if (!value.startsWith('/') && workingDirectory != null) {
+        // Zig's path.resolve is lexical: collapse dot segments before consulting symlinks.
+        val components = mutableListOf<String>()
+        for (part in "$workingDirectory/$value".split('/')) when (part) {
+            "", "." -> Unit
+            ".." -> if (components.isNotEmpty()) components.removeAt(components.lastIndex)
+            else -> components += part
+        }
+        val resolved = "/" + components.joinToString("/")
+        if (resolved.any(::unsafeLinkCharacter)) return resolved
+        if (access(resolved, F_OK) == 0) target = resolved
+    }
+    if (NSURL.URLWithString(target)?.scheme != null) return target
+    val expanded = NSString.create(string = target).stringByStandardizingPath
+    if (expanded.any(::unsafeLinkCharacter)) return expanded
+    // Swift URL(filePath:) uses the path's slash hint, unlike NSURL's filesystem inference.
+    val url = if (expanded.isEmpty()) NSURL.fileURLWithPath(NSFileManager.defaultManager.currentDirectoryPath, isDirectory = true)
+        else NSURL.fileURLWithPath(expanded, isDirectory = expanded.endsWith('/'))
+    return url.absoluteString ?: target
 }
 
 internal fun classifyNativeLink(value: String): NativeLinkDecision {
@@ -94,9 +122,12 @@ internal class NativeTerminalLinkOpener(
     private var pending: TerminalDisposable? = null
     private fun cancel() { token = null; pending?.dispose(); pending = null }
 
-    fun open(value: String): Boolean {
+    fun open(value: String): Boolean = open(value) { true }
+
+    fun open(value: String, permitted: () -> Boolean): Boolean {
         if (disposed) return true
         cancel()
+        if (!permitted()) return true
         val decision = classifyNativeLink(value)
         if (decision is NativeLinkDecision.Allow) { launch(decision.url); return true }
         val current = Any(); token = current
@@ -106,7 +137,7 @@ internal class NativeTerminalLinkOpener(
                 val dialog = present(decision, nativeLinkDisplay(value)) { confirmed ->
                     if (!disposed && token === current) {
                         token = null; pending = null
-                        if (confirmed && decision is NativeLinkDecision.Confirm && canConfirm()) launch(decision.url)
+                        if (confirmed && decision is NativeLinkDecision.Confirm && canConfirm() && permitted()) launch(decision.url)
                     }
                 }
                 if (!disposed && token === current) pending = dialog else dialog.dispose()

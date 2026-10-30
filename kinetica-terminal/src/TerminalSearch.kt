@@ -33,11 +33,16 @@ public fun TerminalSession.hyperlinkAt(line: Int, column: Int): String? {
 }
 
 internal fun terminalHyperlinkAt(row: Int, column: Int, first: Int, last: Int, line: (Int) -> TerminalLine,
-    osc8Enabled: Boolean = true): String? {
+    osc8Enabled: Boolean = true): String? = terminalLinkTargetAt(row, column, first, last, line, osc8Enabled)?.uri
+
+internal data class TerminalLinkTarget(val uri: String, val osc8: Boolean)
+
+internal fun terminalLinkTargetAt(row: Int, column: Int, first: Int, last: Int, line: (Int) -> TerminalLine,
+    osc8Enabled: Boolean): TerminalLinkTarget? {
     val cell = line(row)
     val x = if (cell.width(column) == 0) (column - 1).coerceAtLeast(0) else column
-    if (osc8Enabled) cell.hyperlink(x)?.let { return it.uri }
-    return terminalDetectedLinkAt(row, x, first, last, line)?.uri
+    if (osc8Enabled) cell.hyperlink(x)?.let { return TerminalLinkTarget(it.uri, osc8 = true) }
+    return terminalDetectedLinkAt(row, x, first, last, line)?.let { TerminalLinkTarget(it.uri, osc8 = false) }
 }
 
 internal data class TerminalDetectedLink(val uri: String, val range: TerminalSelectionRange)

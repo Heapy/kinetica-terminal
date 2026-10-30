@@ -37,6 +37,7 @@
     "src/terminal/mouse.zig",
     "macos/Sources/Helpers/Cursor.swift",
     "macos/Sources/Helpers/UntrustedURL.swift",
+    "macos/Sources/Ghostty/Ghostty.App.swift",
     "macos/Sources/Helpers/UntrustedURLAlert.swift",
     "macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift",
     "src/terminal/osc/parsers/clipboard_operation.zig",

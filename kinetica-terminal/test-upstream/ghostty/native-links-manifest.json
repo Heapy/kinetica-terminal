@@ -1,10 +1,12 @@
 {
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
-  "cases": 83,
+  "cases": 207,
   "resources": 32,
   "sourceSha256": "523708cda1ecf7663a228feae07f13d20cb91e50b123e432f24d74c7a4aea9a3",
-  "helperSha256": "9f3f1fd1ff4b6635920609dca6a7f53f0bd71f7f28d8e412ef3aab223da547f2",
-  "generatorSha256": "d94c13ca62f07b0555f914edb8db7e61e05e5b47cf33555757c20b05c1713342",
-  "fixturesSha256": "ceaca420e477588aefb92a3ce0eb1f0400871d1c1c177ccc95d38217d78b2921",
+  "applicationSha256": "2eade2dcde1337b85d1d07e97c24078be3e861791409427f8d936ef32f265373",
+  "conversionSha256": "fbb2cf86d89ed14e16b42a3af9db75e23842931801107bc96c7779e21dcdcbfe",
+  "helperSha256": "610ca2ad0f4e14ad4230c6137873b0ef1a744ba67b931c849bbf72c9ce59dac0",
+  "generatorSha256": "86e99860d9a2c3dc925d030c146095870313287f38784cf6728c352cc260724d",
+  "fixturesSha256": "394a0b0f303f2a6605336c1b38ca34f4b69782abfa348639f7d1cb3cd2d30884",
   "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0"
 }

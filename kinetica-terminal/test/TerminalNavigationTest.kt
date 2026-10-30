@@ -3,6 +3,25 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalNavigationTest {
+    @Test fun linkOriginsFollowVisibleFramesAndCurrentOsc8Policy() {
+        val session = TerminalSession(80, 3)
+        val viewport = TerminalViewport(session, {})
+        try {
+            session.write("\u001b]8;;ssh://hidden.example\u001b\\https://visible.example\u001b]8;;\u001b\\")
+            assertEquals(TerminalLinkTarget("ssh://hidden.example", true), viewport.linkTargetAt(2, 0))
+            session.write("\u001b[?2026h\u001b[Hchanged")
+            assertEquals(TerminalLinkTarget("ssh://hidden.example", true), viewport.linkTargetAt(2, 0))
+            session.osc8LinksEnabled = false
+            assertEquals(TerminalLinkTarget("https://visible.example", false), viewport.linkTargetAt(2, 0))
+            assertEquals("https://visible.example", viewport.hyperlinkAt(2, 0))
+            session.osc8LinksEnabled = true
+            assertEquals(TerminalLinkTarget("ssh://hidden.example", true), viewport.linkTargetAt(2, 0))
+            assertNull(viewport.linkTargetAt(-1, 0)); assertNull(viewport.linkTargetAt(0, 3))
+            session.write("\u001b[?2026l"); session.reset(); session.write("./file.txt")
+            assertEquals(TerminalLinkTarget("./file.txt", false), viewport.linkTargetAt(2, 0))
+        } finally { viewport.dispose() }
+    }
+
     @Test fun recognizedSchemesAndPathsUseTheSameCellsForLinksAndDoubleClicks() {
         val links = listOf("mailto:me@example.org", "ssh://host/path", "tel:+12345", "magnet:?xt=urn:example",
             "ipfs://hash", "file:///tmp/file.txt", "/tmp/test folder/file.txt", "../relative/file.kt:42",

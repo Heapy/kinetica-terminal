@@ -8,6 +8,7 @@ import platform.Foundation.*
 import platform.QuartzCore.*
 import platform.darwin.NSObject
 import platform.darwin.NSObjectProtocol
+import platform.posix.gethostname
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
@@ -57,14 +58,18 @@ public class AppKitTerminalView(
     private var interpretingKey: Pair<UShort, TerminalKey>? = null
     public var onViewportChanged: (() -> Unit)? = null
     internal var onScrollActivity: (() -> Unit)? = null
+    internal var launchLink: (NSURL) -> Unit = { NSWorkspace.sharedWorkspace.openURL(it) }
+    internal var presentLink: (NativeLinkDecision, String, (Boolean) -> Unit) -> TerminalDisposable =
+        { decision, display, complete -> presentNativeLinkDecision(window, decision, display, complete) }
     private val links = NativeTerminalLinkOpener(TerminalScheduler { delay, action ->
         val timer = NSTimer.timerWithTimeInterval(delay / 1000.0, repeats = false) { action() }
         NSRunLoop.mainRunLoop.addTimer(timer, NSRunLoopCommonModes)
         TerminalDisposable { timer.invalidate() }
-    }, { decision, display, complete -> presentNativeLinkDecision(window, decision, display, complete) },
-        { NSWorkspace.sharedWorkspace.openURL(it) }, { !disposed && window != null && session.osc8LinksEnabled })
+    }, { decision, display, complete -> presentLink(decision, display, complete) },
+        { launchLink(it) }, { !disposed && window != null })
+    private val defaultOpenLink: (String) -> Boolean = { value -> links.open(value) { session.osc8LinksEnabled } }
     /** Override only with a host policy suitable for untrusted terminal-output targets. */
-    public var openLink: (String) -> Boolean = links::open
+    public var openLink: (String) -> Boolean = defaultOpenLink
     public val scrollOffset: Int get() = viewport.scrollOffset
     public val scrollbackLines: Int get() = session.historySize
     private var ready = false
@@ -575,7 +580,19 @@ public class AppKitTerminalView(
         window?.makeFirstResponder(this)
         val (x, y) = cell(event)
         if (event.modifierFlags and NSEventModifierFlagCommand != 0uL) {
-            viewport.hyperlinkAt(x, y)?.let { link -> if (openLink(link)) { selecting = false; return } }
+            viewport.linkTargetAt(x, y)?.let { link ->
+                val handled = if (openLink !== defaultOpenLink) openLink(link.uri) else {
+                    val target = if (link.osc8) link.uri else {
+                        val directory = memScoped {
+                            val hostname = allocArray<ByteVar>(1024)
+                            session.localWorkingDirectory(if (gethostname(hostname, 1024u) == 0) hostname.toKString() else "")
+                        }
+                        nativeDetectedLinkTarget(link.uri, directory)
+                    }
+                    links.open(target) { !link.osc8 || session.osc8LinksEnabled }
+                }
+                if (handled) { selecting = false; return }
+            }
         }
         selecting = !mouse(event, 0)
         if (selecting) viewport.beginSelection(x, y, when (event.clickCount.toInt()) {

@@ -70,7 +70,9 @@ test verifies the bounded target passed to the host callback without opening ext
 ## Native link-policy oracle
 
 `native-links-manifest.json` pins the original macOS `UntrustedURL.swift` from Ghostty
-1.4.0. The Swift helper only classifies targets and reads their display strings: it never
+1.4.0 and the detected-path conversion block from `Ghostty.App.swift`. The conversion block
+is copied unchanged into a minimal action shim; its dispatch returns the effective target.
+The Swift helper only converts/classifies targets and reads their display strings: it never
 opens a URL or invokes a handler. Regenerate on macOS with:
 
 ```sh
@@ -78,15 +80,21 @@ python3 scripts/generate-terminal-native-links.py build/upstream/ghostty-1.4.0
 bash scripts/engine.sh test -m kinetica-terminal -p macosArm64 --include-classes='*NativeTerminalLinksTest'
 ```
 
-The 83 cases compare decisions, denial reasons, canonical allowed URLs and normalized,
+The 207 cases compare effective targets, decisions, denial reasons, canonical allowed URLs and normalized,
 escaped display strings. Thirty-two isolated resources exercise safe files/directories,
 all explicitly blocked extensions, script UTIs, executable bits, symlinks, directory URL
-slash hints and a FIFO.
+slash hints and a FIFO. Detected paths additionally cover tilde expansion, literal percent
+signs, line-number suffixes, relative/absolute spelling and unsafe characters before encoding.
 Temporary paths are represented by placeholders, including Foundation's `/tmp` spelling
 of `/private/tmp` for relative paths. Tests recreate the same resources and restore their
 working directory afterward. The manifest records the unmodified upstream source, helper,
-generator and fixture hashes plus the Swift toolchain version. Local UTI classification
+conversion block, generator and fixture hashes plus the Swift toolchain version. Local UTI classification
 uses the host's system type registry, as the original policy does.
+
+Native integration tests separately exercise the preceding core resolution step: an existing
+lexically resolved path in the terminal's working directory wins before scheme interpretation
+or tilde expansion; missing paths fall through to native conversion. Shell variables are not
+expanded. These filesystem tests are authored regressions, not output from the original core.
 
 Separate native tests cover deferred confirmation, cancellation, replaced requests,
 disposal, policy revocation, dialog defaults and selectable plain target text, sanitized

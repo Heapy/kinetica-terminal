@@ -109,13 +109,20 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Validation passes 1395 JVM tests, fresh Release JS tests, 45 focused Native tests and
       Canvas/WebGL double-click/copy checks. Fixtures, tables, manifest and notices regenerate
       byte-for-byte; the original oracle exits successfully before its output is accepted.
-- [ ] Complete native activation of detected file paths: resolve relative paths against the
-      terminal working directory as `Surface.resolvePathForOpening` does, then pass file URLs
-      through the existing safe-opening policy. The recognizer currently returns raw matched
-      text to host callbacks; detection/selection does not imply default file opening works.
-- [ ] Keep deferred confirmation of plain-text non-HTTP links independent of `link-osc8`
-      while preserving revocation of pending explicit OSC 8 requests. The current AppKit
-      confirmation guard checks `osc8LinksEnabled` for every custom-scheme request.
+- [x] Complete native activation of detected file paths: try lexical resolution against the
+      local terminal working directory as `Surface.resolvePathForOpening` does, then follow
+      `Ghostty.App.swift` conversion and safe-opening policy. Existing relative paths win
+      before scheme interpretation; remaining plain paths get native tilde expansion and
+      application-directory fallback. Shell variables and line-number suffixes stay literal.
+      The original Swift conversion block supplies effective-target and policy expectations;
+      separate native filesystem regressions cover the preceding core resolution step.
+      Public host callbacks continue receiving raw matched text.
+- [x] Keep deferred confirmation of plain-text non-HTTP links independent of `link-osc8`
+      while preserving revocation of pending explicit OSC 8 requests. Internal link results
+      retain origin through live and frozen views; explicit OSC 8 targets never become paths.
+      Actual offscreen Cmd-click tests use the default pipeline with injected presentation and
+      launch boundaries. Validation: 1396 JVM tests, fresh Release JS tests, 56 focused Native
+      tests and Canvas/WebGL selection checks. The 207-case native oracle regenerates byte-for-byte.
 - [x] Bound detected URLs by OSC 133 semantic-content transitions, including transitions
       within a row and across soft wraps. Explicit OSC 8 targets retain priority; literal
       search still spans semantic boundaries. The original `Screen.selectLine` oracle covers
@@ -140,10 +147,11 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Custom schemes require deferred confirmation with selectable, normalized and escaped
       target text. Denials offer sanitized copying without an unrestricted fallback.
       Replaced requests, disposed views and revoked OSC 8 policy cannot approve stale actions.
-      The unmodified `macos/Sources/Helpers/UntrustedURL.swift` produces 83 comparative cases
-      over 32 isolated resources, including directory/file slash hints and symlinks; source,
+      The unmodified `macos/Sources/Helpers/UntrustedURL.swift` and extracted native path
+      conversion produce 207 comparative cases over 32 isolated resources, including
+      directory/file slash hints and symlinks; source,
       generator and fixture hashes are recorded in `native-links-manifest.json`. Generation
-      is byte-for-byte reproducible. Fifteen Native tests pass for the classifier corpus,
+      is byte-for-byte reproducible. The Native checks above cover the classifier corpus,
       offscreen dialog configuration, response routing, cancellation/disposal, Cmd-click and
       shared navigation. These checks do not launch external applications or claim interactive
       acceptance of a visible modal sheet. Hosts overriding `openLink` own their target policy.

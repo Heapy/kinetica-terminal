@@ -366,10 +366,13 @@ public class TerminalViewport internal constructor(
         return true
     }
 
-    public fun hyperlinkAt(column: Int, row: Int): String? {
+    public fun hyperlinkAt(column: Int, row: Int): String? = linkTargetAt(column, row)?.uri
+
+    internal fun linkTargetAt(column: Int, row: Int): TerminalLinkTarget? {
         if (row !in 0 until rows || column !in 0 until columns) return null
-        return if (frozen == null) session.hyperlinkAt(firstLine + row, column)
-        else terminalHyperlinkAt(row, column, 0, rows - 1, ::visibleLine, session.osc8LinksEnabled)
+        return if (frozen == null) terminalLinkTargetAt(firstLine + row, column, 0, session.lineCount - 1,
+            session::line, session.osc8LinksEnabled)
+        else terminalLinkTargetAt(row, column, 0, rows - 1, ::visibleLine, session.osc8LinksEnabled)
     }
 
     private fun rememberScrollAnchor() {

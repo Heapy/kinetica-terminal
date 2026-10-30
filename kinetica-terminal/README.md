@@ -930,7 +930,8 @@ asynchronously for all owned PTYs to reap their children before AppKit terminate
   web/mail targets are validated, local paths are canonicalized and checked for executable
   or active content, and custom URL schemes require confirmation. Blocked targets can only
   be copied as normalized, escaped text. Pending confirmations are cancelled on view disposal
-  or replacement; disabling OSC 8 prevents subsequent approval. Embedders overriding
+  or replacement; disabling OSC 8 prevents subsequent approval of explicit OSC 8 requests.
+  Plain-text custom schemes remain confirmable when OSC 8 is disabled. Embedders overriding
   `AppKitTerminalView.openLink` take responsibility for their own target policy.
   Cmd+A selects retained output;
   right-click provides Copy, Paste, Select All and clearing actions. Shift bypasses TUI mouse reporting
@@ -958,9 +959,14 @@ The default recognizer follows Ghostty's case-sensitive grammar for HTTP(S), mai
 SSH, Git, tel, magnet, IPFS/IPNS, Gemini, Gopher and news schemes, plus absolute, dot-relative,
 home-prefixed, environment-prefixed and dotted relative paths. Oniguruma's Unicode classes are
 generated from the pinned original, so matching does not depend on the platform regex library.
-`hyperlinkAt` returns matched text unchanged; path resolution and opening are host responsibilities.
-The default AppKit opener still requires an absolute URL, so detected raw file paths currently
-need a host override before activation. Detection and double-click copying work in both views.
+`hyperlinkAt` and an overridden `openLink` callback receive matched text unchanged.
+Default AppKit Cmd+click first tries relative detected text against a local OSC 7 working
+directory. If that path exists, it wins before URL scheme interpretation. Otherwise the native
+conversion preserves URL schemes and converts plain paths to file URLs, expanding `~` and
+resolving remaining relative paths against the application's working directory, as Ghostty does.
+Shell variables and line-number suffixes are not expanded or stripped. The resulting target
+passes through the same file/scheme policy described above. Explicit OSC 8 targets are never
+reinterpreted as plain paths. Detection and double-click copying work in both views.
 
 ## Run and verify
 

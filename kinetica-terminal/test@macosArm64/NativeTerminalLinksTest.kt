@@ -10,6 +10,89 @@ import kotlin.io.encoding.Base64
 import kotlin.test.*
 
 class NativeTerminalLinksTest {
+    @Test fun detectedPathsResolveAgainstTerminalDirectoryBeforeNativeConversion() {
+        val files = NSFileManager.defaultManager
+        val root = "/tmp/kinetica-link-paths-${NSUUID().UUIDString}"
+        assertTrue(files.createDirectoryAtPath("$root/sub", true, null, null))
+        fun file(path: String) {
+            val handle = assertNotNull(fopen(path, "wb"))
+            try { assertTrue(fputs("fixture", handle) >= 0) } finally { fclose(handle) }
+            assertEquals(0, chmod(path, 420u))
+        }
+        try {
+            file("$root/with space.txt"); file("$root/unsafe.command")
+            file("$root/ssh:literal"); file("$root/with%20space.txt")
+            assertEquals(0, symlink("unsafe.command", "$root/safe-link.txt"))
+            for (path in listOf("./with space.txt", "sub/../with space.txt", "sub//../../${root.substringAfterLast('/')}/with space.txt")) {
+                val target = nativeDetectedLinkTarget(path, root)
+                assertEquals("$root/with space.txt", assertIs<NativeLinkDecision.Allow>(classifyNativeLink(target)).url.path)
+            }
+            assertEquals("$root/ssh:literal", assertIs<NativeLinkDecision.Allow>(
+                classifyNativeLink(nativeDetectedLinkTarget("ssh:literal", root))).url.path,
+                "Original core tries an existing local path before interpreting a scheme")
+            assertEquals("$root/with%20space.txt", assertIs<NativeLinkDecision.Allow>(
+                classifyNativeLink(nativeDetectedLinkTarget("./with%20space.txt", root))).url.path,
+                "Literal percent signs in paths must not be URI-decoded")
+            assertEquals(NativeLinkDenial.UNSAFE_FILE, assertIs<NativeLinkDecision.Deny>(
+                classifyNativeLink(nativeDetectedLinkTarget("./safe-link.txt", root))).reason)
+            assertEquals(nativeDetectedLinkTarget("./missing.txt", null), nativeDetectedLinkTarget("./missing.txt", root),
+                "Missing relative paths fall through to the original native conversion")
+            assertEquals("ssh://example.org", nativeDetectedLinkTarget("ssh://example.org", root))
+            for (prefix in listOf("~", "\$HOME")) {
+                assertTrue(files.createDirectoryAtPath("$root/$prefix", false, null, null))
+                file("$root/$prefix/with space.txt")
+                assertEquals("$root/$prefix/with space.txt", assertIs<NativeLinkDecision.Allow>(
+                    classifyNativeLink(nativeDetectedLinkTarget("$prefix/with space.txt", root))).url.path,
+                    "Existing literal directories win before tilde expansion; variables are never shell-expanded")
+            }
+            assertEquals(NativeLinkDenial.UNSAFE_CHARACTERS, assertIs<NativeLinkDecision.Deny>(
+                classifyNativeLink(nativeDetectedLinkTarget("./a\u202eb.txt", root))).reason)
+        } finally { assertTrue(files.removeItemAtPath(root, null)) }
+    }
+
+    @Test fun defaultCommandClickResolvesPathsAndScopesOsc8ApprovalToItsOrigin() {
+        NSApplication.sharedApplication()
+        val files = NSFileManager.defaultManager
+        val root = "/tmp/kinetica-link-click-${NSUUID().UUIDString}"
+        assertTrue(files.createDirectoryAtPath(root, false, null, null))
+        val path = "$root/with space.txt"
+        val file = assertNotNull(fopen(path, "wb")); fclose(file); assertEquals(0, chmod(path, 420u))
+        val session = TerminalSession(80, 5)
+        val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE)
+        val window = NSWindow(NSMakeRect(0.0, 0.0, 800.0, 480.0), NSWindowStyleMaskTitled, NSBackingStoreBuffered, false)
+        window.setReleasedWhenClosed(false); window.contentView = view
+        val opened = mutableListOf<NSURL>()
+        val decisions = mutableListOf<NativeLinkDecision>()
+        var answer: ((Boolean) -> Unit)? = null
+        view.launchLink = { opened += it }
+        view.presentLink = { decision, _, complete ->
+            decisions += decision; answer = complete; TerminalDisposable {}
+        }
+        fun click() {
+            val point = view.convertPoint(NSMakePoint(12.0, 5.0), toView = null)
+            view.mouseDown(assertNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseDown, point,
+                NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
+            NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.02))
+        }
+        try {
+            session.write("\u001b]7;file://localhost$root\u0007./with space.txt")
+            click(); assertEquals(path, opened.single().path); opened.clear()
+            session.reset(); session.write("\u001b]8;;./with space.txt\u001b\\click\u001b]8;;\u001b\\")
+            click(); assertIs<NativeLinkDecision.Deny>(decisions.last()); answer?.invoke(true)
+            assertTrue(opened.isEmpty(), "Explicit OSC 8 targets never become local paths")
+            session.reset(); session.osc8LinksEnabled = false; session.write("ssh://visible.example")
+            click(); assertIs<NativeLinkDecision.Confirm>(decisions.last()); assertNotNull(answer).invoke(true)
+            assertEquals("ssh://visible.example", opened.single().absoluteString); opened.clear()
+            session.reset(); session.osc8LinksEnabled = true
+            session.write("\u001b]8;;ssh://hidden.example\u001b\\click\u001b]8;;\u001b\\")
+            click(); session.osc8LinksEnabled = false; assertNotNull(answer).invoke(true)
+            assertTrue(opened.isEmpty(), "Disabling OSC 8 revokes a pending explicit link")
+            session.reset(); session.write("$path")
+            session.write("\u001b[?2026h\u001b[Hchanged")
+            click(); assertEquals(path, opened.single().path)
+        } finally { view.dispose(); window.close(); assertTrue(files.removeItemAtPath(root, null)) }
+    }
+
     @Test fun decisionsAndVisibleTargetsMatchOriginalGhostty() {
         val fixture = Json.parseToJsonElement(Base64.decode(terminalNativeLinkFixtures()).decodeToString()).jsonObject
         val files = NSFileManager.defaultManager
@@ -40,10 +123,13 @@ class NativeTerminalLinksTest {
                 val case = element.jsonObject
                 fun text(key: String) = case.getValue(key).jsonPrimitive.content.replace("<ROOT>", root).replace("<WORK>", work)
                     .replace("<SHORT_ROOT>", root.removePrefix("/private")).replace("<SHORT_WORK>", work.removePrefix("/private"))
+                    .replace("<HOME>", NSHomeDirectory())
                 val value = text("value")
                 val label = escapeNativeLinkDisplay(value)
                 try {
-                    val decision = classifyNativeLink(value)
+                    val target = if (text("kind") == "detected") nativeDetectedLinkTarget(value, null) else value
+                    assertEquals(text("target"), target, label)
+                    val decision = classifyNativeLink(target)
                     when (text("decision")) {
                         "allow" -> assertEquals(text("url"), assertIs<NativeLinkDecision.Allow>(decision, label).url.absoluteString, label)
                         "confirm" -> assertEquals(text("url"), assertIs<NativeLinkDecision.Confirm>(decision, label).url.absoluteString, label)
@@ -60,7 +146,7 @@ class NativeTerminalLinksTest {
                         }
                         else -> fail("Unknown original decision")
                     }
-                    assertEquals(text("display"), nativeLinkDisplay(value), label)
+                    assertEquals(text("display"), nativeLinkDisplay(target), label)
                 } catch (failure: AssertionError) { failures += failure.message.orEmpty() }
             }
             assertTrue(failures.isEmpty(), failures.joinToString("\n"))
