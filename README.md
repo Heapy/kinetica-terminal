@@ -55,6 +55,8 @@ Browser integration checks use Playwright/Chromium. Run `npm ci` and
 `npx playwright install chromium`, start the local HTTP server above, then run
 `node scripts/verify-terminal.mjs`. More checks and optional environment overrides
 are documented in the [module guide](kinetica-terminal/README.md#run-and-verify).
+[Clean engine verification](docs/terminal-clean-build.md) records offline builds from
+tracked files, cached-toolchain prerequisites and the full macOS live-TUI check.
 
 ## Layout and embedding
 

@@ -59,6 +59,15 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+An offline clean-export check now builds the independent engine without project artifacts
+or upstream clones. All 1635 JVM tests and fresh Release JS tests pass with networking
+denied. The full Native run exposed stale empty-selection assertions and a media fixture
+whose supposedly non-temporary path was inside `/tmp`; both are corrected. A Neovim
+resize test now waits for the editing cursor instead of an intermediate status-line draw;
+all six live TUI tests and ten Neovim repetitions pass. The latest full Native run still
+has one intermittent GPU animation failure (1770 pass), so this verification remains open.
+See [clean build evidence and reproduction](terminal-clean-build.md).
+
 The next mixed-state probe found styled wide-character spacer heads surviving DCH
 after a bottom-row wrap outside vertical margins. DCH/ECH now follow the original
 `Screen.splitCellBoundary`: clear a wrapped row's ending spacer before shifting, clear
