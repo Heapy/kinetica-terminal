@@ -220,6 +220,26 @@ All 1027 generated fixture/manifest files reproduce byte-for-byte. Validation pa
 tests, the fresh Release JS suite and 1029 Native tests (the full VT oracle, soft-reset host
 defaults and AppKit accessibility). Logs are `/tmp/kinetica-cursor-reset-*`.
 
+The state-sequence audit found a real soft-wrap mismatch after SD. Its minimized input writes
+`界😀` three times into an eight-column screen, then sends `CSI 2 T`: Kinetica retained a
+wrapped-row flag that original Ghostty clears. The pinned `scrollDown` delegates to
+`insertLines`, which clears both `wrap` and `wrap_continuation` for full-width moves. RI uses
+the same path. SU's in-place full-width `deleteLines` branch has the same rule, whereas LF,
+top-anchored primary scrollback scrolling and full-screen alternate SU retain wraps.
+Partial-width scrolling preserves row metadata.
+
+Kinetica now applies those distinctions. Eighteen new original scenarios cover SD, RI, SU,
+IL, LF, both screens, vertical/horizontal margins, wide cells and subsequent widening/narrowing.
+Nine failed before the fix; the other nine serve as preservation controls. Three common tests
+also exercise wrap-continuation flags, copied newlines, logical search and reflow; two failed
+before the fix. The corpus now has 1042 scenarios / 7249 checkpoints, and all 1045 generated
+fixture/manifest artifacts regenerate byte-for-byte. The original history snapshots are kept
+unchanged; these scenarios use the pre-existing explicit strict-history policy (zero alternate
+history) rather than importing upstream's temporary page-granularity quota overrun.
+Validation passes 1528 JVM tests, the freshly built Release JS suite and 1055 Native tests
+(the full VT oracle, scroll-wrap behavior and original graphics anchor/geometry comparisons).
+Logs are `/tmp/kinetica-scroll-wrap-*`.
+
 The release behavior review uses the pinned `stream.zig` / `stream_terminal.zig` dispatch,
 keyboard/mouse encoders and graphics implementation as the reference. It checks the terminal
 capabilities and relevant input/state changes against executable regression families rather

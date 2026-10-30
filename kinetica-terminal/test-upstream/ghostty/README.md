@@ -1,5 +1,11 @@
 # Ghostty differential oracle
 
+The main VT corpus currently contains 1042 scenarios / 7249 checkpoints, each replayed
+as whole writes and bytewise writes. The `scroll_wrap_*` cases distinguish SD/RI/IL and
+in-place SU (which break full-width row wraps) from LF, scrollback-producing SU and
+partial-width scrolling (which preserve them). They compare cells and row flags before
+and after two widths of reflow, on primary/alternate screens and with both margin axes.
+
 ## Default URL/path matcher oracle
 
 `links-manifest.json` pins the unmodified `src/config/url.zig` expression and Ghostty's
@@ -532,8 +538,8 @@ effective foreground/background/cursor colors at each checkpoint. Automatic hype
 IDs and image metadata need separate coverage. Semantic markers are compared in the explicitly
 enabled scenarios described above. Ghostty's
 page-granularity scrollback pruning differs from our strict line limit. The
-`scroll_clear_bounded`, `scroll_clear_no_history` and `scroll_clear_alternate` scenarios
-declare `historyPolicy: strict-limit`: the comparator caps retained history at the configured
+`scroll_clear_bounded`, `scroll_clear_no_history`, `scroll_clear_alternate` and annotated
+`scroll_wrap_*` scenarios declare `historyPolicy: strict-limit`: the comparator caps retained history at the configured
 line limit (zero on alternate screens), removes only the excess oldest oracle rows, and
 compares all remaining cells, cursor state and replies exactly. Original snapshots retain
 the upstream rows unchanged. In particular, libghostty's scroll-and-clear can retain rows

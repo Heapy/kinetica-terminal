@@ -1540,8 +1540,15 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             for (y in bottom downTo top + 1) screen[y] = screen[y - 1]
             screen[top] = spare.also { it.recycleEpoch++; it.clear(0, columns, -1, bg, 0); it.wrapped = false; it.wrapContinuation = false; it.promptMarker = TerminalPromptMarker.NONE }
         }
+        // Ghostty implements full-width SD/RI through insertLines: moved rows no
+        // longer form a logical wrapped line. Partial-width scrolls preserve metadata.
+        if (count > 0) clearScrollWrap()
         restore()
         damage(top, bottom)
+    }
+
+    private fun clearScrollWrap() {
+        for (y in top..bottom) { screen[y].wrapped = false; screen[y].wrapContinuation = false }
     }
 
     private fun scrollRectangle(count: Int, down: Boolean) {
@@ -1633,13 +1640,16 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 val oldTop = top; top = cursorRow
                 if (final == 'L') scrollDown(count, adjustGraphics = false) else scrollUp(count, retainHistory = false, adjustGraphics = false)
                 restoreGraphics()
-                if (left == 0 && right == columns - 1) for (y in top..bottom) {
-                    screen[y].wrapped = false; screen[y].wrapContinuation = false
-                }
+                if (final == 'M' && left == 0 && right == columns - 1) clearScrollWrap()
                 top = oldTop
                 cursorColumn = left; pendingWrap = false
             }
-            'S' -> if (count > 0) scrollUp(count)
+            'S' -> if (count > 0) {
+                scrollUp(count)
+                // SU's in-place full-width branch uses deleteLines, unlike IND/LF.
+                // Its primary top-anchored and full-screen alternate paths retain wraps.
+                if (left == 0 && right == columns - 1 && (top != 0 || alternateScreen && bottom != rows - 1)) clearScrollWrap()
+            }
             'T' -> if (count > 0) scrollDown(count)
             'b' -> if (parameterCount <= 1) previousCharacter?.let { code -> repeat(p()) { print(code) } }
             'r' -> if (!privateCsi && parameterCount <= 2) {
