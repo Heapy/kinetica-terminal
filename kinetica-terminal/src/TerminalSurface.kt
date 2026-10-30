@@ -586,6 +586,7 @@ public class TerminalViewport internal constructor(
                         flags and TerminalStyle.UNDERLINE != 0 -> painter.decoration(left, baseline, width, 1.0, underlineColor)
                     }
                     if (flags and TerminalStyle.STRIKE != 0) painter.decoration(left, (y + 0.5) * cellHeight, width, 1.0, foreground)
+                    if (flags and TerminalStyle.OVERLINE != 0) painter.decoration(left, y * cellHeight, width, 1.0, foreground)
                 }
             }
             if (cursor) {

@@ -1300,7 +1300,13 @@
     "option_policy_kitty31_0": "444661a8bf0ac930c3732756c38cfac716b9583cbf463b189404607dd4da6b59",
     "option_policy_kitty31_1": "b840005716f878a427d11554ddf1a4ed92b91405dd3fdd839b734965444c1786",
     "option_policy_kitty31_2": "ce76554e71c5e3457bf6ac3b92fee1781859bb047b9214d20d0e98b1724676b3",
-    "option_policy_kitty31_3": "d6f94d316bc79c0973a9b32ffdec6b52bd3000e1af234df5403205f99beb92da"
+    "option_policy_kitty31_3": "d6f94d316bc79c0973a9b32ffdec6b52bd3000e1af234df5403205f99beb92da",
+    "overline_state_and_resets": "c696c351cf238ed96af88e820f4b7c86e1ce8679431460d970a799fb0acb7b08",
+    "overline_underline_reports": "cedf6f2636576cb0acbf9055d575a93c137b72a677a38b770b0f1a47a7134757",
+    "overline_screen_state": "9e21cbbed2950f8eb2704c8bff562fc56398023fced8652da58422750ef1b7be",
+    "overline_history_reflow": "ed9839d98c8851592bf17a4df804ce0d8bd01a279051b9ef2bfb35dcba61ac20",
+    "overline_subparameters": "9c4f23dff4d6c57c7d9d9031c24a2e1a27695adf7a51f40f35eae97bd623bdd2",
+    "sgr_unsupported_subparameters": "7d4454580b2657f2e16a510aa58d49f13e9ad953e1a7f9f07e7829c4088f3445"
   },
   "keyboardMatrixSha256": "6c01e3dd0dee327b115ef73db2d811a5a3bef14194045bd7f81b3c9bc4e9c90e",
   "modifyOtherKeysMatrixSha256": "218a6d9d284746fe45e95d10f4b791db3116a9f902dd9d05c43e5949fb2fe764",

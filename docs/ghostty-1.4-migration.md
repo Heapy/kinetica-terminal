@@ -25,9 +25,13 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
       passing the old corpus alone is insufficient. The broader source audit remains open.
 - [x] Update the primary C-reference pin with regenerated evidence and corresponding implementation.
 - [x] Run shared JVM/JS checks, relevant Native tests and fresh browser rendering/input checks for the C-reference migration.
-- [x] Complete the release-note/source audit for remaining emulation and input differences.
+- [ ] Complete the release-note/source audit for remaining emulation and input differences.
       The behavior-to-regression map below records the reviewed families. Runtime acceptance
       and performance requirements in the production checklist remain separate gates.
+      A subsequent per-attribute check found missing SGR 53/55 despite advertised
+      Smol/Rmol capabilities. The family-level review missed this concrete gap; the
+      remaining attribute-level audit stays open rather than treating the table as proof
+      of each advertised attribute.
 
 The final capability review checks `TerminalSession`'s DA/DA2/DA3/XTVERSION dispatch and
 `TerminalTerminfoTest.queriesMatchEveryOriginalCapabilityAndParserBoundary`, including
@@ -36,7 +40,29 @@ graphics negotiation depends on a graphics host. The upstream `stream.zig` expli
 ignores OSC 66/99/3008 callbacks and `stream_terminal.zig` ignores DCS tmux control mode;
 CSI 22/23 t title stacks are also no-ops. The module's compatibility scope now lists these
 intentional ignores, separately from implemented OSC 9/777 and ordinary tmux TUI operation.
-This resolves the capability-documentation review without asserting every runtime gate is closed.
+That review covered identity and intentional ignores; the subsequent per-attribute review below
+showed why it was insufficient to close the entire capability gate.
+
+The overline follow-up implements SGR 53/55 as an independent style bit, preserves it through
+saved cursors, both screens, reflow and compressed history, and includes it in DECRQSS in
+the original attribute order (after underline, before blink). Every painter draws the top
+decoration in the effective foreground, independently of the underline color; concealment,
+inverse/faint, palette updates and synchronized-frame holds apply. Shared glyph/font masks
+remain unchanged because overline does not change glyph rasterization. Original parser
+comparison also exposed unsupported SGR subparameters: only groups 4/38/48/58 accept colons;
+other colon groups are consumed without changing the pen.
+
+Five new original scenarios failed before the implementation. A further matrix checks 26
+SGR codes with one, multiple and trailing subparameters. Together these add six scenarios /
+110 checkpoints to the whole/bytewise oracle (1015 scenarios / 6433 checkpoints total).
+Common tests compare covered decoration pixels independently of batching, both painter
+paths, frozen-frame publication and compressed style retention. The new native and browser
+pixel checks exercise the real software/GPU renderers, reset, concealment, inverse/faint and
+palette repaint; the browser checks DPR 1, 1.25 and 2. This corrects the earlier capability
+audit's insufficient evidence for Smol/Rmol; it does not mark unrelated production gates done.
+Validation passes all 1486 JVM tests, freshly built Release JS tests, 1029 focused Native
+oracle/decoration/software/Metal tests and all six Canvas/WebGL DPR checks. All 1018 original
+oracle fixture/manifest artifacts regenerate byte-for-byte. Logs are `/tmp/kinetica-overline-*`.
 
 The release behavior review uses the pinned `stream.zig` / `stream_terminal.zig` dispatch,
 keyboard/mouse encoders and graphics implementation as the reference. It checks the terminal

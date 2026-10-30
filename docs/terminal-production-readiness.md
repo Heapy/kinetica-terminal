@@ -28,7 +28,7 @@ fixture subset or a working shell demo does not close the goal.
       underline styles/colors, OSC 8, cursor styles, reports, synchronized output,
       application keypad and keyboard/mouse modes actually advertised by the terminal.
 - [x] Recorded and live shell, Vim/Neovim, tmux, less and full-screen TUI workflows.
-- [x] Compatibility/capability documentation accurately describes unsupported image
+- [ ] Compatibility/capability documentation accurately describes unsupported image
       protocols and other extensions; device reports do not advertise absent features.
 
 ## Browser and macOS behavior

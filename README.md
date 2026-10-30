@@ -92,6 +92,7 @@ node scripts/verify-terminal-dnd.mjs
 node scripts/verify-terminal-dnd-host.mjs
 node scripts/verify-terminal-window-resize.mjs
 node scripts/verify-terminal-graphics.mjs
+node scripts/verify-terminal-overline.mjs
 node scripts/verify-terminal-surface-limits.mjs
 ```
 

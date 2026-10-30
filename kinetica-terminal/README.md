@@ -572,6 +572,7 @@ Implemented: streaming UTF-8, CR/LF/BS/tab, delayed autowrap, cursor positioning
 erase and insert/delete characters/lines, scroll margins, origin and insert modes, independent
 normal/alternate screen save slots and distinct 47/1047/1049 behavior, SGR attributes with
 semicolon/colon 16/256/RGB colors and colored single/double/curly/dotted/dashed underlines,
+independent overline (SGR 53/55) using the effective foreground color,
 OSC 4/104 palette set/query/reset and OSC 10/11/12/110/111/112 dynamic colors,
 DEC line drawing/alignment, title and hyperlink OSC, status/cursor reports, application cursor/keypad keys, function/navigation keys, bracketed
 paste, focus reporting, synchronized output, cursor shapes/blinking, DECRQSS cursor-style,
@@ -1108,6 +1109,7 @@ node build/artifacts/CompiledWebArtifact/kinetica-terminaljsTestrelease/kotlin-o
 node scripts/verify-terminal.mjs
 node scripts/verify-terminal-mime-clipboard.mjs
 node scripts/verify-terminal-graphics.mjs
+node scripts/verify-terminal-overline.mjs
 node scripts/verify-terminal-blocks.mjs
 node scripts/verify-terminal-glyphs.mjs
 node scripts/verify-terminal-shaping.mjs

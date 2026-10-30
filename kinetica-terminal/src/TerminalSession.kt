@@ -1851,6 +1851,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             style and TerminalStyle.DASHED_UNDERLINE != 0 -> append(";4:5")
             style and TerminalStyle.UNDERLINE != 0 -> append(";4")
         }
+        if (style and TerminalStyle.OVERLINE != 0) append(";53")
         if (style and TerminalStyle.BLINK != 0) append(";5")
         if (style and TerminalStyle.INVERSE != 0) append(";7")
         if (style and TerminalStyle.HIDDEN != 0) append(";8")
@@ -1968,6 +1969,11 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             // A trailing colon has no subparameter; Ghostty ignores that incomplete group.
             if (separators[i] && end == i) { i++; continue }
             val subparameters = end > i
+            // Ghostty accepts subparameters only for underline style and color groups.
+            if (subparameters && params[i] != 4 && params[i] != 38 && params[i] != 48 && params[i] != 58) {
+                i = end + 1
+                continue
+            }
             when (val p = params[i]) {
                 0 -> { fg = -1; bg = -1; style = 0; setAttributes(-1, attributes?.hyperlink) }
                 1 -> style = style or TerminalStyle.BOLD
@@ -1998,6 +2004,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 27 -> style = style and TerminalStyle.INVERSE.inv()
                 28 -> style = style and TerminalStyle.HIDDEN.inv()
                 29 -> style = style and TerminalStyle.STRIKE.inv()
+                53 -> style = style or TerminalStyle.OVERLINE
+                55 -> style = style and TerminalStyle.OVERLINE.inv()
                 in 30..37 -> fg = INDEXED_COLOR or (p - 30)
                 in 40..47 -> bg = INDEXED_COLOR or (p - 40)
                 in 90..97 -> fg = INDEXED_COLOR or (p - 90 + 8)

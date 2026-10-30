@@ -1012,4 +1012,10 @@ class GhosttyOracleTest {
     @Test fun option_policy_kitty31_1() = checkGhostty(ghostty_option_policy_kitty31_1())
     @Test fun option_policy_kitty31_2() = checkGhostty(ghostty_option_policy_kitty31_2())
     @Test fun option_policy_kitty31_3() = checkGhostty(ghostty_option_policy_kitty31_3())
+    @Test fun overline_state_and_resets() = checkGhostty(ghostty_overline_state_and_resets())
+    @Test fun overline_underline_reports() = checkGhostty(ghostty_overline_underline_reports())
+    @Test fun overline_screen_state() = checkGhostty(ghostty_overline_screen_state())
+    @Test fun overline_history_reflow() = checkGhostty(ghostty_overline_history_reflow())
+    @Test fun overline_subparameters() = checkGhostty(ghostty_overline_subparameters())
+    @Test fun sgr_unsupported_subparameters() = checkGhostty(ghostty_sgr_unsupported_subparameters())
 }

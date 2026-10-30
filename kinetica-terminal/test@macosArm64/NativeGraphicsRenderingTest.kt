@@ -12,6 +12,29 @@ import kotlin.math.ceil
 import kotlin.test.*
 
 class NativeGraphicsRenderingTest {
+    @Test fun overlinePixelsUseForegroundAndRespectResetHiddenInverseAndPaletteChanges() {
+        NSApplication.sharedApplication()
+        for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    fun top(expected: List<Int>) = assertEquals(expected, pixel(capture(), width, 2, 0))
+                    session.write("\u001b[?25l\u001b[38;2;240;20;30;48;2;10;20;200;58;2;20;210;40;53m  ")
+                    top(red) // The underline color must not color the overline.
+                    assertEquals(blue, pixel(capture(), width, 2, 4))
+                    session.write("\u001b[H\u001b[55m  "); top(blue)
+                    session.write("\u001b[H\u001b[53;8m  "); top(blue)
+                    session.write("\u001b[H\u001b[28;7m  "); top(blue)
+                    assertEquals(red, pixel(capture(), width, 2, 4))
+                    session.write("\u001b[H\u001b[0;53;2;38;2;240;20;30m  ")
+                    top(listOf(120, 10, 15, 255))
+                    session.write("\u001b[H\u001b[0;53;31m  \u001b]4;1;#123456\u0007")
+                    top(listOf(18, 52, 86, 255))
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
     @Test fun metalSurfaceDimensionsRespectDeviceLimitsAcrossResizeAndVisibility() {
         NSApplication.sharedApplication()
         val device = checkNotNull(MTLCreateSystemDefaultDevice())
