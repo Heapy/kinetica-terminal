@@ -60,6 +60,18 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+The standalone AppKit surface now handles Ghostty's macOS history/page/prompt defaults,
+matching the browser implementation: Cmd+Home/End, Cmd+PageUp/PageDown and Cmd+Up/Down
+(with Cmd+Shift+Up/Down aliases). This replaces the old broad Shift+PageUp/PageDown interception.
+Physical navigation keys and exact modifiers leave keypad and extra-modifier input available to
+applications. Local navigation preserves selection/focus and emits no Kitty press/repeat/release
+events; boundary/no-prompt actions remain consumed, while IME and held presentation frames do
+not scroll. Thirteen focused macOS tests pass, including NSWindow dispatch in legacy,
+modifyOtherKeys and Kitty modes, accessible text, selection, keyboard lock, alternate screens,
+marked text and existing modifier/keypad checks. Reproduce with `MacOsViewportNavigationTest`,
+`MacOsAccessibilityTest`, `MacOsKeyboardProtocolTest` and `MacOsKeypadTest`; retained log:
+`/tmp/kinetica-native-viewport-navigation.log`. No shared or browser implementation changed.
+
 Ghostty's `scroll_to_selection` is now available through the shared viewport and both view
 wrappers, with the macOS Cmd+J default in browser/AppKit. It resolves the existing normalized
 selection anchors, positions the first selected row at the viewport top (clamped to the active

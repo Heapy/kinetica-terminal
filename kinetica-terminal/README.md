@@ -352,8 +352,14 @@ copy and paste. Option supports macOS text input by default. `AppKitTerminalView
 or `RIGHT`; the selected side is translated without Option while retaining Shift/CapsLock.
 The other side keeps normal AppKit dead-key/IME text input. `optionAsMeta = true` remains a
 convenience for `BOTH`; an explicit `optionAsAlt` wins. When both Option keys are held, right
-wins, matching Ghostty; aggregate-only synthetic flags default to left. Drag selection, wheel scrolling,
-Shift+PageUp/PageDown, and accessibility text are available.
+wins, matching Ghostty; aggregate-only synthetic flags default to left. Drag selection, wheel scrolling
+and accessibility text are available. Native viewport shortcuts follow Ghostty's macOS defaults:
+Cmd+Home/End reach the history boundaries, Cmd+PageUp/PageDown scroll one full page, and
+Cmd+Up/Down (also Cmd+Shift+Up/Down) visit shell prompts. They preserve selection and input focus,
+work under keyboard lock, and consume no-op navigation at boundaries or without prompt marks.
+Physical keys and exact modifiers determine the binding; Shift+PageUp/PageDown and extra
+Control/Option combinations remain available to terminal applications. Marked text and frozen
+presentation frames are not scrolled by these shortcuts.
 
 The AppKit surface exposes an accessibility text area with a help description, visible text,
 UTF-16 character count/range, line lookup, plain and font-attributed substrings, and selection

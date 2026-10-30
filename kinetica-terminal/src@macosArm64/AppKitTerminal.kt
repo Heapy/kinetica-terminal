@@ -525,6 +525,7 @@ public class AppKitTerminalView(
 
     override fun keyDown(event: NSEvent) {
         if (disposed) return
+        if (navigateViewport(event)) return
         val flags = event.modifierFlags
         val command = flags and NSEventModifierFlagCommand != 0uL
         val shift = flags and NSEventModifierFlagShift != 0uL
@@ -546,10 +547,6 @@ public class AppKitTerminalView(
         }
         val keypad = nativeKeypad(event.keyCode.toInt())
         val key = if (keypad == TerminalKeypadKey.ENTER) "Enter" else nativeKey(chars)
-        if (!hasMarkedText() && shift && key in listOf("PageUp", "PageDown")) {
-            viewport.scroll((session.rows - 1) * if (key == "PageUp") 1 else -1)
-            onScrollActivity?.invoke(); return
-        }
         if (session.keyboardInputBlocked) return
         val extendedKeyboard = session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2
         val terminalKey = when {
@@ -567,6 +564,28 @@ public class AppKitTerminalView(
         }
         interpretingKey = if (!hasMarkedText()) event.keyCode to terminalKey else null
         try { interpretKeyEvents(listOf(event)) } finally { interpretingKey = null }
+    }
+
+    /** Ghostty's macOS viewport defaults use physical navigation keys and exact modifiers.
+     * Consumed press/repeat events never enter pressedKeys, so their releases stay local. */
+    private fun navigateViewport(event: NSEvent): Boolean {
+        val flags = event.modifierFlags
+        if (hasMarkedText() || flags and NSEventModifierFlagCommand == 0uL ||
+            flags and (NSEventModifierFlagControl or NSEventModifierFlagOption) != 0uL) return false
+        val shift = flags and NSEventModifierFlagShift != 0uL
+        val previous = viewport.scrollOffset
+        // macOS virtual key codes; keypad aliases must not trigger navigation.
+        when (event.keyCode.toInt()) {
+            115 -> if (!shift) viewport.scrollTo(session.historySize) else return false // Home
+            119 -> if (!shift) viewport.scrollTo(0) else return false // End
+            116 -> if (!shift) viewport.scroll(session.rows) else return false // Page Up
+            121 -> if (!shift) viewport.scroll(-session.rows) else return false // Page Down
+            126 -> viewport.jumpToPrompt(-1) // Up, with or without Shift
+            125 -> viewport.jumpToPrompt(1) // Down, with or without Shift
+            else -> return false
+        }
+        if (viewport.scrollOffset != previous) onScrollActivity?.invoke()
+        return true
     }
 
     private fun terminalKey(event: NSEvent): TerminalKey {
