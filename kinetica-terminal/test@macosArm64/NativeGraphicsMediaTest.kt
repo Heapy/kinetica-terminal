@@ -14,7 +14,10 @@ class NativeGraphicsMediaTest {
     private class Resources {
         val token = NSUUID().UUIDString.replace("-", "").take(15)
         val temp = "/private/tmp/kinetica-media-$token"
-        val work = NSFileManager.defaultManager.currentDirectoryPath + "/build/native-media-$token"
+        // The checkout itself may live under /tmp. Keep "outside" fixtures in a
+        // user cache directory so they cannot be admitted as system temporary files.
+        val work = (NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, true).first() as String) +
+            "/kinetica-media-$token"
         private val shared = mutableListOf<String>()
         init { directory(temp); directory(work) }
         fun directory(path: String) { assertTrue(NSFileManager.defaultManager.createDirectoryAtPath(path,true,null,null)) }
