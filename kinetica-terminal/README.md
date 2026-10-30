@@ -506,11 +506,19 @@ at 16 MiB; files exceeding the remaining budget are rejected before reading. Cel
 geometry and pixel coordinates use the device scale. Source permissions constrain client
 copy/move feedback. Unregistering, a new gesture, detachment, disposal and transport
 failure cancel stale pending reads. Without OSC 72 registration, plain text uses ordinary
-paste; browsers do not expose dropped files as local shell paths. AppKit protocol routing
-is still pending and its existing shell-path paste behavior remains in place.
+paste; browsers do not expose dropped files as local shell paths. AppKit routes native
+drag callbacks to registered clients, maps pasteboard UTIs to MIME types and loads lazy
+providers only on drop. File URLs provide escaped paths and CRLF-separated URI metadata;
+their underlying files are never opened. Ordinary URLs and custom binary formats are also
+supported, within the same sixteen-representation and 16 MiB aggregate limits. Native
+coordinates use cell geometry and backing scale, and source copy/move permissions constrain
+client feedback. Pasteboard replacement, registration changes, detachment and disposal
+invalidate captured data. Unregistered clients retain shell-quoted file-path paste.
 `node scripts/verify-terminal-dnd.mjs` checks the browser session and transport;
 `node scripts/verify-terminal-dnd-host.mjs` checks trusted text drags and native Chromium
 file-drop events, binary replies, operation feedback, limits, backpressure and lifecycle.
+`MacOsDndTest` exercises actual AppKit destination callbacks with isolated windows and
+pasteboards, using a dragging-info fixture on software and Metal views.
 
 Color commands accept X11 names, `rgb:`/`rgbi:`, and 3/6/9/12-digit `#` forms, plus bare
 3/6-digit hex. Queries preserve BEL versus ST and report 16-bit channels. Chained requests,

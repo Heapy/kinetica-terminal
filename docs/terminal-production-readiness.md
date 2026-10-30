@@ -894,8 +894,32 @@ FileReader completion tests verify abort and stale-callback guards after unregis
 DOM removal/reinsertion and view disposal. A blocked real stream adapter coalesces 100 moves,
 then delivers the queued drop and exact data after recovery. These controlled read delays
 test lifecycle ordering, not slow filesystem timing. The full fresh JS suite, general browser
-regression verifier and existing OSC 72 transport verifier also pass. AppKit drag integration
-and its native tests remain open.
+regression verifier and existing OSC 72 transport verifier also pass.
+
+AppKit now connects native destination callbacks to the shared coordinator. Hover inspects
+only pasteboard type metadata; drop loads native/custom MIME data from that drag's pasteboard,
+with a sixteen-representation cap and 16 MiB aggregate byte limit. File URLs expose escaped
+paths and CRLF URI lists without opening files; ordinary URLs and empty binary representations
+are supported. Cell/physical coordinates use the native view geometry and backing scale.
+Client acceptance intersects source copy/move permissions. Dynamic type registration maps
+MIME names to UTIs and replaces the previous list, restoring file-only registration when the
+client unregisters. Unregistered file drops retain ordinary shell-quoted bracketed paste.
+
+Six isolated native tests pass. They invoke actual NSView destination callbacks using an
+NSDraggingInfo fixture with real windows and unique pasteboards; both software and Metal views
+negotiate and return exact text, HTML and custom binary bytes. Lazy-provider counters prove
+hover/rejection do not read data and that cancellation tests reach the provider. Reentrant
+pasteboard replacement, unregister/re-register, view removal/reinsertion and disposal cannot
+publish stale drops. Additional checks cover file/ordinary URLs, empty binary data, over-budget
+data rejection, 100 coalesced moves behind tracked delivery, captured data after pasteboard
+replacement, and disposal cleanup. These tests do not claim a hardware-driven Finder drag.
+
+The related native regression run passes 36 of 37 tests (host coordination, clipboard,
+mouse, selection, usability and window resize). The remaining visibility test also fails
+alone at its first visible-window check. The UI-adapter integration test and five native
+sample tests pass; three sample tests time out waiting for a key window. The system session
+query confirms `CGSSessionScreenIsLocked=1`. These visibility/focus checks must be rerun in
+an unlocked desktop session; this increment does not claim a fully green desktop suite.
 
 Graphics acceptance work:
 

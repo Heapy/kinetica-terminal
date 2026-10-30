@@ -81,17 +81,21 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Confirmed terminal behavior to implement or reconcile
 
-- [ ] Kitty drag-and-drop (`OSC 72`) end-to-end session and host integration. The internal
+- [x] Kitty drag-and-drop (`OSC 72`) end-to-end session and host integration. The internal
       command/state/response core and session now match 167 original-library scenarios /
       436 checkpoints, including 28 scenarios through the original `TerminalStream`.
       It handles registration, chunked acceptance, move/drop/leave, indexed data requests and
       conclusion, including the original refusal of drag-out and remote data transfer.
       Raw wire parsing and bounded transport delivery are connected. Browser drag events
-      and string/file representations are connected; AppKit protocol routing remains open.
+      and string/file representations are connected; AppKit routes its drag pasteboard
+      through the same coordinator, including native and custom MIME representations.
       A shared host coordinator now owns per-view gestures, client/source operation feedback,
       bounded pending actions and stale-reader cancellation. Chromium checks cover trusted
       text/file drags, source/client operations, binary data, budgets, backpressure and disposal
-      on both renderers. Native callbacks and isolated AppKit checks are the next step.
+      on both renderers. Isolated AppKit callback tests cover both native renderers,
+      lazy providers, file/ordinary URLs, binary data, budgets, backpressure, stale reads
+      and registration cleanup. These use real windows/pasteboards and a dragging-info
+      fixture; a hardware-driven Finder drag is not claimed by these tests.
 - [x] Title report (`CSI 21 t`) with explicit `configureTitleReporting` host opt-in,
       disabled by default and preserved across resets. Original-library cases also align
       OSC 0/2 validation and limits: 2047 captured bytes, valid UTF-8, then a 1024-byte

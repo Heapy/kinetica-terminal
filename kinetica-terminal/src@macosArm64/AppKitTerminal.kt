@@ -89,6 +89,15 @@ public class AppKitTerminalView(
     private val sizeRefreshObservation = session.onSizeRefreshRequested {
         if (ready && !disposed) measure(force = true)
     }
+    private val dragAndDrop = AppKitTerminalDnd(session, this, { sender, operations ->
+        if (!ready || disposed || window == null || sender.draggingDestinationWindow != window || hiddenOrHasHiddenAncestor) null else
+            convertPoint(sender.draggingLocation, fromView = null).useContents {
+                val scale = window?.backingScaleFactor ?: 1.0
+                TerminalDndPosition(floor(x / cellWidth).toInt().coerceIn(0, session.columns - 1).toLong(),
+                    floor(y / cellHeight).toInt().coerceIn(0, session.rows - 1).toLong(),
+                    floor(x * scale).toInt(), floor(y * scale).toInt(), operations)
+            }
+    }) { viewport.followOutput(); viewport.clearSelection(); window?.makeFirstResponder(this) }
     private val windowResizeBinding = TerminalWindowResizeBinding(session, TerminalScheduler { delay, action ->
         val timer = NSTimer.timerWithTimeInterval(delay / 1000.0, repeats = false) { action() }
         NSRunLoop.mainRunLoop.addTimer(timer, NSRunLoopCommonModes)
@@ -122,7 +131,7 @@ public class AppKitTerminalView(
         setAccessibilityElement(true)
         setAccessibilityRole("AXTextArea")
         setAccessibilityLabel("Terminal")
-        registerForDraggedTypes(listOf(NSPasteboardTypeFileURL))
+        dragAndDrop.refreshRegistration()
         setContentHuggingPriority(1f, NSUserInterfaceLayoutOrientationHorizontal)
         setContentHuggingPriority(1f, NSUserInterfaceLayoutOrientationVertical)
         setContentCompressionResistancePriority(1f, NSUserInterfaceLayoutOrientationVertical)
@@ -153,6 +162,7 @@ public class AppKitTerminalView(
         super.viewDidMoveToWindow()
         if (!ready || disposed) return
         windowResizeBinding.cancelPending()
+        dragAndDrop.cancel()
         visibilityObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         visibilityObservation = window?.let { owner ->
             NSNotificationCenter.defaultCenter.addObserverForName(NSWindowDidChangeOcclusionStateNotification,
@@ -670,9 +680,16 @@ public class AppKitTerminalView(
     private fun draggedPaths(sender: NSDraggingInfoProtocol): List<String> = terminalDroppedFilePaths(sender.draggingPasteboard)
 
     override fun draggingEntered(sender: NSDraggingInfoProtocol): NSDragOperation =
-        if (draggedPaths(sender).isNotEmpty()) NSDragOperationCopy else NSDragOperationNone
-    override fun prepareForDragOperation(sender: NSDraggingInfoProtocol): Boolean = draggedPaths(sender).isNotEmpty()
+        dragAndDrop.move(sender, entering = true) ?: if (draggedPaths(sender).isNotEmpty()) NSDragOperationCopy else NSDragOperationNone
+    override fun draggingUpdated(sender: NSDraggingInfoProtocol): NSDragOperation =
+        dragAndDrop.move(sender, entering = false) ?: if (draggedPaths(sender).isNotEmpty()) NSDragOperationCopy else NSDragOperationNone
+    override fun draggingExited(sender: NSDraggingInfoProtocol?) { dragAndDrop.cancel() }
+    override fun draggingEnded(sender: NSDraggingInfoProtocol) { dragAndDrop.cancel() }
+    override fun wantsPeriodicDraggingUpdates(): Boolean = !disposed && session.kittyDnd.state != null
+    override fun prepareForDragOperation(sender: NSDraggingInfoProtocol): Boolean =
+        dragAndDrop.prepare(sender) ?: draggedPaths(sender).isNotEmpty()
     override fun performDragOperation(sender: NSDraggingInfoProtocol): Boolean {
+        dragAndDrop.drop(sender)?.let { return it }
         val paths = draggedPaths(sender)
         if (paths.isEmpty()) return false
         pasteFilePaths(paths); window?.makeFirstResponder(this); return true
@@ -687,6 +704,7 @@ public class AppKitTerminalView(
         resizeHoldObservation.dispose(); pendingGridSize = null
         sizeRefreshObservation.dispose()
         windowResizeBinding.dispose()
+        dragAndDrop.dispose()
         pointerObservation.dispose()
         progressIndicator.dispose()
         notificationObservation.dispose(); notifications?.dispose(); notifications = null
