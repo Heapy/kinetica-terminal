@@ -1270,7 +1270,8 @@
     "keyboard_negotiation_greater_u": "fdf78c80e4848e2026a67885e7c4cbec4f21820f8cd620a9aad5165ba901d617",
     "keyboard_negotiation_less_u": "ff1448ac33fd2d1b21923f1e9b1a7619eccca2d05ef4c3b59f827392193bc84b",
     "keyboard_negotiation_equal_u": "a8cc306b87ee2e526260a01c1e4f0b47db052f9e081f7ab1a802747b8bcf1542",
-    "keyboard_negotiation_query_u": "830d4cb776fc556eadad73837164f9e331f2705768060f29a4467b43bac6edaa"
+    "keyboard_negotiation_query_u": "830d4cb776fc556eadad73837164f9e331f2705768060f29a4467b43bac6edaa",
+    "alacritty_hyperlinks": "e1d7512391977b82c433de8ee09a2d23a633c3e737d84ddd9d66a1ec043813fc"
   },
   "keyboardMatrixSha256": "6c01e3dd0dee327b115ef73db2d811a5a3bef14194045bd7f81b3c9bc4e9c90e",
   "modifyOtherKeysMatrixSha256": "218a6d9d284746fe45e95d10f4b791db3116a9f902dd9d05c43e5949fb2fe764",

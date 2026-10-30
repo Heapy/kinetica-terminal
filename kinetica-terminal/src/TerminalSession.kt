@@ -280,6 +280,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         set(value) {
             if (field == value) return
             field = value; damageAll(); flushDamage()
+            linkPolicyObservers.toList().forEach { it() }
         }
     /** Estimated retained row storage after compression; eviction uses [historyStorageBytes]. */
     public val historyResidentStorageBytes: Long get() = history.residentStorageBytes
@@ -462,6 +463,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private val inputObservers = mutableListOf<(TerminalInputData) -> Unit>()
     private val replyCompletions = ArrayDeque<Pair<(Boolean) -> Unit, Boolean>>()
     private var completingReplies = false
+    private val linkPolicyObservers = mutableListOf<() -> Unit>()
     private val pointerObservers = mutableListOf<(TerminalPointerShape) -> Unit>()
     private val notificationObservers = mutableListOf<(TerminalNotification) -> Unit>()
     private val workingDirectoryObservers = mutableListOf<(String?) -> Unit>()
@@ -571,6 +573,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         val listener: (TerminalWindowResizeRequest) -> Unit = { observer(it) }
         windowResizeObservers += listener
         return TerminalDisposable { windowResizeObservers.remove(listener) }
+    }
+
+    /** Host policy changes are visible even while terminal output is synchronized. */
+    internal fun onLinkPolicyChanged(observer: () -> Unit): TerminalDisposable {
+        linkPolicyObservers += observer
+        return TerminalDisposable { linkPolicyObservers.remove(observer) }
     }
 
     /** Observe application pointer changes; hosts apply platform/hover overrides separately. */
@@ -2060,7 +2068,22 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 val split = payload.indexOf(';')
                 if (split < 0) return
                 val uri = payload.substring(split + 1)
-                val id = payload.substring(0, split).split(':').firstOrNull { it.startsWith("id=") }?.substring(3) ?: ""
+                var id = ""
+                val options = payload.substring(0, split)
+                var start = 0
+                while (start < options.length) {
+                    // The original capture scans for the next separator after the first
+                    // byte, so an empty option prefixes the next key and cannot name id.
+                    val end = options.indexOf(':', start + 1).let { if (it < 0) options.length else it }
+                    val option = options.substring(start, end)
+                    val equals = option.indexOf('=')
+                    if (equals < 0) break
+                    if (option.substring(0, equals) == "id" && equals < option.lastIndex) id = option.substring(equals + 1)
+                    start = end + 1
+                }
+                // An empty id requests a new implicit identity. Empty URI plus a nonempty
+                // id is an invalid command, not the OSC 8 close operation.
+                if (uri.isEmpty() && id.isNotEmpty()) return
                 setAttributes(attributes?.underlineColor ?: -1, if (uri.isEmpty()) null else TerminalLink(TerminalHyperlink(id, uri)))
             }
         }

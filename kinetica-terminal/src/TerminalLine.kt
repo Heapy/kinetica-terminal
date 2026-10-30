@@ -22,6 +22,10 @@ public object TerminalStyle {
 public data class TerminalHyperlink(val id: String, val uri: String)
 // Identity, rather than string hashing, makes retaining the same OSC 8 pen O(1) per cell.
 internal class TerminalLink(val value: TerminalHyperlink) {
+    // One implicit identity per OSC 8 open command. Copies/snapshots retain the same pen;
+    // explicitly named links can match across independent open commands and rows.
+    fun sameIdentity(other: TerminalLink?): Boolean = this === other ||
+        value.id.isNotEmpty() && value == other?.value
     val storageBytes: Long = 96L + 2L * (value.id.length.toLong() + value.uri.length)
 }
 internal data class CellAttributes(val underlineColor: Int = -1, val hyperlink: TerminalLink? = null)
@@ -107,7 +111,8 @@ public class TerminalLine internal constructor(public val columns: Int, internal
     internal fun rawUnderlineColor(column: Int): Int { index(column); return attributes?.get(column)?.underlineColor ?: -1 }
     private fun resolveColor(value: Int): Int = if (value >= INDEXED_COLOR)
         colors?.palette(value and 255) ?: terminalPalette(value and 255) else value
-    public fun hyperlink(column: Int): TerminalHyperlink? { index(column); return attributes?.get(column)?.hyperlink?.value }
+    public fun hyperlink(column: Int): TerminalHyperlink? = hyperlinkIdentity(column)?.value
+    internal fun hyperlinkIdentity(column: Int): TerminalLink? { index(column); return attributes?.get(column)?.hyperlink }
     internal fun isCombined(column: Int): Boolean = combined?.get(column) != null
     internal fun isSpacerHead(column: Int): Boolean = data[index(column)] and SPACER_HEAD != 0
     internal fun hasText(column: Int): Boolean = data[index(column)] and WRITTEN != 0 && width(column) != 0

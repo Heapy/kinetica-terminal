@@ -54,7 +54,23 @@ Alacritty's source fixtures omit cursors, modes and replies; this suite alone do
 not establish VT conformance. Whole-stream and deterministic chunked replays use
 the same upstream golden expectations.
 
+The link-hover corpus calls the original `RenderState.linkCells` after real OSC 8 input.
+Its 32 cases / 44 checkpoints / 2152 hover positions cover implicit/reopened and explicit
+identities, empty/repeated/malformed ID options, invalid close commands, disjoint rows,
+wide/combining cells, edits, alternate screens, reflow and scrollback. Common tests replay
+whole and bytewise input, then compare every visible highlighted cell. Separate painter
+checks cover Ghostty's single/double hover underline rule, hidden text, custom underline
+colors, detected-link ranges, frozen views and immediate host policy revocation.
+Regenerate with `python3 scripts/generate-terminal-link-hover.py /path/to/ghostty /path/to/zig`;
+`ghostty/link-hover-manifest.json` records source, generator, helper and fixture hashes.
+
 ## Explicit behavior differences
+
+- `hyperlinks`: Ghostty rejects an OSC 8 close command carrying a nonempty `id` and
+  retains the current link; Alacritty closes it. The exact archived recording is also run
+  through original Ghostty as `alacritty_hyperlinks`. Its complete grid, modes and replies
+  are checked whole and chunked; every ID string in Alacritty's original linked cells is
+  additionally preserved as an assertion. The source recording and grid remain unchanged.
 
 - `underline`, row 7, columns 0–9: `SGR 4:3;21` selects double underline in
   Kinetica, following Ghostty `src/terminal/sgr.zig` at commit

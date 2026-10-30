@@ -137,6 +137,10 @@ public class TerminalViewport internal constructor(
     private var dragRow = 0
     private var dragTimer: TerminalDisposable? = null
     private var disposed = false
+    private var hoverColumn = -1
+    private var hoverRow = -1
+    internal var linkHover: TerminalLinkHover? = null
+        private set
     private val observation = session.observe { change ->
         if (!advancingGraphics) cancelGraphicsTimer()
         if (screenEpoch != session.screenEpoch) {
@@ -156,7 +160,7 @@ public class TerminalViewport internal constructor(
         val hadSelection = liveSelection.hasAnchor
         if (liveSelection.range() == null && frozen == null) cancelSelectionDrag()
         resetBlink()
-        if (change.full || scrollOffset > 0 || hadSelection) markAll()
+        if (refreshLinkHover() || change.full || scrollOffset > 0 || hadSelection) markAll()
         else {
             firstDirty = minOf(firstDirty, change.firstRow); lastDirty = maxOf(lastDirty, change.lastRow)
             if (!advancingGraphics) invalidate()
@@ -165,6 +169,9 @@ public class TerminalViewport internal constructor(
             resizeQuietTimer?.dispose()
             resizeQuietTimer = scheduler?.schedule(8) { releaseResizeFrame() }
         }
+    }
+    private val linkPolicyObservation = session.onLinkPolicyChanged {
+        if (refreshLinkHover()) markAll()
     }
     private val holdObservation = session.onRenderHold { renderHold(it) }
     private val historyCompression = session.attachHistoryCompression(scheduler) {
@@ -263,14 +270,18 @@ public class TerminalViewport internal constructor(
 
     public fun dispose() {
         if (!disposed) {
-            disposed = true; observation.dispose(); holdObservation.dispose(); historyCompression.dispose()
+            disposed = true; linkHover = null; hoverColumn = -1; hoverRow = -1; observation.dispose(); holdObservation.dispose(); linkPolicyObservation.dispose(); historyCompression.dispose()
             cancelGraphicsTimer()
             cancelResizeTimers(); resizeHeld = false
             cancelSelectionDrag(); liveSelection.clear(); frozen?.selection?.clear(); scrollAnchor = null
             blinkTimer?.dispose(); holdTimer?.dispose(); blinkTimer = null; holdTimer = null; frozen = null
         }
     }
-    public fun markAll() { firstDirty = 0; lastDirty = rows - 1; if (!disposed && !advancingGraphics) invalidate() }
+    public fun markAll() {
+        refreshLinkHover()
+        firstDirty = 0; lastDirty = rows - 1
+        if (!disposed && !advancingGraphics) invalidate()
+    }
     public fun scroll(lines: Int) {
         if (disposed || frozen != null) return
         scrollOffset = (scrollOffset.toLong() + lines).coerceIn(0, session.historySize.toLong()).toInt()
@@ -430,6 +441,23 @@ public class TerminalViewport internal constructor(
         return true
     }
 
+    /** Hosts apply their current modifier/capture policy before supplying a hover position. */
+    internal fun setLinkHover(column: Int = -1, row: Int = -1): TerminalLinkTarget? {
+        if (disposed) return null
+        hoverColumn = column; hoverRow = row
+        if (refreshLinkHover()) markAll()
+        return linkHover?.target
+    }
+    private fun refreshLinkHover(): Boolean {
+        val next = if (disposed || hoverRow !in 0 until rows || hoverColumn !in 0 until columns) null
+            else if (frozen == null) terminalLinkHoverAt(hoverColumn, hoverRow, firstLine, rows,
+                session.lineCount - 1, session::line, session.osc8LinksEnabled)
+            else terminalLinkHoverAt(hoverColumn, hoverRow, 0, rows, rows - 1, ::visibleLine, session.osc8LinksEnabled)
+        if (next == linkHover) return false
+        linkHover = next
+        return true
+    }
+
     public fun hyperlinkAt(column: Int, row: Int): String? = linkTargetAt(column, row)?.uri
 
     internal fun linkTargetAt(column: Int, row: Int): TerminalLinkTarget? {
@@ -487,7 +515,7 @@ public class TerminalViewport internal constructor(
             var x = 0
             while (x < columns) {
                 val start = x
-                val flags = line.style(x)
+                val flags = terminalLinkHoverStyle(line.style(x), linkHover?.contains(x, y) == true)
                 var foreground = line.foreground(x).let { if (it < 0) theme.foreground else it }
                 var background = line.background(x).let { if (it < 0) theme.background else it }
                 if (flags and TerminalStyle.INVERSE != 0) { val swap = foreground; foreground = background; background = swap }
@@ -506,7 +534,7 @@ public class TerminalViewport internal constructor(
                 } while (ordinary && x < columns && !(block && (start == cursorX || x == cursorX)) &&
                     line.width(x) == 1 && !line.isCombined(x) && line.codePoint(x) <= 0xffff &&
                     !isTerminalBlockElement(line.codePoint(x)) &&
-                    line.style(x) == flags && line.foreground(x) == line.foreground(start) &&
+                    terminalLinkHoverStyle(line.style(x), linkHover?.contains(x, y) == true) == flags && line.foreground(x) == line.foreground(start) &&
                     line.background(x) == line.background(start) && line.underlineColor(x) == line.underlineColor(start) &&
                     selected(selection, index, x) == selected)
                 if (painter is TerminalGlyphPainter) painter.background(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background,

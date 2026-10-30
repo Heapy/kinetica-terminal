@@ -982,4 +982,5 @@ class GhosttyOracleTest {
     @Test fun keyboard_negotiation_less_u() = checkGhostty(ghostty_keyboard_negotiation_less_u())
     @Test fun keyboard_negotiation_equal_u() = checkGhostty(ghostty_keyboard_negotiation_equal_u())
     @Test fun keyboard_negotiation_query_u() = checkGhostty(ghostty_keyboard_negotiation_query_u())
+    @Test fun alacritty_hyperlinks() = checkGhostty(ghostty_alacritty_hyperlinks())
 }

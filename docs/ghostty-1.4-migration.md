@@ -133,8 +133,25 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 - [ ] Shape multi-cell font runs in GPU renderers, including programming ligatures.
       The current per-cell `TerminalGpu` glyph keys cannot form a ligature across cells;
       original Ghostty `renderer/generic.zig` uses a font-shaper run iterator and cluster mapping.
+- [x] Implement shared hover identity, range tracking and decorations. Reopened implicit
+      OSC 8 links remain independent; explicit nonempty IDs match by ID plus URI across
+      disjoint visible rows. Copies, reflow and frozen snapshots retain identity. The original
+      parser treats empty IDs as implicit, keeps the last nonempty repeated ID, stops at
+      malformed options, and rejects close commands with nonempty IDs. The independent
+      `RenderState.linkCells` corpus covers 32 cases / 44 checkpoints / 2152 hover points,
+      replayed whole and bytewise, and reproduces byte-for-byte. Hover adds a single underline
+      or changes an existing single underline to double, retaining colors and invisible-text
+      behavior without mutating stored styles. Policy revocation updates frozen views at once.
+      The archived Alacritty hyperlinks recording now has a complete original-Ghostty
+      expectation for its differing invalid-close behavior, preserving its explicit-ID checks.
+      Validation passes 1420 JVM tests, fresh Release JS tests, 86 focused Native tests,
+      and browser link gestures on Canvas/WebGL with macOS/Linux modifiers. The browser
+      verifier here covers existing activation; hover event wiring, pointer feedback and
+      previews remain open below.
 - [ ] Add link hover feedback: pointer cursor, target preview and matching range highlighting,
       respecting exact binding modifiers, mouse capture and frozen visible content.
+      Include Ghostty's all/OSC8-only/disabled preview modes (default: all) and a host
+      `link-url` policy for enabling/disabling detected links independently of OSC 8.
 
 - [x] Native Force Click selects the original press's word, consumes further dragging and
       stops autoscroll. It bypasses the double-click URL override, honors current word

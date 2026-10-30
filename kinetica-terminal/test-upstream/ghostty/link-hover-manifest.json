@@ -1,0 +1,21 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
+  "cases": 32,
+  "snapshots": 44,
+  "hoverPoints": 2152,
+  "helperSha256": "7a578bfd79798bf6b42368991ed8cc741ae1d35b96b0a5cb262b7a7215f6c515",
+  "generatorSha256": "7930ce962c8aa0bcbd4cdcdb393858a4097582eeef4bad23c48b0eec8db0cc9f",
+  "fixtureSha256": "d5e35b99972c536babd4abdff621b1aaa3323c0df85f533fa5dbd1080c91ecec",
+  "sources": {
+    "src/terminal/Terminal.zig": "68b23d077e45ec680e158691409705bdfbf6d2fc45322cd30c7153265b8aad70",
+    "src/terminal/Screen.zig": "33e5bd5515e96a059cbb2c438fb2634333c0a712f29134ffdd2509923f97aa1f",
+    "src/terminal/render.zig": "813c385b4282728d26c37f2a3ddf3c988909f0b437f5dab3ba4b3a0542d4d9c0",
+    "src/terminal/hyperlink.zig": "8b7db5f00723871e268034f314c1dec6dcfeb99947abe9f63bf15f38b8786884",
+    "src/terminal/osc.zig": "87044bfbde4738eb134d5407d9674e74f5aaa6a8640d8da67f15a6e10e90e6a9",
+    "src/terminal/osc/parsers/hyperlink.zig": "444fb06dc81a9aa6e04b36ebd30b7c4389bc881c34edaf6d9a58d4b50fab2028",
+    "src/renderer/generic.zig": "07796ed3c5852e834442d64b1b2f79d35868b469b81c69f82bd390dad3896b1e",
+    "src/Surface.zig": "a63a77a8c01598366d82498661cfbb9244391036578422e7b3b37cbdc737b318",
+    "src/config/Config.zig": "9074944c1de5e06031cc6f099ee5f9a5ef7d9343727f768220e2dedb78cd12d4"
+  }
+}

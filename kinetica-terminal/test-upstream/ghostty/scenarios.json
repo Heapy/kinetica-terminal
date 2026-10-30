@@ -149317,5 +149317,21 @@
         "write": "\u001b[?u"
       }
     ]
+  },
+  {
+    "name": "alacritty_hyperlinks",
+    "columns": 140,
+    "rows": 32,
+    "history": 0,
+    "events": [
+      {
+        "write": "sh-5.2$ cat alacritty?\b \b_tir\b \b\b \berminal/tests/ref/hyperlinks/alacritty.recording\r\n\u001b[?2004hsh-5.1$ \u001b[7mprintf '\\e]8;;https://example.com\\e\\\\foo\\e]8;;\\e\\\\\\n'\u001b[27m\r\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[Cprintf '\\e]8;;https://example.com\\e\\\\foo\\e]8;;\\e\\\\\\n'\r\r\n\u001b[?2004l\r\u001b]8;;https://example.com\u001b\\foo\u001b]8;;\u001b\\\r\r\n\u001b[?2004hsh-5.1$ \u001b[7mprintf '\\e]8;;https://example.com\\e\\\\foo\\e]8;;\\e\\\\\\n'\u001b[27m\r\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[Cprintf '\\e]8;;https://example.com\\e\\\\foo\\e]8;;\\e\\\\\\n'\r\r\n\u001b[?2004l\r\u001b]8;;https://example.com\u001b\\foo\u001b]8;;\u001b\\\r\r\n\u001b[?2004hsh-5.1$ \u001b[7mprintf '\\e]8;id=42;https://example.com\\e\\\\bar\\e]8;;\\e\\\\\\n'\u001b[27m\r\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[Cprintf '\\e]8;id=42;https://example.com\\e\\\\bar\\e]8;;\\e\\\\\\n'\r\r\n\u001b[?2004l\r\u001b]8;id=42;https://example.com\u001b\\bar\u001b]8;;\u001b\\\r\r\n\u001b[?2004hsh-5.1$ \u001b[7mprintf '\\e]8;id=42;https://example.com\\e\\\\bar\\e]8;;\\e\\\\\\n'\u001b[27m\r\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[C\u001b[Cprintf '\\e]8;id=42;https://example.com\\e\\\\bar\\e]8;;\\e\\\\\\n'\r\r\n\u001b[?2004l\r\u001b]8;id=42;https://example.com\u001b\\bar\u001b]8;;\u001b\\\r\r\n\u001b[?2004hsh-5.1$ \u001b[?2004l\r\r\r\nexit\r\r\nsh-5.2$ printf '\\e]8;id=hello;http://example.com/naoheu;ntahoeu\\e\\\\This is a link\\e]8;id=hello;\\e\\\\\\n'\r\n\u001b]8;id=hello;http://example.com/naoheu;ntahoeu\u001b\\This is a link\u001b]8;id=hello;\u001b\\\r\nsh-5.2$ exit\r\n"
+      }
+    ],
+    "alacrittyRecording": {
+      "commit": "d692748d3f61253ebe9f5094320120d22f6a046f",
+      "path": "alacritty_terminal/tests/ref/hyperlinks/alacritty.recording",
+      "sha256": "b8d647eeb522835f432720ebfa27f2368705d605a863fa5687fc8f8ebe8da900"
+    }
   }
 ]

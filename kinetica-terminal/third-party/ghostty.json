@@ -71,7 +71,11 @@
     "src/terminal/device_status.zig",
     "src/terminal/osc/parsers/program_status.zig",
     "src/terminal/osc/kitty_metadata.zig",
-    "src/terminal/osc/encoding.zig"
+    "src/terminal/osc/encoding.zig",
+    "src/terminal/render.zig",
+    "src/terminal/hyperlink.zig",
+    "src/terminal/osc/parsers/hyperlink.zig",
+    "src/renderer/generic.zig"
   ],
   "adaptedTests": [
     "src/terminal/Parser.zig",

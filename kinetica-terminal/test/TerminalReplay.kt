@@ -19,6 +19,8 @@ internal fun checkReplay(fixture: ReplayFixture) {
     // Ghostty resizes when allowed and otherwise ignores it. Replay the exact same archived
     // bytes against the original Ghostty, including its resulting dimensions and every cell.
     val geometryPolicy = when (fixture.name) {
+        // Ghostty rejects OSC 8 close with a nonempty id; Alacritty closes the pen.
+        "hyperlinks" -> ghostty_alacritty_hyperlinks()
         "deccolm_reset" -> ghostty_alacritty_deccolm_reset()
         "vttest_cursor_movement_1" -> ghostty_alacritty_vttest_cursor_movement_1()
         "vttest_origin_mode_1" -> ghostty_alacritty_vttest_origin_mode_1()
@@ -35,6 +37,24 @@ internal fun checkReplay(fixture: ReplayFixture) {
         assertTrue(bytes.contentEquals(scenario.getValue("events").jsonArray.single().jsonObject
             .getValue("write").jsonPrimitive.content.encodeToByteArray()))
         checkGhostty(geometryPolicy)
+        if (fixture.name == "hyperlinks") {
+            // The C oracle exposes target URIs, not public ID strings. Keep every archived
+            // Alacritty ID assertion where that recording contains a link; Ghostty's full
+            // grid above additionally checks links retained after the rejected close.
+            val session = TerminalSession(fixture.columns, fixture.rows, fixture.history)
+            session.write(bytes)
+            val cells = expected.getValue("cells").jsonArray
+            var position = 0
+            for (run in expected.getValue("runs").jsonArray) {
+                val cell = cells[run.jsonArray[1].jsonPrimitive.int].jsonArray
+                repeat(run.jsonArray[0].jsonPrimitive.int) {
+                    val row = position / fixture.columns; val column = position++ % fixture.columns
+                    cell[6].jsonPrimitive.contentOrNull?.let { id ->
+                        assertEquals(id, session.line(row).hyperlink(column)?.id, "Archived hyperlink ID at $column,$row")
+                    }
+                }
+            }
+        }
         return
     }
     // EL at pending wrap moves subsequent output to different rows in these two emulators.
