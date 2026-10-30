@@ -27,14 +27,16 @@ public class BrowserTerminalFont(
 
 /** Owns one WASM runtime and the CSS faces needed by measurement, IME and Canvas fallback. */
 internal class BrowserTerminalFontSet private constructor(
-    sources: List<BrowserTerminalFont>, private val runtime: dynamic,
+    sources: List<BrowserTerminalFont>, private val runtime: dynamic, private val nativeColorFactory: dynamic,
 ) {
     private var sources = sources
     private val aliases = sources.map { it.family }.distinct().associateWith { "kinetica-terminal-${nextAlias++}" }
     private val cssFaces = mutableListOf<dynamic>()
+    private val nativeColors = MutableList<BrowserTerminalNativeColorFont?>(sources.size) { null }
+    private var nativeFontBytes = 0
     private var disposed = false
     val fontCount: Int get() = (runtime.fontCount as Number).toInt()
-    val fontBytes: Int get() = (runtime.fontBytes as Number).toInt()
+    val fontBytes: Int get() = (runtime.fontBytes as Number).toInt() + nativeFontBytes
     val memoryBytes: Int get() = (runtime.memoryBytes as Number).toInt()
 
     fun primary(family: String?): String? = if (family == null)
@@ -54,7 +56,7 @@ internal class BrowserTerminalFontSet private constructor(
         val faces = mutableListOf<dynamic>()
         try {
             for (source in sources) faces.add(runtime.createFont(browserFontBytes(source.bytes), pixels))
-            return BrowserTerminalShaper(sources, faces, primary)
+            return BrowserTerminalShaper(sources, faces, primary, nativeColors.toList(), pixels)
         } catch (error: Throwable) {
             faces.forEach { it.dispose() }
             throw error
@@ -67,16 +69,30 @@ internal class BrowserTerminalFontSet private constructor(
         val fonts: dynamic = js("globalThis.document.fonts")
         cssFaces.forEach { fonts.delete(it) }; cssFaces.clear()
         runtime.dispose()
+        nativeColors.clear(); nativeFontBytes = 0
         sources = emptyList()
     }
 
     private fun loadCss(isCurrent: () -> Boolean): Promise<BrowserTerminalFontSet> {
-        val loads = sources.map { source ->
+        val loads = mutableListOf<Promise<dynamic>>()
+        sources.forEachIndexed { index, source ->
             val face = newBrowserFontFace(aliases.getValue(source.family), browserFontBytes(source.bytes),
                 if (source.style and TerminalStyle.ITALIC != 0) "italic" else "normal",
                 if (source.style and TerminalStyle.BOLD != 0) "700" else "400")
             cssFaces.add(face)
-            face.load().unsafeCast<Promise<dynamic>>()
+            loads.add(face.load().unsafeCast<Promise<dynamic>>())
+            if (jsTypeOf(nativeColorFactory) == "function") {
+                val prepared: dynamic = nativeColorFactory(browserFontBytes(source.bytes))
+                if (prepared != null) {
+                    nativeFontBytes += (prepared.bytes.length as Number).toInt()
+                    check(nativeFontBytes <= 64 * 1024 * 1024) { "Native glyph fonts exceed the resource limit" }
+                    val alias = "${aliases.getValue(source.family)}-glyph-$index"
+                    val nativeFace = newBrowserFontFace(alias, prepared.bytes, "normal", "400")
+                    cssFaces.add(nativeFace)
+                    nativeColors[index] = BrowserTerminalNativeColorFont(alias, prepared.glyphs)
+                    loads.add(nativeFace.load().unsafeCast<Promise<dynamic>>())
+                }
+            }
         }
         return Promise.all(loads.toTypedArray()).then {
             check(isCurrent()) { "Terminal font load was superseded" }
@@ -95,14 +111,16 @@ internal class BrowserTerminalFontSet private constructor(
             require(snapshot.any { it.style == 0 && it.presentation == BrowserTerminalFontPresentation.TEXT })
             require(snapshot.distinctBy { it.family to it.style }.size == snapshot.size)
             var pending: BrowserTerminalFontSet? = null
+            var nativeColorFactory: dynamic = null
             // Dynamic chaining preserves promise flattening at the JS boundary.
             return importBrowserShaper(moduleUrl).then { module: dynamic ->
                 check(isCurrent()) { "Terminal font load was superseded" }
+                nativeColorFactory = module.prepareTerminalNativeColorFont
                 module.createTerminalHarfBuzz()
             }
                 .then { runtime: dynamic ->
                     if (!isCurrent()) { runtime.dispose(); error("Terminal font load was superseded") }
-                    val set = BrowserTerminalFontSet(snapshot, runtime)
+                    val set = BrowserTerminalFontSet(snapshot, runtime, nativeColorFactory)
                     pending = set
                     // Validate SFNT files before registering any faces with the document.
                     set.createShaper(null, 14.0)?.dispose()
@@ -113,9 +131,14 @@ internal class BrowserTerminalFontSet private constructor(
     }
 }
 
+internal class BrowserTerminalNativeColorFont(val alias: String, private val glyphs: dynamic) {
+    operator fun contains(glyph: Int): Boolean = glyphs[glyph] == 1
+}
+
 /** Only one shaper per drawing surface. Face IDs remain valid until its atlas is reset. */
 internal class BrowserTerminalShaper(
     private val sources: List<BrowserTerminalFont>, private val faces: List<dynamic>, private val primary: String,
+    private val nativeColors: List<BrowserTerminalNativeColorFont?>, private val pixels: Double,
 ) {
     private val resolved = linkedMapOf<Pair<String, Int>, TerminalResolvedFontCell>()
     private val foregroundGlyphs = linkedMapOf<Pair<Int, Int>, Boolean>()
@@ -189,11 +212,31 @@ internal class BrowserTerminalShaper(
     fun rasterize(key: GlyphKey, canvas: dynamic, context: dynamic, cellWidth: Double, cellHeight: Double, maxSize: Int): GlyphBitmap {
         check(!disposed)
         val face = faces[key.font]
-        val extents: dynamic = face.extents(key.glyph)
-        if (extents == null) return GlyphBitmap(1, 1, ByteArray(4), false)
+        val layers: dynamic = if (face.hasColorLayers == true) face.colorLayers(key.glyph) else null
+        val png: dynamic = if (layers == null) face.colorPng(key.glyph) else null
+        val native = if (layers == null && png == null) nativeColors[key.font]?.takeIf { key.glyph in it } else null
+        val nativeText = if (native == null) "" else browserNativeGlyphText(key.glyph)
+        fun nativeFont() {
+            context.font = "${pixels}px \"${checkNotNull(native).alias}\""
+            context.textBaseline = "alphabetic"; context.textAlign = "left"
+            context.direction = "ltr"; context.fontKerning = "none"
+        }
         fun coordinate(value: dynamic) = (value as Number).toDouble() / 64
-        val originalX = coordinate(extents.xBearing); val originalY = coordinate(extents.yBearing)
-        val w = coordinate(extents.width); val h = coordinate(extents.height)
+        val originalX: Double; val originalY: Double; val w: Double; val h: Double
+        if (native != null) {
+            nativeFont()
+            val measured: dynamic = context.measureText(nativeText)
+            originalX = -(measured.actualBoundingBoxLeft as Number).toDouble()
+            originalY = (measured.actualBoundingBoxAscent as Number).toDouble()
+            w = (measured.actualBoundingBoxRight as Number).toDouble() - originalX
+            h = -(measured.actualBoundingBoxDescent as Number).toDouble() - originalY
+        } else {
+            val extents: dynamic = face.extents(key.glyph)
+            if (extents == null) return GlyphBitmap(1, 1, ByteArray(4), false)
+            originalX = coordinate(extents.xBearing); originalY = coordinate(extents.yBearing)
+            w = coordinate(extents.width); h = coordinate(extents.height)
+        }
+        check(originalX.isFinite() && originalY.isFinite() && w.isFinite() && h.isFinite())
         if (w == 0.0 || h == 0.0) return GlyphBitmap(1, 1, ByteArray(4), false)
         val primaryIndex = sources.indexOfFirst { it.family == primary && it.style == 0 }.takeIf { it >= 0 } ?: 0
         val metrics: dynamic = faces[primaryIndex].horizontalExtents()
@@ -219,8 +262,6 @@ internal class BrowserTerminalShaper(
         val width = right - left; val height = top - bottom
         check(width in 1..maxSize && height in 1..maxSize) { "Browser glyph exceeds the bounded atlas" }
         canvas.width = width; canvas.height = height
-        val layers: dynamic = if (face.hasColorLayers == true) face.colorLayers(key.glyph) else null
-        val png: dynamic = if (layers == null) face.colorPng(key.glyph) else null
         fun outlineTransform() {
             context.setTransform(scaleX / 64, 0, 0, -scaleY / 64,
                 x - left - original.x * scaleX, top - y + (original.y - baselineBottom) * scaleY)
@@ -244,7 +285,24 @@ internal class BrowserTerminalShaper(
             }
             context.fill()
         }
-        if (layers != null) {
+        var nativeIntrinsic = false
+        if (native != null) {
+            fun draw(color: String) {
+                context.setTransform(1, 0, 0, 1, 0, 0); context.clearRect(0, 0, width, height)
+                nativeFont()
+                context.setTransform(scaleX, 0, 0, scaleY,
+                    x - left - original.x * scaleX, top - y + (original.y - baselineBottom) * scaleY)
+                context.fillStyle = color; context.fillText(nativeText, 0, 0)
+            }
+            // Platforms without the bitmap codec may draw the ordinary outline.
+            // Compare fills so that fallback remains a tintable mask, while even
+            // an entirely white or gray intrinsic image keeps its own colors.
+            draw("black")
+            val black: dynamic = context.getImageData(0, 0, width, height).data
+            draw("white")
+            val white: dynamic = context.getImageData(0, 0, width, height).data
+            nativeIntrinsic = (0 until width * height * 4).all { black[it] == white[it] }
+        } else if (layers != null) {
             outlineTransform()
             for (i in 0 until (layers.length as Number).toInt()) {
                 val layer = layers[i]
@@ -272,7 +330,8 @@ internal class BrowserTerminalShaper(
         }
         val pixels: dynamic = context.getImageData(0, 0, width, height).data
         return glyphBitmap(width, height, ByteArray(width * height * 4) { (pixels[it] as Number).toByte() })
-            .let { it.copy(left = left, top = baseline.roundToInt() - top, colored = layers != null || png != null || it.colored) }
+            .let { it.copy(left = left, top = baseline.roundToInt() - top,
+                colored = nativeIntrinsic || layers != null || png != null || it.colored) }
     }
 
     fun dispose() {
@@ -285,3 +344,4 @@ private fun browserFontBytes(bytes: ByteArray): dynamic = js("new Uint8Array(byt
 private fun importBrowserShaper(url: String): dynamic = js("import(new URL(url, globalThis.document.baseURI).href)")
 private fun newBrowserFontFace(family: String, bytes: dynamic, style: String, weight: String): dynamic =
     js("new FontFace(family, bytes, {style, weight})")
+private fun browserNativeGlyphText(glyph: Int): String = js("String.fromCodePoint(glyph < 65534 ? 0xf0000 + glyph : 0x100000)")

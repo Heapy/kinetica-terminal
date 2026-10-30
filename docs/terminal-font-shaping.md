@@ -205,16 +205,36 @@ across color spaces. For example, the authored TIFF blue `[32,64,240]` becomes
 FontTools environment and `--check`, and run the desktop commands with
 `--font sbix-media --check`. All eight desktop files regenerate byte-for-byte.
 
-The browser gap is confirmed, not closed: Chromium 149.0.7827.55 on macOS renders
-the fixture's JPEG/TIFF through native Canvas, but our shaped WebGL path asks
-HarfBuzz only for PNG images and draws monochrome fallback outlines. Run
-`scripts/probe-terminal-sbix-media.mjs` with the usual Playwright executable and
-browser base URL environment variables. It validates independent JPEG pixels,
-checks that shaped WebGL is active, and reports native Canvas versus GPU colors.
-`--require-parity` currently fails: native Canvas has 367 gray / 140 blue pixels,
-whereas WebGL has no gray/blue artwork and 548 foreground-green pixels. This is
-the regression gate for adding browser non-PNG sbix rendering; no browser support
-claim is made from the Native tests. The formats and tags follow the
+The browser regression is now fixed: shaped WebGL uses the browser's native font
+renderer for JPEG/TIFF glyph images while retaining HarfBuzz's selected glyph IDs
+and terminal-grid positioning. A private SFNT face maps supplementary private-use
+scalars directly to glyph IDs and removes substitution/positioning tables, so
+Canvas does not shape the result again. The original font bytes and the original
+shaping face remain unchanged. A second fixture uses `ccmp` to select a blue
+glyph without a Unicode mapping; applying `ccmp` again would incorrectly turn it
+gray. Both Node and actual WebGL checks prove the selected glyph stays blue.
+
+`scripts/probe-terminal-sbix-media.mjs --require-parity --require-native` passes on
+Chromium 149.0.7827.55 on macOS. At 20px / DPR 1, native Canvas and WebGL both have
+367 gray / 140 blue pixels; before the fix WebGL had only 548 foreground-green
+pixels. Full pixel comparisons at font sizes 20/30 and DPR 1/1.25/2 have a maximum
+channel difference of zero. The checks also cover `dupe`, negative offsets, SGR
+changes, simulated unsupported-codec fallback, intrinsic white artwork, font-set
+replacement, rejected loads and disposal during a pending private-face load.
+Codec availability follows the browser: if it paints a monochrome fallback,
+comparison of two fills preserves that glyph as a tintable text mask.
+
+The private table reader validates ranges, resolves `dupe` chains once, rejects
+cycles as image sources and bounds strike/table counts. Private font data is
+limited to 32 MiB per face and 64 MiB per font set, in addition to the existing
+HarfBuzz budget; browser/OS decoder allocations are not an RSS guarantee. Private
+CSS faces are removed with their owning font set. Raster probes use the existing
+atlas dimension limit and retain no decoded-image cache. Run
+`scripts/verify-terminal-native-color-font.mjs` for checksum, glyph identity,
+table-copy, Unicode-boundary, malformed-input and layout-removal checks.
+The Release JS suite and existing COLRv0, PNG sbix and default-font browser
+regressions pass. The fixture generator reproduces both fonts byte-for-byte;
+the original desktop fixture and its recorded pixels are unchanged. The formats and tags follow the
 [OpenType sbix specification](https://learn.microsoft.com/en-us/typography/opentype/spec/sbix).
 
 SVG coverage uses a third original fixture with separate gray and gzip-compressed
@@ -238,8 +258,8 @@ the 18 cases per backend with the commands above plus `--font svg`; results are 
 `test-upstream/color-fonts/ghostty-svg-{freetype,coretext}.json`. All three font
 fixtures and six desktop probe files regenerate byte-for-byte.
 
-Browser SVG rendering, COLRv1 and browser non-PNG sbix remain open. These Native
-checks do not establish browser support for embedded SVG or JPEG/TIFF documents.
+Browser SVG rendering and COLRv1 remain open. The SVG Native checks do not
+establish browser support for embedded SVG documents.
 
 ## Original reference
 

@@ -50,6 +50,16 @@ Shaping forces LTR and the `CHARACTERS` cluster level, matching Ghostty. The def
 `liga` feature can be overridden with a feature list such as `['-liga', '-calt']`.
 The runtime deliberately does not perform font fallback or terminal-cell layout.
 
+The companion `terminal-native-color-font.mjs` must be served alongside the main
+module. The browser integration uses its `prepareTerminalNativeColorFont(bytes)`
+helper for JPEG/TIFF sbix artwork that `colorPng` cannot expose. It returns `null`
+or an independent `{bytes, glyphs}` private face plus a glyph-membership byte array.
+The private face is used only to paint already-selected glyph IDs through Canvas;
+it does not replace the HarfBuzz shaping face. Its cmap uses supplementary PUA and
+its layout tables are removed. Bitmap codec support follows the host browser,
+and unsupported-codec outlines remain tintable text masks. Normal outline,
+COLRv0 and PNG fonts do not need an additional private face.
+
 Ownership is explicit: disposing a font releases its HarfBuzz references; disposing
 the runtime also disposes remaining fonts and drops its WASM instance. Operations
 on disposed handles fail. Results remain valid after subsequent calls or disposal.
@@ -58,6 +68,10 @@ per font and 64 MiB of owned font data per runtime; glyph outlines are limited t
 1,048,576 floats; one COLRv0 glyph is limited to 4,096 layers. Repeated create/shape/outline/dispose cycles reuse the heap without
 depending on JavaScript finalization. These limits do not include caller-owned
 font bytes or renderer caches.
+The browser font set separately limits private native faces to 32 MiB each and
+64 MiB total, reports their encoded sizes in its font-byte accounting, and removes
+their CSS registrations on replacement, failure or disposal. Native browser/OS
+font-decoder storage is outside the WASM budget.
 
 ## Rebuild and verify
 
@@ -81,6 +95,8 @@ static server serving the repository root:
 KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-browser-harfbuzz.mjs
 KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-terminal-color-fonts.mjs
 KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-terminal-sbix.mjs
+node scripts/verify-terminal-native-color-font.mjs
+KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/probe-terminal-sbix-media.mjs --require-parity --require-native
 ```
 
 Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` when using an existing Chromium installation.

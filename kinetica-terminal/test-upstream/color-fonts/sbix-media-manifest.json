@@ -1,8 +1,9 @@
 {
   "fonttools": "4.60.1",
-  "generatorSha256": "17f2be80b4ff88a71d18f4c81d2ffbe785c821cf635790cdf1d31fc09a7d0a98",
+  "generatorSha256": "142d42597582b47307469b880aabf593981018499d59c9904d46596dab7dd491",
   "baseGeneratorSha256": "83ff7ba002e808e8ccd4412d385189666a59e310828fb6d41fdcab2ccb9c9c29",
   "fontSha256": "949d751f27d1305de8ddc6f1c2a993a246045d6b1dc80bd63173ce85de99aa57",
+  "shapedFontSha256": "57cc5ef64324588eee39687eab4edd72ad8d5f9dbe6715dc393f6f6a2a5f0198",
   "strikes": [
     {
       "ppem": 40,

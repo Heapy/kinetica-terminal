@@ -1,5 +1,6 @@
 // Explicitly owned HarfBuzz resources. Results are copies, never views into WASM memory.
 // Font sizes are physical pixels; positions, extents and outline coordinates are 26.6 units.
+export {prepareTerminalNativeColorFont} from './terminal-native-color-font.mjs';
 export async function createTerminalHarfBuzz({ wasmBytes, wasmUrl = new URL("./harfbuzz.wasm", import.meta.url) } = {}) {
   if (!wasmBytes) {
     const response = await fetch(wasmUrl);

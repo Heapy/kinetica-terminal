@@ -155,10 +155,12 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       layers with alpha and current-foreground colors; independent pixel checks cover
       palette gray, empty base outlines and cache invalidation. Original desktop probes
       record the pinned backends' limitations on the same fixture. The remaining
-      COLRv1/browser-SVG/browser-non-PNG sbix work stays open. Native JPEG/TIFF
-      sbix now has deterministic fixtures, original backend probes and Metal
-      regressions. Chromium's native Canvas paints them, while shaped WebGL still
-      loses their artwork; the dedicated probe reproduces that remaining gap.
+      COLRv1/browser-SVG work stays open. Native JPEG/TIFF sbix now has
+      deterministic fixtures, original backend probes and Metal regressions.
+      Shaped WebGL also paints JPEG/TIFF through a private glyph-index font,
+      preserving HarfBuzz substitutions without a second shaping pass. Real
+      Chromium pixels match native Canvas at DPR 1/1.25/2; codec fallback, intrinsic
+      white, rejected/pending loads and font disposal have regression coverage.
       Native SVG classification
       now checks individual glyph ranges: ordinary outlines retain their size,
       gray artwork keeps its intrinsic color and compressed gradients reach Metal.
