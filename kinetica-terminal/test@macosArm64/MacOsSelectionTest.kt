@@ -10,6 +10,17 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    @Test fun nativeWordBoundariesGroupDelimitersAndHonorHostSettings() = withView { session, view, mouse ->
+        session.write("one  (two);three")
+        mouse(NSEventTypeLeftMouseDown, 3, 0, 2)
+        mouse(NSEventTypeLeftMouseUp, 3, 0, 2)
+        assertEquals("  (", view.accessibilitySelectedText())
+        session.selectionWordChars = " "
+        mouse(NSEventTypeLeftMouseDown, 7, 0, 2)
+        mouse(NSEventTypeLeftMouseUp, 7, 0, 2)
+        assertEquals("(two);three", view.accessibilitySelectedText())
+    }
+
     @Test fun nativeDoubleClickCopiesTheVisibleUrlAndDragResumesWords() = withView { session, view, mouse ->
         val url = "https://e.test/a(b);q=1"
         session.write("[$url].")
@@ -20,7 +31,7 @@ class MacOsSelectionTest {
         mouse(NSEventTypeLeftMouseDown, 3, 0, 2)
         mouse(NSEventTypeLeftMouseDragged, 3, 0, 2)
         mouse(NSEventTypeLeftMouseUp, 3, 0, 2)
-        assertEquals("https://e.test/a", view.accessibilitySelectedText())
+        assertEquals("https", view.accessibilitySelectedText())
     }
 
     @Test fun nativeTripleClicksStopAtSemanticBoundariesAndTrimEdges() = withView { session, view, mouse ->

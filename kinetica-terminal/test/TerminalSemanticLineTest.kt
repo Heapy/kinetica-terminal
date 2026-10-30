@@ -5,10 +5,13 @@ import kotlin.io.encoding.Base64
 import kotlin.test.*
 
 class TerminalSemanticLineTest {
-    @Test fun semanticLineBoundsMatchOriginalGhosttyAtEveryCell() {
+    @Test fun lineAndWordSelectionsMatchOriginalGhosttyAtEveryCell() {
         for (encoded in terminalSemanticLineFixtures()) for (chunked in listOf(false, true)) {
             val case = Json.parseToJsonElement(Base64.decode(encoded).decodeToString()).jsonObject
             val session = TerminalSession(case.getValue("columns").jsonPrimitive.int, case.getValue("rows").jsonPrimitive.int)
+            case["word_boundaries"]?.jsonArray?.let { values ->
+                session.selectionWordChars = values.joinToString("") { codePointString(it.jsonPrimitive.int) }
+            }
             for ((index, element) in case.getValue("events").jsonArray.withIndex()) {
                 val event = element.jsonObject
                 event["text"]?.jsonPrimitive?.content?.encodeToByteArray()?.let { bytes ->
@@ -30,7 +33,7 @@ class TerminalSemanticLineTest {
                     val actual = terminalSemanticLineRange(y, x, 0, session.lineCount - 1, session::line)
                     assertEquals(values, listOf(x, y, actual.start.column, actual.start.line, actual.end.column, actual.end.line), label)
                 }
-                val selection = TerminalSelection({ 0 }, { session.lineCount - 1 }, session::line, session::indexOfLine)
+                val selection = TerminalSelection({ 0 }, { session.lineCount - 1 }, session::line, session::indexOfLine, wordBoundaries = { session.selectionWordBoundaries })
                 fun checkSelected(value: JsonElement, context: String) {
                     val actual = selection.range()
                     if (value == JsonNull) {
@@ -47,17 +50,21 @@ class TerminalSemanticLineTest {
                     assertEquals(result.getValue("text").jsonPrimitive.content, selection.text(), context)
                 }
                 try {
-                    for ((cell, selected) in expected.getValue("selected").jsonArray.withIndex()) {
-                        selection.begin(TerminalCellPosition(cell / session.columns, cell % session.columns), TerminalSelectionMode.LINE)
-                        checkSelected(selected, "$label select=$cell")
-                    }
-                    for ((gestureIndex, gesture) in expected.getValue("gestures").jsonArray.withIndex()) {
-                        for ((stepIndex, step) in gesture.jsonArray.withIndex()) {
-                            val value = step.jsonObject
-                            val point = value.getValue("position").jsonArray.map { it.jsonPrimitive.int }
-                            val position = TerminalCellPosition(point[1], point[0])
-                            if (stepIndex == 0) selection.begin(position, TerminalSelectionMode.LINE) else selection.extend(position)
-                            checkSelected(value.getValue("selected"), "$label gesture=$gestureIndex step=$stepIndex")
+                    for (mode in TerminalSelectionMode.entries.filter { it != TerminalSelectionMode.CHARACTER }) {
+                        val selections = if (mode == TerminalSelectionMode.LINE) "selected" else "words"
+                        val gestures = if (mode == TerminalSelectionMode.LINE) "gestures" else "wordGestures"
+                        for ((cell, selected) in expected.getValue(selections).jsonArray.withIndex()) {
+                            selection.begin(TerminalCellPosition(cell / session.columns, cell % session.columns), mode)
+                            checkSelected(selected, "$label mode=$mode select=$cell")
+                        }
+                        for ((gestureIndex, gesture) in expected.getValue(gestures).jsonArray.withIndex()) {
+                            for ((stepIndex, step) in gesture.jsonArray.withIndex()) {
+                                val value = step.jsonObject
+                                val point = value.getValue("position").jsonArray.map { it.jsonPrimitive.int }
+                                val position = TerminalCellPosition(point[1], point[0])
+                                if (stepIndex == 0) selection.begin(position, mode) else selection.extend(position)
+                                checkSelected(value.getValue("selected"), "$label mode=$mode gesture=$gestureIndex step=$stepIndex")
+                            }
                         }
                     }
                 } finally { selection.clear() }

@@ -121,6 +121,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     // Like libghostty-vt, an embedded engine cannot assume shell redraw support until negotiated.
     public var promptRedraw: TerminalPromptRedraw = TerminalPromptRedraw.NONE
         private set
+    /** Unicode code points delimiting words; NUL is always included. Preserved across terminal resets. */
+    public var selectionWordChars: String = terminalDefaultWordChars
+        set(value) {
+            selectionWordBoundaries = terminalWordBoundaryCodePoints(value)
+            field = value
+        }
+    internal var selectionWordBoundaries: IntArray = terminalDefaultWordBoundaries
+        private set
     public val cursorAtPrompt: Boolean get() = !alternateScreen &&
         (screen[cursorRow].promptMarker != TerminalPromptMarker.NONE || semantic.content != TerminalSemanticContent.OUTPUT)
     public var applicationCursor: Boolean = false

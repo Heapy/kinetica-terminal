@@ -89,10 +89,17 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       synthesizes a drag; actual dragging resumes the existing word-selection behavior.
       Validation passes 1391 JVM tests, fresh Release JS tests, 38 focused Native tests and
       the Canvas/WebGL selection verifier, including actual double-click, copy and drag events.
-- [ ] Match ordinary word selection with original `Screen.selectWord`,
-      `selectWordBetween` and configurable `selection-word-chars`: the current local word
-      rules differ in delimiter membership, adjacent delimiter grouping and unwritten cells.
-      The URL press override above does not establish word-drag parity.
+- [x] Match ordinary word selection with original `Screen.selectWord`,
+      `selectWordBetween` and configurable `selection-word-chars`. Adjacent delimiters form
+      one group; unwritten cells have no word; blank-origin/destination drags search toward
+      the opposite endpoint. Wide-cell spacers inherit their owner's code point. The public
+      `session.selectionWordChars` policy parses Unicode code points, always includes NUL,
+      survives resets and applies to live and frozen views. Invalid surrogate sequences leave
+      the previous policy intact. The expanded original-source oracle covers 45 cases /
+      66 snapshots / 2787 cell positions and 2970 gesture steps each for lines and words,
+      with whole and bytewise input, custom delimiters and supplementary code points.
+      Generation reproduces byte-for-byte. Validation passes 1392 JVM tests, fresh Release JS
+      tests, 40 focused Native tests and Canvas/WebGL gestures/copy checks with host policy changes.
 - [ ] Match the complete default URL/path recognizer in `src/config/url.zig`, including
       non-HTTP schemes, rooted/relative paths, environment-variable prefixes, spaced path
       segments and the original punctuation/Unicode rules. Kinetica currently detects HTTP(S)

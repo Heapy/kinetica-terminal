@@ -23,7 +23,7 @@ class TerminalNavigationTest {
             assertEquals(punctuated, viewport.selectedText())
             viewport.extendSelection(3, 0)
             viewport.endSelection(3, 0)
-            assertEquals("https://example.org/a", viewport.selectedText(), "An actual drag resumes word granularity")
+            assertEquals("https", viewport.selectedText(), "An actual drag resumes word granularity")
             session.reset()
             session.write("\u001b]8;;https://hidden.example\u001b\\two words\u001b]8;;\u001b\\")
             viewport.beginSelection(5, 0, TerminalSelectionMode.WORD); viewport.endSelection(5, 0)

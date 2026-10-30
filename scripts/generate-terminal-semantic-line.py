@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Original Ghostty semantic line ranges used for detected links; no Kinetica expectations."""
+"""Original Ghostty line/word selections, gestures and link bounds; no Kinetica expectations."""
 import base64
 import hashlib
 import itertools
@@ -46,6 +46,19 @@ def cases():
         result.append(dict(name="redraw_" + redraw, columns=5, rows=4,
             events=[dict(text=osc("A;redraw=" + redraw) + "abc" + osc("B") + "defghijkl"),
                     dict(resize=[8,4]), dict(resize=[4,4])]))
+    for name, text, boundaries in [
+        ("word_delimiters", "one  (two);three:a|b$VAR│x", None),
+        ("word_empty_cells", "one\r\n\r\ntwo\x1b[1;7HX", None),
+        ("word_unicode_spaces", "a\u00a0b\u3000c é😀z", None),
+        ("word_custom_empty", "one two:three;four", [0]),
+        ("word_custom_punctuation", "one-two:three;four", [0, ord("-"), ord(":")]),
+        ("word_custom_wide", "a界界b😀😀c", [0, ord("界"), ord("😀")]),
+        ("word_custom_combining", "éé x", [0, ord("e"), 0x301]),
+    ]:
+        for columns in [7, 30]:
+            case = dict(name=name+"_"+str(columns), columns=columns, rows=5, events=[dict(text=text)])
+            if boundaries is not None: case["word_boundaries"] = boundaries
+            result.append(case)
     return result
 
 
@@ -60,6 +73,7 @@ def main():
     (build / "cases.json").write_text(json.dumps(corpus, ensure_ascii=True))
     helper = ROOT / "scripts/terminal-ghostty-semantic-line-oracle.zig"
     (build / "main.zig").write_text(helper.read_text())
+    (build / "selection-codepoints.zig").write_bytes((upstream / "src/terminal/selection_codepoints.zig").read_bytes())
     (build/"build.zig.zon").write_text('.{ .name = .zig_vt_stream, .version = "0.0.0", .fingerprint = 0x34c1f71303690b3f, .minimum_zig_version = "0.17.0", .dependencies = .{ .ghostty = .{ .path = '+json.dumps(os.path.relpath(upstream,build))+' } }, .paths = .{""} }')
     (build/"build.zig").write_text('''const std = @import("std");
 pub fn build(b: *std.Build) void {
@@ -86,6 +100,7 @@ pub fn build(b: *std.Build) void {
         initialPromptRedraw=False,
         cases=len(corpus), snapshots=sum(len(c["snapshots"]) for c in corpus),
         ranges=sum(len(s["ranges"]) for c in corpus for s in c["snapshots"]),
+        wordGestureSteps=sum(sum(len(g) for g in s["wordGestures"]) for c in corpus for s in c["snapshots"]),
         gestureSteps=sum(sum(len(g) for g in s["gestures"]) for c in corpus for s in c["snapshots"]),
         helperSha256=digest(helper), generatorSha256=digest(Path(__file__)), fixtureSha256=digest(fixture),
         sources={p:digest(upstream/p) for p in ["src/terminal/Terminal.zig", "src/terminal/c/terminal.zig", "src/terminal/stream_terminal.zig", "src/terminal/Screen.zig", "src/terminal/SelectionGesture.zig", "src/terminal/selection_codepoints.zig", "src/terminal/formatter.zig", "src/terminal/PageList.zig", "src/Surface.zig"]})

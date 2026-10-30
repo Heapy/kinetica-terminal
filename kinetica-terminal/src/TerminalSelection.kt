@@ -23,6 +23,7 @@ internal class TerminalSelection(
     private val indexOf: (TerminalLine) -> Int,
     private val resetEpoch: () -> Long = { 0L },
     private val orderEpoch: () -> Long = { 0L },
+    private val wordBoundaries: () -> IntArray = { terminalDefaultWordBoundaries },
 ) {
     private data class Anchor(val row: TerminalLine, val column: Int, val recycle: Long = row.recycleEpoch)
     private inner class Watch(val row: TerminalLine) {
@@ -35,6 +36,7 @@ internal class TerminalSelection(
     private var watchFirst = 0
     private var anchorStart: Anchor? = null
     private var anchorEnd: Anchor? = null
+    private var clickAnchor: Anchor? = null
     private var bounds: TerminalSelectionRange? = null
     private var reset = resetEpoch()
     private var order = orderEpoch()
@@ -44,7 +46,7 @@ internal class TerminalSelection(
 
     fun clear() {
         watches.forEach { it.subscription.dispose() }; watches.clear()
-        bounds = null; anchorStart = null; anchorEnd = null; invalid = false
+        bounds = null; anchorStart = null; anchorEnd = null; clickAnchor = null; invalid = false
         reset = resetEpoch(); order = orderEpoch()
     }
 
@@ -55,7 +57,10 @@ internal class TerminalSelection(
         val unit = unit(position)?.let(::normalize)
         // A blank line has no initial selection, but remains a valid drag origin.
         val y = position.line.coerceIn(firstLine(), lastLine())
-        val origin = unit ?: terminalSemanticLineRange(y, position.column.coerceIn(0, line(y).columns - 1), firstLine(), lastLine(), line)
+        val point = clamp(position)
+        clickAnchor = anchor(point)
+        val origin = unit ?: if (mode == TerminalSelectionMode.LINE) terminalSemanticLineRange(y, point.column, firstLine(), lastLine(), line)
+            else TerminalSelectionRange(point, point)
         anchorStart = anchor(origin.start); anchorEnd = anchor(origin.end)
         val x = position.column.coerceIn(0, line(y).columns - 1)
         val link = if (mode == TerminalSelectionMode.WORD) terminalDetectedLinkAt(y, x, firstLine(), lastLine(), line) else null
@@ -64,6 +69,16 @@ internal class TerminalSelection(
 
     fun extend(position: TerminalCellPosition) {
         reconcile()
+        if (mode == TerminalSelectionMode.WORD) {
+            val origin = clickAnchor?.position() ?: return
+            val focus = clamp(position)
+            val boundaries = wordBoundaries()
+            val startWord = terminalWordBetween(origin, focus, firstLine(), lastLine(), line, boundaries) ?: return
+            val focusWord = terminalWordBetween(focus, origin, firstLine(), lastLine(), line, boundaries) ?: return
+            setRange(normalize(if (focus < origin) TerminalSelectionRange(focusWord.start, startWord.end)
+                else TerminalSelectionRange(startWord.start, focusWord.end)))
+            return
+        }
         val start = anchorStart?.position() ?: return
         val end = anchorEnd?.position() ?: return
         val focus = unit(position) ?: return
@@ -73,7 +88,7 @@ internal class TerminalSelection(
     fun text(): String {
         val range = range() ?: return ""
         if (range.start == range.end) return ""
-        if (mode == TerminalSelectionMode.LINE) return lineText(range)
+        if (mode != TerminalSelectionMode.CHARACTER) return selectionText(range)
         return buildString {
             for (y in range.start.line..range.end.line) {
                 val row = line(y)
@@ -90,13 +105,14 @@ internal class TerminalSelection(
 
     // ScreenFormatter's plain, unwrapped, untrimmed output: written spaces survive;
     // trailing empty cells/rows do not. No newline is synthesized after the selection.
-    private fun lineText(range: TerminalSelectionRange): String = buildString {
+    private fun selectionText(range: TerminalSelectionRange): String = buildString {
         var blankRows = 0
         var blankCells = 0
         for (y in range.start.line..range.end.line) {
             val row = line(y)
             val from = if (y == range.start.line) range.start.column else 0
             val to = if (y == range.end.line) range.end.column else row.columns
+            if (y == range.start.line && row.isSpacerHead(from)) continue
             if ((from until to).none { row.hasText(it) && !row.isSpacerHead(it) }) { blankRows++; continue }
             repeat(blankRows) { append('\n') }; blankRows = if (row.wrapped) 0 else 1
             if (y == range.start.line || !line(y - 1).wrapped) blankCells = 0
@@ -159,7 +175,7 @@ internal class TerminalSelection(
         val point = TerminalCellPosition(y, x)
         return when (mode) {
             TerminalSelectionMode.CHARACTER -> TerminalSelectionRange(point, point)
-            TerminalSelectionMode.WORD -> word(TerminalCellPosition(y, x.coerceAtMost(row.columns - 1)))
+            TerminalSelectionMode.WORD -> terminalWordRange(TerminalCellPosition(y, x.coerceAtMost(row.columns - 1)), firstLine(), lastLine(), line, wordBoundaries())
             TerminalSelectionMode.LINE -> terminalSelectedLineRange(y, x.coerceAtMost(row.columns - 1), firstLine(), lastLine(), line)
         }
     }
@@ -174,48 +190,8 @@ internal class TerminalSelection(
         return TerminalSelectionRange(edge(range.start, false), edge(range.end, true))
     }
 
-    private fun word(point: TerminalCellPosition): TerminalSelectionRange {
-        var start = if (line(point.line).width(point.column) == 0) point.copy(column = point.column - 1) else point
-        if (line(start.line).isSpacerHead(start.column)) start = next(start) ?: previous(start) ?: start
-        var last = start
-        val kind = wordKind(start)
-        // Punctuation is selected one glyph at a time; path/URL characters stay in words.
-        if (kind != 2) {
-            while (true) { val previous = previous(start) ?: break; if (wordKind(previous) != kind) break; start = previous }
-            while (true) { val next = next(last) ?: break; if (wordKind(next) != kind) break; last = next }
-        }
-        val row = line(last.line)
-        return TerminalSelectionRange(start, last.copy(column = last.column + maxOf(1, row.width(last.column))))
-    }
-    private fun wordKind(point: TerminalCellPosition): Int {
-        val cp = line(point.line).codePoint(point.column)
-        return when {
-            cp <= 0xffff && cp.toChar().isWhitespace() -> 0
-            cp <= 0xffff && cp.toChar() in "()[]{}<>\"'`|,;" -> 2
-            else -> 1
-        }
-    }
-    private fun previous(point: TerminalCellPosition): TerminalCellPosition? {
-        var y = point.line; var x = point.column - 1
-        while (true) {
-            if (x < 0) {
-                if (y == firstLine() || !line(y - 1).wrapped) return null
-                y--; x = line(y).columns - 1
-            }
-            if (line(y).width(x) == 0) x--
-            if (!line(y).isSpacerHead(x)) return TerminalCellPosition(y, x)
-            x--
-        }
-    }
-    private fun next(point: TerminalCellPosition): TerminalCellPosition? {
-        var y = point.line; var x = point.column + maxOf(1, line(y).width(point.column))
-        while (true) {
-            if (x >= line(y).columns) {
-                if (y == lastLine() || !line(y).wrapped) return null
-                y++; x = 0
-            }
-            if (!line(y).isSpacerHead(x)) return TerminalCellPosition(y, x)
-            x++
-        }
+    private fun clamp(position: TerminalCellPosition): TerminalCellPosition {
+        val y = position.line.coerceIn(firstLine(), lastLine())
+        return TerminalCellPosition(y, position.column.coerceIn(0, line(y).columns - 1))
     }
 }

@@ -92,7 +92,14 @@ try {
     assert.equal(await copy(), url, "Double click and release retain the complete visible URL across soft wraps");
     await move(3, 0); await page.mouse.down({ clickCount: 2 });
     await move(4, 0); await page.mouse.up({ clickCount: 2 });
-    assert.equal(await copy(), "https://e.test/a", "Dragging resumes word granularity");
+    assert.equal(await copy(), "https", "Dragging resumes Ghostty word granularity");
+
+    await reset("one  (two);three");
+    await click(3, 0, 2);
+    assert.equal(await copy(), "  (", "Adjacent delimiters form one selection");
+    await page.evaluate(() => kineticaTerminalDemo.selectionWordChars(" "));
+    await click(7, 0, 2);
+    assert.equal(await copy(), "(two);three", "Host word-boundary policy reaches the browser view");
 
     await reset(Array.from({ length: 80 }, (_, i) => `line-${i}\r\n`).join(""));
     await move(4, 2); await page.mouse.down(); await move(4, -2);
@@ -136,7 +143,7 @@ try {
     await page.evaluate(() => kineticaTerminalDemo.dispose());
     await page.waitForTimeout(180); await page.mouse.up();
     assert.equal(await page.locator("#app > *").count(), 0);
-    report.renderers.push({ renderer, selection: "passed", semanticLines: "passed", doubleClickUrls: "passed", autoscroll: "passed", cancellation: "passed", pixels: "passed" });
+    report.renderers.push({ renderer, selection: "passed", semanticLines: "passed", doubleClickUrls: "passed", wordBoundaries: "passed", autoscroll: "passed", cancellation: "passed", pixels: "passed" });
     await page.close();
   }
   assert.deepEqual(report.errors, []);

@@ -3,6 +3,34 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalSelectionTest {
+    @Test fun wordBoundaryPolicySupportsUnicodeChangesFrozenFramesAndResets() {
+        val session = TerminalSession(30, 4)
+        val viewport = TerminalViewport(session, {})
+        fun select(x: Int): String {
+            viewport.beginSelection(x, 0, TerminalSelectionMode.WORD); viewport.endSelection(x, 0)
+            return viewport.selectedText()
+        }
+        try {
+            session.write("one-two:three")
+            assertEquals("one-two", select(1))
+            session.selectionWordChars = "-"
+            assertEquals("two:three", select(5))
+            assertFailsWith<IllegalArgumentException> { session.selectionWordChars = "\ud800" }
+            assertFailsWith<IllegalArgumentException> { session.selectionWordChars = "\udc00" }
+            assertEquals("two:three", select(5), "Invalid Unicode must not change the policy")
+            session.write("\u001b[?2026h\u001b[Hchanged")
+            session.selectionWordChars = ":"
+            assertEquals("one-two", select(1), "Frozen selection uses the current host policy and retained cells")
+            session.write("\u001b[?2026l")
+            session.selectionWordChars = "界😀"
+            session.reset(); session.write("a界界b😀😀c")
+            assertEquals("界界", select(2))
+            assertEquals("😀😀", select(7), "A supplementary code point is one delimiter")
+            session.selectionWordChars = ""
+            assertEquals("a界界b😀😀c", select(0), "Empty policy joins all written characters")
+        } finally { viewport.dispose() }
+    }
+
     @Test fun lineSelectionsRespectSemanticRegionsAndFrozenFrames() {
         val session = TerminalSession(20, 4)
         val viewport = TerminalViewport(session, {})
@@ -163,9 +191,9 @@ class TerminalSelectionTest {
         try {
             session.write("one  (two);three")
             viewport.beginSelection(3, 0, TerminalSelectionMode.WORD)
-            assertEquals("  ", viewport.selectedText())
+            assertEquals("  (", viewport.selectedText())
             viewport.beginSelection(5, 0, TerminalSelectionMode.WORD)
-            assertEquals("(", viewport.selectedText())
+            assertEquals("  (", viewport.selectedText())
             viewport.beginSelection(7, 0, TerminalSelectionMode.WORD); viewport.extendSelection(0, 0)
             assertEquals("one  (two", viewport.selectedText())
             viewport.extendSelection(13, 0)

@@ -127,7 +127,7 @@ public class TerminalViewport internal constructor(
     private var selectionEpoch = session.selectionEpoch
     private var scrollAnchor: ScrollAnchor? = null
     private val liveSelection = TerminalSelection({ 0 }, { session.lineCount - 1 }, session::line, session::indexOfLine,
-        { session.selectionEpoch }, { session.lineOrderEpoch })
+        { session.selectionEpoch }, { session.lineOrderEpoch }, { session.selectionWordBoundaries })
     private val activeSelection: TerminalSelection get() = frozen?.selection ?: liveSelection
     private var draggingSelection = false
     private var promptClickCandidate: Pair<Int, Int>? = null
@@ -203,7 +203,7 @@ public class TerminalViewport internal constructor(
         }
         val selection = TerminalSelection({ first }, { first + lines.lastIndex }, { lines[it - first] }, { row ->
             val index = lines.indexOfFirst { it === row }; if (index < 0) -1 else first + index
-        })
+        }, wordBoundaries = { session.selectionWordBoundaries })
         frozen = FrozenFrame(lines, first, session.renderTheme, session.cursorColumn, session.cursorRow,
             capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText,
             if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList())

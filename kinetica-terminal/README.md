@@ -440,8 +440,10 @@ Shift+PageUp/PageDown, and accessibility text are available.
   including soft wraps. Line selection trims empty cells, spaces and tabs at its edges, stops
   at OSC 133 prompt/input/output transitions and adds no final newline. Dragging over blank
   regions retains the last selection; a blank initial region can still anchor a drag.
-  Word boundaries use whitespace and shell punctuation; paths and URLs
-  remain together. Dragging extends in the starting granularity. Copy expands partial wide
+  Word boundaries use Ghostty's default set of spaces, tabs, quotes, brackets and shell
+  punctuation. Adjacent delimiters select together; unwritten cells have no word. Word drags
+  starting or ending in blank cells find the nearest written word toward the other endpoint.
+  Dragging extends in the starting granularity. Copy expands partial wide
   cells to whole glyphs, preserves combining sequences and omits wide-glyph wrap padding.
   Dragging beyond the top/bottom autoscrolls at 50 ms intervals, up to ten rows per tick.
   Release, pointer cancellation, focus loss, synchronized-output hold and disposal stop the timer.
@@ -450,6 +452,12 @@ Shift+PageUp/PageDown, and accessibility text are available.
   parentheses and query punctuation, across soft wraps. Releasing without moving retains that
   selection; dragging resumes word selection. OSC 8 labels still use their visible text and
   never substitute a hidden target URI into the selection.
+- `session.selectionWordChars` replaces the word delimiters with the Unicode code points in
+  a host-provided string; for example, `" \t"` keeps punctuation inside words. NUL is always a
+  delimiter. Supplementary code points are supported; multi-code-point graphemes are treated
+  as their individual code points, not as a single delimiter. Invalid surrogate sequences are
+  rejected without changing the policy. This setting survives terminal resets and applies to
+  subsequent selection gestures in live and frozen views.
 - Sessions are application-owned. Unmounting a view removes its observers, listeners and
   scheduled redraws, but does not close a shared transport. Dispose transports explicitly.
 - Session IDs label platform surfaces for diagnostics. Dispose a view before removing it;

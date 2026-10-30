@@ -1398,6 +1398,14 @@ region. The original-source oracle compares ranges and copied text at 1492 posit
 The separate URL candidate-range checks remain untrimmed. This is line-selection coverage;
 it does not establish equivalence of every configurable word or rectangular selection mode.
 
+Word selection now uses the original default delimiter set and groups adjacent delimiters.
+Blank-origin/destination drags search toward the opposite endpoint; wide spacers follow their
+owner glyph. `session.selectionWordChars` supplies a reset-preserved Unicode delimiter policy
+to both live and frozen views. The expanded original-source selection oracle covers 2787
+positions and 2970 word-gesture steps with default and custom delimiter sets. Host regressions
+exercise actual double clicks and policy changes, including the URL override's transition
+back to ordinary word dragging.
+
 Fifteen common selection tests cover these invariants, independent views, partial scrolling,
 hard/soft line boundaries, directional changes and timer limits. Two AppKit tests use native
 NSEvent click counts, mouse dragging, text input and the real run loop. Metal tests verify
@@ -1408,7 +1416,7 @@ assertion failed once; repeated runs passed, and it now awaits observed scroll p
 testing cancellation rather than assuming a timer fires within 120 ms. This is not latency
 evidence. Reports and inspected screenshots are under `build/reports/terminal-selection/`.
 The existing browser keypad/IME, binary mouse/chord, focus, context-loss and rendering suite
-also passes. Rectangular selection, configurable word separators, broader keyboard acceptance
+also passes. Rectangular selection, broader keyboard acceptance
 and assistive-technology navigation remain outside this completed selection-anchor gate.
 
 Unicode properties are generated from seven archived, hashed UCD 18.0.0 snapshot
