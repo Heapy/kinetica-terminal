@@ -631,7 +631,7 @@ public class AppKitTerminalView(
         if (selecting) viewport.beginSelection(x, y, when ((leftClickCount - forceClickCountOffset).coerceAtLeast(1).toInt()) {
             0, 1 -> TerminalSelectionMode.CHARACTER
             2 -> TerminalSelectionMode.WORD
-            else -> TerminalSelectionMode.LINE
+            else -> if (event.modifierFlags and NSEventModifierFlagCommand != 0uL) TerminalSelectionMode.OUTPUT else TerminalSelectionMode.LINE
         }) else viewport.clearSelection()
     }
     override fun mouseDragged(event: NSEvent) {

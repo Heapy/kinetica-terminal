@@ -59,6 +59,20 @@ def cases():
             case = dict(name=name+"_"+str(columns), columns=columns, rows=5, events=[dict(text=text)])
             if boundaries is not None: case["word_boundaries"] = boundaries
             result.append(case)
+    output_cases = {
+        "output_two_commands": "before\r\n" + osc("A") + "$ " + osc("B") + "one" + osc("C") + "\r\n  first  \r\nsecond \r\n" + osc("A") + "$ " + osc("B") + "two" + osc("C") + "\r\nthird",
+        "output_same_row": osc("A") + "$" + osc("B") + "cmd" + osc("C") + "ab" + osc("B") + "input" + osc("C") + "cd",
+        "output_without_prompt": "first\r\nsecond",
+        "output_before_prompt": "\r\n first  \r\n\r\n" + osc("A") + "$ " + osc("B") + "cmd",
+        "output_blank_before_prompt": "\r\n\r\n" + osc("A") + "$",
+        "output_blank_command": osc("A") + "$ " + osc("B") + "cmd" + osc("C") + "\r\n\r\n" + osc("A") + "$",
+        "output_continuations": osc("A") + "$ " + osc("B") + "cmd\r\n" + osc("P;k=c") + "> " + osc("B") + "more" + osc("C") + "\r\nresult\r\n" + osc("A") + "$",
+        "output_orphan_continuations": osc("P;k=c") + "> " + osc("B") + "a\r\n" + osc("P;k=c") + "> " + osc("B") + "b" + osc("C") + "\r\nresult",
+        "output_wide_spaces": osc("A") + "$ " + osc("B") + "cmd" + osc("C") + "\r\n  界é😀  \r\nlast  ",
+    }
+    for name, text in output_cases.items():
+        for columns in [7, 30]:
+            result.append(dict(name=name+"_"+str(columns), columns=columns, rows=8, events=[dict(text=text)]))
     return result
 
 
@@ -100,11 +114,13 @@ pub fn build(b: *std.Build) void {
         initialPromptRedraw=False,
         cases=len(corpus), snapshots=sum(len(c["snapshots"]) for c in corpus),
         ranges=sum(len(s["ranges"]) for c in corpus for s in c["snapshots"]),
+        outputSelections=sum(len(s["outputs"]) for c in corpus for s in c["snapshots"]),
+        outputGestureSteps=sum(sum(len(g) for g in s["outputGestures"]) for c in corpus for s in c["snapshots"]),
         deepPresses=sum(len(s["deepPress"]) for c in corpus for s in c["snapshots"]),
         wordGestureSteps=sum(sum(len(g) for g in s["wordGestures"]) for c in corpus for s in c["snapshots"]),
         gestureSteps=sum(sum(len(g) for g in s["gestures"]) for c in corpus for s in c["snapshots"]),
         helperSha256=digest(helper), generatorSha256=digest(Path(__file__)), fixtureSha256=digest(fixture),
-        sources={p:digest(upstream/p) for p in ["src/terminal/Terminal.zig", "src/terminal/c/terminal.zig", "src/terminal/stream_terminal.zig", "src/terminal/Screen.zig", "src/terminal/SelectionGesture.zig", "src/terminal/selection_codepoints.zig", "src/terminal/formatter.zig", "src/terminal/PageList.zig", "src/Surface.zig", "src/apprt/embedded.zig", "macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift", "macos/Sources/Helpers/Extensions/UserDefaults+Extension.swift"]})
+        sources={p:digest(upstream/p) for p in ["src/terminal/Terminal.zig", "src/terminal/c/terminal.zig", "src/terminal/stream_terminal.zig", "src/terminal/Screen.zig", "src/terminal/SelectionGesture.zig", "src/terminal/selection_codepoints.zig", "src/terminal/formatter.zig", "src/terminal/PageList.zig", "src/Surface.zig", "src/apprt/embedded.zig", "src/input/key_mods.zig", "macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift", "macos/Sources/Helpers/Extensions/UserDefaults+Extension.swift"]})
     (ROOT/"kinetica-terminal/test-upstream/ghostty/semantic-line-manifest.json").write_text(json.dumps(manifest, indent=2)+"\n")
     print(f'Generated {len(corpus)} cases / {manifest["snapshots"]} checkpoints / {manifest["ranges"]} cell ranges')
 

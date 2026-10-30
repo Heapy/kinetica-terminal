@@ -448,6 +448,12 @@ Shift+PageUp/PageDown, and accessibility text are available.
   Dragging beyond the top/bottom autoscrolls at 50 ms intervals, up to ten rows per tick.
   Release, pointer cancellation, focus loss, synchronized-output hold and disposal stop the timer.
   Committed keyboard/IME/paste input clears selection; copying leaves it intact.
+- Cmd+triple-click on macOS (Ctrl+triple-click on other browser platforms) selects the
+  command output identified by OSC 133 shell markers. `TerminalSelectionMode.OUTPUT`
+  exposes the same behavior to hosts. Dragging expands by complete output blocks, including
+  intervening prompts; dragging onto a prompt/input region restores the original block.
+  Written spaces survive, unwritten trailing cells are excluded, and no final newline is
+  added. Without shell markers there is no output block to select.
 - Double clicking a recognized URL or path selects its complete visible text, including matched
   parentheses, query punctuation and path spaces, across soft wraps. Releasing without moving retains that
   selection; dragging resumes word selection. OSC 8 labels still use their visible text and

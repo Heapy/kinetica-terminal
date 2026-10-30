@@ -27,6 +27,17 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
 - [x] Run shared JVM/JS checks, relevant Native tests and fresh browser rendering/input checks for the C-reference migration.
 - [ ] Complete the release-note/source audit for remaining emulation and input differences.
 
+- [x] Select complete command output with Cmd+triple-click on macOS and Ctrl+triple-click
+      on other browser platforms, following original `Surface`, `Screen.selectOutput` and
+      `SelectionGesture` behavior. Dragging extends by command blocks and returns to the
+      original block on prompt/input targets. OSC 133 markers, written spaces, wide cells,
+      continuation prompts, missing prompts and synchronized views are covered.
+      The expanded original oracle has 63 scenarios / 84 checkpoints, 5451 cell positions
+      and 3780 gesture steps per mode, replayed whole and bytewise. Fixture regeneration
+      is byte-identical. Validation: 1401 JVM tests, Release JS tests, 71 focused Native
+      tests and real Chromium selection gestures with Canvas/WebGL. This validation excludes
+      the separately documented live GPU visibility gate below.
+
 The first release comparison builds the existing C graphics host against both libraries and
 runs all 244 current execution scenarios (2394 checkpoints). Twenty scenarios differ, covering
 reflow/anchor positions, saved cursor behavior and cancelled APC execution. Array ordering for

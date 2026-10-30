@@ -3,8 +3,8 @@
 // Pinned sources and license: ../third-party/ghostty.json and GHOSTTY-LICENSE.
 package io.heapy.kinetica.terminal
 
-/** Drag granularity. LINE joins soft wraps, respects semantic regions and trims edge whitespace. */
-public enum class TerminalSelectionMode { CHARACTER, WORD, LINE }
+/** LINE selects semantic lines; OUTPUT selects command output identified by OSC 133. */
+public enum class TerminalSelectionMode { CHARACTER, WORD, LINE, OUTPUT }
 
 internal data class TerminalCellPosition(val line: Int, val column: Int) : Comparable<TerminalCellPosition> {
     override fun compareTo(other: TerminalCellPosition): Int =
@@ -69,6 +69,18 @@ internal class TerminalSelection(
 
     fun extend(position: TerminalCellPosition) {
         reconcile()
+        if (mode == TerminalSelectionMode.OUTPUT) {
+            val origin = clickAnchor?.position() ?: return
+            val initial = terminalOutputRange(origin, firstLine(), lastLine(), line) ?: return
+            val focus = clamp(position)
+            val current = terminalOutputRange(focus, firstLine(), lastLine(), line)
+            setRange(normalize(when {
+                current == null -> initial
+                focus < origin -> TerminalSelectionRange(current.start, initial.end)
+                else -> TerminalSelectionRange(initial.start, current.end)
+            }))
+            return
+        }
         if (mode == TerminalSelectionMode.WORD) {
             val origin = clickAnchor?.position() ?: return
             val focus = clamp(position)
@@ -166,6 +178,7 @@ internal class TerminalSelection(
             TerminalSelectionMode.CHARACTER -> TerminalSelectionRange(point, point)
             TerminalSelectionMode.WORD -> terminalWordRange(TerminalCellPosition(y, x.coerceAtMost(row.columns - 1)), firstLine(), lastLine(), line, wordBoundaries())
             TerminalSelectionMode.LINE -> terminalSelectedLineRange(y, x.coerceAtMost(row.columns - 1), firstLine(), lastLine(), line)
+            TerminalSelectionMode.OUTPUT -> terminalOutputRange(point.copy(column = x.coerceAtMost(row.columns - 1)), firstLine(), lastLine(), line)
         }
     }
 

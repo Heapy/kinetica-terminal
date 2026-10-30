@@ -29,12 +29,12 @@ The Kotlin runtime contains the portable scanner and generated character tables,
 These tests establish matching and offset behavior, not path resolution or external application
 launching. Common/native/browser tests separately exercise link lookup and double-click copying.
 
-## Line/word selection and semantic link-boundary oracle
+## Line/word/output selection and semantic link-boundary oracle
 
 The same snapshots now exercise original `SelectionGesture.deepPress` at every cell. Besides
 the selected range/text, the helper verifies that deep press clears the click count/time and
 tracked pin, marks the gesture as dragged, stops autoscroll, and makes repeated pressure and
-subsequent dragging return no replacement selection. There are 2787 original deep presses;
+subsequent dragging return no replacement selection. There are 5451 original deep presses;
 the Kotlin corpus runs them with whole-stream and bytewise input. Host tests separately cover
 existing drag/autoscroll cancellation, blank anchors, frozen text and custom word boundaries.
 AppKit tests deliver synthetic `NSEvent` subclasses to the actual pressure callback and use
@@ -54,8 +54,8 @@ python3 scripts/generate-terminal-semantic-line.py build/upstream/ghostty-1.4.0 
 bash scripts/engine.sh test -m kinetica-terminal -p jvm --include-classes='*TerminalSemanticLineTest'
 ```
 
-The 45 scenarios / 66 checkpoints compare 2787 untrimmed cell ranges, the corresponding
-trimmed line/word selections and 2970 gesture steps for each selection mode, replayed both
+The 63 scenarios / 84 checkpoints compare 5451 untrimmed cell ranges, the corresponding
+trimmed line/word and command-output selections and 3780 gesture steps for each selection mode, replayed both
 whole and bytewise.
 They cover every ordering of prompt/input/output, mid-row and soft-wrap boundaries, history,
 resize/reflow, wide cells, combining characters, wrap spacers, blank seams, erasure, input-until-EOL,
@@ -67,7 +67,7 @@ only converts inclusive end columns to exclusive ones. The manifest hashes the g
 fixtures and relevant original sources. Generation reproduces byte-for-byte.
 
 The helper also calls original `Screen.selectLine` with default whitespace trimming and
-`SelectionGesture.press`/`drag` with line and word behavior. It records nullable selections and actual
+`SelectionGesture.press`/`drag` with line, word and output behavior. It records nullable selections and actual
 `selectionString(trim = false)` output: blank drag targets retain the preceding selection,
 blank origins use untrimmed fallback bounds, interior written spaces survive and no final newline
 is synthesized. The test normalizes inclusive wide-glyph endpoint pins to complete display cells.
@@ -78,6 +78,11 @@ blank cells, grouped delimiters, non-ASCII spaces and custom empty/punctuation/w
 code-point sets. The default delimiter file is copied byte-for-byte from the pinned source
 into the helper's build directory because Zig disallows importing the same source file into
 two modules; its source hash remains in the manifest. No upstream source is modified.
+Output expectations invoke original `Screen.selectOutput` and cover multiple commands,
+output before the first prompt, missing prompts, blank output, continuation prompts,
+same-row semantic changes, wide glyphs and written spaces. Output drags restore the original
+block when their target has no selectable output. The manifest pins `input/key_mods.zig`;
+AppKit and browser event tests separately verify the platform-specific modified triple-click.
 Common URL tests cover actual matching,
 frozen frames, explicit OSC 8 precedence and the disabled-OSC-8 fallback; the AppKit Cmd-click
 test verifies the bounded target passed to the host callback without opening external applications.

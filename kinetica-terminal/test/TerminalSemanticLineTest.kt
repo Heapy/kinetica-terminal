@@ -59,8 +59,12 @@ class TerminalSemanticLineTest {
                         checkSelected(selected, "$label drag after deep press=$cell")
                     }
                     for (mode in TerminalSelectionMode.entries.filter { it != TerminalSelectionMode.CHARACTER }) {
-                        val selections = if (mode == TerminalSelectionMode.LINE) "selected" else "words"
-                        val gestures = if (mode == TerminalSelectionMode.LINE) "gestures" else "wordGestures"
+                        val (selections, gestures) = when (mode) {
+                            TerminalSelectionMode.LINE -> "selected" to "gestures"
+                            TerminalSelectionMode.WORD -> "words" to "wordGestures"
+                            TerminalSelectionMode.OUTPUT -> "outputs" to "outputGestures"
+                            TerminalSelectionMode.CHARACTER -> error("Character gestures are checked separately")
+                        }
                         for ((cell, selected) in expected.getValue(selections).jsonArray.withIndex()) {
                             selection.begin(TerminalCellPosition(cell / session.columns, cell % session.columns), mode)
                             checkSelected(selected, "$label mode=$mode select=$cell")

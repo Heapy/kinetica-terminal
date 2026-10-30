@@ -3,6 +3,35 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalSelectionTest {
+    @Test fun outputSelectionExpandsByCommandsAndReturnsToOriginalBlockOnPromptDrag() {
+        val session = TerminalSession(30, 6)
+        val viewport = TerminalViewport(session, {})
+        val text = "\u001b]133;A\u0007$ \u001b]133;B\u0007one\u001b]133;C\u0007\r\nfirst\r\nsecond\r\n" +
+            "\u001b]133;A\u0007$ \u001b]133;B\u0007two\u001b]133;C\u0007\r\nthird"
+        try {
+            session.write(text)
+            viewport.beginSelection(1, 1, TerminalSelectionMode.OUTPUT)
+            assertEquals("first\nsecond", viewport.selectedText())
+            viewport.extendSelection(1, 4)
+            assertEquals("first\nsecond\n$ two\nthird", viewport.selectedText())
+            viewport.extendSelection(1, 3)
+            assertEquals("first\nsecond", viewport.selectedText(), "A non-output destination restores the original block")
+            viewport.beginSelection(1, 4, TerminalSelectionMode.OUTPUT); viewport.extendSelection(1, 1)
+            assertEquals("first\nsecond\n$ two\nthird", viewport.selectedText())
+            viewport.extendSelection(1, 0); assertEquals("third", viewport.selectedText())
+            viewport.beginSelection(1, 0, TerminalSelectionMode.OUTPUT); viewport.extendSelection(1, 1)
+            assertEquals("", viewport.selectedText(), "Prompt origin cannot start an output selection")
+            session.write("\u001b[?2026h\u001b[Hchanged")
+            viewport.beginSelection(1, 1, TerminalSelectionMode.OUTPUT)
+            assertEquals("first\nsecond", viewport.selectedText())
+            viewport.extendSelection(1, 4)
+            assertEquals("first\nsecond\n$ two\nthird", viewport.selectedText())
+            session.write("\u001b[?2026l"); session.reset(); session.write("no shell markers")
+            viewport.beginSelection(1, 0, TerminalSelectionMode.OUTPUT)
+            assertEquals("", viewport.selectedText())
+        } finally { viewport.dispose() }
+    }
+
     @Test fun wordLookupReadsVisibleWordsWithoutChangingSelectionOrGesture() {
         val session = TerminalSession(30, 4)
         val viewport = TerminalViewport(session, {})

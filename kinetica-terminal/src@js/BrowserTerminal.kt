@@ -222,7 +222,12 @@ public class BrowserTerminalView(
             event.preventDefault(); event.stopPropagation()
             if (selecting && activePointer != null && event.button == 0 && (event.detail as Number).toInt() >= 2) {
                 val (x, y) = coordinates(event)
-                viewport.beginSelection(x, y, if ((event.detail as Number).toInt() == 2) TerminalSelectionMode.WORD else TerminalSelectionMode.LINE)
+                val output = if (window.navigator.platform.startsWith("Mac")) event.metaKey == true else event.ctrlKey == true
+                viewport.beginSelection(x, y, when {
+                    (event.detail as Number).toInt() == 2 -> TerminalSelectionMode.WORD
+                    output -> TerminalSelectionMode.OUTPUT
+                    else -> TerminalSelectionMode.LINE
+                })
             }
         }
         listen(root, "pointermove") { event ->

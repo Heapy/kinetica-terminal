@@ -86,6 +86,19 @@ try {
     await move(1, 0); await page.mouse.up({ clickCount: 3 });
     assert.equal(await copy(), "p  cmd", "Reverse drag preserves spaces between semantic regions");
 
+    await reset("\x1b]133;A\x07$ \x1b]133;B\x07one\x1b]133;C\x07\r\nfirst\r\nsecond\r\n" +
+      "\x1b]133;A\x07$ \x1b]133;B\x07two\x1b]133;C\x07\r\nthird");
+    const outputModifier = await page.evaluate(() => navigator.platform.startsWith("Mac") ? "Meta" : "Control");
+    await page.keyboard.down(outputModifier);
+    await click(1, 1, 3);
+    assert.equal(await copy(), "first\nsecond", "Modified triple-click selects the command's multiline output");
+    await move(1, 1); await page.mouse.down({ clickCount: 3 });
+    await move(1, 4);
+    assert.equal(await copy(), "first\nsecond\n$ two\nthird", "Dragging expands by output blocks");
+    await move(1, 3); await page.mouse.up({ clickCount: 3 });
+    assert.equal(await copy(), "first\nsecond", "Dragging onto a prompt returns to the original block");
+    await page.keyboard.up(outputModifier);
+
     const url = "https://e.test/a(b);q=1";
     await reset(`[${url}].`);
     await click(3, 0, 2);
@@ -148,7 +161,7 @@ try {
     await page.evaluate(() => kineticaTerminalDemo.dispose());
     await page.waitForTimeout(180); await page.mouse.up();
     assert.equal(await page.locator("#app > *").count(), 0);
-    report.renderers.push({ renderer, selection: "passed", semanticLines: "passed", doubleClickUrls: "passed", detectedPaths: "passed", wordBoundaries: "passed", autoscroll: "passed", cancellation: "passed", pixels: "passed" });
+    report.renderers.push({ renderer, selection: "passed", semanticLines: "passed", commandOutput: "passed", doubleClickUrls: "passed", detectedPaths: "passed", wordBoundaries: "passed", autoscroll: "passed", cancellation: "passed", pixels: "passed" });
     await page.close();
   }
   assert.deepEqual(report.errors, []);

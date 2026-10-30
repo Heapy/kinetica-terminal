@@ -10,6 +10,30 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    @Test fun commandTripleClickSelectsAndDragsWholeCommandOutput() = withView { session, view, _ ->
+        session.write("\u001b]133;A\u0007$ \u001b]133;B\u0007one\u001b]133;C\u0007\r\nfirst\r\nsecond\r\n" +
+            "\u001b]133;A\u0007$ \u001b]133;B\u0007two\u001b]133;C\u0007\r\nthird")
+        fun event(type: NSEventType, y: Int, flags: ULong = NSEventModifierFlagCommand) {
+            val point = view.bounds.useContents { NSMakePoint(size.width / session.columns * 1.5, size.height / session.rows * (y + 0.5)) }
+            val native = assertNotNull(NSEvent.mouseEventWithType(type, view.convertPoint(point, toView = null),
+                flags, 0.0, view.window!!.windowNumber, null, 0, 3, 1.0f))
+            when (type) {
+                NSEventTypeLeftMouseDown -> view.mouseDown(native)
+                NSEventTypeLeftMouseDragged -> view.mouseDragged(native)
+                else -> view.mouseUp(native)
+            }
+        }
+        event(NSEventTypeLeftMouseDown, 1)
+        assertEquals("first\nsecond", view.accessibilitySelectedText())
+        event(NSEventTypeLeftMouseDragged, 4)
+        assertEquals("first\nsecond\n$ two\nthird", view.accessibilitySelectedText())
+        event(NSEventTypeLeftMouseDragged, 3); event(NSEventTypeLeftMouseUp, 3)
+        assertEquals("first\nsecond", view.accessibilitySelectedText())
+        event(NSEventTypeLeftMouseDown, 1, NSEventModifierFlagControl)
+        event(NSEventTypeLeftMouseUp, 1, NSEventModifierFlagControl)
+        assertEquals("first", view.accessibilitySelectedText(), "Darwin uses Command, not Control, for output granularity")
+    }
+
     private class PressureEvent(private val pressureStage: Long) : NSEvent() {
         override fun stage(): Long = pressureStage
     }
