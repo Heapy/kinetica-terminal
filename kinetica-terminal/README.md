@@ -921,6 +921,12 @@ Embedders enable these native controls by wrapping their view in `AppKitTerminal
 `AppKitTerminalView` remains a bare terminal view. Both platform views expose `configureFont(family, size)`.
 The common engine exposes `search`, `hyperlinkAt`, `configureTheme`, `clearScreen`, `clearHistory`,
 and viewport selection/reveal methods for hosts with their own controls.
+`session.osc8LinksEnabled = false` disables OSC 8 activation through session/viewport
+`hyperlinkAt`, including existing history, alternate-screen rows and synchronized snapshots.
+Visible HTTP(S) text detection remains available. Raw `TerminalLine.hyperlink` metadata is
+retained, so re-enabling the setting restores explicit links; terminal resets preserve this
+host policy. Hosts implementing link previews, highlighting or link-specific copying should
+use `hyperlinkAt` to respect the setting.
 
 ## Run and verify
 

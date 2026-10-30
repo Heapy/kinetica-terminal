@@ -267,6 +267,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
     /** Accounted primary scrollback storage, including while the alternate screen is active. */
     public val historyStorageBytes: Long get() = history.storageBytes
+    /** Host policy for OSC 8 activation; stored metadata and detection of plain URLs remain available. */
+    public var osc8LinksEnabled: Boolean = true
+        set(value) {
+            if (field == value) return
+            field = value; damageAll(); flushDamage()
+        }
     /** Estimated retained row storage after compression; eviction uses [historyStorageBytes]. */
     public val historyResidentStorageBytes: Long get() = history.residentStorageBytes
     /** Compress idle history in attached views. Disabling leaves existing rows lazily readable. */

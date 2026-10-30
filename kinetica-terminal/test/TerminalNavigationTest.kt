@@ -3,6 +3,38 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalNavigationTest {
+    @Test fun osc8HostPolicyAppliesToExistingAndFrozenRowsWithoutRemovingMetadata() {
+        val session = TerminalSession(80, 3)
+        val viewport = TerminalViewport(session, {})
+        val target = "https://example.org/hidden"
+        val output = "\u001b]8;;$target\u001b\\界 label\r\nhttps://example.org/visible\u001b]8;;\u001b\\"
+        try {
+            session.write(output)
+            assertEquals(target, viewport.hyperlinkAt(1, 0))
+            session.write("\u001b[?2026h")
+            session.osc8LinksEnabled = false
+            assertNull(session.hyperlinkAt(0, 1)); assertNull(viewport.hyperlinkAt(1, 0))
+            assertEquals(target, session.screenLine(0).hyperlink(0)?.uri, "The setting is an activation policy")
+            assertEquals("https://example.org/visible", viewport.hyperlinkAt(3, 1), "Plain URL detection remains active")
+            session.osc8LinksEnabled = true
+            assertEquals(target, viewport.hyperlinkAt(1, 0), "Existing frozen metadata becomes usable again")
+            session.write("\u001b[?2026l\r\nnew\r\nmore")
+            assertTrue(session.historySize > 0)
+            assertEquals(target, session.hyperlinkAt(0, 1), "OSC 8 metadata survives in history")
+            session.osc8LinksEnabled = false
+            assertNull(session.hyperlinkAt(0, 1), "The policy covers scrollback")
+            session.write("\u001b[?1049h\u001b[H$output\u001b[!p")
+            assertFalse(session.osc8LinksEnabled)
+            assertNull(viewport.hyperlinkAt(1, 0))
+            session.osc8LinksEnabled = true
+            assertEquals(target, viewport.hyperlinkAt(1, 0), "Alternate-screen metadata is preserved")
+            session.osc8LinksEnabled = false
+            session.reset(); session.write(output)
+            assertFalse(session.osc8LinksEnabled, "RIS preserves host policy")
+            assertNull(viewport.hyperlinkAt(1, 0))
+        } finally { viewport.dispose() }
+    }
+
     @Test fun searchFindsUnicodeAcrossWrapsAndRevealsScrollback() {
         val session = TerminalSession(8, 3)
         session.write("one\r\nabc界e\u0301xyz\r\ntwo\r\nthree\r\nfour\r\nfive")

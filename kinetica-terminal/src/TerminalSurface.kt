@@ -367,7 +367,7 @@ public class TerminalViewport internal constructor(
     public fun hyperlinkAt(column: Int, row: Int): String? {
         if (row !in 0 until rows || column !in 0 until columns) return null
         return if (frozen == null) session.hyperlinkAt(firstLine + row, column)
-        else terminalHyperlinkAt(row, column, 0, rows - 1, ::visibleLine)
+        else terminalHyperlinkAt(row, column, 0, rows - 1, ::visibleLine, session.osc8LinksEnabled)
     }
 
     private fun rememberScrollAnchor() {

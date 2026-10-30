@@ -29,13 +29,14 @@ public fun TerminalSession.search(query: String, caseSensitive: Boolean = false,
 
 public fun TerminalSession.hyperlinkAt(line: Int, column: Int): String? {
     if (line !in 0 until lineCount || column !in 0 until columns) return null
-    return terminalHyperlinkAt(line, column, 0, lineCount - 1, this::line)
+    return terminalHyperlinkAt(line, column, 0, lineCount - 1, this::line, osc8LinksEnabled)
 }
 
-internal fun terminalHyperlinkAt(row: Int, column: Int, first: Int, last: Int, line: (Int) -> TerminalLine): String? {
+internal fun terminalHyperlinkAt(row: Int, column: Int, first: Int, last: Int, line: (Int) -> TerminalLine,
+    osc8Enabled: Boolean = true): String? {
     val cell = line(row)
     val x = if (cell.width(column) == 0) (column - 1).coerceAtLeast(0) else column
-    cell.hyperlink(x)?.let { return it.uri }
+    if (osc8Enabled) cell.hyperlink(x)?.let { return it.uri }
     val logical = terminalLogicalLine(row, first, last, line)
     val offset = logical.offset(row, x, line)
     for (match in terminalUrl.findAll(logical.text)) {
