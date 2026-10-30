@@ -82,6 +82,39 @@ oracle scenarios. All 1025 oracle fixture/manifest artifacts regenerate byte-for
 Logs are `/tmp/kinetica-sgr-boundaries-*`. These checks establish parser/state/reply parity
 for this matrix; the remaining rendering and production acceptance gates stay open.
 
+The rendering audit then found that SGR 2 halved RGB toward black rather than reducing
+foreground opacity. Ghostty 1.4's `Config.zig` defaults `faint-opacity` to 0.5;
+`renderer/generic.zig` quantizes this to 128/255 and supplies it to glyphs, underline,
+overline and strike. The renderer now carries this opacity separately from RGB through
+both shaped and unshaped glyphs, color-font artwork, block elements and decorations.
+GPU tints are premultiplied; Canvas and AppKit scope alpha around foreground drawing,
+including their image-composition paths. Backgrounds and cursor decorations remain opaque.
+Opacity does not enter the glyph atlas identity, including color layers using foreground RGB.
+The additive `TerminalPainter.withOpacity` hook keeps existing custom painters source-compatible;
+custom painters must implement it to composite faint drawing (the default draws opaquely).
+AppKit delegates underline drawing to the shared painter, avoiding a second native underline
+that would double-composite a translucent decoration.
+
+The new `verify-terminal-faint.mjs` failed on the previous browser artifact (maximum channel
+error 122/255). Its pixel oracle compares faint output to the normal foreground composited
+at 128/255 over a separately captured background, allowing two levels for raster rounding.
+It covers text, emoji, all five underline styles, strike and overline on a solid color and
+on a Kitty image behind text, including reset by SGR 22. Native pixel tests use the same
+independent composition check; shared tests cover selection, shaped/unshaped frames, frozen
+publication, color-glyph tint and opaque backgrounds.
+Validation passes all 1495 JVM tests, freshly built Release JS tests, 17 focused Native
+tests (including AppKit and Metal pixel captures at 1, 1.25 and 2), all six Canvas/WebGL
+faint and overline DPR checks, and the bundled/system-font glyph verifier. The faint pixel
+matrix covers 72 browser scenes and 48 native scenes. A separate Canvas control repaints
+without ever setting SGR 2 and reproduces the same maximum two-level text difference at
+fractional/high DPR; the browser reset assertion permits that verified baseline rounding.
+Logs are `/tmp/kinetica-faint-*`, including `kinetica-faint-canvas-redraw-control.log`.
+
+The remaining rendering audit must also address decoration/text intersections: the original
+draws underlines before glyphs and strike after them, whereas the shared painter currently
+places all decorations in the overlay batch. The opacity checks above use separate text and
+decoration samples and do not establish parity for overlapping descenders and colored lines.
+
 The release behavior review uses the pinned `stream.zig` / `stream_terminal.zig` dispatch,
 keyboard/mouse encoders and graphics implementation as the reference. It checks the terminal
 capabilities and relevant input/state changes against executable regression families rather

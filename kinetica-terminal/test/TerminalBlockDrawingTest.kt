@@ -52,7 +52,8 @@ class TerminalBlockDrawingTest {
                 .last { column * 8.0 >= it.x && column * 8.0 < it.x + it.width }.color
             assertEquals(0xc86432, colorAt(0))
             assertEquals(0x0a141e, colorAt(1)) // Inverse.
-            assertEquals(0x643219, colorAt(2)) // Faint.
+            assertEquals(0xc86432, colorAt(2)) // Faint preserves RGB and changes opacity.
+            assertEquals(128.0 / 255.0, frame.rows.single().decorations.last { it.x == 16.0 }.opacity)
             assertEquals(0x0a141e, colorAt(3)) // Concealed.
             session.write("\u001b[H\u001b[0;4m▀")
             viewport.beginSelection(0, 0); viewport.endSelection(1, 0)

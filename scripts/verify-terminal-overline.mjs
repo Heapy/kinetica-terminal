@@ -43,7 +43,7 @@ try {
       await write("\x1b[H\x1b[28;7m  ");
       assert.deepEqual(await pixels(), [blue, red], "Inverse swaps effective foreground");
       await write("\x1b[H\x1b[0;53;2;38;2;240;20;30m  ");
-      assert.deepEqual((await pixels())[0], [120, 10, 15, 255], "Faint applies to overline");
+      assert.deepEqual((await pixels())[0], [135, 25, 30, 255], "Faint composites overline over the default background");
       await write("\x1b[H\x1b[0;53;31m  \x1b]4;1;#123456\x07");
       assert.deepEqual((await pixels())[0], [18, 52, 86, 255], "Palette changes repaint existing overlines");
       assert.deepEqual(errors, []);

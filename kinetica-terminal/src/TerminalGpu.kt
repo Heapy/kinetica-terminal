@@ -82,8 +82,10 @@ internal fun glyphBitmap(width: Int, height: Int, rgba: ByteArray, premultiplied
 }
 
 internal data class TerminalGlyph(val key: GlyphKey, val x: Double, val y: Double, val color: Int,
-    val xOffset: Int = 0, val yOffset: Int = 0, val clipLeft: Double = x, val clipRight: Double = Double.NaN)
-internal data class TerminalRect(val x: Double, val y: Double, val width: Double, val height: Double, val color: Int, val defaultBackground: Boolean = false)
+    val xOffset: Int = 0, val yOffset: Int = 0, val clipLeft: Double = x, val clipRight: Double = Double.NaN,
+    val opacity: Double = 1.0)
+internal data class TerminalRect(val x: Double, val y: Double, val width: Double, val height: Double, val color: Int,
+    val defaultBackground: Boolean = false, val opacity: Double = 1.0)
 internal class TerminalDrawRow {
     val backgrounds = mutableListOf<TerminalRect>()
     val glyphs = mutableListOf<TerminalGlyph>()
@@ -106,6 +108,13 @@ internal class TerminalGpuFrame(
         private set
     private var current = TerminalDrawRow()
     private var columns = 0
+    private var opacity = 1.0
+
+    override fun withOpacity(opacity: Double, draw: () -> Unit) {
+        val previous = this.opacity
+        this.opacity *= opacity
+        try { draw() } finally { this.opacity = previous }
+    }
 
     fun update(viewport: TerminalViewport, width: Double, height: Double) {
         if (rows.size != viewport.rows || columns != viewport.columns || cellWidth != width || cellHeight != height) {
@@ -134,7 +143,8 @@ internal class TerminalGpuFrame(
                 current.glyphs += TerminalGlyph(GlyphKey("", available, run.style and (TerminalStyle.BOLD or TerminalStyle.ITALIC),
                     glyph.font, glyph.glyph, constraint, if (glyph.usesForeground) foreground(column) else null),
                     column * cellWidth, row * cellHeight, foreground(column),
-                    glyph.xOffset, glyph.yOffset, run.offset * cellWidth, right * cellWidth)
+                    glyph.xOffset, glyph.yOffset, run.offset * cellWidth, right * cellWidth,
+                    terminalForegroundOpacity(line.style(column)))
             }
         }
         return true
@@ -151,13 +161,13 @@ internal class TerminalGpuFrame(
     private fun appendRect(list: MutableList<TerminalRect>, x: Double, y: Double, width: Double, height: Double, color: Int, default: Boolean = false) {
         // Merge adjacent equal backgrounds after keeping glyph boundaries independent.
         val last = list.lastOrNull()
-        if (last != null && last.color == color && last.y == y && last.height == height && last.x + last.width == x && last.defaultBackground == default) {
+        if (last != null && last.color == color && last.y == y && last.height == height && last.x + last.width == x && last.defaultBackground == default && last.opacity == opacity) {
             list[list.lastIndex] = last.copy(width = last.width + width)
-        } else list += TerminalRect(x, y, width, height, color, default)
+        } else list += TerminalRect(x, y, width, height, color, default, opacity)
     }
     override fun glyph(value: String, x: Double, y: Double, columns: Int, color: Int, style: Int) {
         if (value.isNotBlank()) current.glyphs += TerminalGlyph(GlyphKey(value, columns,
-            style and (TerminalStyle.BOLD or TerminalStyle.ITALIC)), x, y, color)
+            style and (TerminalStyle.BOLD or TerminalStyle.ITALIC)), x, y, color, opacity = opacity)
     }
     override fun text(value: String, x: Double, y: Double, color: Int, style: Int) =
         glyph(value, x, y, 1, color, style)
@@ -172,18 +182,19 @@ internal class TerminalInstances {
     val floatCount: Int get() = count * 12
     fun clear() { count = 0 }
     fun add(x: Double, y: Double, width: Double, height: Double, color: Int,
-        u0: Float = 0f, v0: Float = 0f, u1: Float = 0f, v1: Float = 0f) {
+        u0: Float = 0f, v0: Float = 0f, u1: Float = 0f, v1: Float = 0f, opacity: Double = 1.0) {
         val offset = count * 12
         if (offset + 12 > data.size) data = data.copyOf(data.size * 2)
         data[offset] = x.toFloat(); data[offset + 1] = y.toFloat()
         data[offset + 2] = width.toFloat(); data[offset + 3] = height.toFloat()
         data[offset + 4] = u0; data[offset + 5] = v0; data[offset + 6] = u1; data[offset + 7] = v1
-        data[offset + 8] = (color shr 16 and 255) / 255f
-        data[offset + 9] = (color shr 8 and 255) / 255f
-        data[offset + 10] = (color and 255) / 255f; data[offset + 11] = 1f
+        val alpha = opacity.toFloat()
+        data[offset + 8] = (color shr 16 and 255) / 255f * alpha
+        data[offset + 9] = (color shr 8 and 255) / 255f * alpha
+        data[offset + 10] = (color and 255) / 255f * alpha; data[offset + 11] = alpha
         count++
     }
-    fun add(rect: TerminalRect) = add(rect.x, rect.y, rect.width, rect.height, rect.color)
+    fun add(rect: TerminalRect) = add(rect.x, rect.y, rect.width, rect.height, rect.color, opacity = rect.opacity)
 }
 
 internal class TerminalGpuBatches {
@@ -210,7 +221,7 @@ internal class TerminalGpuBatches {
                     pages[entry.page].add(x / pixelRatio, y / pixelRatio, (right - x) / pixelRatio, (bottom - y) / pixelRatio,
                         if (entry.colored) 0xffffff else glyph.color,
                         (entry.x + x - left).toFloat() / atlas.size, (entry.y + y - top).toFloat() / atlas.size,
-                        (entry.x + right - left).toFloat() / atlas.size, (entry.y + bottom - top).toFloat() / atlas.size)
+                        (entry.x + right - left).toFloat() / atlas.size, (entry.y + bottom - top).toFloat() / atlas.size, glyph.opacity)
                     continue
                 }
                 // The atlas already contains antialiased device pixels. Squeezing its
@@ -225,7 +236,7 @@ internal class TerminalGpuBatches {
                 pages[entry.page].add(x / pixelRatio, y / pixelRatio, width / pixelRatio, height / pixelRatio,
                     if (entry.colored) 0xffffff else glyph.color,
                     entry.x.toFloat() / atlas.size, entry.y.toFloat() / atlas.size,
-                    (entry.x + width).toFloat() / atlas.size, (entry.y + height).toFloat() / atlas.size)
+                    (entry.x + width).toFloat() / atlas.size, (entry.y + height).toFloat() / atlas.size, glyph.opacity)
             }
         }
     }
@@ -234,6 +245,6 @@ internal class TerminalGpuBatches {
         val x = round(rect.x * pixelRatio) / pixelRatio
         val y = round(rect.y * pixelRatio) / pixelRatio
         target.add(x, y, round((rect.x + rect.width) * pixelRatio) / pixelRatio - x,
-            round((rect.y + rect.height) * pixelRatio) / pixelRatio - y, rect.color)
+            round((rect.y + rect.height) * pixelRatio) / pixelRatio - y, rect.color, opacity = rect.opacity)
     }
 }

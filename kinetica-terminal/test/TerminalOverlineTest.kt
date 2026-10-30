@@ -52,7 +52,7 @@ class TerminalOverlineTest {
             frame.update(viewport, 8.0, 16.0)
             val top = frame.rows[0].decorations.filter { it.y == 0.0 }
             assertEquals(listOf(TerminalRect(8.0, 0.0, 8.0, 1.0, 0x14283c),
-                TerminalRect(16.0, 0.0, 8.0, 1.0, 0x323c46)), top)
+                TerminalRect(16.0, 0.0, 8.0, 1.0, 0x64788c, opacity = 128.0 / 255.0)), top)
             val line = session.screenLine(0)
             line.compress()
             assertTrue(line.compressed)

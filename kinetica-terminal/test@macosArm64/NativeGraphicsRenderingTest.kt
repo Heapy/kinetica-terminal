@@ -12,6 +12,40 @@ import kotlin.math.ceil
 import kotlin.test.*
 
 class NativeGraphicsRenderingTest {
+    @Test fun faintCompositesTextColorGlyphsAndDecorationsOverBackgroundsAndImages() {
+        NSApplication.sharedApplication()
+        val samples = listOf("" to "Aa😀") + (1..5).map { "4:$it;53;9;58;2;20;210;40;" to "  " }
+        for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    for (backgroundImage in listOf(false, true)) for ((attributes, text) in samples) {
+                        reset()
+                        if (backgroundImage) session.write(image(44, green, ",z=-1"))
+                        val background = capture()
+                        session.write("\u001b[H\u001b[${attributes}38;2;240;20;30m$text")
+                        val normal = capture()
+                        session.write("\u001b[H\u001b[2m$text")
+                        val faint = capture()
+                        var affected = 0
+                        for (i in normal.indices) {
+                            val base = background[i].toInt() and 255
+                            val full = normal[i].toInt() and 255
+                            if (full != base) affected++
+                            val expected = (base * 127 + full * 128 + 127) / 255
+                            val actual = faint[i].toInt() and 255
+                            assertTrue(kotlin.math.abs(actual - expected) <= 2,
+                                "Faint byte $i: expected $expected, got $actual; image=$backgroundImage, attributes=$attributes, text=$text")
+                        }
+                        assertTrue(affected > 16, "Must exercise visible text or decorations")
+                        session.write("\u001b[H\u001b[22m$text")
+                        assertContentEquals(normal, capture(), "SGR 22 restores full opacity")
+                    }
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
     @Test fun overlinePixelsUseForegroundAndRespectResetHiddenInverseAndPaletteChanges() {
         NSApplication.sharedApplication()
         for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
@@ -27,7 +61,7 @@ class NativeGraphicsRenderingTest {
                     session.write("\u001b[H\u001b[28;7m  "); top(blue)
                     assertEquals(red, pixel(capture(), width, 2, 4))
                     session.write("\u001b[H\u001b[0;53;2;38;2;240;20;30m  ")
-                    top(listOf(120, 10, 15, 255))
+                    top(listOf(135, 25, 30, 255))
                     session.write("\u001b[H\u001b[0;53;31m  \u001b]4;1;#123456\u0007")
                     top(listOf(18, 52, 86, 255))
                 }

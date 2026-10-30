@@ -32,6 +32,8 @@ public data class TerminalTheme(
 public interface TerminalPainter {
     public fun fill(x: Double, y: Double, width: Double, height: Double, color: Int)
     public fun text(value: String, x: Double, y: Double, color: Int, style: Int)
+    /** Scope foreground opacity (0..1), including color glyphs. Legacy painters draw opaquely. */
+    public fun withOpacity(opacity: Double, draw: () -> Unit) { draw() }
     /** Draw over text; GPU backends keep this in the final overlay batch. */
     public fun decoration(x: Double, y: Double, width: Double, height: Double, color: Int) {
         fill(x, y, width, height, color)
@@ -521,7 +523,7 @@ public class TerminalViewport internal constructor(
                 val flags = line.style(column)
                 val raw = if (flags and TerminalStyle.INVERSE != 0) line.background(column).let { if (it < 0) theme.background else it }
                     else line.foreground(column).let { if (it < 0) theme.foreground else it }
-                if (block && column == cursorX) theme.background else if (flags and TerminalStyle.FAINT != 0) dim(raw) else raw
+                if (block && column == cursorX) theme.background else raw
             } == true
             var x = 0
             while (x < columns) {
@@ -530,7 +532,6 @@ public class TerminalViewport internal constructor(
                 var foreground = line.foreground(x).let { if (it < 0) theme.foreground else it }
                 var background = line.background(x).let { if (it < 0) theme.background else it }
                 if (flags and TerminalStyle.INVERSE != 0) { val swap = foreground; foreground = background; background = swap }
-                if (flags and TerminalStyle.FAINT != 0) foreground = dim(foreground)
                 val selected = selected(selection, index, x)
                 if (selected) background = theme.selection
                 if (block && x == cursorX) { foreground = theme.background; background = theme.cursor }
@@ -551,42 +552,44 @@ public class TerminalViewport internal constructor(
                 if (painter is TerminalGlyphPainter) painter.background(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background,
                     line.rawBackground(start) == TerminalStyle.DEFAULT && flags and TerminalStyle.INVERSE == 0 && !selected && !(block && start == cursorX))
                 else painter.fill(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background)
-                if (flags and TerminalStyle.HIDDEN == 0 && line.codePoint(start) != TERMINAL_GRAPHICS_PLACEHOLDER) {
-                    if (blockElement) painter.blockElement(line.codePoint(start), start * cellWidth, y * cellHeight,
-                        (x - start) * cellWidth, cellHeight, foreground)
-                    else if (painter is TerminalGlyphPainter) { if (!shaped) painter.glyph(text.toString(), start * cellWidth, y * cellHeight, x - start, foreground, flags) }
-                    else painter.text(text.toString(), start * cellWidth, y * cellHeight, foreground, flags)
-                }
-                if (flags and TerminalStyle.HIDDEN == 0) {
-                    val underlineColor = line.underlineColor(start).let { if (it < 0) foreground else it }
-                    val left = start * cellWidth
-                    val width = (x - start) * cellWidth
-                    val baseline = (y + 1) * cellHeight - 2
-                    when {
-                        flags and TerminalStyle.DOUBLE_UNDERLINE != 0 -> {
-                            painter.decoration(left, baseline - 2, width, 1.0, underlineColor)
-                            painter.decoration(left, baseline, width, 1.0, underlineColor)
-                        }
-                        flags and TerminalStyle.UNDERCURL != 0 -> {
-                            var offset = 0.0
-                            while (offset < width) {
-                                painter.decoration(left + offset, baseline - if (offset.toInt() % 4 < 2) 1 else 0,
-                                    minOf(1.0, width - offset), 1.0, underlineColor)
-                                offset++
-                            }
-                        }
-                        flags and (TerminalStyle.DOTTED_UNDERLINE or TerminalStyle.DASHED_UNDERLINE) != 0 -> {
-                            val dash = if (flags and TerminalStyle.DOTTED_UNDERLINE != 0) 1.0 else 4.0
-                            var offset = 0.0
-                            while (offset < width) {
-                                painter.decoration(left + offset, baseline, minOf(dash, width - offset), 1.0, underlineColor)
-                                offset += dash + 2.0
-                            }
-                        }
-                        flags and TerminalStyle.UNDERLINE != 0 -> painter.decoration(left, baseline, width, 1.0, underlineColor)
+                painter.withOpacity(terminalForegroundOpacity(flags)) {
+                    if (flags and TerminalStyle.HIDDEN == 0 && line.codePoint(start) != TERMINAL_GRAPHICS_PLACEHOLDER) {
+                        if (blockElement) painter.blockElement(line.codePoint(start), start * cellWidth, y * cellHeight,
+                            (x - start) * cellWidth, cellHeight, foreground)
+                        else if (painter is TerminalGlyphPainter) { if (!shaped) painter.glyph(text.toString(), start * cellWidth, y * cellHeight, x - start, foreground, flags) }
+                        else painter.text(text.toString(), start * cellWidth, y * cellHeight, foreground, flags)
                     }
-                    if (flags and TerminalStyle.STRIKE != 0) painter.decoration(left, (y + 0.5) * cellHeight, width, 1.0, foreground)
-                    if (flags and TerminalStyle.OVERLINE != 0) painter.decoration(left, y * cellHeight, width, 1.0, foreground)
+                    if (flags and TerminalStyle.HIDDEN == 0) {
+                        val underlineColor = line.underlineColor(start).let { if (it < 0) foreground else it }
+                        val left = start * cellWidth
+                        val width = (x - start) * cellWidth
+                        val baseline = (y + 1) * cellHeight - 2
+                        when {
+                            flags and TerminalStyle.DOUBLE_UNDERLINE != 0 -> {
+                                painter.decoration(left, baseline - 2, width, 1.0, underlineColor)
+                                painter.decoration(left, baseline, width, 1.0, underlineColor)
+                            }
+                            flags and TerminalStyle.UNDERCURL != 0 -> {
+                                var offset = 0.0
+                                while (offset < width) {
+                                    painter.decoration(left + offset, baseline - if (offset.toInt() % 4 < 2) 1 else 0,
+                                        minOf(1.0, width - offset), 1.0, underlineColor)
+                                    offset++
+                                }
+                            }
+                            flags and (TerminalStyle.DOTTED_UNDERLINE or TerminalStyle.DASHED_UNDERLINE) != 0 -> {
+                                val dash = if (flags and TerminalStyle.DOTTED_UNDERLINE != 0) 1.0 else 4.0
+                                var offset = 0.0
+                                while (offset < width) {
+                                    painter.decoration(left + offset, baseline, minOf(dash, width - offset), 1.0, underlineColor)
+                                    offset += dash + 2.0
+                                }
+                            }
+                            flags and TerminalStyle.UNDERLINE != 0 -> painter.decoration(left, baseline, width, 1.0, underlineColor)
+                        }
+                        if (flags and TerminalStyle.STRIKE != 0) painter.decoration(left, (y + 0.5) * cellHeight, width, 1.0, foreground)
+                        if (flags and TerminalStyle.OVERLINE != 0) painter.decoration(left, y * cellHeight, width, 1.0, foreground)
+                    }
                 }
             }
             if (cursor) {
@@ -621,12 +624,14 @@ public class TerminalViewport internal constructor(
         val p = TerminalCellPosition(row, column)
         return p >= selection.start && p < selection.end
     }
-    private fun dim(rgb: Int): Int = (((rgb shr 16 and 255) / 2) shl 16) or (((rgb shr 8 and 255) / 2) shl 8) or ((rgb and 255) / 2)
     private data class ScrollAnchor(val row: TerminalLine, val recycle: Long)
     private data class FrozenFrame(val lines: Array<TerminalLine>, val firstLine: Int, val theme: TerminalTheme,
         val cursorColumn: Int, val cursorRow: Int, val cursorVisible: Boolean, val cursorStyle: TerminalCursorStyle,
         val selection: TerminalSelection, var inheritedRange: TerminalSelectionRange?, var inheritedText: String?,
         val graphics: List<TerminalGraphicsFrameEntry>)
 }
+
+// Ghostty quantizes its default faint-opacity (0.5) to ceil(0.5 * 255).
+internal fun terminalForegroundOpacity(style: Int): Double = if (style and TerminalStyle.FAINT != 0) 128.0 / 255.0 else 1.0
 
 internal data class TerminalWordLookup(val text: String, val start: TerminalCellPosition?)

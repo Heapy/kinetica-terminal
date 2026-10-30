@@ -4,6 +4,8 @@ package io.heapy.kinetica.terminal
 
 import kotlinx.cinterop.*
 import platform.AppKit.*
+import platform.AppKit.NSCompositingOperation.NSCompositingOperationSourceOver
+import platform.CoreGraphics.*
 import platform.Foundation.*
 import platform.QuartzCore.*
 import platform.darwin.NSObject
@@ -424,15 +426,24 @@ public class AppKitTerminalView(
         val last = dirtyRect.useContents { floor((origin.y + size.height) / cellHeight).toInt().coerceAtMost(viewport.rows - 1) }
         val scale = window?.backingScaleFactor ?: 1.0
         val painter = object : TerminalPainter {
+            private var alpha = 1.0
+            override fun withOpacity(opacity: Double, draw: () -> Unit) {
+                val context = NSGraphicsContext.currentContext?.CGContext ?: return draw()
+                val previous = alpha
+                alpha *= opacity
+                CGContextSaveGState(context)
+                try { CGContextSetAlpha(context, alpha); draw() } finally { alpha = previous; CGContextRestoreGState(context) }
+            }
             override fun fill(x: Double, y: Double, width: Double, height: Double, color: Int) {
                 val left = round(x * scale) / scale
                 val top = round(y * scale) / scale
                 color(color).setFill()
-                NSRectFill(NSMakeRect(left, top, round((x + width) * scale) / scale - left,
-                    round((y + height) * scale) / scale - top))
+                NSRectFillUsingOperation(NSMakeRect(left, top, round((x + width) * scale) / scale - left,
+                    round((y + height) * scale) / scale - top), NSCompositingOperationSourceOver)
             }
             override fun text(value: String, x: Double, y: Double, color: Int, style: Int) {
-                NSAttributedString.create(string = value, attributes = textAttributes(color, style)).drawAtPoint(NSMakePoint(x, y))
+                // The shared painter draws decorations; native underlining would composite them twice.
+                NSAttributedString.create(string = value, attributes = textAttributes(color, style and TerminalStyle.UNDERLINES.inv())).drawAtPoint(NSMakePoint(x, y))
             }
         }
         val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, scale, viewport.columns, viewport.rows) }
@@ -448,10 +459,12 @@ public class AppKitTerminalView(
             for (row in softwareImageFrame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground)
                 painter.fill(rect.x, rect.y, rect.width, rect.height, rect.color)
             softwareImages.draw(images, TerminalGraphicsLayer.BELOW_TEXT)
-            for (row in softwareImageFrame.rows) for (glyph in row.glyphs)
+            for (row in softwareImageFrame.rows) for (glyph in row.glyphs) painter.withOpacity(glyph.opacity) {
                 painter.text(glyph.key.text, glyph.x, glyph.y, glyph.color, glyph.key.style)
-            for (row in softwareImageFrame.rows) for (rect in row.decorations)
+            }
+            for (row in softwareImageFrame.rows) for (rect in row.decorations) painter.withOpacity(rect.opacity) {
                 painter.fill(rect.x, rect.y, rect.width, rect.height, rect.color)
+            }
             softwareImages.draw(images, TerminalGraphicsLayer.ABOVE_TEXT)
             softwareImages.endFrame()
         }

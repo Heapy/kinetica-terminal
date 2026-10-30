@@ -50,6 +50,11 @@ internal fun createBrowserTerminalDrawing(mode: TerminalRendering, invalidate: (
 internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = TerminalRenderProbe(null)) : BrowserTerminalDrawing() {
     override val name = "canvas2d"
     private val context: dynamic = canvas.getContext("2d", js("({alpha:false})"))
+    private fun withOpacity(opacity: Double, draw: () -> Unit) {
+        val previous = context.globalAlpha as Double
+        context.globalAlpha = previous * opacity
+        try { draw() } finally { context.globalAlpha = previous }
+    }
     private var width = 0.0; private var height = 0.0; private var ratio = 0.0
     private var size = 14.0; private var cellWidth = 0.0; private var cellHeight = 0.0
     private var family: String? = null
@@ -106,6 +111,7 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         }
         context.textBaseline = "top"
         viewport.paint(object : TerminalPainter {
+            override fun withOpacity(opacity: Double, draw: () -> Unit) = this@CanvasTerminalDrawing.withOpacity(opacity, draw)
             override fun fill(x: Double, y: Double, width: Double, height: Double, color: Int) {
                 val left = round(x * ratio) / ratio
                 val top = round(y * ratio) / ratio
@@ -148,7 +154,7 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
                 context.drawImage(bitmap, q.sourceX, q.sourceY, q.sourceWidth, q.sourceHeight, q.x, q.y, q.width, q.height)
             }
         }
-        fun fill(rect: TerminalRect) {
+        fun fill(rect: TerminalRect) = withOpacity(rect.opacity) {
             val left = round(rect.x * ratio) / ratio; val top = round(rect.y * ratio) / ratio
             context.fillStyle = terminalCssColor(rect.color)
             context.fillRect(left, top, round((rect.x + rect.width) * ratio) / ratio - left,
@@ -158,9 +164,11 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         for (row in imageFrame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground) fill(rect)
         layer(TerminalGraphicsLayer.BELOW_TEXT)
         for (row in imageFrame.rows) for (glyph in row.glyphs) {
-            context.font = fonts?.cssFont(size, glyph.key.style, family) ?: browserFont(size, glyph.key.style, family)
-            context.fillStyle = terminalCssColor(glyph.color)
-            context.fillText(glyph.key.text, glyph.x, glyph.y + 1)
+            withOpacity(glyph.opacity) {
+                context.font = fonts?.cssFont(size, glyph.key.style, family) ?: browserFont(size, glyph.key.style, family)
+                context.fillStyle = terminalCssColor(glyph.color)
+                context.fillText(glyph.key.text, glyph.x, glyph.y + 1)
+            }
         }
         for (row in imageFrame.rows) for (rect in row.decorations) fill(rect)
         layer(TerminalGraphicsLayer.ABOVE_TEXT)
