@@ -92,9 +92,25 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Validation passes 1398 JVM tests, fresh Release JS tests, 60 focused Native tests and
       Canvas/WebGL selection checks. Native synthetic pressure events reach the real callback
       and exercise real autoscroll timers; physical trackpad acceptance is not claimed.
-- [ ] Complete native Quick Look integration after pressure-based selection. Original
-      `SurfaceView_AppKit.pressureChange` optionally invokes Quick Look when the system force-click
-      preference is enabled; selection and preview are separate responsibilities.
+- [x] Native Quick Look reads the current pointer word without changing selection and forwards
+      attributed text with the current font to AppKit's definition presenter. Force Click
+      invokes it once per gesture when the system preference is enabled, independently of
+      application mouse reporting. Word lookup uses visible/frozen cells and current delimiters;
+      partially visible words retain their whole text with a clipped viewport anchor.
+      Definition rectangles preserve Ghostty's baseline offsets in the view's flipped coordinates;
+      IME requests matching the marked range retain their cursor anchor.
+      Validation passes 1400 JVM tests, fresh Release JS tests, 69 focused Native lookup/selection/input tests
+      and Canvas/WebGL selection checks. The original word/formatting corpus and expanded source
+      provenance regenerate byte-for-byte. Tests intercept system presentation; physical trackpad
+      and visible system-definition popup acceptance remain unclaimed.
+
+The expanded native run also exercises the pre-existing live GPU/IME window gate. Its first-frame
+timeout reproduces on an isolated build of the exact pre-lookup HEAD `78ee5a0`. The test now uses
+the existing `runWindowSteps` AppKit loop and explicitly waits for WindowServer visibility before
+asserting frame submission. In this environment it reports `visible=true, occlusion=8192` without
+`NSWindowOcclusionStateVisible`; an independent Swift window, including floating/all-Spaces mode,
+reports the same condition. This live window gate remains unverified here, rather than being
+replaced with an offscreen or visibility-bypassing assertion.
 
 - [x] Double-click a recognized visible HTTP(S) link as one complete selection, following
       `Surface`'s override of ordinary word selection. Soft wraps, wide/combined cells and

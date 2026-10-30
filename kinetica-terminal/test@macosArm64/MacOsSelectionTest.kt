@@ -227,6 +227,7 @@ class MacOsSelectionTest {
         val height = ceil(font.ascender - font.descender + font.leading + 2.0)
         val session = TerminalSession(20, 5)
         val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE)
+        view.forceClickLookupEnabled = { false }
         val window = NSWindow(NSMakeRect(0.0, 0.0, ceil(width * 20), height * 5), NSWindowStyleMaskTitled, NSBackingStoreBuffered, false)
         window.setReleasedWhenClosed(false); window.contentView = view
         view.setFrameSize(NSMakeSize(ceil(width * 20), height * 5))

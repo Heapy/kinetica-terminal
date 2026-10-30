@@ -76,6 +76,7 @@
     "src/terminal/kitty/graphics_command.zig"
   ],
   "referenceSemantics": [
+    "src/apprt/embedded.zig",
     "src/terminal/stream.zig",
     "src/terminal/sgr.zig",
     "src/termio/Termio.zig",

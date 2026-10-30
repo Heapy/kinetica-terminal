@@ -3,6 +3,44 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalSelectionTest {
+    @Test fun wordLookupReadsVisibleWordsWithoutChangingSelectionOrGesture() {
+        val session = TerminalSession(30, 4)
+        val viewport = TerminalViewport(session, {})
+        try {
+            session.write("alpha-beta gamma")
+            viewport.beginSelection(0, 0); viewport.extendSelection(5, 0)
+            assertEquals(TerminalWordLookup("gamma", TerminalCellPosition(0, 11)), viewport.lookupWord(12, 0))
+            assertEquals("alpha", viewport.selectedText())
+            viewport.extendSelection(10, 0); assertEquals("alpha-beta", viewport.selectedText())
+            session.selectionWordChars = "- "
+            assertEquals(TerminalWordLookup("beta", TerminalCellPosition(0, 6)), viewport.lookupWord(7, 0))
+            assertNull(viewport.lookupWord(25, 0)); assertNull(viewport.lookupWord(-1, 0))
+            session.write("\u001b[?2026h\u001b[Hchanged")
+            assertEquals("beta", viewport.lookupWord(7, 0)?.text)
+            session.write("\u001b[?2026l"); session.reset(); session.write("https://example.org")
+            assertEquals("https://example.org", viewport.lookupWord(2, 0)?.text, "Custom delimiters apply to lookup")
+            session.selectionWordChars = " :/"
+            assertEquals("https", viewport.lookupWord(2, 0)?.text, "Lookup has no detected-URL override")
+        } finally { viewport.dispose() }
+    }
+
+    @Test fun lookupAnchorsClipToTheViewportWhileRetainingWholeWords() {
+        val session = TerminalSession(5, 3, 20)
+        val viewport = TerminalViewport(session, {})
+        try {
+            session.write("abcdefghijklmnopq")
+            assertEquals(TerminalWordLookup("abcdefghijklmnopq", TerminalCellPosition(0, 0)), viewport.lookupWord(1, 0))
+            viewport.selectAll()
+            assertEquals(TerminalCellPosition(0, 0), viewport.selectionForLookup()?.start)
+            session.reset(); session.write((0..10).joinToString("\r\n") { "r$it" })
+            viewport.beginSelection(0, 2, TerminalSelectionMode.WORD); viewport.endSelection(0, 2)
+            assertEquals("r10", viewport.selectionForLookup()?.text)
+            viewport.scrollTo(session.historySize)
+            assertNull(viewport.selectionForLookup()?.start, "Offscreen selection has no viewport anchor")
+            assertEquals("r10", viewport.selectionForLookup()?.text)
+        } finally { viewport.dispose() }
+    }
+
     @Test fun deepPressSelectsOriginalWordConsumesDragAndStopsAutoscroll() {
         val session = TerminalSession(30, 4).also { it.scrollbackCompression = false }
         val clock = Clock()

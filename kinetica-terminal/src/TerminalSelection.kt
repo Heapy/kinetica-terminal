@@ -99,7 +99,7 @@ internal class TerminalSelection(
     fun text(): String {
         val range = range() ?: return ""
         if (range.start == range.end) return ""
-        if (mode != TerminalSelectionMode.CHARACTER) return selectionText(range)
+        if (mode != TerminalSelectionMode.CHARACTER) return terminalSelectionText(range, line)
         return buildString {
             for (y in range.start.line..range.end.line) {
                 val row = line(y)
@@ -110,28 +110,6 @@ internal class TerminalSelection(
                 }
                 append(if (to == row.columns && !row.wrapped) value.trimEnd(' ') else value)
                 if (y < range.end.line && !row.wrapped) append('\n')
-            }
-        }
-    }
-
-    // ScreenFormatter's plain, unwrapped, untrimmed output: written spaces survive;
-    // trailing empty cells/rows do not. No newline is synthesized after the selection.
-    private fun selectionText(range: TerminalSelectionRange): String = buildString {
-        var blankRows = 0
-        var blankCells = 0
-        for (y in range.start.line..range.end.line) {
-            val row = line(y)
-            val from = if (y == range.start.line) range.start.column else 0
-            val to = if (y == range.end.line) range.end.column else row.columns
-            if (y == range.start.line && row.isSpacerHead(from)) continue
-            if ((from until to).none { row.hasText(it) && !row.isSpacerHead(it) }) { blankRows++; continue }
-            repeat(blankRows) { append('\n') }; blankRows = if (row.wrapped) 0 else 1
-            if (y == range.start.line || !line(y - 1).wrapped) blankCells = 0
-            for (x in from until to) {
-                if (row.width(x) == 0 || row.isSpacerHead(x)) continue
-                if (!row.hasText(x)) { blankCells++; continue }
-                repeat(blankCells) { append(' ') }; blankCells = 0
-                row.appendTextTo(this, x)
             }
         }
     }
@@ -204,5 +182,27 @@ internal class TerminalSelection(
     private fun clamp(position: TerminalCellPosition): TerminalCellPosition {
         val y = position.line.coerceIn(firstLine(), lastLine())
         return TerminalCellPosition(y, position.column.coerceIn(0, line(y).columns - 1))
+    }
+}
+
+// ScreenFormatter's plain, unwrapped, untrimmed output: written spaces survive;
+// trailing empty cells/rows do not. No newline is synthesized after the selection.
+internal fun terminalSelectionText(range: TerminalSelectionRange, line: (Int) -> TerminalLine): String = buildString {
+    var blankRows = 0
+    var blankCells = 0
+    for (y in range.start.line..range.end.line) {
+        val row = line(y)
+        val from = if (y == range.start.line) range.start.column else 0
+        val to = if (y == range.end.line) range.end.column else row.columns
+        if (y == range.start.line && row.isSpacerHead(from)) continue
+        if ((from until to).none { row.hasText(it) && !row.isSpacerHead(it) }) { blankRows++; continue }
+        repeat(blankRows) { append('\n') }; blankRows = if (row.wrapped) 0 else 1
+        if (y == range.start.line || !line(y - 1).wrapped) blankCells = 0
+        for (x in from until to) {
+            if (row.width(x) == 0 || row.isSpacerHead(x)) continue
+            if (!row.hasText(x)) { blankCells++; continue }
+            repeat(blankCells) { append(' ') }; blankCells = 0
+            row.appendTextTo(this, x)
+        }
     }
 }

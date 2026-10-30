@@ -328,6 +328,28 @@ public class TerminalViewport internal constructor(
     }
     public fun selectedText(): String = frozen?.inheritedText ?: activeSelection.text()
 
+    /** A lookup reads visible cells without changing the user's selection or gesture. */
+    internal fun lookupWord(column: Int, row: Int): TerminalWordLookup? {
+        if (disposed || column !in 0 until columns || row !in 0 until rows) return null
+        val frame = frozen
+        val first = if (frame == null) 0 else firstLine
+        val last = if (frame == null) session.lineCount - 1 else firstLine + rows - 1
+        val line: (Int) -> TerminalLine = if (frame == null) session::line else { y -> frame.lines[y - firstLine] }
+        val range = terminalWordRange(TerminalCellPosition(firstLine + row, column), first, last, line,
+            session.selectionWordBoundaries) ?: return null
+        return TerminalWordLookup(terminalSelectionText(range, line), visibleSelectionStart(range))
+    }
+
+    internal fun selectionForLookup(): TerminalWordLookup? = selection()?.takeIf { it.start != it.end }?.let {
+        TerminalWordLookup(selectedText(), visibleSelectionStart(it))
+    }
+
+    private fun visibleSelectionStart(range: TerminalSelectionRange): TerminalCellPosition? {
+        if (range.end <= TerminalCellPosition(firstLine, 0) || range.start.line >= firstLine + rows) return null
+        return if (range.start.line < firstLine) TerminalCellPosition(0, 0)
+        else range.start.copy(line = range.start.line - firstLine)
+    }
+
     /** Select retained output without synthesizing a mouse drag or starting autoscroll. */
     public fun selectAll() {
         if (disposed) return
@@ -526,3 +548,5 @@ public class TerminalViewport internal constructor(
         val selection: TerminalSelection, var inheritedRange: TerminalSelectionRange?, var inheritedText: String?,
         val graphics: List<TerminalGraphicsFrameEntry>)
 }
+
+internal data class TerminalWordLookup(val text: String, val start: TerminalCellPosition?)

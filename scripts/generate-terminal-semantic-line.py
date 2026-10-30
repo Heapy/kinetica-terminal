@@ -104,7 +104,7 @@ pub fn build(b: *std.Build) void {
         wordGestureSteps=sum(sum(len(g) for g in s["wordGestures"]) for c in corpus for s in c["snapshots"]),
         gestureSteps=sum(sum(len(g) for g in s["gestures"]) for c in corpus for s in c["snapshots"]),
         helperSha256=digest(helper), generatorSha256=digest(Path(__file__)), fixtureSha256=digest(fixture),
-        sources={p:digest(upstream/p) for p in ["src/terminal/Terminal.zig", "src/terminal/c/terminal.zig", "src/terminal/stream_terminal.zig", "src/terminal/Screen.zig", "src/terminal/SelectionGesture.zig", "src/terminal/selection_codepoints.zig", "src/terminal/formatter.zig", "src/terminal/PageList.zig", "src/Surface.zig"]})
+        sources={p:digest(upstream/p) for p in ["src/terminal/Terminal.zig", "src/terminal/c/terminal.zig", "src/terminal/stream_terminal.zig", "src/terminal/Screen.zig", "src/terminal/SelectionGesture.zig", "src/terminal/selection_codepoints.zig", "src/terminal/formatter.zig", "src/terminal/PageList.zig", "src/Surface.zig", "src/apprt/embedded.zig", "macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift", "macos/Sources/Helpers/Extensions/UserDefaults+Extension.swift"]})
     (ROOT/"kinetica-terminal/test-upstream/ghostty/semantic-line-manifest.json").write_text(json.dumps(manifest, indent=2)+"\n")
     print(f'Generated {len(corpus)} cases / {manifest["snapshots"]} checkpoints / {manifest["ranges"]} cell ranges')
 

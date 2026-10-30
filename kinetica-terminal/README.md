@@ -456,7 +456,10 @@ Shift+PageUp/PageDown, and accessibility text are available.
   press, stops autoscroll and consumes further dragging until release. It uses word delimiters,
   including inside URLs, and does not send a shell prompt-click report. Application-captured
   mouse gestures remain application gestures. Other hosts may call `viewport.deepPressSelection()`.
-  This provides pressure-based selection; native Quick Look integration remains pending.
+  Native Quick Look reads the word under the pointer without changing selection and displays
+  it using the terminal font. Automatic lookup after Force Click respects the macOS
+  `com.apple.trackpad.forceClick` preference and runs once per held gesture; a direct native
+  lookup request also works independently of selection and application mouse reporting.
 - `session.selectionWordChars` replaces the word delimiters with the Unicode code points in
   a host-provided string; for example, `" \t"` keeps punctuation inside words. NUL is always a
   delimiter. Supplementary code points are supported; multi-code-point graphemes are treated

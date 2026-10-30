@@ -80,6 +80,14 @@ public class AppKitTerminalView(
     private var selecting = false
     private var leftClickCount = 0L
     private var forceClickCountOffset = 0L
+    private var forceClickLookupFired = false
+    private val lookupLayout = NSLayoutManager()
+    internal var forceClickLookupEnabled: () -> Boolean = {
+        NSUserDefaults.standardUserDefaults.boolForKey("com.apple.trackpad.forceClick")
+    }
+    internal var showLookup: (NSAttributedString, CValue<NSPoint>) -> Unit = { text, point ->
+        showDefinitionForAttributedString(text, atPoint = point)
+    }
     private val mouseReporter = TerminalMouseReporter(session)
     private val verticalScroll = TerminalScrollAccumulator()
     private val horizontalScroll = TerminalScrollAccumulator()
@@ -566,8 +574,29 @@ public class AppKitTerminalView(
     override fun attributedSubstringForProposedRange(range: CValue<NSRange>, actualRange: CPointer<NSRange>?): NSAttributedString? = null
     override fun characterIndexForPoint(point: CValue<NSPoint>): ULong = 0u
     override fun firstRectForCharacterRange(range: CValue<NSRange>, actualRange: CPointer<NSRange>?): CValue<NSRect> {
-        val rect = convertRect(NSMakeRect(viewport.cursorColumn * cellWidth, viewport.cursorRow * cellHeight, cellWidth, cellHeight), toView = null)
+        val selectionRange = selectedRange().useContents { location to length }
+        val isLookup = range.useContents { length > 0uL && (location != selectionRange.first || length != selectionRange.second) }
+        val selection = if (isLookup) viewport.selectionForLookup() else null
+        val origin = selection?.let { lookupPoint(it.start) }
+            ?: NSMakePoint(viewport.cursorColumn * cellWidth, viewport.cursorRow * cellHeight)
+        val rect = origin.useContents {
+            // Ghostty's definition rectangle extends upward from the baseline in screen
+            // coordinates. This view is flipped, so its local rectangle starts one cell above.
+            convertRect(NSMakeRect(x - if (selection != null) 2.0 else 0.0,
+                y + if (selection != null) 2.0 - cellHeight else 0.0, cellWidth, cellHeight), toView = null)
+        }
         return window?.convertRectToScreen(rect) ?: rect
+    }
+
+    private fun lookupPoint(start: TerminalCellPosition?): CValue<NSPoint> = if (start == null) NSMakePoint(-1.0, -1.0)
+        else NSMakePoint(start.column * cellWidth, start.line * cellHeight + lookupLayout.defaultBaselineOffsetForFont(font))
+
+    override fun quickLookWithEvent(event: NSEvent) {
+        if (disposed) return
+        val (column, row) = cell(event)
+        val word = viewport.lookupWord(column, row)
+        if (word == null || word.text.isEmpty()) { super.quickLookWithEvent(event); return }
+        showLookup(NSAttributedString.create(string = word.text, attributes = mapOf(NSFontAttributeName to font)), lookupPoint(word.start))
     }
     override fun doCommandBySelector(selector: CPointer<out CPointed>?) {
         val key = when (NSStringFromSelector(selector)) {
@@ -611,12 +640,18 @@ public class AppKitTerminalView(
         if (selecting) viewport.extendSelection(x, y) else mouse(event, 0, motion = true)
     }
     override fun pressureChangeWithEvent(event: NSEvent) {
-        if (!disposed && selecting && event.stage == 2L && viewport.deepPressSelection()) {
+        if (disposed) return
+        if (selecting && event.stage == 2L && viewport.deepPressSelection()) {
             forceClickCountOffset = leftClickCount
+        }
+        if (event.stage == 2L && !forceClickLookupFired) {
+            forceClickLookupFired = true
+            if (forceClickLookupEnabled()) quickLookWithEvent(event)
         }
     }
     override fun mouseUp(event: NSEvent) {
         if (disposed) return
+        forceClickLookupFired = false
         val (x, y) = cell(event)
         if (selecting) viewport.endPointerSelection(x, y) else mouse(event, 0, release = true)
         selecting = false

@@ -39,6 +39,12 @@ the Kotlin corpus runs them with whole-stream and bytewise input. Host tests sep
 existing drag/autoscroll cancellation, blank anchors, frozen text and custom word boundaries.
 AppKit tests deliver synthetic `NSEvent` subclasses to the actual pressure callback and use
 real mouse callbacks/timers; they do not claim physical trackpad or Quick Look acceptance.
+Quick Look word queries reuse the compared `selectWord` ranges and plain-text formatter;
+native tests intercept `showDefinitionForAttributedString` at the presentation boundary.
+They verify current-pointer lookup independent of the active selection, frozen frames,
+font/baseline placement, the system preference gate, one preview per pressure gesture and
+the distinction between definition and IME anchor rectangles. The manifest also records the
+pinned embedded Quick Look adapter, native view and defaults extension source hashes.
 
 `semantic-line-manifest.json` pins original `Screen.selectLine` with the same options used by
 `Surface.linkAtPin`: no whitespace trimming and semantic boundaries enabled. Regenerate with:
