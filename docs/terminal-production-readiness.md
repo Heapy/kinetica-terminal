@@ -59,6 +59,16 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+The browser accessibility stability check reproduced a detached DOM reading range after
+cursor blinking: repeated `textContent` assignment replaced the unchanged output node.
+The surface now retains one text node and edits only the changed UTF-16 span, keeping
+unaffected ranges and skipping identical updates. A Chromium browser check verifies actual
+AX text/log exposure, input focus, range preservation before/after edits, synchronized-output
+holds and disposal in both Canvas and WebGL. Fresh Release JS tests and the full existing
+browser integration suite pass. Evidence is `terminal-browser-accessibility.json`; the
+reproducible check is `scripts/verify-terminal-accessibility.mjs`. Announcements, browser
+navigation and real screen-reader acceptance remain open.
+
 The next malformed-input probe exposed DCS payload decoding before DECRQSS byte-limit
 validation. DCS now consumes original bytes, preserving C1 bytes as payload and counting
 XTGETTCAP storage without UTF-8 expansion. Six new original scenarios / 191 checkpoints

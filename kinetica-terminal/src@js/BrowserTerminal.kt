@@ -38,6 +38,7 @@ public class BrowserTerminalView(
     private val canvas: dynamic get() = drawing.canvas
     private val input: dynamic = document.createElement("textarea")
     private val accessible: dynamic = document.createElement("pre")
+    private val accessibleText: dynamic = document.createTextNode("")
     private val composition: dynamic = document.createElement("div")
     private val linkPreview: dynamic = document.createElement("div")
     private val progressElement: dynamic = document.createElement("progress")
@@ -135,6 +136,7 @@ public class BrowserTerminalView(
         accessible.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:pre;"
         accessible.setAttribute("role", "log"); accessible.setAttribute("aria-label", "Terminal output")
         accessible.setAttribute("aria-live", "off")
+        accessible.appendChild(accessibleText)
         composition.style.cssText = "position:absolute;display:none;background:#1e1e1e;color:#d4d4d4;text-decoration:underline;white-space:pre;pointer-events:none;"
         composition.setAttribute("aria-hidden", "true")
         root.appendChild(canvas); root.appendChild(input); root.appendChild(accessible); root.appendChild(composition)
@@ -423,10 +425,26 @@ public class BrowserTerminalView(
                 if (!composing) { input.style.left = "${viewport.cursorColumn * cellWidth}px"; input.style.top = "${viewport.cursorRow * cellHeight}px" }
                 if (accessibilityTimer == null) accessibilityTimer = window.setTimeout({
                     accessibilityTimer = null
-                    if (!disposed) accessible.textContent = viewport.visibleText()
+                    if (!disposed) updateAccessibleText()
                 }, 200)
             }
         } as Int
+    }
+
+    private fun updateAccessibleText() {
+        val next = viewport.visibleText()
+        val previous = accessibleText.data as String
+        if (next == previous) return
+        // Keep the DOM text node and unaffected reading ranges stable across cursor
+        // blinks and output updates. Replacing textContent detaches every existing range.
+        var start = 0
+        while (start < previous.length && start < next.length && previous[start] == next[start]) start++
+        if (start > 0 && previous[start - 1].isHighSurrogate()) start--
+        var suffix = 0
+        while (suffix < previous.length - start && suffix < next.length - start &&
+            previous[previous.lastIndex - suffix] == next[next.lastIndex - suffix]) suffix++
+        if (suffix > 0 && previous[previous.length - suffix].isLowSurrogate()) suffix--
+        accessibleText.replaceData(start, previous.length - start - suffix, next.substring(start, next.length - suffix))
     }
 
     private fun updateDrawingDiagnostics() {

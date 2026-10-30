@@ -350,6 +350,12 @@ output. Wide/combined glyphs and synchronized-output snapshots preserve their ce
 Selection-change notifications debounce for 100 ms and are cancelled on disposal. This mirrors
 the query families in Ghostty's AppKit runtime, with consistent UTF-16 offsets for NSRange.
 
+The browser exposes visible output in a persistent DOM text node. Unchanged paints do not
+rewrite it; output updates replace only the changed span, preserving DOM reading ranges
+outside that span. `node scripts/verify-terminal-accessibility.mjs` checks Chromium
+accessibility-tree exposure, focus, range stability, synchronized output and disposal with
+both Canvas and WebGL. This does not establish screen-reader announcement/navigation behavior.
+
 ## Engine and lifecycle
 
 - Confine a session and its observers to one thread. Mounted surfaces and the macOS transport
@@ -1126,6 +1132,7 @@ python3 -m http.server 4173 --bind 127.0.0.1
 ./kotlin build -m kinetica-terminal -p js -v release
 node build/artifacts/CompiledWebArtifact/kinetica-terminaljsTestrelease/kotlin-output/kinetica-terminal_test.mjs
 node scripts/verify-terminal.mjs
+node scripts/verify-terminal-accessibility.mjs
 node scripts/verify-terminal-mime-clipboard.mjs
 node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-overline.mjs
