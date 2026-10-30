@@ -59,6 +59,7 @@ public class BrowserTerminalView(
     private var accessibilityTimer: Int? = null
     private var disposed = false
     public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
+    public var copyTrimTrailingSpaces: Boolean = true
     public var pasteConfirmation: TerminalPasteConfirmation = TerminalPasteConfirmation { text, complete ->
         presentBrowserPaste(root, text, complete)
     }
@@ -186,11 +187,11 @@ public class BrowserTerminalView(
             val clipboardShortcut = !key.alt && if (window.navigator.platform.startsWith("Mac"))
                 key.meta && !key.control && !key.shift else key.control && key.shift && !key.meta
             if (clipboardShortcut && key.key.lowercase() == "v") return@listen
-            val selection = if (clipboardShortcut && key.key.lowercase() == "c") viewport.selectedText() else ""
+            val copyRequested = clipboardShortcut && key.key.lowercase() == "c" && viewport.hasSelection
             if (clipboardShortcut && key.key.lowercase() == "a") {
                 viewport.selectAll(); event.preventDefault()
-            } else if (selection.isNotEmpty()) {
-                copy(selection); event.preventDefault()
+            } else if (copyRequested) {
+                copySelection(); event.preventDefault()
             } else if (navigateViewport(key)) {
                 event.preventDefault()
             } else if (session.sendKey(key)) {
@@ -246,8 +247,10 @@ public class BrowserTerminalView(
             }
         }
         listen(root, "copy") { event ->
-            val text = viewport.selectedText()
-            if (text.isNotEmpty()) { event.clipboardData?.setData("text/plain", text); event.preventDefault(); event.stopPropagation() }
+            if (viewport.hasSelection) {
+                event.clipboardData?.setData("text/plain", viewport.copyText(copyTrimTrailingSpaces))
+                event.preventDefault(); event.stopPropagation()
+            }
         }
         listen(input, "focus") { focusChanged(true) }
         listen(input, "blur") { event ->
@@ -615,7 +618,7 @@ public class BrowserTerminalView(
         focused = value; viewport.setFocused(value); session.sendFocus(value)
         if (value) notifications?.clear()
     }
-    private fun copy(text: String) { window.navigator.clipboard?.writeText(text)?.catch { _: dynamic -> Unit } }
+    private fun copySelection() { window.navigator.clipboard?.writeText(viewport.copyText(copyTrimTrailingSpaces))?.catch { _: dynamic -> Unit } }
     private fun updateProgress() {
         val report = progressPresentation.report
         progressElement.hidden = report == null

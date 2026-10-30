@@ -60,6 +60,21 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Plain clipboard copy now uses Ghostty's cell formatter separately from selection/accessibility
+text. Browser shortcuts/DOM copy and AppKit shortcuts/menu actions trim trailing ASCII spaces
+by default; hosts can disable trimming. Interior soft-wrap spaces, wide/combining cells and
+non-ASCII whitespace follow original Ghostty output. Selected empty cells copy an empty string,
+while absent selections leave the clipboard alone. Both policies preserve selected history and
+the presented text through synchronized-output holds; replacing/clearing selection drops the
+inherited clipboard forms. OSC/MIME protocol writes are unchanged. The expanded semantic oracle
+checks 73 cases / 94 snapshots in both policies, including words/lines/output, pointer gestures,
+rectangles, tabs, styled/combining spaces and resize/history. Fixtures regenerate byte-for-byte.
+Validation passes 1648 JVM tests, fresh Release JS tests, 33 focused Native tests (with a private
+pasteboard), and browser editing/selection checks on macOS/Linux shortcuts and Canvas/WebGL.
+Evidence: `test-upstream/ghostty/semantic-line-manifest.json`, `scripts/verify-terminal-editing.mjs`,
+and `/tmp/kinetica-copy-*`. Clipboard codepoint mappings and VT/HTML/mixed copy formats remain
+separate open work; plain-text formatting does not establish those capabilities.
+
 Ordinary text paste now matches original Ghostty `input/paste.zig`: the fixed xterm control-byte
 set is replaced by spaces, bracketed mode preserves CR/LF, and unbracketed mode maps each LF to
 CR (including CRLF → CRCR). This fixes the former ESC deletion and unconditional line-ending

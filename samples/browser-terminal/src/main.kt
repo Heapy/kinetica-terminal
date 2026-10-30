@@ -149,6 +149,7 @@ fun main() {
     api.osc8LinksEnabled = { enabled: Boolean -> session.osc8LinksEnabled = enabled }
     api.openLink = { handler: (String) -> Boolean -> surface?.openLink = handler }
     api.selectionWordChars = { value: String -> session.selectionWordChars = value }
+    api.copyTrimTrailingSpaces = { enabled: Boolean -> surface?.copyTrimTrailingSpaces = enabled }
     api.write = { text: String -> session.write(text) }
     api.configureTheme = { background: Int -> session.configureTheme(TerminalTheme(background = background)) }
     api.screen = { (0 until session.rows).joinToString("\n") { session.screenLine(it).text() } }

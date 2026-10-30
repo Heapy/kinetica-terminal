@@ -40,6 +40,10 @@ def cases():
         "non_ascii_spaces": "\u00a0x\u3000\r\n \t\r\n z ",
         "blank_edges": "\r\n abc \r\n\r\n def ",
         "written_spaces": "a  \r\n b \r\nc",
+        "copy_combined_trailing_space": "a \u0301 \r\nb",
+        "copy_written_blank_row": "a\r\n    \r\nb",
+        "copy_wrapped_blank_cells": "abc\x1b[5G \u0301x",
+        "copy_styled_spaces": "\x1b[31;4ma  \x1b[0m\r\nb",
     }
     for name,text in setups.items():
         result.append(dict(name=name,columns=5,rows=4,events=[dict(text=text)]))
@@ -78,6 +82,7 @@ def cases():
         for columns in [7, 30]:
             result.append(dict(name=name+"_"+str(columns), columns=columns, rows=8, events=[dict(text=text)]))
     result.append(dict(name="pointer_geometry", columns=5, rows=4, pointer=True, events=[dict(text="A界bcdé f\r\nxx\r\n     \r\nYZ")]))
+    result.append(dict(name="copy_tabs", columns=20, rows=4, events=[dict(text="a\tb  \r\n  c\t\r\n\t \r\n\u00a0x\u3000 ")]))
     return result
 
 
@@ -106,7 +111,7 @@ pub fn build(b: *std.Build) void {
     env = os.environ | {"ZIG_GLOBAL_CACHE_DIR": os.environ.get("ZIG_GLOBAL_CACHE_DIR", str(ROOT/"build/upstream/zig-cache-0.17"))}
     subprocess.run([str(zig), "build"], cwd=build, check=True, env=env)
     output = subprocess.check_output([str(build/"zig-out/bin/semantic-line-oracle")], text=True)
-    actual = [json.loads(line) for line in output.splitlines()]
+    actual = [json.loads(line) for line in output.split("\n") if line]
     assert len(corpus) == len(actual)
     for case, result in zip(corpus, actual):
         assert case["name"] == result["name"]
@@ -120,6 +125,7 @@ pub fn build(b: *std.Build) void {
         cases=len(corpus), snapshots=sum(len(c["snapshots"]) for c in corpus),
         ranges=sum(len(s["ranges"]) for c in corpus for s in c["snapshots"]),
         selectAll=sum(len(c["snapshots"]) for c in corpus),
+        copyTrimPolicies=[False, True],
         pointerDrags=sum(len(s["pointerDrags"]) for c in corpus for s in c["snapshots"]),
         rectangles=sum(len(s["rectangles"]) for c in corpus for s in c["snapshots"]),
         outputSelections=sum(len(s["outputs"]) for c in corpus for s in c["snapshots"]),

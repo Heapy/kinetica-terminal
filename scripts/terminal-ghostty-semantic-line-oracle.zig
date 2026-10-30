@@ -4,7 +4,7 @@ const vt = @import("ghostty-vt");
 extern "c" fn write(c_int, [*]const u8, usize) isize;
 const Event = struct { text: ?[]const u8 = null, resize: ?[2]u16 = null };
 const Case = struct { name: []const u8, columns: u16, rows: u16, events: []const Event, word_boundaries: ?[]const u21 = null, pointer: bool = false };
-const Selected = struct { range: [4]u32, text: []const u8 };
+const Selected = struct { range: [4]u32, text: []const u8, trimmedText: []const u8 };
 const GestureStep = struct { position: [2]u32, selected: ?Selected };
 const PointerDrag = struct { click: [2]u32, drag: [2]u32, clickX: f64, dragX: f64, width: u32, padding: u32, rectangle: bool, selected: ?Selected };
 const Snapshot = struct { all: ?Selected, columns: u16, lines: u32, semantics: []const u32, markers: []const u32, ranges: []const [6]u32, selected: []const ?Selected, gestures: []const []const GestureStep, words: []const ?Selected, wordGestures: []const []const GestureStep, deepPress: []const ?Selected, outputs: []const ?Selected, outputGestures: []const []const GestureStep, rectangles: []const Selected, pointerDrags: []const PointerDrag };
@@ -13,7 +13,9 @@ fn selected(screen: *vt.Screen, alloc: std.mem.Allocator, selection: ?vt.Selecti
     defer sel.deinit(screen);
     const start = screen.pages.pointFromPin(.screen, sel.topLeft(screen)).?.screen;
     const end = screen.pages.pointFromPin(.screen, sel.bottomRight(screen)).?.screen;
-    return .{ .range = .{ start.x, start.y, @as(u32, end.x) + 1, end.y }, .text = try screen.selectionString(alloc, .{ .sel = sel, .trim = false }) };
+    return .{ .range = .{ start.x, start.y, @as(u32, end.x) + 1, end.y },
+        .text = try screen.selectionString(alloc, .{ .sel = sel, .trim = false }),
+        .trimmedText = try screen.selectionString(alloc, .{ .sel = sel, .trim = true }) };
 }
 pub fn main(init: std.process.Init) !void {
     var arena = std.heap.ArenaAllocator.init(init.gpa);

@@ -59,6 +59,11 @@ public class AppKitTerminalView(
     private var cellHeight = 19.0
     private var disposed = false
     public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
+    public var copyTrimTrailingSpaces: Boolean = true
+    internal var writeCopyText: (String) -> Unit = {
+        NSPasteboard.generalPasteboard.clearContents()
+        NSPasteboard.generalPasteboard.setString(it, NSPasteboardTypeString)
+    }
     public var pasteConfirmation: TerminalPasteConfirmation = TerminalPasteConfirmation { text, complete ->
         presentNativePaste(window, text, complete)
     }
@@ -871,8 +876,7 @@ public class AppKitTerminalView(
         }
     }
     private fun copySelection() {
-        val text = viewport.selectedText()
-        if (text.isNotEmpty()) { NSPasteboard.generalPasteboard.clearContents(); NSPasteboard.generalPasteboard.setString(text, NSPasteboardTypeString) }
+        if (viewport.hasSelection) writeCopyText(viewport.copyText(copyTrimTrailingSpaces))
     }
     private fun pasteClipboard() {
         if (disposed) return
@@ -909,7 +913,7 @@ public class AppKitTerminalView(
             })
         }
         autoenablesItems = false
-        item("Copy", "copy:", viewport.selectedText().isNotEmpty())
+        item("Copy", "copy:", viewport.hasSelection)
         item("Paste", "paste:", session.clipboardPasteEventsEnabled || NSPasteboard.generalPasteboard.stringForType(NSPasteboardTypeString) != null)
         item("Select All", "selectAll:")
         addItem(NSMenuItem.separatorItem())

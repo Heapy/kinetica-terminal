@@ -214,6 +214,11 @@ public class TerminalViewport internal constructor(
         val first = session.historySize - scrollOffset
         val selected = liveSelection.range()
         val selectedText = if (selected != null) liveSelection.text() else null
+        val copiedText = if (selected != null) {
+            val untrimmed = liveSelection.copyText(false).let { if (it == selectedText) selectedText else it }
+            val trimmed = liveSelection.copyText(true).let { if (it == untrimmed) untrimmed else it }
+            checkNotNull(untrimmed) to checkNotNull(trimmed)
+        } else null
         // A newly mounted view has no completed frame to retain.
         val lines = Array(session.rows) {
             if (capture) session.line(first + it).snapshot(colors) else TerminalLine(session.columns, colors)
@@ -222,7 +227,7 @@ public class TerminalViewport internal constructor(
             val index = lines.indexOfFirst { it === row }; if (index < 0) -1 else first + index
         }, wordBoundaries = { session.selectionWordBoundaries }, detectedLinksEnabled = { session.detectedLinksEnabled })
         frozen = FrozenFrame(lines, first, session.renderTheme, session.cursorColumn, session.cursorRow,
-            capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText,
+            capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText, copiedText,
             if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList())
         blinkTimer?.dispose(); blinkTimer = null
     }
@@ -309,7 +314,7 @@ public class TerminalViewport internal constructor(
     public fun beginSelection(column: Int, row: Int, mode: TerminalSelectionMode = TerminalSelectionMode.CHARACTER) {
         if (disposed) return
         cancelSelectionDrag()
-        frozen?.let { liveSelection.clear(); it.inheritedRange = null; it.inheritedText = null }
+        frozen?.let { liveSelection.clear(); it.clearInheritedSelection() }
         activeSelection.begin(position(column, row), mode)
         draggingSelection = true; dragColumn = column; dragRow = row; dragRectangle = false
         promptClickCandidate = if (mode == TerminalSelectionMode.CHARACTER && frozen == null &&
@@ -383,10 +388,22 @@ public class TerminalViewport internal constructor(
     public fun cancelSelectionDrag() { draggingSelection = false; promptClickCandidate = null; dragPointer = null; dragTimer?.dispose(); dragTimer = null }
     public fun clearSelection() {
         cancelSelectionDrag(); liveSelection.clear()
-        frozen?.let { it.selection.clear(); it.inheritedRange = null; it.inheritedText = null }
+        frozen?.let { it.selection.clear(); it.clearInheritedSelection() }
         markAll()
     }
     public fun selectedText(): String = frozen?.inheritedText ?: activeSelection.text()
+    /** Includes selected empty cells, whose clipboard representation may be an empty string. */
+    public val hasSelection: Boolean get() = !disposed && selection()?.let {
+        it.start != it.end && (!it.rectangle || it.start.column != it.end.column)
+    } == true
+
+    /** Clipboard formatting is independent of selection/accessible text. The default trims
+     * trailing ASCII spaces, matching Ghostty; soft-wrapped interior spaces stay intact. */
+    public fun copyText(trimTrailingSpaces: Boolean = true): String {
+        if (disposed) return ""
+        frozen?.inheritedCopyText?.let { return if (trimTrailingSpaces) it.second else it.first }
+        return activeSelection.copyText(trimTrailingSpaces)
+    }
 
     /** A lookup reads visible cells without changing the user's selection or gesture. */
     internal fun lookupWord(column: Int, row: Int): TerminalWordLookup? {
@@ -414,7 +431,7 @@ public class TerminalViewport internal constructor(
     public fun selectAll() {
         if (disposed || !activeSelection.selectAll()) return
         cancelSelectionDrag()
-        frozen?.let { liveSelection.clear(); it.inheritedRange = null; it.inheritedText = null }
+        frozen?.let { liveSelection.clear(); it.clearInheritedSelection() }
         markAll()
     }
 
@@ -651,7 +668,9 @@ public class TerminalViewport internal constructor(
     private data class FrozenFrame(val lines: Array<TerminalLine>, val firstLine: Int, val theme: TerminalTheme,
         val cursorColumn: Int, val cursorRow: Int, val cursorVisible: Boolean, val cursorStyle: TerminalCursorStyle,
         val selection: TerminalSelection, var inheritedRange: TerminalSelectionRange?, var inheritedText: String?,
-        val graphics: List<TerminalGraphicsFrameEntry>)
+        var inheritedCopyText: Pair<String, String>?, val graphics: List<TerminalGraphicsFrameEntry>) {
+        fun clearInheritedSelection() { inheritedRange = null; inheritedText = null; inheritedCopyText = null }
+    }
 }
 
 // Ghostty quantizes its default faint-opacity (0.5) to ceil(0.5 * 255).

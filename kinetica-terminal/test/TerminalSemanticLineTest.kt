@@ -39,6 +39,8 @@ class TerminalSemanticLineTest {
                     if (value == JsonNull) {
                         assertTrue(actual == null || actual.start == actual.end, context)
                         assertEquals("", selection.text(), context)
+                        assertEquals("", selection.copyText(true), context)
+                        assertEquals("", selection.copyText(false), context)
                         return
                     }
                     val result = value.jsonObject
@@ -48,6 +50,8 @@ class TerminalSemanticLineTest {
                     assertEquals(TerminalSelectionRange(TerminalCellPosition(points[1], points[0]),
                         TerminalCellPosition(points[3], end)), actual, context)
                     assertEquals(result.getValue("text").jsonPrimitive.content, selection.text(), context)
+                    assertEquals(result.getValue("text").jsonPrimitive.content, selection.copyText(false), context)
+                    assertEquals(result.getValue("trimmedText").jsonPrimitive.content, selection.copyText(true), context)
                 }
                 try {
                     selection.selectAll()
@@ -72,6 +76,8 @@ class TerminalSemanticLineTest {
                                 TerminalCellPosition(p[3], p[2]), rectangle), actual, context)
                             assertEquals(selected.jsonObject.getValue("text").jsonPrimitive.content,
                                 terminalSelectionText(assertNotNull(actual), session::line), context)
+                            assertEquals(selected.jsonObject.getValue("trimmedText").jsonPrimitive.content,
+                                terminalSelectionText(assertNotNull(actual), session::line, true), context)
                         }
                     }
                     for ((rectangleIndex, rectangle) in expected.getValue("rectangles").jsonArray.withIndex()) {
@@ -86,6 +92,8 @@ class TerminalSemanticLineTest {
                             val context = "$label rectangle=$rectangleIndex reverseX=$reverseX reverseY=$reverseY"
                             assertEquals(range, selection.range(), context)
                             assertEquals(value.getValue("text").jsonPrimitive.content, selection.text(), context)
+                            assertEquals(value.getValue("text").jsonPrimitive.content, selection.copyText(false), context)
+                            assertEquals(value.getValue("trimmedText").jsonPrimitive.content, selection.copyText(true), context)
                         }
                     }
                     for ((cell, selected) in expected.getValue("deepPress").jsonArray.withIndex()) {

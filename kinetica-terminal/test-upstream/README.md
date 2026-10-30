@@ -1,5 +1,12 @@
 # Upstream terminal test corpus
 
+The semantic-selection corpus also compares plain clipboard text with trimming enabled and
+disabled, through original `Screen.selectionString`/`ScreenFormatter`. Its 73 cases / 94
+snapshots cover select-all, word/line/output selection, pointer gestures and rectangles,
+including written spaces, tabs, Unicode spaces, combining spaces, wrap boundaries and history.
+Regenerate with `python3 scripts/generate-terminal-semantic-line.py /path/to/ghostty /path/to/zig`;
+`ghostty/semantic-line-manifest.json` records the pin, policies and source/artifact hashes.
+
 The paste corpus executes original libghostty-vt `encodePaste`, `isSafePaste` and
 `isSafePasteWith`: 273 cases cover all byte-valued characters, CR/LF combinations,
 Unicode, bracket delimiters/near misses, empty input and larger text. It records 546

@@ -97,6 +97,38 @@ try {
       await write("\x1b[?2026l\x1b[?1049h\x1b[Halternate");
       await key("a"); assert.equal(await selection(), "alternate");
       assert.deepEqual(await drain(), []);
+      // Clipboard formatting is independent of selection geometry and changes with host policy.
+      const rawCopy = "first  \n second\u00a0  \nthird";
+      const trimmedCopy = "first\n second\u00a0\nthird";
+      await write("\x1bcfirst  \r\n second\u00a0  \r\nthird");
+      await key("a"); assert.equal(await selection(), trimmedCopy);
+      await key("c"); assert.deepEqual(await page.evaluate(() => editCopies.splice(0)), [trimmedCopy, trimmedCopy]);
+      await page.evaluate(() => kineticaTerminalDemo.copyTrimTrailingSpaces(false));
+      assert.equal(await selection(), rawCopy);
+      await key("c"); assert.deepEqual(await page.evaluate(() => editCopies.splice(0)), [rawCopy, rawCopy]);
+      await write("\x1b[?2026h\x1b[HCHANGED");
+      await page.evaluate(() => kineticaTerminalDemo.copyTrimTrailingSpaces(true));
+      assert.equal(await selection(), trimmedCopy);
+      await page.evaluate(() => kineticaTerminalDemo.copyTrimTrailingSpaces(false));
+      assert.equal(await selection(), rawCopy, "Both clipboard forms retain the presented selection");
+      assert.deepEqual(await drain(), []);
+      await write("\x1b[?2026l\x1bc");
+      const point = await page.evaluate(() => {
+        const rect = document.querySelector("canvas").getBoundingClientRect();
+        const { width, height } = kineticaTerminalDemo.cellMetrics();
+        return { x: rect.x + width * 0.1, y: rect.y + height * 1.5, end: rect.x + width * 3.8 };
+      });
+      await page.mouse.move(point.x, point.y); await page.mouse.down();
+      await page.mouse.move(point.end, point.y); await page.mouse.up();
+      const blank = await page.evaluate(() => {
+        const data = new DataTransfer(); data.setData("text/plain", "stale");
+        const event = new ClipboardEvent("copy", { clipboardData: data, bubbles: true, cancelable: true });
+        document.querySelector("[data-terminal]").dispatchEvent(event);
+        return { text: data.getData("text/plain"), consumed: event.defaultPrevented };
+      });
+      assert.deepEqual(blank, { text: "", consumed: true }, "Selected empty cells replace the clipboard with empty text");
+      await key("c"); assert.deepEqual(await page.evaluate(() => editCopies.splice(0)), ["", ""]);
+      assert.deepEqual(await drain(), []);
       assert.deepEqual(errors, []);
       results.push({ platform, renderer, passed: true });
     } finally { await page.close(); }

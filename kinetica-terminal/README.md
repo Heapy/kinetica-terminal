@@ -283,6 +283,18 @@ browser's normal paste event. Local select-all/copy do not emit Kitty key events
 available under keyboard lock. During an atomic presentation hold, select-all operates on the
 presented frame; on the alternate screen it excludes primary history.
 
+Browser/AppKit plain-text copying trims trailing ASCII spaces by default, following Ghostty's
+`clipboard-trim-trailing-spaces`. Set `view.copyTrimTrailingSpaces = false` to preserve written
+spaces. Formatting uses selected cells: it preserves spaces inside soft-wrapped logical lines,
+handles wide/combining cells, and does not trim non-ASCII spaces. It is independent of the
+selected/accessibility text and applies to both keyboard and clipboard/menu copy actions.
+`TerminalViewport.copyText(trimTrailingSpaces)` exposes the same formatting to custom hosts;
+`hasSelection` also includes selected empty cells, which copy as an empty string. No selection
+leaves the clipboard untouched. Both policies retain the presented selection, including selected
+history outside the visible snapshot, while synchronized output holds a frame. These settings
+do not transform OSC 52 or MIME protocol clipboard writes.
+Ghostty's clipboard codepoint maps and VT/HTML/mixed copy formats are not yet implemented.
+
 Cmd+J on macOS scrolls back to the current selection in both browser and AppKit surfaces.
 It preserves the selected text and puts its first retained row at the top (or returns to the
 bottom viewport when the selection is in the active screen), following Ghostty's
