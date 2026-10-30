@@ -1,0 +1,168 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "backend": "freetype",
+  "zig": "0.17.0",
+  "generatorSha256": "da7c103ac4ec614a773335525449573242065eaeaacb7b1dded13c50b2beb917",
+  "helperSha256": "ddb88d39630eda6cbaf9bdc643d7a5cf539b705002821d73953feddeecd829f6",
+  "buildTemplateSha256": "9d887a3bfc304a1d8c443656844b01850dfd660103e98b69d8b26def1bbc09a2",
+  "fontSha256": "949d751f27d1305de8ddc6f1c2a993a246045d6b1dc80bd63173ce85de99aa57",
+  "sources": {
+    "src/font/face/freetype.zig": "5d0d125a2d7ef02302d5ceaab918bbeb01a11cbbae66340170ba7e654b15c7a3",
+    "src/font/Glyph.zig": "977d93d7a55c82f976880d2d6692ec934abd1e95a236a5db6e5c3dcee5895334",
+    "src/font/Metrics.zig": "cb38c0d9a5799d6b71585d070f12d0809036d082c0fef400aefd1dd1a51bc013",
+    "src/font/Atlas.zig": "ae86d92e2af4b5ce7360855737833b80442d715dd0bdc1ad4c6a3eba6f8071e3",
+    "pkg/freetype/build.zig.zon": "46ce4eb4a795e07ac2b89fd2a648fa23e651aedf940e28c9c4e57f9e0afce325"
+  },
+  "results": [
+    {
+      "points": 20,
+      "codepoint": 65,
+      "glyph": 4,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 20,
+      "codepoint": 66,
+      "glyph": 5,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 20,
+      "codepoint": 67,
+      "glyph": 6,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 20,
+      "codepoint": 68,
+      "glyph": 7,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 20,
+      "codepoint": 69,
+      "glyph": 8,
+      "color": false,
+      "width": 0,
+      "height": 0,
+      "offset_x": 0,
+      "offset_y": 0,
+      "rgba_premultiplied": []
+    },
+    {
+      "points": 20,
+      "codepoint": 70,
+      "glyph": 9,
+      "color": false,
+      "width": 0,
+      "height": 0,
+      "offset_x": 0,
+      "offset_y": 0,
+      "rgba_premultiplied": []
+    },
+    {
+      "points": 30,
+      "codepoint": 65,
+      "glyph": 4,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 30,
+      "codepoint": 66,
+      "glyph": 5,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 30,
+      "codepoint": 67,
+      "glyph": 6,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 30,
+      "codepoint": 68,
+      "glyph": 7,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 30,
+      "codepoint": 69,
+      "glyph": 8,
+      "color": false,
+      "width": 0,
+      "height": 0,
+      "offset_x": 0,
+      "offset_y": 0,
+      "rgba_premultiplied": []
+    },
+    {
+      "points": 30,
+      "codepoint": 70,
+      "glyph": 9,
+      "color": false,
+      "width": 0,
+      "height": 0,
+      "offset_x": 0,
+      "offset_y": 0,
+      "rgba_premultiplied": []
+    },
+    {
+      "points": 40,
+      "codepoint": 65,
+      "glyph": 4,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 40,
+      "codepoint": 66,
+      "glyph": 5,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 40,
+      "codepoint": 67,
+      "glyph": 6,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 40,
+      "codepoint": 68,
+      "glyph": 7,
+      "color": false,
+      "err": "UnknownFileFormat"
+    },
+    {
+      "points": 40,
+      "codepoint": 69,
+      "glyph": 8,
+      "color": false,
+      "width": 0,
+      "height": 0,
+      "offset_x": 0,
+      "offset_y": 0,
+      "rgba_premultiplied": []
+    },
+    {
+      "points": 40,
+      "codepoint": 70,
+      "glyph": 9,
+      "color": false,
+      "width": 0,
+      "height": 0,
+      "offset_x": 0,
+      "offset_y": 0,
+      "rgba_premultiplied": []
+    }
+  ]
+}

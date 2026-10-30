@@ -19,6 +19,9 @@ internal fun <T> withTerminalSbixFont(size: Double = 20.0, block: (NSFont) -> T)
 internal fun <T> withTerminalSvgFont(size: Double = 20.0, block: (NSFont) -> T): T =
     withTerminalFontBytes(Base64.decode(terminalSvgFont()), size, block)
 
+internal fun <T> withTerminalSbixMediaFont(size: Double = 20.0, block: (NSFont) -> T): T =
+    withTerminalFontBytes(Base64.decode(terminalSbixMediaFont()), size, block)
+
 private fun <T> withTerminalFontBytes(bytes: ByteArray, size: Double, block: (NSFont) -> T): T {
     val data = bytes.usePinned { checkNotNull(CFDataCreate(null, it.addressOf(0).reinterpret(), bytes.size.toLong())) }
     try {
