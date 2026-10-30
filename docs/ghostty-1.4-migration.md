@@ -114,6 +114,28 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Confirmed terminal behavior to implement or reconcile
 
+- [x] Open browser links with Cmd+click on macOS and Ctrl+click elsewhere. Both browser and
+      AppKit now activate on release in the original cell, following original `Surface`
+      release handling and `SelectionGesture`; a drag remains cancelled after returning
+      to the start, including same-cell threshold drags. Exact binding modifiers and TUI
+      mouse capture/Shift override apply. Native target conversion and deferred approvals
+      retain their existing policy.
+      The browser default opens absolute web/mail targets with `noopener,noreferrer`,
+      confirms external schemes and rejects relative/file/executable/browser-local targets
+      and unsafe characters. Hosts can supply their own `openLink` policy. Confirmation
+      rechecks disposal and the originating OSC 8 policy; detected text links stay independent.
+      Validation: 1414 JVM tests, fresh Release JS tests, 79 focused Native tests, and real
+      Chromium link plus selection gestures on Canvas/WebGL with macOS/Linux modifiers.
+      `scripts/verify-terminal-links.mjs` also checks frozen and wrapped targets, cancellation,
+      denied schemes, declined/revoked approvals, disposal and host callback behavior.
+      Hover feedback and multi-cell shaping remain separate open requirements below.
+
+- [ ] Shape multi-cell font runs in GPU renderers, including programming ligatures.
+      The current per-cell `TerminalGpu` glyph keys cannot form a ligature across cells;
+      original Ghostty `renderer/generic.zig` uses a font-shaper run iterator and cluster mapping.
+- [ ] Add link hover feedback: pointer cursor, target preview and matching range highlighting,
+      respecting exact binding modifiers, mouse capture and frozen visible content.
+
 - [x] Native Force Click selects the original press's word, consumes further dragging and
       stops autoscroll. It bypasses the double-click URL override, honors current word
       delimiters, and preserves the prior selection when the pressed cell has no word.

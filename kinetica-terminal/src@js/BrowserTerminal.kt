@@ -20,6 +20,10 @@ public class BrowserTerminalView(
     windowResizePolicy: (TerminalWindowResizeRequest) -> Boolean = { false },
     resizeContainer: (TerminalWindowSize) -> Unit = {},
 ) {
+    private val defaultOpenLink: (String) -> Boolean = { openBrowserTerminalLink(it) { !disposed } }
+    /** Override only with a host policy suitable for untrusted terminal-output targets.
+     * The default opens absolute web/mail URLs and confirms external application schemes. */
+    public var openLink: (String) -> Boolean = defaultOpenLink
     public val scrollOffset: Int get() = viewport.scrollOffset
     public fun jumpToPrompt(direction: Int): Boolean = viewport.jumpToPrompt(direction)
     private val document: dynamic = js("globalThis.document")
@@ -404,6 +408,12 @@ public class BrowserTerminalView(
     }
     private fun rectangleSelection(event: dynamic): Boolean = event.altKey == true &&
         (window.navigator.platform.startsWith("Mac") || event.ctrlKey == true)
+    private fun linkModifiers(event: dynamic): Boolean {
+        val mac = window.navigator.platform.startsWith("Mac")
+        val shift = event.shiftKey == true && !(session.mouseTracking != 0 && !session.mouseShiftCapture)
+        return !shift && event.altKey != true && if (mac) event.metaKey == true && event.ctrlKey != true
+            else event.ctrlKey == true && event.metaKey != true
+    }
     private fun selectionPointer(event: dynamic): TerminalSelectionPointer {
         val rect = canvas.getBoundingClientRect()
         return terminalSelectionPointer((event.clientX as Number).toDouble() - (rect.left as Number).toDouble(),
@@ -431,7 +441,14 @@ public class BrowserTerminalView(
                     if (selecting) viewport.beginPointerSelection(selectionPointer(event)) else viewport.clearSelection()
                 }
             } else {
-                if (button == 0 && selecting) { viewport.endPointerSelection(selectionPointer(event)); selecting = false }
+                if (button == 0 && selecting) {
+                    val pointer = selectionPointer(event)
+                    val link = if (linkModifiers(event)) viewport.pointerLinkAt(pointer) else null
+                    if (link != null && (if (openLink !== defaultOpenLink) openLink(link.uri) else
+                        openBrowserTerminalLink(link.uri) { !disposed && (!link.osc8 || session.osc8LinksEnabled) })) viewport.cancelSelectionDrag()
+                    else viewport.endPointerSelection(pointer)
+                    selecting = false
+                }
                 else mouse(event, button, release = true)
             }
         }

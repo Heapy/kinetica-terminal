@@ -305,6 +305,11 @@ public class TerminalViewport internal constructor(
         updateDragScroll(); markAll()
     }
     internal fun selectionModifiersChanged(rectangle: Boolean) { dragRectangle = rectangle }
+    internal fun pointerLinkAt(pointer: TerminalSelectionPointer): TerminalLinkTarget? {
+        if (disposed || !draggingSelection || pointer.column !in 0 until columns || pointer.row !in 0 until rows ||
+            !activeSelection.isPointerClick(pointerPosition(pointer))) return null
+        return linkTargetAt(pointer.column, pointer.row)
+    }
     internal fun endPointerSelection(pointer: TerminalSelectionPointer): Boolean {
         // Ghostty releases without synthesizing a final drag. Moving cells still cancels click actions.
         if (pointer.column != dragColumn || pointer.row != dragRow) promptClickCandidate = null

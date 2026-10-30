@@ -137,6 +137,8 @@ class MacOsUsabilityTest {
                 val point = view.convertPoint(NSMakePoint(12.0, y), toView = null)
                 view.mouseDown(checkNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseDown, point,
                     NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
+                view.mouseUp(checkNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseUp, point,
+                    NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
             }
             assertEquals(listOf("https://example.org/", "https://example.org/osc8"), opened)
             session.write("\u001b[?2004h")
@@ -173,10 +175,16 @@ class MacOsUsabilityTest {
             val promptPoint = view.convertPoint(NSMakePoint(12.0, 5.0), toView = null)
             view.mouseDown(checkNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseDown, promptPoint,
                 NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
+            assertTrue(opened.isEmpty(), "Link activation waits for release")
+            view.mouseUp(checkNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseUp, promptPoint,
+                NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
             assertEquals(listOf("https://prompt.example"), opened, "Cmd-click must not append input text to the prompt URL")
             for (target in listOf("mailto:me@example.org", "ssh://example.org/a", "../test folder/file.txt")) {
                 opened.clear(); session.reset(); session.write(target)
                 view.mouseDown(checkNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseDown, promptPoint,
+                    NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
+                assertTrue(opened.isEmpty(), "Link activation waits for release")
+                view.mouseUp(checkNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseUp, promptPoint,
                     NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
                 assertEquals(listOf(target), opened, "The host receives the complete detected target")
             }

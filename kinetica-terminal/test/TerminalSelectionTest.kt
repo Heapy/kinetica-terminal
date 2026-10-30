@@ -3,6 +3,35 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalSelectionTest {
+    @Test fun pointerLinksRequireAnUncancelledClickOnTheOriginalCell() {
+        val session = TerminalSession(40, 3)
+        val viewport = TerminalViewport(session, {})
+        fun point(x: Double, row: Int = 0) = terminalSelectionPointer(x * 10, row * 20.0 + 10, 10.0, 20.0, 1.0)
+        try {
+            session.write("\u001b]8;;https://example.org\u001b\\click\u001b]8;;\u001b\\")
+            viewport.beginPointerSelection(point(1.2))
+            assertEquals("https://example.org", viewport.pointerLinkAt(point(1.3))?.uri)
+            assertNull(viewport.pointerLinkAt(point(2.2)), "Release in another cell is not a click")
+            viewport.extendPointerSelection(point(2.2), false)
+            viewport.extendPointerSelection(point(1.2), false)
+            assertNull(viewport.pointerLinkAt(point(1.2)), "Returning to the press cell cannot undo a drag")
+            viewport.beginPointerSelection(point(1.2))
+            viewport.extendPointerSelection(point(1.8), false)
+            viewport.extendPointerSelection(point(1.2), false)
+            assertNull(viewport.pointerLinkAt(point(1.2)), "Crossing the within-cell threshold cancels the click")
+            viewport.beginPointerSelection(point(1.2)); viewport.cancelSelectionDrag()
+            assertNull(viewport.pointerLinkAt(point(1.2)))
+            viewport.beginPointerSelection(point(1.2)); session.osc8LinksEnabled = false
+            assertNull(viewport.pointerLinkAt(point(1.2)))
+            session.osc8LinksEnabled = true
+            session.write("\u001b[?2026h\u001b[Hchanged")
+            viewport.beginPointerSelection(point(1.2))
+            assertEquals("https://example.org", viewport.pointerLinkAt(point(1.2))?.uri, "Frozen visible target wins over hidden output")
+            viewport.dispose()
+            assertNull(viewport.pointerLinkAt(point(1.2)))
+        } finally { viewport.dispose() }
+    }
+
     @Test fun pointerThresholdsSelectWithinACellAndDoNotTurnDraggedPromptsIntoClicks() {
         val session = TerminalSession(12, 3)
         val viewport = TerminalViewport(session, {})

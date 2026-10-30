@@ -47,6 +47,7 @@ internal class TerminalSelection(
     private var invalid = false
     private var mode = TerminalSelectionMode.CHARACTER
     private var pointerX: Double? = null
+    private var pointerDragged = false
     val hasAnchor: Boolean get() = bounds != null
 
     fun clear() {
@@ -54,6 +55,7 @@ internal class TerminalSelection(
         bounds = null; anchorStart = null; anchorEnd = null; clickAnchor = null; invalid = false
         reset = resetEpoch(); order = orderEpoch()
         pointerX = null
+        pointerDragged = false
     }
 
     fun range(): TerminalSelectionRange? { reconcile(); return bounds }
@@ -63,16 +65,26 @@ internal class TerminalSelection(
         pointerX = x
     }
 
+    fun isPointerClick(position: TerminalCellPosition): Boolean {
+        reconcile()
+        return pointerX != null && !pointerDragged && clickAnchor?.position() == clamp(position)
+    }
+
     /** True once the pointer moves cells or crosses the same-cell selection threshold. */
     fun extendPointer(position: TerminalCellPosition, x: Double, cellWidth: Int, rectangle: Boolean): Boolean {
         reconcile()
         val click = clickAnchor?.position() ?: return false
         val focus = clamp(position)
-        if (mode != TerminalSelectionMode.CHARACTER) { extend(focus); return focus != click }
+        if (mode != TerminalSelectionMode.CHARACTER) {
+            extend(focus)
+            if (focus != click) pointerDragged = true
+            return pointerDragged
+        }
         val range = terminalPointerSelectionRange(click, focus, pointerX ?: return false, x,
             line(focus.line).columns, cellWidth, firstLine(), lastLine(), rectangle)
         setRange(if (range == null) TerminalSelectionRange(click, click) else if (rectangle) range else normalize(range))
-        return focus != click || range != null
+        if (focus != click || range != null) pointerDragged = true
+        return pointerDragged
     }
 
     fun begin(position: TerminalCellPosition, mode: TerminalSelectionMode) {

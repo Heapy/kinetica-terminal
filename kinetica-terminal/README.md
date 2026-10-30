@@ -962,6 +962,8 @@ asynchronously for all owned PTYs to reap their children before AppKit terminate
   or replacement; disabling OSC 8 prevents subsequent approval of explicit OSC 8 requests.
   Plain-text custom schemes remain confirmable when OSC 8 is disabled. Embedders overriding
   `AppKitTerminalView.openLink` take responsibility for their own target policy.
+  Activation occurs on release in the original cell. Dragging, including a same-cell
+  selection threshold followed by returning to the start, cancels activation.
   Cmd+A selects retained output;
   right-click provides Copy, Paste, Select All and clearing actions. Shift bypasses TUI mouse reporting
   unless application capture is enabled.
@@ -972,6 +974,17 @@ asynchronously for all owned PTYs to reap their children before AppKit terminate
 
 Embedders enable these native controls by wrapping their view in `AppKitTerminalPane`;
 `AppKitTerminalView` remains a bare terminal view. Both platform views expose `configureFont(family, size)`.
+Browser links use Cmd+click on macOS and Ctrl+click elsewhere, with the same release/drag
+rules. Both views require the exact binding modifiers and respect TUI mouse capture;
+Shift can bypass capture when the application has not requested Shift capture.
+The default `BrowserTerminalView.openLink` opens absolute HTTP(S)/mailto URLs in a new tab
+with `noopener,noreferrer`, confirms external application schemes, and rejects invisible
+characters, relative paths, file URLs and executable/browser-local schemes. It never resolves
+terminal targets against the embedding page's base URL. Hosts can override `openLink` to
+handle local paths using their own policy; the callback receives the original target and
+returns whether it handled the action. A declined callback does not invoke the default opener.
+Browser confirmation rechecks view lifetime and the originating OSC 8 policy before opening.
+
 The common engine exposes `search`, `hyperlinkAt`, `configureTheme`, `clearScreen`, `clearHistory`,
 and viewport selection/reveal methods for hosts with their own controls.
 `session.osc8LinksEnabled = false` disables OSC 8 activation through session/viewport
@@ -1018,6 +1031,7 @@ node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-blocks.mjs
 node scripts/verify-terminal-glyphs.mjs
 node scripts/verify-terminal-selection.mjs
+node scripts/verify-terminal-links.mjs
 node scripts/verify-terminal-transport.mjs
 node scripts/verify-terminal-tui.mjs
 node scripts/benchmark-terminal.mjs

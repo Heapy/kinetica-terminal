@@ -144,6 +144,8 @@ fun main() {
     api.sendInput = { text: String -> session.sendInput(text) }
     api.terminfoName = { name: String? -> session.terminfoName = name }
     api.allowKeyboardLock = { allowed: Boolean -> session.keyboardLockAllowed = allowed }
+    api.osc8LinksEnabled = { enabled: Boolean -> session.osc8LinksEnabled = enabled }
+    api.openLink = { handler: (String) -> Boolean -> surface?.openLink = handler }
     api.selectionWordChars = { value: String -> session.selectionWordChars = value }
     api.write = { text: String -> session.write(text) }
     api.configureTheme = { background: Int -> session.configureTheme(TerminalTheme(background = background)) }

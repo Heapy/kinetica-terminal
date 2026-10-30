@@ -612,22 +612,6 @@ public class AppKitTerminalView(
         leftClickCount = event.clickCount
         if (leftClickCount <= 1) forceClickCountOffset = 0
         window?.makeFirstResponder(this)
-        val (x, y) = cell(event)
-        if (event.modifierFlags and NSEventModifierFlagCommand != 0uL) {
-            viewport.linkTargetAt(x, y)?.let { link ->
-                val handled = if (openLink !== defaultOpenLink) openLink(link.uri) else {
-                    val target = if (link.osc8) link.uri else {
-                        val directory = memScoped {
-                            val hostname = allocArray<ByteVar>(1024)
-                            session.localWorkingDirectory(if (gethostname(hostname, 1024u) == 0) hostname.toKString() else "")
-                        }
-                        nativeDetectedLinkTarget(link.uri, directory)
-                    }
-                    links.open(target) { !link.osc8 || session.osc8LinksEnabled }
-                }
-                if (handled) { selecting = false; return }
-            }
-        }
         selecting = !mouse(event, 0)
         if (selecting) viewport.beginPointerSelection(selectionPointer(event), when ((leftClickCount - forceClickCountOffset).coerceAtLeast(1).toInt()) {
             0, 1 -> TerminalSelectionMode.CHARACTER
@@ -650,10 +634,31 @@ public class AppKitTerminalView(
             if (forceClickLookupEnabled()) quickLookWithEvent(event)
         }
     }
+    private fun linkModifiers(event: NSEvent): Boolean {
+        val flags = event.modifierFlags
+        val shift = flags and NSEventModifierFlagShift != 0uL && !(session.mouseTracking != 0 && !session.mouseShiftCapture)
+        return !shift && flags and NSEventModifierFlagCommand != 0uL &&
+            flags and (NSEventModifierFlagControl or NSEventModifierFlagOption) == 0uL
+    }
+    private fun activateLink(link: TerminalLinkTarget): Boolean {
+        if (openLink !== defaultOpenLink) return openLink(link.uri)
+        val target = if (link.osc8) link.uri else {
+            val directory = memScoped {
+                val hostname = allocArray<ByteVar>(1024)
+                session.localWorkingDirectory(if (gethostname(hostname, 1024u) == 0) hostname.toKString() else "")
+            }
+            nativeDetectedLinkTarget(link.uri, directory)
+        }
+        return links.open(target) { !link.osc8 || session.osc8LinksEnabled }
+    }
     override fun mouseUp(event: NSEvent) {
         if (disposed) return
         forceClickLookupFired = false
-        if (selecting) viewport.endPointerSelection(selectionPointer(event)) else mouse(event, 0, release = true)
+        if (selecting) {
+            val pointer = selectionPointer(event)
+            val link = if (linkModifiers(event)) viewport.pointerLinkAt(pointer) else null
+            if (link != null && activateLink(link)) viewport.cancelSelectionDrag() else viewport.endPointerSelection(pointer)
+        } else mouse(event, 0, release = true)
         selecting = false
     }
     override fun rightMouseDown(event: NSEvent) {

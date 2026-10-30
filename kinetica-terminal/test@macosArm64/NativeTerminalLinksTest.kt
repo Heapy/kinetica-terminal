@@ -10,6 +10,46 @@ import kotlin.io.encoding.Base64
 import kotlin.test.*
 
 class NativeTerminalLinksTest {
+    @Test fun commandClickActivatesOnReleaseAndDraggingOrExtraModifiersCancelIt() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession(80, 5)
+        val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE)
+        val window = NSWindow(NSMakeRect(0.0, 0.0, 800.0, 480.0), NSWindowStyleMaskTitled, NSBackingStoreBuffered, false)
+        window.setReleasedWhenClosed(false); window.contentView = view
+        val opened = mutableListOf<String>()
+        view.openLink = { opened += it; true }
+        fun event(type: NSEventType, x: Double = 12.0, flags: ULong = NSEventModifierFlagCommand): NSEvent =
+            assertNotNull(NSEvent.mouseEventWithType(type, view.convertPoint(NSMakePoint(x, 5.0), toView = null),
+                flags, 0.0, window.windowNumber, null, 0, 1, 1.0f))
+        fun click(flags: ULong = NSEventModifierFlagCommand) {
+            view.mouseDown(event(NSEventTypeLeftMouseDown, flags = flags))
+            view.mouseUp(event(NSEventTypeLeftMouseUp, flags = flags))
+        }
+        try {
+            session.write("https://example.org")
+            view.mouseDown(event(NSEventTypeLeftMouseDown))
+            assertTrue(opened.isEmpty(), "Press must not activate a link")
+            view.mouseUp(event(NSEventTypeLeftMouseUp))
+            assertEquals(listOf("https://example.org"), opened); opened.clear()
+            view.mouseDown(event(NSEventTypeLeftMouseDown))
+            view.mouseDragged(event(NSEventTypeLeftMouseDragged, 40.0))
+            view.mouseDragged(event(NSEventTypeLeftMouseDragged))
+            view.mouseUp(event(NSEventTypeLeftMouseUp))
+            assertTrue(opened.isEmpty(), "Drag away and back remains a drag")
+            view.mouseDown(event(NSEventTypeLeftMouseDown))
+            view.mouseUp(event(NSEventTypeLeftMouseUp, 40.0))
+            assertTrue(opened.isEmpty(), "Release alone cannot open another cell")
+            for (extra in listOf(NSEventModifierFlagShift, NSEventModifierFlagOption, NSEventModifierFlagControl))
+                click(NSEventModifierFlagCommand or extra)
+            click(0uL)
+            assertTrue(opened.isEmpty(), "Only the exact binding opens links")
+            session.write("\u001b[?1000h\u001b[?1006h")
+            click(); assertTrue(opened.isEmpty(), "TUI capture wins over link activation")
+            click(NSEventModifierFlagCommand or NSEventModifierFlagShift)
+            assertEquals(listOf("https://example.org"), opened, "Shift escapes capture and is removed from link modifiers")
+        } finally { view.dispose(); window.close() }
+    }
+
     @Test fun detectedPathsResolveAgainstTerminalDirectoryBeforeNativeConversion() {
         val files = NSFileManager.defaultManager
         val root = "/tmp/kinetica-link-paths-${NSUUID().UUIDString}"
@@ -71,6 +111,8 @@ class NativeTerminalLinksTest {
         fun click() {
             val point = view.convertPoint(NSMakePoint(12.0, 5.0), toView = null)
             view.mouseDown(assertNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseDown, point,
+                NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
+            view.mouseUp(assertNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseUp, point,
                 NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
             NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.02))
         }
@@ -289,6 +331,8 @@ class NativeTerminalLinksTest {
         fun click() {
             val point = view.convertPoint(NSMakePoint(12.0, 5.0), toView = null)
             view.mouseDown(assertNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseDown, point,
+                NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
+            view.mouseUp(assertNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseUp, point,
                 NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
         }
         try {
