@@ -64,6 +64,24 @@ Validation passes all 1486 JVM tests, freshly built Release JS tests, 1029 focus
 oracle/decoration/software/Metal tests and all six Canvas/WebGL DPR checks. All 1018 original
 oracle fixture/manifest artifacts regenerate byte-for-byte. Logs are `/tmp/kinetica-overline-*`.
 
+The next SGR source comparison found different handling of supported subparameter groups.
+Unknown underline styles now fall back to single underline, while extra or trailing colons
+reject that underline group. RGB colon forms require exactly three components with an optional
+colorspace slot; indexed forms and semicolon RGB consume the same parameters as the original,
+including mixed separators. Components and palette indices use their low byte, matching the
+original `sgr.zig` truncation instead of rejecting values above 255. Incomplete groups preserve
+the original parser's consumption so subsequent attributes are interpreted consistently.
+Seven new original scenarios cover 664 checkpoints: underline styles 0–6, 9, 255, 256 and
+65535 from both underlined and plain pens; RGB/indexed bounds on all three channels; every
+semicolon/colon combination of five/six-value RGB and indexed groups; trailing, missing and
+extra parameters, with following attributes and DECRQSS replies. All seven failed before the
+fix while the preceding 1015 scenarios passed. The corpus now has 1022 scenarios / 7097
+checkpoints, checked with whole and bytewise input.
+Validation passes all 1493 JVM tests, freshly built Release JS tests and all 1022 Native
+oracle scenarios. All 1025 oracle fixture/manifest artifacts regenerate byte-for-byte.
+Logs are `/tmp/kinetica-sgr-boundaries-*`. These checks establish parser/state/reply parity
+for this matrix; the remaining rendering and production acceptance gates stay open.
+
 The release behavior review uses the pinned `stream.zig` / `stream_terminal.zig` dispatch,
 keyboard/mouse encoders and graphics implementation as the reference. It checks the terminal
 capabilities and relevant input/state changes against executable regression families rather

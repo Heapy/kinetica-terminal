@@ -1964,14 +1964,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private fun sgr() {
         var i = 0
         while (i <= paramIndex) {
-            var end = i
-            while (end < paramIndex && separators[end]) end++
-            // A trailing colon has no subparameter; Ghostty ignores that incomplete group.
-            if (separators[i] && end == i) { i++; continue }
-            val subparameters = end > i
+            var next = i + 1
+            val colon = separators[i]
             // Ghostty accepts subparameters only for underline style and color groups.
-            if (subparameters && params[i] != 4 && params[i] != 38 && params[i] != 48 && params[i] != 58) {
-                i = end + 1
+            if (colon && params[i] != 4 && params[i] != 38 && params[i] != 48 && params[i] != 58) {
+                while (next <= paramIndex && separators[next]) next++
+                i = next + 1
                 continue
             }
             when (val p = params[i]) {
@@ -1981,7 +1979,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 3 -> style = style or TerminalStyle.ITALIC
                 5, 6 -> style = style or TerminalStyle.BLINK
                 4 -> {
-                    val underline = if (subparameters) params[i + 1] else 1
+                    // Exactly one subparameter is valid. Unknown styles fall back to single;
+                    // extra or trailing colons reject the group without changing the pen.
+                    if (colon && (next > paramIndex || separators[next])) {
+                        while (next < paramIndex && separators[next]) next++
+                        i = next + 1
+                        continue
+                    }
+                    val underline = if (colon) params[next++] else 1
                     val flag = when (underline) {
                         0 -> 0
                         1 -> TerminalStyle.UNDERLINE
@@ -1989,7 +1994,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                         3 -> TerminalStyle.UNDERCURL
                         4 -> TerminalStyle.DOTTED_UNDERLINE
                         5 -> TerminalStyle.DASHED_UNDERLINE
-                        else -> style and TerminalStyle.UNDERLINES
+                        else -> TerminalStyle.UNDERLINE
                     }
                     style = (style and TerminalStyle.UNDERLINES.inv()) or flag
                 }
@@ -2014,20 +2019,27 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 49 -> bg = -1
                 59 -> setAttributes(-1, attributes?.hyperlink)
                 38, 48, 58 -> {
-                    val available = if (subparameters) end else paramIndex
-                    var consumed = 0
                     val color = when {
-                        i + 2 <= available && params[i + 1] == 5 -> {
-                            consumed = 2
-                            params[i + 2].takeIf { it in 0..255 }?.let { INDEXED_COLOR or it }
+                        i + 2 <= paramIndex && params[i + 1] == 5 -> {
+                            // Indexed groups consume three parameters even with mixed separators.
+                            next = i + 3
+                            INDEXED_COLOR or (params[i + 2] and 255)
                         }
-                        i + 4 <= available && params[i + 1] == 2 -> {
-                            // Colon form optionally carries a colorspace slot (including an omitted slot).
-                            val first = i + if (subparameters && end - i >= 5) 3 else 2
-                            consumed = first - i + 2
-                            if ((first..first + 2).all { params[it] in 0..255 })
-                                (params[first] shl 16) or (params[first + 1] shl 8) or params[first + 2]
-                            else null
+                        i + 4 <= paramIndex && params[i + 1] == 2 -> {
+                            var end = next
+                            if (colon) while (end < paramIndex && separators[end]) end++
+                            val count = end - next
+                            if (colon && count != 3 && count != 4) {
+                                next = end + 1
+                                null
+                            } else {
+                                // Colon RGB permits one colorspace slot. As in Ghostty, color
+                                // components use their low byte rather than rejecting overflow.
+                                val first = i + if (colon && count == 4) 3 else 2
+                                next = first + 3
+                                ((params[first] and 255) shl 16) or
+                                    ((params[first + 1] and 255) shl 8) or (params[first + 2] and 255)
+                            }
                         }
                         else -> null
                     }
@@ -2036,10 +2048,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                         48 -> bg = color
                         58 -> setAttributes(color, attributes?.hyperlink)
                     }
-                    if (!subparameters) end = i + consumed
                 }
             }
-            i = end + 1
+            i = next
         }
     }
 

@@ -1018,4 +1018,11 @@ class GhosttyOracleTest {
     @Test fun overline_history_reflow() = checkGhostty(ghostty_overline_history_reflow())
     @Test fun overline_subparameters() = checkGhostty(ghostty_overline_subparameters())
     @Test fun sgr_unsupported_subparameters() = checkGhostty(ghostty_sgr_unsupported_subparameters())
+    @Test fun sgr_underline_subparameter_boundaries() = checkGhostty(ghostty_sgr_underline_subparameter_boundaries())
+    @Test fun sgr_color_component_bounds_38() = checkGhostty(ghostty_sgr_color_component_bounds_38())
+    @Test fun sgr_color_separator_boundaries_38() = checkGhostty(ghostty_sgr_color_separator_boundaries_38())
+    @Test fun sgr_color_component_bounds_48() = checkGhostty(ghostty_sgr_color_component_bounds_48())
+    @Test fun sgr_color_separator_boundaries_48() = checkGhostty(ghostty_sgr_color_separator_boundaries_48())
+    @Test fun sgr_color_component_bounds_58() = checkGhostty(ghostty_sgr_color_component_bounds_58())
+    @Test fun sgr_color_separator_boundaries_58() = checkGhostty(ghostty_sgr_color_separator_boundaries_58())
 }

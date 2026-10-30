@@ -1306,7 +1306,14 @@
     "overline_screen_state": "9e21cbbed2950f8eb2704c8bff562fc56398023fced8652da58422750ef1b7be",
     "overline_history_reflow": "ed9839d98c8851592bf17a4df804ce0d8bd01a279051b9ef2bfb35dcba61ac20",
     "overline_subparameters": "9c4f23dff4d6c57c7d9d9031c24a2e1a27695adf7a51f40f35eae97bd623bdd2",
-    "sgr_unsupported_subparameters": "7d4454580b2657f2e16a510aa58d49f13e9ad953e1a7f9f07e7829c4088f3445"
+    "sgr_unsupported_subparameters": "7d4454580b2657f2e16a510aa58d49f13e9ad953e1a7f9f07e7829c4088f3445",
+    "sgr_underline_subparameter_boundaries": "d707505bb55f29418481f69b0b1594d00f23bbaa7384d08f5b93c619150fd084",
+    "sgr_color_component_bounds_38": "76583dd29a0a1a13a2b49b97d3545c11324470d69a98843e85f5be66d5e16bd9",
+    "sgr_color_separator_boundaries_38": "08a142e5d54bf17c16b2c4bdb58810a633a74793c293f446ca44b9f6abb0b1a1",
+    "sgr_color_component_bounds_48": "f82580ada815d02e7cc152a097493763836e3a1fd80433853d104e8b5e277ca1",
+    "sgr_color_separator_boundaries_48": "27c23be47edbf3f2a895f6b40687fb3329cca106804fb0d1666747bfca75a6cb",
+    "sgr_color_component_bounds_58": "6b77817e7a5fbdd870efadeff4de9654926cd4554f1d0d0529c8be1236489e00",
+    "sgr_color_separator_boundaries_58": "dd472ef130d9d3e6f3d591179d52e226a7ca1f5c61df4ef4f8452c85c2532659"
   },
   "keyboardMatrixSha256": "6c01e3dd0dee327b115ef73db2d811a5a3bef14194045bd7f81b3c9bc4e9c90e",
   "modifyOtherKeysMatrixSha256": "218a6d9d284746fe45e95d10f4b791db3116a9f902dd9d05c43e5949fb2fe764",
