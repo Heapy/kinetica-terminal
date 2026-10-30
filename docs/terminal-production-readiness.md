@@ -60,6 +60,19 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Ordinary text paste now matches original Ghostty `input/paste.zig`: the fixed xterm control-byte
+set is replaced by spaces, bracketed mode preserves CR/LF, and unbracketed mode maps each LF to
+CR (including CRLF → CRCR). This fixes the former ESC deletion and unconditional line-ending
+normalization. Public `TerminalSession.paste` keeps its signature/JVM facade; typing/IME and raw
+input retain their separate paths. A new original-library oracle covers 267 cases / 534 encodings:
+all ASCII values, U+0080–U+00FF, mixed endings, Unicode, frame delimiters and larger mixed text.
+Fixtures and provenance regenerate byte-for-byte. Validation passes all 1640 JVM tests, fresh
+Release JS tests and 42 focused Native tests, including an isolated raw PTY that verifies exact
+bytes; browser paste integration and trusted Canvas/WebGL text-drop/MIME tests also pass.
+Evidence: `test-upstream/ghostty/paste-manifest.json` and `/tmp/kinetica-paste-*`.
+Ghostty's host-side unsafe-paste confirmation policy remains unimplemented in Browser/AppKit;
+byte-encoding parity does not close that separate behavior gap.
+
 Browser select-all now uses Ghostty's platform defaults (Cmd+A / Ctrl+Shift+A), and browser/
 AppKit local editing requires exact modifiers rather than intercepting extra Control/Option/
 Shift/Meta combinations. Browser coverage includes retained Unicode history, local Kitty event

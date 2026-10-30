@@ -174,10 +174,10 @@ public fun TerminalSession.sendText(text: String) {
     if (!keyboardInputBlocked) sendInput(text)
 }
 
+/** Encode explicit text insertion for the current paste mode, then submit it as one input.
+ * Hosts own any confirmation before calling this method; typing/IME uses [sendText]. */
 public fun TerminalSession.paste(text: String) {
-    // Pasted escape bytes must not terminate bracketed paste and inject terminal commands.
-    val normalized = text.replace("\r\n", "\n").replace('\n', '\r').replace("\u001b", "")
-    sendInput(if (bracketedPaste) "\u001b[200~$normalized\u001b[201~" else normalized)
+    sendInput(terminalEncodePaste(text, bracketedPaste))
 }
 
 public fun TerminalSession.sendFocus(focused: Boolean) {

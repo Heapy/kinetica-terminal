@@ -142,7 +142,7 @@ class TerminalSessionTest {
         terminal.sendKey(TerminalKey("ArrowUp"))
         terminal.sendKey(TerminalKey("c", control = true))
         terminal.paste("a\nb")
-        assertEquals(listOf("\u001b[A", "\u001b[2;3R", "\u001bOA", "\u0003", "\u001b[200~a\rb\u001b[201~"), output)
+        assertEquals(listOf("\u001b[A", "\u001b[2;3R", "\u001bOA", "\u0003", "\u001b[200~a\nb\u001b[201~"), output)
         subscription.dispose(); terminal.sendInput("ignored")
         assertEquals(5, output.size)
     }
@@ -210,7 +210,7 @@ class TerminalSessionTest {
         assertFalse(terminal.sendMouse(2, 3, 0, shift = true))
         terminal.sendFocus(true)
         terminal.paste("a\u001b[201~b")
-        assertEquals(listOf("\u001b[<0;3;4M", "\u001b[<0;3;4m", "\u001b[I", "\u001b[200~a[201~b\u001b[201~"), sent)
+        assertEquals(listOf("\u001b[<0;3;4M", "\u001b[<0;3;4m", "\u001b[I", "\u001b[200~a [201~b\u001b[201~"), sent)
     }
 
     private fun assertSameScreen(expected: TerminalSession, actual: TerminalSession) {

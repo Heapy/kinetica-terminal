@@ -331,6 +331,21 @@ try {
   await page.waitForFunction(() => keypadBytes.length === 1);
   assert.deepEqual(await page.evaluate(() => keypadBytes), [13]);
   await page.evaluate(() => { kineticaTerminalDemo.allowKeyboardLock(false); keypadBytes.length = 0; });
+  // Ordinary clipboard text uses Ghostty's byte transformations and per-mode line endings.
+  // This event carries only test text; no OS clipboard is read or modified.
+  for (const bracketed of [false, true]) {
+    await page.evaluate(bracketed => {
+      kineticaTerminalDemo.reset(); keypadBytes.length = 0;
+      if (bracketed) kineticaTerminalDemo.write("\x1b[?2004h");
+    }, bracketed);
+    await input.evaluate(element => {
+      const data = new DataTransfer(); data.setData("text/plain", "a\x00\x03\x1b[201~b\r\n界😀\x7f");
+      element.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+    });
+    const expected = bracketed ? "\x1b[200~a   [201~b\r\n界😀 \x1b[201~" : "a   [201~b\r\r界😀 ";
+    await page.waitForFunction(length => keypadBytes.length === length && kineticaTerminalDemo.transportState().pendingInputBytes === 0, Buffer.byteLength(expected));
+    assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), expected);
+  }
   // Mode 1036 controls legacy Alt text, independently of C0/function keys and 1039.
   await page.evaluate(() => { kineticaTerminalDemo.reset(); keypadBytes.length = 0; });
   await page.keyboard.press("Alt+a");

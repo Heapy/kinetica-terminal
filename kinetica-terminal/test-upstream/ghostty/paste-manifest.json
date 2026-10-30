@@ -1,0 +1,15 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
+  "cases": 267,
+  "encodings": 534,
+  "helperSha256": "22aa881f79fdf9451b637451b593dbb22b3e4f2bbb1102d01845bec6f139eee1",
+  "generatorSha256": "0be124a804099466d8b9f8bb713d149354c0e9305d74f53fe2045b23cce03cd4",
+  "fixtureSha256": "69ef86868783a2c81e045468b8548b69456dba502f8eb08223ec42471587cbc3",
+  "sources": {
+    "src/input/paste.zig": "062ac3248d99760f95cd0a1ad7053b7b33b171aff8a70ce78ddf30b61a9c19f7",
+    "src/lib_vt.zig": "09c5db2a09bd4612c6658a1b97a548a4ba6577a487de1f46388700347991df56",
+    "src/terminal/paste.zig": "08f03f2b5e6cf9319ccbc44e1ef368c3ff0779cc3c1148ed51444509ba881ed6",
+    "src/Surface.zig": "a63a77a8c01598366d82498661cfbb9244391036578422e7b3b37cbdc737b318"
+  }
+}

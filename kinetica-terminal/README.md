@@ -973,6 +973,15 @@ Custom hosts should call `session.pasteClipboard()` only for trusted user clipbo
 its `false` return allows ordinary text paste when the mode or host is unavailable. A `true`
 return means handled, including failures; the optional completion reports delivery or cancellation.
 `session.paste(text)`, dropped paths, IME input and synthetic browser paste events remain text input.
+
+Ordinary `session.paste(text)` and text-drop fallback use Ghostty's paste encoder: its fixed
+xterm control-byte set (including NUL, ESC, DEL and common tty control keys) is replaced by
+spaces. Bracketed paste preserves CR and LF verbatim inside the frame. Unbracketed paste
+converts each LF to CR, so CRLF becomes CRCR, matching the original rather than folding line
+endings. Typing/IME through `sendText` and raw `sendInput` do not use this transformation.
+This encoder does not itself request confirmation. Ghostty's host-side unsafe-paste confirmation
+flow is still a separate integration gap; existing browser/AppKit paste actions currently submit
+the encoded text directly.
 Mode queries report unknown without a MIME host; save/restore and RIS/DECSTR follow Ghostty.
 Up to sixteen gestures can wait behind clipboard I/O. Host replacement, reset and transport
 failure cancel pending gestures and revoke their passwords.
