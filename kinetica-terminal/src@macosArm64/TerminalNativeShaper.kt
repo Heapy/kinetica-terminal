@@ -14,7 +14,7 @@ internal class TerminalNativeShaper(font: NSFont) {
     private var primaryFont: NSFont? = font
     private val primaryFace: CTFontRef = checkNotNull(CFBridgingRetain(font)).reinterpret()
     private val faces = mutableListOf<CTFontRef>()
-    private val sbixFaces = mutableListOf<Boolean>()
+    private val colorFaces = mutableListOf<TerminalNativeColorGlyphs>()
     private val resolved = linkedMapOf<String, TerminalResolvedFontCell>()
     private var disposed = false
     val fontCount: Int get() = faces.size
@@ -24,8 +24,7 @@ internal class TerminalNativeShaper(font: NSFont) {
         return faces[index]
     }
 
-    fun isEmojiFont(index: Int): Boolean = CTFontGetSymbolicTraits(face(index)) and kCTFontColorGlyphsTrait != 0u
-    fun isSbixFont(index: Int): Boolean { check(!disposed); return sbixFaces[index] }
+    fun isColorGlyph(index: Int, glyph: Int): Boolean { check(!disposed); return glyph in colorFaces[index] }
 
     /** Resolve one complete terminal grapheme before run boundaries are chosen. */
     fun resolve(text: String): TerminalResolvedFontCell {
@@ -153,7 +152,7 @@ internal class TerminalNativeShaper(font: NSFont) {
         if (existing >= 0) return existing
         CFRetain(font)
         faces += font
-        sbixFaces += terminalNativeFontHasSbix(font)
+        colorFaces += TerminalNativeColorGlyphs.read(font)
         return faces.lastIndex
     }
 
@@ -162,7 +161,7 @@ internal class TerminalNativeShaper(font: NSFont) {
         disposed = true
         faces.forEach { CFRelease(it) }
         faces.clear()
-        sbixFaces.clear()
+        colorFaces.clear()
         resolved.clear()
         CFRelease(primaryFace)
         primaryFont = null

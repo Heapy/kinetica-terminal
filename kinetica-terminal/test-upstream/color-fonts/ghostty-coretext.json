@@ -2,7 +2,7 @@
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
   "backend": "coretext",
   "zig": "0.17.0",
-  "generatorSha256": "8d3f9006759e7ce9d70efcca0b349defe8423831fac1a6cb374adeb2d5a6f406",
+  "generatorSha256": "b6749f5631de89e2b008611903781d190b0cd9bf7b6c8ba96f98e7b5f95a19b3",
   "helperSha256": "ddb88d39630eda6cbaf9bdc643d7a5cf539b705002821d73953feddeecd829f6",
   "buildTemplateSha256": "9d887a3bfc304a1d8c443656844b01850dfd660103e98b69d8b26def1bbc09a2",
   "fontSha256": "b76fa2a0ccc8fc78864a5395dc6fa21ded66443c9902250aeaad453c192bc0e8",

@@ -155,7 +155,11 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       layers with alpha and current-foreground colors; independent pixel checks cover
       palette gray, empty base outlines and cache invalidation. Original desktop probes
       record the pinned backends' limitations on the same fixture. The remaining
-      COLRv1/SVG/non-PNG sbix audit stays open. PNG sbix now has independent
+      COLRv1/browser-SVG/non-PNG sbix audit stays open. Native SVG classification
+      now checks individual glyph ranges: ordinary outlines retain their size,
+      gray artwork keeps its intrinsic color and compressed gradients reach Metal.
+      Original CoreText/FreeType probes record the distinct backend behavior.
+      PNG sbix now has independent
       multi-strike, transparency, offset and dupe checks; Metal preserves intrinsic
       gray bitmap colors instead of tinting them as text. See the shaping reference.
 - [x] Implement shared hover identity, range tracking and decorations. Reopened implicit

@@ -1,0 +1,34 @@
+{
+  "fonttools": "4.60.1",
+  "generatorSha256": "83ff7ba002e808e8ccd4412d385189666a59e310828fb6d41fdcab2ccb9c9c29",
+  "fontSha256": "a7ffdb7043c26a55a5222ce5f595359402288b8c737ca93ae580382827407d78",
+  "glyphOrder": [
+    ".notdef",
+    "space",
+    "M",
+    "H",
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "outer",
+    "inner",
+    "band",
+    "letter",
+    "fallback"
+  ],
+  "documents": [
+    {
+      "glyph": 4,
+      "svg": "<svg id=\"glyph4\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\"><rect x=\"50\" y=\"-700\" width=\"500\" height=\"700\" fill=\"#606060\"/></svg>",
+      "compressed": false
+    },
+    {
+      "glyph": 6,
+      "svg": "<svg id=\"glyph6\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\"><defs><linearGradient id=\"paint\"><stop offset=\"0\" stop-color=\"#f02010\"/><stop offset=\"1\" stop-color=\"#2040f0\" stop-opacity=\"0.5\"/></linearGradient></defs><rect x=\"50\" y=\"-700\" width=\"500\" height=\"700\" fill=\"url(#paint)\"/></svg>",
+      "compressed": true
+    }
+  ]
+}

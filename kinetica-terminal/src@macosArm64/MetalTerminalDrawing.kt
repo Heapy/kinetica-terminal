@@ -62,7 +62,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     internal val shapingFontCount: Int get() = shapers.values.sumOf { it.fontCount }
     private val frame = TerminalGpuFrame({ text, style -> shaper(style).resolve(text) }) { run ->
         val current = shaper(run.style)
-        current.shape(run.input, run.font).map { if (current.isEmojiFont(it.font)) it.copy(emoji = true) else it }
+        current.shape(run.input, run.font).map { if (current.isColorGlyph(it.font, it.glyph)) it.copy(emoji = true) else it }
     }
     private val batches = TerminalGpuBatches()
     private val textures = mutableListOf<MTLTextureProtocol>()
@@ -367,7 +367,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
             cellHeight * scale - baseline.roundToInt() - (font.leading / 2 - font.descender),
             faceHeight, (2 * font.capHeight + faceHeight) / 3)
         val bitmap = terminalRasterizeNativeGlyph(shaper(key.style).face(key.font), key.glyph, baseline, atlas.size - 2,
-            key.constraint, metrics, key.columns, intrinsicColor = shaper(key.style).isSbixFont(key.font))
+            key.constraint, metrics, key.columns, intrinsicColor = shaper(key.style).isColorGlyph(key.font, key.glyph))
         rasterizations++
         return bitmap
     }

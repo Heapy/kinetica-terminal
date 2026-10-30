@@ -187,6 +187,30 @@ them with the commands above plus `--font sbix`; their output is recorded in
 `test-upstream/color-fonts/ghostty-sbix-{freetype,coretext}.json`. JPEG/TIFF sbix images
 remain outside this verified PNG coverage.
 
+SVG coverage uses a third original fixture with separate gray and gzip-compressed
+gradient documents, with an ordinary monochrome glyph between their glyph IDs.
+The Native shaper caches SVG membership per glyph, following Ghostty's CoreText
+classification, rather than applying emoji fitting to every glyph in a color font.
+The rasterizer preserves intrinsic SVG colors even when all channels are gray.
+The table reader retains only validated, ordered glyph ranges; document offsets,
+lengths, truncation and overlapping ranges are checked without copying XML data.
+CoreText remains responsible for document rendering and decompression.
+
+Offscreen Metal regressions reproduce both previous failures: the ordinary 4×4
+outline was enlarged to 144 ink pixels, and gray SVG artwork was tinted by SGR.
+They now preserve the 16-pixel outline and unchanged gray pixels across foreground
+changes, and verify that the compressed gradient reaches the GPU in color.
+Validation passes 1,440 JVM tests, the fresh Release JS suite and 21 focused Native
+tests. The original CoreText probe classifies only A/C as SVG color glyphs and
+renders both documents at 20/30/40 points. The original FreeType probe renders
+monochrome fallback outlines, consistent with its disabled SVG loading. Reproduce
+the 18 cases per backend with the commands above plus `--font svg`; results are in
+`test-upstream/color-fonts/ghostty-svg-{freetype,coretext}.json`. All three font
+fixtures and six desktop probe files regenerate byte-for-byte.
+
+Browser SVG rendering, COLRv1 and non-PNG sbix remain open format audits. These
+Native SVG checks do not establish browser support for embedded SVG documents.
+
 ## Original reference
 
 `scripts/generate-terminal-shaping.py` builds and runs the unmodified Ghostty 1.4.0
