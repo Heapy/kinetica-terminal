@@ -258,20 +258,38 @@ class MacOsRenderObserverTest {
         val session = TerminalSession(80, 24)
         val frameText = mutableMapOf<Long, String>()
         val presentations = mutableListOf<Pair<String, Double>>()
+        val events = ArrayDeque<String>()
+        fun record(event: String) {
+            if (events.size == 80) events.removeFirst()
+            events.addLast("${CACurrentMediaTime()}: $event")
+        }
         var submitted = 0
         var completed = 0
         val completedFrames = mutableSetOf<Long>()
+        var latestSubmitted = 0L
+        var presentationRecoveryPending = false
+        var presentationRecoverySubmissions = 0
         val observer = object : TerminalRenderObserver {
             override fun onFrameStarted(frameId: Long, viewport: TerminalViewport) {
                 frameText[frameId] = viewport.visibleText().lineSequence().first()
+                record("start $frameId ${frameText[frameId]}")
             }
-            override fun onFrameSubmitted(frame: TerminalFrameMetrics) { submitted++ }
-            override fun onGpuTime(frameId: Long, milliseconds: Double?) { completed++; completedFrames += frameId }
+            override fun onFrameSubmitted(frame: TerminalFrameMetrics) {
+                if (presentationRecoveryPending) {
+                    presentationRecoveryPending = false; presentationRecoverySubmissions++
+                    record("presentation recovery ${frame.frameId}")
+                }
+                submitted++; latestSubmitted = frame.frameId; record("submit ${frame.frameId}")
+            }
+            override fun onGpuTime(frameId: Long, milliseconds: Double?) { completed++; completedFrames += frameId; record("complete $frameId") }
             override fun onFramePresented(frameId: Long, hostTimeSeconds: Double) {
                 presentations += (frameText[frameId].orEmpty() to hostTimeSeconds)
+                if (hostTimeSeconds == 0.0 && frameId == latestSubmitted) presentationRecoveryPending = true
+                record("present $frameId at $hostTimeSeconds")
             }
         }
         val view = AppKitTerminalView(session, rendering = TerminalRendering.GPU, renderObserver = observer)
+        view.onViewportChanged = { record("viewport change") }
         var metalLayer: platform.QuartzCore.CAMetalLayer? = null
         val window = NSWindow(NSMakeRect(40.0, 40.0, 800.0, 480.0), NSWindowStyleMaskTitled, NSBackingStoreBuffered, false)
         window.setReleasedWhenClosed(false); window.contentView = view
@@ -294,13 +312,14 @@ class MacOsRenderObserverTest {
         ) {
             visibilityEvents += "visible=${visible()}, dirty=${view.needsDisplay}, attached=${view.window == window}, " +
                 "submitted=$submitted, model=${session.screenLine(0).text()}"
+            record("visibility ${visibilityEvents.last()}")
         }
         fun diagnostics() = "visible=${visible()}, ordered=${window.visible}, cover=${cover.visible}, " +
                 "activeSpace=${window.onActiveSpace}, metalAttached=${metalLayer?.let { it == view.layer }}, " +
                 "appHidden=${app.hidden}, started=${frameText.size}, submitted=$submitted, " +
                 "windowFrame=${NSStringFromRect(window.frame)}, coverFrame=${NSStringFromRect(cover.frame)}, " +
                 "completed=$completed, lastPresentations=${presentations.takeLast(5)}, model=${session.screenLine(0).text()}, " +
-                "visibilityEvents=$visibilityEvents"
+                "visibilityEvents=$visibilityEvents\nevents:\n${events.joinToString("\n")}"
         fun delay(seconds: Double): () -> Boolean {
             val until = CACurrentMediaTime() + seconds
             return { CACurrentMediaTime() >= until }
@@ -343,6 +362,7 @@ class MacOsRenderObserverTest {
                 // in another app; it is not part of the rendering contract.
                 // Covering and ordering out exercise different AppKit invalidation paths.
                 for (hide in listOf(false, true)) {
+                    record("hide=$hide")
                     if (hide) window.orderOut(null) else {
                         cover.setFrame(window.frame.useContents {
                             NSMakeRect(origin.x - 32, origin.y - 32, size.width + 64, size.height + 64)
@@ -364,17 +384,35 @@ class MacOsRenderObserverTest {
                     yield("Occluded idle window" to delay(0.2))
                     assertEquals(hiddenIdle, submitted, "An occluded idle terminal must not keep retrying")
                     if (hide) window.orderFrontRegardless() else cover.orderOut(null)
+                    record("restore hide=$hide")
                     // No writes, forced display, resize or cursor animation may rescue a lost redraw.
-                    // A cached surface may be reused on uncover without a new drawable
-                    // presentation callback. The optional verifier checks WindowServer pixels.
+                    // Completion alone does not settle presentation or its recovery retries.
+                    // The optional verifier also checks WindowServer pixels.
                     yield("Latest completed output after restore (hide=$hide)" to {
                         visible() && completedText(marker)
                     })
                     yield("Drain restored frame and pending window updates" to drained())
                     yield("Capture restored window" to capture(if (hide) "after_hide" else "after_cover", marker))
-                    val idle = submitted
-                    yield("Idle window" to delay(0.2))
-                    assertEquals(idle, submitted, "Restored idle terminal must stop drawing")
+                    var idle = submitted
+                    var idleRecoveries = presentationRecoverySubmissions
+                    var idleSince = CACurrentMediaTime()
+                    record("idle baseline $idle hide=$hide")
+                    yield("Idle window" to {
+                        // A late dropped-frame callback is an external reason to redraw,
+                        // even after GPU work has drained. Admit one recovery submission
+                        // per current dropped frame; older callbacks grant no allowance.
+                        val recoveries = presentationRecoverySubmissions - idleRecoveries
+                        check(submitted == idle + recoveries) {
+                            "Idle drawing needs a dropped-frame cause: expected ${idle + recoveries}, actual $submitted; ${diagnostics()}"
+                        }
+                        if (recoveries > 0 || presentationRecoveryPending || completed < submitted) {
+                            if (recoveries > 0) println("Idle presentation recovery: $recoveries frame(s), hide=$hide")
+                            idle = submitted; idleRecoveries = presentationRecoverySubmissions
+                            idleSince = CACurrentMediaTime()
+                            false
+                        } else CACurrentMediaTime() - idleSince >= 0.2
+                    })
+                    assertEquals(idle, submitted, "Restored idle terminal must stop drawing; ${diagnostics()}")
                 }
             })
         } finally {

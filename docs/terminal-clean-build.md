@@ -123,10 +123,33 @@ The corrected fixture passes the nine native animation/visibility/resize checks.
 tracing, twenty repetitions of the previously problematic ordering pass all twenty animation
 lifecycle cases and all forty drawable regressions. The neighbouring
 `retainsLastCompletedFrameAcrossOcclusionWithoutFurtherWrites` test passes 19/20: one run
-submits a sixth frame after its idle baseline of five. That separate late-frame observation
-still needs investigation; its idle assertion is unchanged. The combined repeat log records
+submits a sixth frame after its idle baseline of five. The combined repeat log records
 79 passed / 1 failed, rather than a blanket passing result. Logs are
 `/tmp/kinetica-animation-window-{after,repeat}.log` and their copies in the report directory.
+
+A diagnostic repeat reproduces the idle assertion twice in 30 iterations. In both cases,
+WindowServer reports the latest submitted frame as dropped about 0.57–0.70 seconds after
+GPU completion, after the test's 0.5-second drain interval. The subsequent single recovery
+frame is necessary work. [Metal's presented-time contract](https://developer.apple.com/documentation/metal/mtldrawable/presentedtime)
+distinguishes presentation from completion and reports zero for unpresented/dropped frames.
+A barrier that requires a positive callback also proves unsuitable on this host: the
+WindowServer/OCR verifier sees the correct `BEFORE`, `AFTER COVER` and `AFTER HIDE` pixels,
+but the latest callback can remain absent until the 10-second test deadline. The failed
+strict-barrier run and all three matching captures remain in
+`build/reports/terminal-idle-frame/pixels/run-nt_7asy6/`.
+
+The idle test now admits exactly one recovery submission after a dropped **current** frame;
+stale callbacks grant no allowance, and any unrelated submission still fails immediately.
+After recovery completes it requires the original 0.2-second interval with no further
+submissions. Pending recovery cannot bypass the existing 10-second deadline. Hidden idle
+windows still permit zero submissions. This corrects the test's completion assumption
+without changing production rendering or enlarging its wait durations.
+The corrected idle test passes 30/30 repetitions, and the complete WindowServer/OCR
+occlusion verifier passes all three phases plus lifecycle assertions
+(`terminal-idle-frame/final-pixels/run-zqzs92v3/report.json`). The combined repeat has
+117 passes / 3 failures: all three failures are in the neighbouring drawable-recovery
+fixture, whose window still uses the ordinary window level. Its visibility assumptions
+are the next check; this result is not reported as a wholly passing suite.
 The timeout is not relaxed and the clean-export native gate remains open.
 
 `build/reports/terminal-clean-engine/report.json` retains the source hashes, individual run
