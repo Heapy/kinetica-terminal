@@ -214,7 +214,7 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       Validation: 1420 JVM tests, fresh Release JS tests, 93 focused Native tests and real
       Chromium hover pixels/previews, activation and selection with Canvas/WebGL on both
       macOS/Linux modifier policies. AppKit tests exercise event callbacks and overlay state;
-      the separately documented live GPU visibility gate remains unresolved.
+      the live GPU visibility gate was unresolved at this checkpoint (see the later recheck below).
 - [x] Add the independent `link-url` host policy as `session.detectedLinksEnabled` (default true).
       Disabled detection removes plain URL/path lookup, hover and activation and restores
       ordinary word selection on double-click. Explicit OSC 8 links retain their own setting;
@@ -246,13 +246,24 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       provenance regenerate byte-for-byte. Tests intercept system presentation; physical trackpad
       and visible system-definition popup acceptance remain unclaimed.
 
-The expanded native run also exercises the pre-existing live GPU/IME window gate. Its first-frame
-timeout reproduces on an isolated build of the exact pre-lookup HEAD `78ee5a0`. The test now uses
+The expanded native run also exercised the pre-existing live GPU/IME window gate. Its first-frame
+timeout reproduced on an isolated build of the exact pre-lookup HEAD `78ee5a0`. The test uses
 the existing `runWindowSteps` AppKit loop and explicitly waits for WindowServer visibility before
-asserting frame submission. In this environment it reports `visible=true, occlusion=8192` without
+asserting frame submission. That environment reported `visible=true, occlusion=8192` without
 `NSWindowOcclusionStateVisible`; an independent Swift window, including floating/all-Spaces mode,
-reports the same condition. This live window gate remains unverified here, rather than being
-replaced with an offscreen or visibility-bypassing assertion.
+reported the same condition. No offscreen or visibility-bypassing assertion replaced this gate.
+
+The October 30 recheck at `ffef0ea` passes all ten `MacOsTerminalTest` tests, including actual
+WindowServer visibility, first presentation, hide/show recovery, IME and real PTYs. All five
+`MacOsRenderObserverTest` tests also pass with the current engine-only test binary: atomic TUI
+resize, continuous resize, retained glyph geometry, cover/hide recovery without further output,
+and observer disposal. Logs: `/tmp/kinetica-live-window-recheck.log` and
+`/tmp/kinetica-live-render-observer.log`. The earlier visibility blocker is no longer reproduced.
+External pixel acceptance remains open: the current-binary occlusion verifier reaches its initial
+visible frame, but `screencapture` fails with `could not create image from window` for all attempts.
+`build/reports/terminal-window/run-eslh_w39/report.json` retains the failure and source/binary
+hashes. This does not prove pixels, physical presentation latency or the open load-performance
+gates. Earlier attempts selected the old root-project binary and are not current-build evidence.
 
 - [x] Double-click a recognized visible HTTP(S) link as one complete selection, following
       `Surface`'s override of ordinary word selection. Soft wraps, wide/combined cells and

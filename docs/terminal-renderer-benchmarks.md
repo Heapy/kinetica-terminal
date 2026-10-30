@@ -67,6 +67,18 @@ python3 scripts/verify-terminal-window.py --scenario continuous-resize --tui hto
 python3 scripts/verify-terminal-window.py --scenario continuous-resize --tui claude --duration 30
 ```
 
+The default binary path is for the root project build. When compiling with
+`scripts/engine.sh`, explicitly select its output so an older root-project binary cannot be
+mistaken for the current tests:
+
+```sh
+python3 scripts/verify-terminal-window.py \
+  --binary build/engine-project/build/tasks/_kinetica-terminal_linkMacosArm64TestDebug/kinetica-terminal_test.kexe
+```
+
+Use the same `--binary` argument for the resize and continuous-resize scenarios. The report
+records the executable hash; compiling in one project does not refresh the other project's output.
+
 Each command opens only its own fixture window. The native test supplies that window's ID;
 the driver captures it and uses offline Apple Vision OCR. Reports, source/binary hashes,
 native logs and PNGs are retained in `build/reports/terminal-window/run-*`. Missing capture
