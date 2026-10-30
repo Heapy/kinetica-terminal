@@ -6,11 +6,61 @@ import kotlinx.cinterop.*
 import platform.AppKit.*
 import platform.CoreGraphics.*
 import platform.Foundation.*
+import platform.Metal.*
 import kotlin.io.encoding.Base64
 import kotlin.math.ceil
 import kotlin.test.*
 
 class NativeGraphicsRenderingTest {
+    @Test fun metalSurfaceDimensionsRespectDeviceLimitsAcrossResizeAndVisibility() {
+        NSApplication.sharedApplication()
+        val device = checkNotNull(MTLCreateSystemDefaultDevice())
+        // Original Ghostty's Device.queryMaxTextureSize, from Apple's feature-set table.
+        val limit = when {
+            device.supportsFamily(MTLGPUFamilyApple10) -> 32768
+            device.supportsFamily(MTLGPUFamilyApple3) -> 16384
+            else -> 8192
+        }
+        val session = TerminalSession(20, 6)
+        val viewport = TerminalViewport(session, {})
+        val renderer = MetalTerminalDrawing {}
+        try {
+            session.resize(20, 6, TerminalCellSize(8, 16))
+            session.setGraphicsStorageLimit(64 * 1024 * 1024)
+            session.write("\u001b[?25l\u001b]11;#0a14c8\u0007" + image(1, red))
+            for (scale in listOf(1.0, 1.25, 2.0)) for (wide in listOf(true, false)) {
+                val major = limit / scale + 100.25
+                val minor = 2 / scale
+                renderer.resize(if (wide) major else minor, if (wide) minor else major,
+                    scale, 14.0, 8.0, 16.0)
+                val width = if (wide) limit else 2
+                val height = if (wide) 2 else limit
+                fun expectSize() = renderer.layer.drawableSize.useContents {
+                    assertEquals(width.toDouble(), this.width)
+                    assertEquals(height.toDouble(), this.height)
+                }
+                expectSize()
+                renderer.setVisible(false)
+                renderer.setVisible(true)
+                expectSize()
+                // Only two pixels along the short axis: exercise real rendering without
+                // allocating a maximum-width * maximum-height texture or readback buffer.
+                val bytes = renderer.snapshot(viewport)
+                assertEquals(width * height * 4, bytes.size)
+                assertEquals(red, pixel(bytes, width, 0, 0).let { listOf(it[2], it[1], it[0], it[3]) })
+                assertEquals(blue, pixel(bytes, width, width - 1, height - 1).let { listOf(it[2], it[1], it[0], it[3]) })
+            }
+            renderer.resize(160.2, 96.2, 1.25, 14.0, 8.0, 16.0)
+            renderer.layer.drawableSize.useContents {
+                assertEquals(201.0, width); assertEquals(121.0, height)
+            }
+            if (limit == 32768) {
+                renderer.resize(limit.toDouble(), limit.toDouble(), 1.0, 14.0, 8.0, 16.0)
+                assertFailsWith<IllegalArgumentException> { renderer.snapshot(viewport) }
+            }
+        } finally { renderer.dispose(); viewport.dispose() }
+    }
+
     @Test fun nativePngCropPixelsMatchTheFixtureWithAndWithoutOuterZlib() {
         NSApplication.sharedApplication()
         val fixture = terminalGraphicsPngFixtures().first { Base64.decode(it.rgba)[3] == 255.toByte() }

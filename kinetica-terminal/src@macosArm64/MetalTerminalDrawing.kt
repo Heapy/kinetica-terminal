@@ -1,3 +1,6 @@
+// Surface limits follow Ghostty renderer/Metal.zig and renderer/metal/Device.zig (MIT).
+// Copyright (c) 2024 Mitchell Hashimoto, Ghostty contributors.
+// Pinned source and license: ../third-party/ghostty.json and GHOSTTY-LICENSE.
 @file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class, kotlinx.cinterop.BetaInteropApi::class)
 
 package io.heapy.kinetica.terminal
@@ -19,6 +22,11 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     private val fontProvider: (String?, Double, Int) -> NSFont = ::terminalNativeFont,
     private val invalidate: () -> Unit) {
     private val device = checkNotNull(MTLCreateSystemDefaultDevice()) { "Metal is unavailable" }
+    private val maxTextureDimension = when {
+        device.supportsFamily(MTLGPUFamilyApple10) -> 32768
+        device.supportsFamily(MTLGPUFamilyApple3) -> 16384
+        else -> 8192
+    }
     private val queue = checkNotNull(device.newCommandQueue())
     val layer = CAMetalLayer().apply {
         this.device = this@MetalTerminalDrawing.device as objcnames.protocols.MTLDeviceProtocol
@@ -113,13 +121,19 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
             if (!busy) releaseResources()
         } else {
             layer.device = device as objcnames.protocols.MTLDeviceProtocol
-            layer.drawableSize = NSMakeSize(ceil(width * scale), ceil(height * scale))
+            updateDrawableSize()
             resetAtlas = true
         }
     }
 
     private fun cancelPresentationRetry() {
         presentationRetry?.invalidate(); presentationRetry = null
+    }
+
+    private fun pixelDimension(points: Double): Int = ceil(points * scale).toInt().coerceIn(1, maxTextureDimension)
+
+    private fun updateDrawableSize() {
+        layer.drawableSize = NSMakeSize(pixelDimension(width).toDouble(), pixelDimension(height).toDouble())
     }
 
     private fun releaseResources() {
@@ -147,7 +161,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         CATransaction.begin(); CATransaction.setDisableActions(true)
         if (managesLayerFrame) layer.frame = NSMakeRect(0.0, 0.0, width, height)
         layer.contentsScale = scale
-        if (visible) layer.drawableSize = NSMakeSize(ceil(width * scale), ceil(height * scale))
+        if (visible) updateDrawableSize()
         CATransaction.commit()
     }
 
@@ -375,8 +389,10 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     /** Readback for native pixel tests only; normal presentation only waits under image-budget pressure. */
     internal fun snapshot(viewport: TerminalViewport): ByteArray {
         check(!busy && !disposed && visible)
+        val pixelWidth = pixelDimension(width); val pixelHeight = pixelDimension(height)
+        val byteCount = pixelWidth.toLong() * pixelHeight * 4
+        require(byteCount <= Int.MAX_VALUE) { "Metal readback exceeds the byte-array size limit" }
         val images = prepare(viewport)
-        val pixelWidth = ceil(width * scale).toInt(); val pixelHeight = ceil(height * scale).toInt()
         val descriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(MTLPixelFormatBGRA8Unorm,
             pixelWidth.toULong(), pixelHeight.toULong(), false)
         descriptor.storageMode = MTLStorageModeShared; descriptor.usage = MTLTextureUsageRenderTarget
@@ -384,7 +400,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         val command = encode(target, viewport.theme.background, images)
         command.commit(); command.waitUntilCompleted(); imageCache.completed()
         check(command.error == null) { command.error?.localizedDescription.orEmpty() }
-        val result = ByteArray(pixelWidth * pixelHeight * 4)
+        val result = ByteArray(byteCount.toInt())
         result.usePinned { target.getBytes(it.addressOf(0), (pixelWidth * 4).toULong(),
             MTLRegionMake2D(0u, 0u, pixelWidth.toULong(), pixelHeight.toULong()), 0u) }
         return result

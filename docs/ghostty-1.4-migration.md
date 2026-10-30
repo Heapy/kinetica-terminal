@@ -468,6 +468,17 @@ replaced with an offscreen or visibility-bypassing assertion.
 
 ## Memory and lifecycle
 
+- [x] Clamp native Metal drawable dimensions to the device's 2D texture limit, including
+      visibility restoration and test readback. The family lookup follows original
+      `renderer/metal/Device.zig` and the [Apple feature-set table](https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf):
+      Apple10 supports 32,768 pixels, Apple3 and later 16,384, with the original 8,192 fallback.
+      Previously an oversized width left CAMetalLayer's drawable size at zero on the tested
+      device. Thin real textures now verify both axes at its 16,384 limit, scales 1/1.25/2,
+      image/background pixels and hide/show; normal fractional sizing keeps its ceil behavior.
+      Readback checks its byte count in Long before allocating a texture or ByteArray; its
+      4 GiB rejection test runs only on a device supporting the 32,768 limit. All eleven
+      Native graphics tests pass. This does not close the separate live-window visibility
+      gate or impose a combined resident/renderer memory budget.
 - [x] Resize browser backing canvases by shrinking an axis before growing the other.
       Canvas/WebGL previously requested the new width at the old height during tall-to-wide
       changes: a DPR-2 regression requested 28,730,880 RGBA bytes between surfaces requiring
