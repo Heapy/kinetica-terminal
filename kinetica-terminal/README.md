@@ -1008,8 +1008,9 @@ notifications. AppKit progress pixels and browser progress state/expiry are chec
 This is an initial VT implementation, not complete xterm conformance. Known limits:
 
 - No sixel or blinking text. Metal shapes font runs with CoreText; WebGL ligatures require
-  configured shaping fonts as described above. Hyperlink activation and search controls
-  are currently provided by the native host; browser hosts can use the shared search/link APIs.
+  configured shaping fonts as described above. Both surfaces activate detected and OSC 8
+  links through their host policies. Search controls are provided by the native host;
+  browser hosts can build search controls with the shared search API.
   DECRQSS supports cursor style, SGR attributes and vertical/horizontal margins;
   its SGR report omits underline color, matching the pinned Ghostty reference.
 - Mouse input surfaces support clicks, dragging, wheel and all-motion tracking.
