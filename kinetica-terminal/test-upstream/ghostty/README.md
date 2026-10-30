@@ -58,6 +58,13 @@ Kotlin replays each case whole and bytewise; host policy, encoded mouse modifier
 gestures are tested separately. Regenerate with
 `python3 scripts/generate-terminal-mouse-shift.py /path/to/ghostty /path/to/zig`.
 
+The [ENQ corpus](enquiry-manifest.json) contains 30 scenarios / 79 checkpoints from the
+original terminal stream and enquiry effect. Host configuration supplies raw response bytes;
+the original handler decides whether to respond and applies its 255-byte bound. Hex snapshots
+preserve NUL/non-UTF-8 data. Parser-state cases cover ESC/CSI/DCS headers, control strings,
+partial input, pending wrap, resets and screen switches; Kotlin replays whole and bytewise.
+Regenerate with `python3 scripts/generate-terminal-enquiry.py /path/to/ghostty /path/to/zig`.
+
 The [program-status corpus](program-status-manifest.json) contains 260 scenarios /
 290 checkpoints from the original OSC 7501 parser, typed effect callback and reply
 encoder. It covers optional handler installation, both query terminators, reset,

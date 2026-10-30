@@ -943,6 +943,20 @@ to its horizontal axis, so the native report reflects that platform event. Brows
 also suppresses the shifted context menu. Generated fixtures and provenance reproduce
 byte-for-byte.
 
+ENQ (`0x05`) now emits an optional host-configured answerback, disabled by default. Hosts can
+configure UTF-8 text or raw bytes; only 1–255 encoded bytes are retained, and empty/oversized
+values suppress replies. Configuration is copied, survives terminal resets and never exposes
+host identity implicitly. Raw replies preserve embedded NUL and non-UTF-8 data. Parser-state
+behavior follows the original stream: an ENQ is executed only in control-executing states,
+without disrupting a pending escape/CSI sequence or pending wrap.
+
+Thirty original-Ghostty scenarios / 79 checkpoints compare byte boundaries, binary/Unicode
+payloads, host replacement, reset/screen/hold behavior and ENQ in ESC/CSI/DCS/OSC/APC/SOS/PM
+contexts. Fixtures and provenance reproduce byte-for-byte. Validation passes all 1225 JVM
+tests, the fresh JS suite and three native enquiry tests. A separate isolated real-PTY test
+receives and compares all 255 raw bytes twice, including NUL and high bytes, with RIS between
+the requests; both responses remain exact and no transport input is rejected.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than

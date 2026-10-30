@@ -70,6 +70,19 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         private set
     private var mouseShiftCaptureDefault = false
     private var mouseShiftCaptureApplicationAllowed = true
+    private var enquiryResponse: ByteArray? = null
+
+    /** Host answerback for ENQ (0x05). Disabled by default; empty or over-255-byte responses
+     * produce no reply, matching Ghostty. A private copy survives terminal resets. */
+    public fun configureEnquiryResponse(response: ByteArray?) {
+        enquiryResponse = response?.takeIf { it.size in 1..255 }?.copyOf()
+    }
+
+    /** UTF-8 convenience overload; the limit is encoded bytes, not characters. */
+    public fun configureEnquiryResponse(response: String) {
+        configureEnquiryResponse(if (response.length <= 255) response.encodeToByteArray() else null)
+    }
+
     public val mouseShiftCapture: Boolean get() =
         (if (mouseShiftCaptureApplicationAllowed) mouseShiftCaptureRequested else null) ?: mouseShiftCaptureDefault
 
@@ -1042,6 +1055,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     private fun executeControl(code: Int) {
         if (code in 0x80..0x9f) { escapeSequence(code - 0x40, 0); return }
         when (code) {
+            5 -> enquiryResponse?.let(::sendProtocolBytes)
             7 -> bellCount++
             8 -> cursorLeft(1)
             9 -> tab(1)

@@ -473,6 +473,13 @@ codepoints). Combinations 0–31 are valid; for example, 23 matches xterm's
 `no-negate,no-attributes,no-trim,full`. Terminal commands cannot enable this host policy.
 SGR blink state is retained for checksums and DECRQSS; text blinking remains unrendered.
 
+ENQ (`0x05`) sends an optional host-configured answerback. `configureEnquiryResponse` accepts
+a UTF-8 string or raw bytes; the byte overload accepts `null` to disable it. The default is
+no reply. Responses of 1–255 bytes are copied and retained; empty or longer values disable
+the response, matching Ghostty's size limit. Embedded NUL and non-UTF-8 bytes remain intact.
+RIS/DECSTR and screen switches preserve this host configuration. ENQ executes only where
+the terminal parser recognizes a control, without interrupting a pending escape sequence.
+
 Device identification supports DA1/DA2/DA3 (`CSI c`, `CSI > c`, `CSI = c`), legacy
 DECID (`ESC Z`), and XTVERSION (`CSI > q`). The conservative profile reports
 `CSI ? 1;2 c` (VT100 with advanced video), `CSI > 0;0;0 c`, a zero unit ID, and

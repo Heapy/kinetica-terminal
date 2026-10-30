@@ -7,6 +7,40 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsProtocolDeliveryTest {
+    @Test fun realPtyPreservesBinaryEnquiryAcrossTerminalReset() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession()
+        session.configureEnquiryResponse(ByteArray(255) { it.toByte() })
+        val program = """
+            use strict; use warnings;
+            system('/bin/stty', 'raw', '-echo') == 0 or die 'stty';
+            ${'$'}| = 1;
+            my ${'$'}expected = pack('C*', 0..254);
+            for my ${'$'}request ("\x05", "\ec\x05") {
+                print ${'$'}request;
+                my ${'$'}received = '';
+                while (length(${'$'}received) < 255) {
+                    my ${'$'}n = sysread(STDIN, my ${'$'}part, 255 - length(${'$'}received));
+                    defined(${'$'}n) && ${'$'}n > 0 or die 'read';
+                    ${'$'}received .= ${'$'}part;
+                }
+                die 'binary answerback mismatch' unless ${'$'}received eq ${'$'}expected;
+            }
+            print 'ENQUIRY_OK';
+        """.trimIndent()
+        val pty = MacOsPty(session, "/usr/bin/perl", listOf("-e", program),
+            onInputRejected = { fail("Answerback rejected") })
+        var closed = false
+        fun screen() = (0 until session.lineCount).joinToString("\n") { session.line(it).text() }
+        try {
+            await("binary answerback", ::screen) { "ENQUIRY_OK" in screen() }
+            assertEquals(0L, pty.rejectedInputCount)
+        } finally {
+            pty.close { closed = true }
+            await("answerback cleanup", ::screen) { closed }
+        }
+    }
+
     @Test fun realPtyDrainsChainedRepliesAndCancelsAnUndeliveredTail() {
         NSApplication.sharedApplication()
         val session = TerminalSession()

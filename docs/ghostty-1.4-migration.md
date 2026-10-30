@@ -168,6 +168,10 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       switches preserve it. Host defaults/forced policy survive resets. AppKit/browser paths
       honor capture, including the encoded modifier, and preserve local selection otherwise.
       Seventeen original-parser scenarios cover 86 states, including invalid/cancelled input.
+- [x] ENQ (`0x05`) with explicit host answerback configuration, disabled by default. Raw
+      replies of 1–255 bytes preserve NUL/non-UTF-8 data; oversized responses are suppressed.
+      Thirty original-parser scenarios / 79 states cover byte limits, parser contexts,
+      partial sequences, host changes, pending wrap, resets and screen transitions.
 - [x] Legacy Alt-prefix mode 1036, with UTF-8/layout fallbacks, C0/fixterms and independent
       modified functional-key tables, connected to AppKit Option-as-Meta and browser layout input.
       ANSI SRM (12), DEC slow-scroll (4), autorepeat (8) and Alt mode 1039 retain queryable
