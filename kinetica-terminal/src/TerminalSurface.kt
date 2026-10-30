@@ -72,6 +72,7 @@ public class TerminalViewport internal constructor(
     public fun setVisible(visible: Boolean) {
         if (disposed || this.visible == visible) return
         this.visible = visible
+        session.requestHistoryCompression()
         cancelGraphicsTimer(); resetBlink()
         if (visible) markAll()
     }
@@ -164,6 +165,10 @@ public class TerminalViewport internal constructor(
         }
     }
     private val holdObservation = session.onRenderHold { renderHold(it) }
+    private val historyCompression = session.attachHistoryCompression(scheduler) {
+        if (disposed || !visible || frozen != null || session.alternateScreen) null
+        else (session.historySize - scrollOffset) until (session.historySize - scrollOffset + rows)
+    }
 
     init { if (session.synchronizedOutput) renderHold(true, capture = false) else resetBlink() }
 
@@ -256,7 +261,7 @@ public class TerminalViewport internal constructor(
 
     public fun dispose() {
         if (!disposed) {
-            disposed = true; observation.dispose(); holdObservation.dispose()
+            disposed = true; observation.dispose(); holdObservation.dispose(); historyCompression.dispose()
             cancelGraphicsTimer()
             cancelResizeTimers(); resizeHeld = false
             cancelSelectionDrag(); liveSelection.clear(); frozen?.selection?.clear(); scrollAnchor = null
@@ -267,10 +272,11 @@ public class TerminalViewport internal constructor(
     public fun scroll(lines: Int) {
         if (disposed || frozen != null) return
         scrollOffset = (scrollOffset.toLong() + lines).coerceIn(0, session.historySize.toLong()).toInt()
+        session.requestHistoryCompression()
         rememberScrollAnchor(); resetBlink(); markAll()
     }
     public fun followOutput() {
-        if (scrollOffset != 0) { scrollOffset = 0; scrollAnchor = null; resetBlink(); markAll() }
+        if (scrollOffset != 0) { scrollOffset = 0; scrollAnchor = null; session.requestHistoryCompression(); resetBlink(); markAll() }
     }
     public fun beginSelection(column: Int, row: Int, mode: TerminalSelectionMode = TerminalSelectionMode.CHARACTER) {
         if (disposed) return

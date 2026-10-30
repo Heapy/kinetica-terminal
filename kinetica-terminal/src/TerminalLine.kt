@@ -29,7 +29,21 @@ internal data class CellAttributes(val underlineColor: Int = -1, val hyperlink: 
 /** Packed primitive storage; no object allocation per ordinary character. */
 public class TerminalLine internal constructor(public val columns: Int, internal val colors: TerminalColors? = null,
     internal val hyperlinkLimit: Int = 64 * 1024) {
-    private val data = IntArray(columns * 4)
+    private var cells: IntArray? = IntArray(columns * 4)
+    private var compressedCells: ByteArray? = null
+    private var compressionAttempted = false
+    private val data: IntArray get() = cells ?: unpackTerminalCells(checkNotNull(compressedCells), columns).also {
+        cells = it; compressedCells = null; compressionAttempted = false
+    }
+    internal val compressed: Boolean get() = compressedCells != null
+    internal val residentStorageBytes: Long get() = storageBytes - columns * 16L +
+        (compressedCells?.size?.toLong() ?: (columns * 16L))
+    internal fun compress() {
+        if (compressionAttempted || compressedCells != null) return
+        compressionAttempted = true
+        val packed = packTerminalCells(checkNotNull(cells), columns) ?: return
+        compressedCells = packed; cells = null
+    }
     private var combined: Array<String?>? = null
     private var attributes: Array<CellAttributes?>? = null
     private var combinedCount = 0
@@ -60,10 +74,13 @@ public class TerminalLine internal constructor(public val columns: Int, internal
         listeners += observer
         return TerminalDisposable { listeners.remove(observer); if (listeners.isEmpty()) textObservers = null }
     }
-    private fun changed(first: Int, end: Int) { textObservers?.forEach { it(first, end) } }
+    private fun changed(first: Int, end: Int) {
+        compressionAttempted = false
+        textObservers?.forEach { it(first, end) }
+    }
     internal var hyperlinkBytes: Long = 0
         private set
-    internal val storageBytes: Long get() = 128L + data.size * 4L + combinedBytes + hyperlinkBytes +
+    internal val storageBytes: Long get() = 128L + columns * 16L + combinedBytes + hyperlinkBytes +
         (if (combined == null) 0 else 32L + columns * 8L) +
         (if (attributes == null) 0 else 32L + columns * 8L + attributeCount * 32L) + linkHighWater * 64L
     public var wrapped: Boolean = false
@@ -271,6 +288,21 @@ internal class LineRing(private val capacity: Int, private val byteLimit: Long) 
         private set
     var storageBytes: Long = 0
         private set
+    val residentStorageBytes: Long get() = (0 until size).sumOf { get(it).residentStorageBytes }
+
+    /** Bounded idle work. Row objects and logical eviction charges never change. */
+    fun compressBatch(startIndex: Int, excluded: List<IntRange>): Int? {
+        var index = startIndex
+        var cells = 0
+        while (index < size && cells < 16_384) {
+            val line = get(index)
+            if (cells > 0 && line.columns > 16_384 - cells) break
+            if (excluded.none { index in it }) line.compress()
+            cells += line.columns
+            index++
+        }
+        return index.takeIf { it < size }
+    }
 
     operator fun get(index: Int): TerminalLine {
         require(index in 0 until size)

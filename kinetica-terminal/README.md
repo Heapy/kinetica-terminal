@@ -381,6 +381,18 @@ Shift+PageUp/PageDown, and accessibility text are available.
   retaining new ones. An oversized newest row retires the old history too, so retained history
   stays a contiguous suffix. Active rows are preserved. `historyStorageBytes` reports primary
   history storage, including while the alternate screen is active.
+- History cell arrays are losslessly compressed after one second of idle time when a view
+  supplies a `TerminalScheduler` (both browser and AppKit views do). One worker per session
+  processes at most 16,384 cells per callback and excludes history visible in any attached
+  view. Output restarts the idle delay; disposing the last view cancels maintenance. Set
+  `session.scrollbackCompression = false` to disable further compression. Existing compressed
+  rows remain readable. Text access restores cells lazily in the same `TerminalLine`, preserving
+  selection watches, graphics anchors, graphemes, links and frozen-frame semantics. A compact
+  delta/run representation stores the four cell planes; incompressible rows retain their arrays.
+  Optional grapheme/link metadata is not compressed. `historyResidentStorageBytes` estimates
+  retained row storage after compression; `historyStorageBytes` and eviction keep their original
+  logical charges. Compression does not increase the configured history length or byte budget.
+  Search/reflow can materialize history again, so this is not a bound on peak memory or RSS.
 - These are accounting bytes, **not an exact heap/RSS limit**. A row charges 128 bytes plus
   16 bytes per packed cell; optional reference arrays charge 32 + 8 bytes per column each.
   Combined strings charge 32 + 2 bytes per UTF-16 unit, attributes 32 bytes per populated cell,

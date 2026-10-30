@@ -267,6 +267,18 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
     /** Accounted primary scrollback storage, including while the alternate screen is active. */
     public val historyStorageBytes: Long get() = history.storageBytes
+    /** Estimated retained row storage after compression; eviction uses [historyStorageBytes]. */
+    public val historyResidentStorageBytes: Long get() = history.residentStorageBytes
+    /** Compress idle history in attached views. Disabling leaves existing rows lazily readable. */
+    public var scrollbackCompression: Boolean = true
+        set(value) { field = value; historyCompactor?.request() }
+    private var historyCompactor: TerminalHistoryCompactor? = null
+    internal fun attachHistoryCompression(scheduler: TerminalScheduler?, visibleRange: () -> IntRange?): TerminalDisposable {
+        val worker = historyCompactor ?: TerminalHistoryCompactor(this) { historyCompactor = null }.also { historyCompactor = it }
+        return worker.attach(scheduler, visibleRange)
+    }
+    internal fun requestHistoryCompression() { historyCompactor?.request() }
+    internal fun compressHistoryBatch(start: Int, excluded: List<IntRange>): Int? = history.compressBatch(start, excluded)
     internal val cursorPendingWrap: Boolean get() = pendingWrap
     internal fun inspectedModes(): BooleanArray = booleanArrayOf(applicationCursor, origin, wrap,
         insertMode, newlineMode, bracketedPaste, focusReporting, sgrMouse, graphemeClustering, synchronizedOutput, cursorBlink, leftRightMarginMode)
@@ -769,7 +781,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     /** Index zero is the oldest retained history line; returned lines are live, read-only views. */
     public fun line(index: Int): TerminalLine {
         require(index in 0 until lineCount)
-        return if (index < historySize) history[index] else screen[index - historySize]
+        return if (index < historySize) history[index].also {
+            if (it.compressed) historyCompactor?.request()
+        } else screen[index - historySize]
     }
 
     public fun screenLine(row: Int): TerminalLine = screen[row]
@@ -902,6 +916,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             else accept(if (char in '\udc00'..'\udfff') 0xfffd else char.code)
         }
         damage(cursorRow)
+        if (synchronizedOutput && text.isNotEmpty()) historyCompactor?.request()
         flushDamage()
     }
 
@@ -934,7 +949,11 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             consumed++
             acceptByte(bytes[i].toInt() and 255)
         }
-        if (consumed > 0) { damage(cursorRow); flushDamage() }
+        if (consumed > 0) {
+            damage(cursorRow)
+            if (synchronizedOutput) historyCompactor?.request()
+            flushDamage()
+        }
         return consumed
     }
 

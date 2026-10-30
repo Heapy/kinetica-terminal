@@ -3,8 +3,9 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalPresentationTest {
+    // Timer-count assertions isolate presentation deadlines from idle history maintenance.
     @Test fun liveResizeRetainsTheCompletedFrameThroughReflowAndFragmentedRedraw() {
-        val session = TerminalSession(12, 4)
+        val session = TerminalSession(12, 4).also { it.scrollbackCompression = false }
         val clock = Clock()
         val viewport = TerminalViewport(session, {}, clock)
         val other = TerminalViewport(session, {})
@@ -30,7 +31,7 @@ class TerminalPresentationTest {
     }
 
     @Test fun synchronizedRedrawUsesThePreResizeFrameAndItsOwnDeadline() {
-        val session = TerminalSession(12, 4)
+        val session = TerminalSession(12, 4).also { it.scrollbackCompression = false }
         val clock = Clock()
         val viewport = TerminalViewport(session, {}, clock)
         try {
@@ -55,7 +56,7 @@ class TerminalPresentationTest {
     }
 
     @Test fun repeatedLiveResizeCannotFreezeSilentOutputAndDisposalCancelsTheWait() {
-        val session = TerminalSession(12, 4)
+        val session = TerminalSession(12, 4).also { it.scrollbackCompression = false }
         val clock = Clock()
         var invalidations = 0
         val viewport = TerminalViewport(session, { invalidations++ }, clock)
@@ -112,7 +113,7 @@ class TerminalPresentationTest {
     }
 
     @Test fun holdCapturesAtTheEscapeBoundaryAndFreezesCellsPaletteCursorAndAccessibility() {
-        val session = TerminalSession(8, 3, 2)
+        val session = TerminalSession(8, 3, 2).also { it.scrollbackCompression = false }
         val clock = Clock()
         val viewport = TerminalViewport(session, {}, clock)
         val frame = TerminalGpuFrame()

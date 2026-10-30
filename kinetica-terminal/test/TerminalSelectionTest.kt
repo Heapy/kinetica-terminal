@@ -205,10 +205,11 @@ class TerminalSelectionTest {
         } finally { viewport.dispose() }
     }
 
+    // Timer counts below cover autoscroll; idle compaction has its own scheduling tests.
     @Test fun autoscrollExtendsSelectionAndStopsOnReleaseCancelFocusLossAndDispose() {
         for (stop in listOf<(TerminalViewport) -> Unit>({ it.endSelection(0, -2) },
             { it.cancelSelectionDrag() }, { it.setFocused(false) }, { it.dispose() })) {
-            val session = TerminalSession(8, 3)
+            val session = TerminalSession(8, 3).also { it.scrollbackCompression = false }
             session.write((0..20).joinToString("\r\n"))
             val clock = Clock(); val viewport = TerminalViewport(session, {}, clock)
             try {
@@ -225,7 +226,7 @@ class TerminalSelectionTest {
     }
 
     @Test fun autoscrollUsesTheLatestDirectionAndStopsAtHistoryLimits() {
-        val session = TerminalSession(8, 3)
+        val session = TerminalSession(8, 3).also { it.scrollbackCompression = false }
         session.write((0..20).joinToString("\r\n"))
         val clock = Clock(); val viewport = TerminalViewport(session, {}, clock)
         try {
