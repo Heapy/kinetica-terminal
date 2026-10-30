@@ -54,6 +54,21 @@ try {
     await page.mouse.up(); await page.keyboard.up(modifier);
     assert.deepEqual((await log()).opened, [["https://example.org/path", "_blank", "noopener,noreferrer"]]);
 
+    // An unfinished OSC 8 span cannot leak into the other screen's clickable text.
+    for (const mode of [47, 1047, 1049]) {
+      const activeLink = "\x1b]8;;https://screen.example\x1b\\";
+      await reset(`${activeLink}label\x1b[?${mode}h\x1b[Hplain`);
+      await click();
+      assert.deepEqual((await log()).opened, [], `Link leaked on alternate entry ${mode}`);
+      await write(`\x1b[H${activeLink}label\x1b[?${mode}l\x1b[Hplain`);
+      await click();
+      assert.deepEqual((await log()).opened, [], `Link leaked on primary return ${mode}`);
+      await reset(`${activeLink}\x1b[?${mode}lplain`);
+      await click();
+      assert.deepEqual((await log()).opened, [["https://screen.example/", "_blank", "noopener,noreferrer"]],
+        `An already-primary mode request must retain the link ${mode}`);
+    }
+
     for (const mods of [[], [otherModifier], [modifier, "Shift"], [modifier, "Alt"], [modifier, otherModifier]]) {
       await reset(osc8("https://example.org")); await click(mods);
       assert.deepEqual((await log()).opened, [], `Wrong modifiers: ${mods}`);

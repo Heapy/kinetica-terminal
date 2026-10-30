@@ -59,6 +59,16 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+The screen-state audit exposed active OSC 8 links leaking across alternate-screen
+switches. Ghostty ends the old screen's hyperlink before copying the cursor/pen. Kinetica
+now does the same only when the screen actually changes, retaining other pen attributes
+and existing cell links. Twelve original scenarios / 117 checkpoints cover all 47/1047/1049
+entry/exit pairs, repeated requests and saved cursors. All twelve and a shared viewport
+link/frozen-frame regression failed before the fix. Validation passes 1579 JVM tests,
+fresh Release JS tests, 1103 Native oracle/navigation tests and real browser link clicks
+on Canvas/WebGL with Mac/Linux modifiers. All 1090 VT fixture/manifest artifacts reproduce
+byte-for-byte. Logs are `/tmp/kinetica-screen-link-*`.
+
 The browser accessibility stability check reproduced a detached DOM reading range after
 cursor blinking: repeated `textContent` assignment replaced the unchanged output node.
 The surface now retains one text node and edits only the changed UTF-16 span, keeping

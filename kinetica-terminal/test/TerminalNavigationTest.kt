@@ -3,6 +3,25 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalNavigationTest {
+    @Test fun screenSwitchEndsActiveLinksButRetainsExistingAndFrozenTargets() {
+        for (enter in listOf(47, 1047, 1049)) for (leave in listOf(47, 1047, 1049)) {
+            val session = TerminalSession(8, 3)
+            val viewport = TerminalViewport(session, {})
+            try {
+                session.write("\u001b]8;;https://primary.example\u001b\\P")
+                assertEquals("https://primary.example", viewport.hyperlinkAt(0, 0))
+                session.write("\u001b[?2026h\u001b[?${enter}h\u001b[HA")
+                assertNull(session.hyperlinkAt(0, 0), "Entry mode $enter")
+                assertEquals("https://primary.example", viewport.hyperlinkAt(0, 0), "Frozen primary stays linked")
+                session.write("\u001b[?2026l")
+                assertNull(viewport.hyperlinkAt(0, 0))
+                session.write("\u001b]8;;https://alternate.example\u001b\\B\u001b[?${leave}l\u001b[1;2HC")
+                assertEquals("https://primary.example", viewport.hyperlinkAt(0, 0), "Existing cells keep links")
+                assertNull(viewport.hyperlinkAt(1, 0), "Exit mode $leave")
+            } finally { viewport.dispose() }
+        }
+    }
+
     @Test fun detectedLinkPolicyIsIndependentAndAppliesToFrozenLookupAndNewWordSelections() {
         for (frozen in listOf(false, true)) {
             val session = TerminalSession(80, 4)

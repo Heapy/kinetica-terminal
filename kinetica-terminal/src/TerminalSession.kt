@@ -1940,6 +1940,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         if (mode == 1049 && enabled) saved = saveCursor()
         if (mode == 1047 && !enabled && alternateScreen) eraseScreen()
         if (switched) {
+            // Ghostty ends OSC 8 on the old screen before copying its cursor/pen.
+            // A repeated mode request on the same screen leaves the link active.
+            setAttributes(attributes?.underlineColor ?: -1, null)
             selectionEpoch++; screenEpoch++
             if (enabled) {
                 primaryCursorStyle = cursorStyle

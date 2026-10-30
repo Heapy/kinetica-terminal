@@ -1,6 +1,6 @@
 # Ghostty differential oracle
 
-The main VT corpus currently contains 1075 scenarios / 7548 checkpoints, each replayed
+The main VT corpus currently contains 1087 scenarios / 7665 checkpoints, each replayed
 as whole writes and bytewise writes. The `scroll_wrap_*` cases distinguish SD/RI/IL and
 in-place SU (which break full-width row wraps) from LF, scrollback-producing SU and
 partial-width scrolling (which preserve them). They compare cells and row flags before
@@ -15,6 +15,9 @@ Raw C1 bytes inside an OSC title remain subject to strict UTF-8 validation.
 The `dcs_raw_bytes_*` cases compare byte-counted DECRQSS limits for valid/malformed
 UTF-8, raw C1/ST, NUL and DEL, with ST/CAN/SUB/OSC termination and subsequent recovery.
 XTGETTCAP cases check raw-byte key isolation and valid keys after malformed fields.
+The `hyperlink_screen_*` cases cover all 47/1047/1049 entry/exit combinations and
+repeated requests on the active screen. Actual switches end the OSC 8 pen without
+erasing existing linked cells or changing other pen attributes.
 
 ## Default URL/path matcher oracle
 

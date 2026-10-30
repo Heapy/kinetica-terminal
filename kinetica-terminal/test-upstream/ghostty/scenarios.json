@@ -154847,5 +154847,452 @@
         "bytes": "1b502b71ff3b343336661b5c58"
       }
     ]
+  },
+  {
+    "name": "hyperlink_screen_switch_47_47",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\\u001b[31;44;4:3;58:2::1:2:3mP\u001b7"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "A"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\B\u001b7"
+      },
+      {
+        "write": "\u001b[?47l"
+      },
+      {
+        "write": "C\u001b8D"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "E"
+      },
+      {
+        "write": "\u001b[?47l"
+      },
+      {
+        "write": "F"
+      }
+    ]
+  },
+  {
+    "name": "hyperlink_screen_switch_47_1047",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\\u001b[31;44;4:3;58:2::1:2:3mP\u001b7"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "A"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\B\u001b7"
+      },
+      {
+        "write": "\u001b[?1047l"
+      },
+      {
+        "write": "C\u001b8D"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "E"
+      },
+      {
+        "write": "\u001b[?1047l"
+      },
+      {
+        "write": "F"
+      }
+    ]
+  },
+  {
+    "name": "hyperlink_screen_switch_47_1049",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\\u001b[31;44;4:3;58:2::1:2:3mP\u001b7"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "A"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\B\u001b7"
+      },
+      {
+        "write": "\u001b[?1049l"
+      },
+      {
+        "write": "C\u001b8D"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "E"
+      },
+      {
+        "write": "\u001b[?1049l"
+      },
+      {
+        "write": "F"
+      }
+    ]
+  },
+  {
+    "name": "hyperlink_screen_switch_1047_47",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\\u001b[31;44;4:3;58:2::1:2:3mP\u001b7"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "A"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\B\u001b7"
+      },
+      {
+        "write": "\u001b[?47l"
+      },
+      {
+        "write": "C\u001b8D"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "E"
+      },
+      {
+        "write": "\u001b[?47l"
+      },
+      {
+        "write": "F"
+      }
+    ]
+  },
+  {
+    "name": "hyperlink_screen_switch_1047_1047",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\\u001b[31;44;4:3;58:2::1:2:3mP\u001b7"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "A"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\B\u001b7"
+      },
+      {
+        "write": "\u001b[?1047l"
+      },
+      {
+        "write": "C\u001b8D"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "E"
+      },
+      {
+        "write": "\u001b[?1047l"
+      },
+      {
+        "write": "F"
+      }
+    ]
+  },
+  {
+    "name": "hyperlink_screen_switch_1047_1049",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\\u001b[31;44;4:3;58:2::1:2:3mP\u001b7"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "A"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\B\u001b7"
+      },
+      {
+        "write": "\u001b[?1049l"
+      },
+      {
+        "write": "C\u001b8D"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "E"
+      },
+      {
+        "write": "\u001b[?1049l"
+      },
+      {
+        "write": "F"
+      }
+    ]
+  },
+  {
+    "name": "hyperlink_screen_switch_1049_47",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\\u001b[31;44;4:3;58:2::1:2:3mP\u001b7"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "A"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\B\u001b7"
+      },
+      {
+        "write": "\u001b[?47l"
+      },
+      {
+        "write": "C\u001b8D"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "E"
+      },
+      {
+        "write": "\u001b[?47l"
+      },
+      {
+        "write": "F"
+      }
+    ]
+  },
+  {
+    "name": "hyperlink_screen_switch_1049_1047",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\\u001b[31;44;4:3;58:2::1:2:3mP\u001b7"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "A"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\B\u001b7"
+      },
+      {
+        "write": "\u001b[?1047l"
+      },
+      {
+        "write": "C\u001b8D"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "E"
+      },
+      {
+        "write": "\u001b[?1047l"
+      },
+      {
+        "write": "F"
+      }
+    ]
+  },
+  {
+    "name": "hyperlink_screen_switch_1049_1049",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\\u001b[31;44;4:3;58:2::1:2:3mP\u001b7"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "A"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\B\u001b7"
+      },
+      {
+        "write": "\u001b[?1049l"
+      },
+      {
+        "write": "C\u001b8D"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "E"
+      },
+      {
+        "write": "\u001b[?1049l"
+      },
+      {
+        "write": "F"
+      }
+    ]
+  },
+  {
+    "name": "hyperlink_screen_noop_47",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\"
+      },
+      {
+        "write": "\u001b[?47l"
+      },
+      {
+        "write": "P"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\A"
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "B"
+      },
+      {
+        "write": "\u001b[?47l"
+      },
+      {
+        "write": "C"
+      }
+    ]
+  },
+  {
+    "name": "hyperlink_screen_noop_1047",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\"
+      },
+      {
+        "write": "\u001b[?1047l"
+      },
+      {
+        "write": "P"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\A"
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "B"
+      },
+      {
+        "write": "\u001b[?1047l"
+      },
+      {
+        "write": "C"
+      }
+    ]
+  },
+  {
+    "name": "hyperlink_screen_noop_1049",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001b]8;id=primary;https://primary.example\u001b\\"
+      },
+      {
+        "write": "\u001b[?1049l"
+      },
+      {
+        "write": "P"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b]8;id=alternate;https://alternate.example\u001b\\A"
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "B"
+      },
+      {
+        "write": "\u001b[?1049l"
+      },
+      {
+        "write": "C"
+      }
+    ]
   }
 ]

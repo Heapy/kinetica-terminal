@@ -1087,6 +1087,10 @@ still receive the original target.
 
 The common engine exposes `search`, `hyperlinkAt`, `configureTheme`, `clearScreen`, `clearHistory`,
 and viewport selection/reveal methods for hosts with their own controls.
+Switching between primary and alternate screens (47/1047/1049) ends the active OSC 8
+span. Existing linked cells keep their targets; repeating a mode request without changing
+screens retains the current span.
+
 `session.osc8LinksEnabled = false` disables OSC 8 activation through session/viewport
 `hyperlinkAt`, including existing history, alternate-screen rows and synchronized snapshots.
 Visible URL/path detection remains available when `session.detectedLinksEnabled` is true. Raw `TerminalLine.hyperlink` metadata is
