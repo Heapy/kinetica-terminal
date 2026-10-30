@@ -130,7 +130,7 @@ class TerminalGpuTest {
         viewport.dispose()
     }
 
-    @Test fun foregroundChangesReuseGlyphAndDecorationsAreDrawnLast() {
+    @Test fun foregroundChangesReuseGlyphAndDecorationsKeepTheirTextLayer() {
         val session = TerminalSession(4, 1)
         session.write("\u001b[31mX\u001b[32;4mX")
         val viewport = TerminalViewport(session, {})
@@ -143,7 +143,8 @@ class TerminalGpuTest {
         val batches = TerminalGpuBatches(); batches.build(frame, atlas)
         assertEquals(2, batches.pages.single().count)
         assertNotEquals(batches.pages[0].data[8], batches.pages[0].data[20])
-        assertEquals(2, batches.decorations.count)
+        assertEquals(1, batches.underlays.count)
+        assertEquals(1, batches.decorations.count)
         assertEquals(1f / 16f, batches.pages[0].data[4])
         viewport.dispose()
     }

@@ -38,6 +38,10 @@ public interface TerminalPainter {
     public fun decoration(x: Double, y: Double, width: Double, height: Double, color: Int) {
         fill(x, y, width, height, color)
     }
+    /** Draw before text; retained renderers must preserve this layer separately from overlays. */
+    public fun underlay(x: Double, y: Double, width: Double, height: Double, color: Int) {
+        decoration(x, y, width, height, color)
+    }
 }
 
 /** Cell boundaries are preserved for atlas rendering, including wide and combined glyphs. */
@@ -553,12 +557,6 @@ public class TerminalViewport internal constructor(
                     line.rawBackground(start) == TerminalStyle.DEFAULT && flags and TerminalStyle.INVERSE == 0 && !selected && !(block && start == cursorX))
                 else painter.fill(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background)
                 painter.withOpacity(terminalForegroundOpacity(flags)) {
-                    if (flags and TerminalStyle.HIDDEN == 0 && line.codePoint(start) != TERMINAL_GRAPHICS_PLACEHOLDER) {
-                        if (blockElement) painter.blockElement(line.codePoint(start), start * cellWidth, y * cellHeight,
-                            (x - start) * cellWidth, cellHeight, foreground)
-                        else if (painter is TerminalGlyphPainter) { if (!shaped) painter.glyph(text.toString(), start * cellWidth, y * cellHeight, x - start, foreground, flags) }
-                        else painter.text(text.toString(), start * cellWidth, y * cellHeight, foreground, flags)
-                    }
                     if (flags and TerminalStyle.HIDDEN == 0) {
                         val underlineColor = line.underlineColor(start).let { if (it < 0) foreground else it }
                         val left = start * cellWidth
@@ -566,29 +564,40 @@ public class TerminalViewport internal constructor(
                         val baseline = (y + 1) * cellHeight - 2
                         when {
                             flags and TerminalStyle.DOUBLE_UNDERLINE != 0 -> {
-                                painter.decoration(left, baseline - 2, width, 1.0, underlineColor)
-                                painter.decoration(left, baseline, width, 1.0, underlineColor)
+                                painter.underlay(left, baseline - 2, width, 1.0, underlineColor)
+                                painter.underlay(left, baseline, width, 1.0, underlineColor)
                             }
                             flags and TerminalStyle.UNDERCURL != 0 -> {
-                                var offset = 0.0
-                                while (offset < width) {
-                                    painter.decoration(left + offset, baseline - if (offset.toInt() % 4 < 2) 1 else 0,
-                                        minOf(1.0, width - offset), 1.0, underlineColor)
-                                    offset++
+                                // Ghostty uses a cell-wide sprite. Pattern phase must not depend
+                                // on software text-run batching or a glyph spanning two cells.
+                                for (column in start until x) {
+                                    var offset = 0.0
+                                    while (offset < cellWidth) {
+                                        painter.underlay(column * cellWidth + offset, baseline - if (offset.toInt() % 4 < 2) 1 else 0,
+                                            minOf(2.0, cellWidth - offset), 1.0, underlineColor)
+                                        offset += 2.0
+                                    }
                                 }
                             }
                             flags and (TerminalStyle.DOTTED_UNDERLINE or TerminalStyle.DASHED_UNDERLINE) != 0 -> {
                                 val dash = if (flags and TerminalStyle.DOTTED_UNDERLINE != 0) 1.0 else 4.0
-                                var offset = 0.0
-                                while (offset < width) {
-                                    painter.decoration(left + offset, baseline, minOf(dash, width - offset), 1.0, underlineColor)
-                                    offset += dash + 2.0
+                                for (column in start until x) {
+                                    var offset = 0.0
+                                    while (offset < cellWidth) {
+                                        painter.underlay(column * cellWidth + offset, baseline, minOf(dash, cellWidth - offset), 1.0, underlineColor)
+                                        offset += dash + 2.0
+                                    }
                                 }
                             }
-                            flags and TerminalStyle.UNDERLINE != 0 -> painter.decoration(left, baseline, width, 1.0, underlineColor)
+                            flags and TerminalStyle.UNDERLINE != 0 -> painter.underlay(left, baseline, width, 1.0, underlineColor)
+                        }
+                        if (flags and TerminalStyle.OVERLINE != 0) painter.underlay(left, y * cellHeight, width, 1.0, foreground)
+                        if (line.codePoint(start) != TERMINAL_GRAPHICS_PLACEHOLDER) {
+                            if (blockElement) painter.blockElement(line.codePoint(start), left, y * cellHeight, width, cellHeight, foreground)
+                            else if (painter is TerminalGlyphPainter) { if (!shaped) painter.glyph(text.toString(), left, y * cellHeight, x - start, foreground, flags) }
+                            else painter.text(text.toString(), left, y * cellHeight, foreground, flags)
                         }
                         if (flags and TerminalStyle.STRIKE != 0) painter.decoration(left, (y + 0.5) * cellHeight, width, 1.0, foreground)
-                        if (flags and TerminalStyle.OVERLINE != 0) painter.decoration(left, y * cellHeight, width, 1.0, foreground)
                     }
                 }
             }

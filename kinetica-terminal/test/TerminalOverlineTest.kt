@@ -51,8 +51,8 @@ class TerminalOverlineTest {
             session.write("\u001b[?25l\u001b[53;8m \u001b[28;7;48;2;20;40;60m \u001b[27;2;38;2;100;120;140m ")
             frame.update(viewport, 8.0, 16.0)
             val top = frame.rows[0].decorations.filter { it.y == 0.0 }
-            assertEquals(listOf(TerminalRect(8.0, 0.0, 8.0, 1.0, 0x14283c),
-                TerminalRect(16.0, 0.0, 8.0, 1.0, 0x64788c, opacity = 128.0 / 255.0)), top)
+            assertEquals(listOf(TerminalRect(8.0, 0.0, 8.0, 1.0, 0x14283c, behindText = true),
+                TerminalRect(16.0, 0.0, 8.0, 1.0, 0x64788c, opacity = 128.0 / 255.0, behindText = true)), top)
             val line = session.screenLine(0)
             line.compress()
             assertTrue(line.compressed)

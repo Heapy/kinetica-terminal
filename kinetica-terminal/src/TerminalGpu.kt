@@ -85,7 +85,12 @@ internal data class TerminalGlyph(val key: GlyphKey, val x: Double, val y: Doubl
     val xOffset: Int = 0, val yOffset: Int = 0, val clipLeft: Double = x, val clipRight: Double = Double.NaN,
     val opacity: Double = 1.0)
 internal data class TerminalRect(val x: Double, val y: Double, val width: Double, val height: Double, val color: Int,
-    val defaultBackground: Boolean = false, val opacity: Double = 1.0)
+    val defaultBackground: Boolean = false, val opacity: Double = 1.0, val behindText: Boolean = false)
+
+// Tie-to-even endpoint rounding can collapse a 1px line at 9.5..10.5 to 10..10.
+// Preserve spans at least a physical pixel; shorter cell-edge fragments may snap away.
+internal fun terminalPixelSpan(start: Double, size: Double, ratio: Double): Double =
+    (round((start + size) * ratio) - round(start * ratio)).coerceAtLeast(if (size * ratio >= 1.0) 1.0 else 0.0) / ratio
 internal class TerminalDrawRow {
     val backgrounds = mutableListOf<TerminalRect>()
     val glyphs = mutableListOf<TerminalGlyph>()
@@ -158,12 +163,16 @@ internal class TerminalGpuFrame(
     override fun decoration(x: Double, y: Double, width: Double, height: Double, color: Int) {
         appendRect(current.decorations, x, y, width, height, color)
     }
-    private fun appendRect(list: MutableList<TerminalRect>, x: Double, y: Double, width: Double, height: Double, color: Int, default: Boolean = false) {
+    override fun underlay(x: Double, y: Double, width: Double, height: Double, color: Int) {
+        appendRect(current.decorations, x, y, width, height, color, behindText = true)
+    }
+    private fun appendRect(list: MutableList<TerminalRect>, x: Double, y: Double, width: Double, height: Double, color: Int,
+        default: Boolean = false, behindText: Boolean = false) {
         // Merge adjacent equal backgrounds after keeping glyph boundaries independent.
         val last = list.lastOrNull()
-        if (last != null && last.color == color && last.y == y && last.height == height && last.x + last.width == x && last.defaultBackground == default && last.opacity == opacity) {
+        if (last != null && last.color == color && last.y == y && last.height == height && last.x + last.width == x && last.defaultBackground == default && last.opacity == opacity && last.behindText == behindText) {
             list[list.lastIndex] = last.copy(width = last.width + width)
-        } else list += TerminalRect(x, y, width, height, color, default, opacity)
+        } else list += TerminalRect(x, y, width, height, color, default, opacity, behindText)
     }
     override fun glyph(value: String, x: Double, y: Double, columns: Int, color: Int, style: Int) {
         if (value.isNotBlank()) current.glyphs += TerminalGlyph(GlyphKey(value, columns,
@@ -199,15 +208,16 @@ internal class TerminalInstances {
 
 internal class TerminalGpuBatches {
     val backgrounds = TerminalInstances()
+    val underlays = TerminalInstances()
     val decorations = TerminalInstances()
     val pages = mutableListOf<TerminalInstances>()
     fun build(frame: TerminalGpuFrame, atlas: TerminalGlyphAtlas, pixelRatio: Double = 1.0, transparentDefaultBackground: Boolean = false) {
         require(pixelRatio.isFinite() && pixelRatio > 0)
-        backgrounds.clear(); decorations.clear(); pages.forEach { it.clear() }
+        backgrounds.clear(); underlays.clear(); decorations.clear(); pages.forEach { it.clear() }
         while (pages.size < atlas.pageCount) pages += TerminalInstances()
         for (row in frame.rows) {
             for (rect in row.backgrounds) if (!transparentDefaultBackground || !rect.defaultBackground) addRect(backgrounds, rect, pixelRatio)
-            for (rect in row.decorations) addRect(decorations, rect, pixelRatio)
+            for (rect in row.decorations) addRect(if (rect.behindText) underlays else decorations, rect, pixelRatio)
             for (glyph in row.glyphs) {
                 val entry = atlas[glyph.key]
                 if (glyph.key.glyph >= 0) {
@@ -244,7 +254,7 @@ internal class TerminalGpuBatches {
     private fun addRect(target: TerminalInstances, rect: TerminalRect, pixelRatio: Double) {
         val x = round(rect.x * pixelRatio) / pixelRatio
         val y = round(rect.y * pixelRatio) / pixelRatio
-        target.add(x, y, round((rect.x + rect.width) * pixelRatio) / pixelRatio - x,
-            round((rect.y + rect.height) * pixelRatio) / pixelRatio - y, rect.color, opacity = rect.opacity)
+        target.add(x, y, terminalPixelSpan(rect.x, rect.width, pixelRatio),
+            terminalPixelSpan(rect.y, rect.height, pixelRatio), rect.color, opacity = rect.opacity)
     }
 }

@@ -294,6 +294,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
             drawImages({ encoder }, images, TerminalGraphicsLayer.BELOW_BACKGROUND)
             submit(encoder, batches.backgrounds, false, 0, 0)
             drawImages({ encoder }, images, TerminalGraphicsLayer.BELOW_TEXT)
+            submit(encoder, batches.underlays, false, 0, batches.pages.size + 2)
             for (page in batches.pages.indices) submit(encoder, batches.pages[page], true, page, page + 1)
             submit(encoder, batches.decorations, false, 0, batches.pages.size + 1)
             drawImages({ encoder }, images, TerminalGraphicsLayer.ABOVE_TEXT)

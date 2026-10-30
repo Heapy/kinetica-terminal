@@ -116,8 +116,7 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
                 val left = round(x * ratio) / ratio
                 val top = round(y * ratio) / ratio
                 context.fillStyle = terminalCssColor(color)
-                context.fillRect(left, top, round((x + width) * ratio) / ratio - left,
-                    round((y + height) * ratio) / ratio - top)
+                context.fillRect(left, top, terminalPixelSpan(x, width, ratio), terminalPixelSpan(y, height, ratio))
             }
             override fun text(value: String, x: Double, y: Double, color: Int, style: Int) {
                 context.font = fonts?.cssFont(size, style, family) ?: browserFont(size, style, family)
@@ -157,12 +156,12 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         fun fill(rect: TerminalRect) = withOpacity(rect.opacity) {
             val left = round(rect.x * ratio) / ratio; val top = round(rect.y * ratio) / ratio
             context.fillStyle = terminalCssColor(rect.color)
-            context.fillRect(left, top, round((rect.x + rect.width) * ratio) / ratio - left,
-                round((rect.y + rect.height) * ratio) / ratio - top)
+            context.fillRect(left, top, terminalPixelSpan(rect.x, rect.width, ratio), terminalPixelSpan(rect.y, rect.height, ratio))
         }
         layer(TerminalGraphicsLayer.BELOW_BACKGROUND)
         for (row in imageFrame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground) fill(rect)
         layer(TerminalGraphicsLayer.BELOW_TEXT)
+        for (row in imageFrame.rows) for (rect in row.decorations) if (rect.behindText) fill(rect)
         for (row in imageFrame.rows) for (glyph in row.glyphs) {
             withOpacity(glyph.opacity) {
                 context.font = fonts?.cssFont(size, glyph.key.style, family) ?: browserFont(size, glyph.key.style, family)
@@ -170,7 +169,7 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
                 context.fillText(glyph.key.text, glyph.x, glyph.y + 1)
             }
         }
-        for (row in imageFrame.rows) for (rect in row.decorations) fill(rect)
+        for (row in imageFrame.rows) for (rect in row.decorations) if (!rect.behindText) fill(rect)
         layer(TerminalGraphicsLayer.ABOVE_TEXT)
         imageCache.endFrame()
         clear = false
@@ -353,6 +352,7 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         drawImages(images, TerminalGraphicsLayer.BELOW_BACKGROUND)
         submit(batches.backgrounds, false, 0)
         drawImages(images, TerminalGraphicsLayer.BELOW_TEXT)
+        submit(batches.underlays, false, 0)
         for (page in batches.pages.indices) submit(batches.pages[page], true, page)
         submit(batches.decorations, false, 0)
         drawImages(images, TerminalGraphicsLayer.ABOVE_TEXT)

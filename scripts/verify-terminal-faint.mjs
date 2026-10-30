@@ -5,13 +5,14 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 const base = process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173";
 const samples = [["", "Aa😀"], ...[1, 2, 3, 4, 5].map(style => [`4:${style};53;9;58;2;20;210;40;`, "  "])];
 try {
-  for (const renderer of ["gpu", "software"]) for (const scale of [1, 1.25, 2]) {
+  for (const fontSize of [12.5, 14]) for (const renderer of ["gpu", "software"]) for (const scale of [1, 1.25, 2]) {
     const page = await browser.newPage({ viewport: { width: 500, height: 250 }, deviceScaleFactor: scale });
     const errors = [];
     page.on("pageerror", error => errors.push(String(error)));
     try {
       await page.goto(`${base}/samples/browser-terminal/web/index.html?renderer=${renderer}`);
       await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 20);
+      await page.evaluate(size => kineticaTerminalDemo.fontSize(size), fontSize);
       await page.evaluate(() => document.fonts.ready);
       assert.equal(await page.locator("[data-terminal]").getAttribute("data-terminal-renderer"), renderer === "gpu" ? "webgl2" : "canvas2d");
       await page.evaluate(renderer => {
@@ -53,7 +54,7 @@ try {
           return { affected, maxError, worstByte };
         });
         assert.ok(result.affected > 16, "Must exercise visible glyphs/decorations");
-        assert.ok(result.maxError <= 2, `${renderer} DPR ${scale}, image=${image}, ${attributes}${text}: ${JSON.stringify(result)}`);
+        assert.ok(result.maxError <= 2, `${renderer} font ${fontSize} DPR ${scale}, image=${image}, ${attributes}${text}: ${JSON.stringify(result)}`);
         await write(`\x1b[H\x1b[22m${text}`);
         const restored = await page.evaluate(() => {
           const pixels = captureFaint();
@@ -66,10 +67,10 @@ try {
           return { maxError, changed, worstByte, actual: pixels[worstByte], expected: faintNormal[worstByte] };
         });
         // A control repaint without SGR 2 also differs by up to two levels for Canvas text.
-        assert.ok(restored.maxError <= 2, `${renderer} DPR ${scale}, image=${image}, ${attributes}${text}: SGR 22 ${JSON.stringify(restored)}`);
+        assert.ok(restored.maxError <= 2, `${renderer} font ${fontSize} DPR ${scale}, image=${image}, ${attributes}${text}: SGR 22 ${JSON.stringify(restored)}`);
       }
       assert.deepEqual(errors, []);
-      console.log(`${renderer} DPR ${scale}: faint text, emoji, five underline styles, strike and overline over colors/images passed`);
+      console.log(`${renderer} font ${fontSize} DPR ${scale}: faint text, emoji, five underline styles, strike and overline over colors/images passed`);
     } finally { await page.close(); }
   }
 } finally { await browser.close(); }

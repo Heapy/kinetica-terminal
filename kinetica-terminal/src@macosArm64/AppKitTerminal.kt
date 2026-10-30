@@ -438,8 +438,8 @@ public class AppKitTerminalView(
                 val left = round(x * scale) / scale
                 val top = round(y * scale) / scale
                 color(color).setFill()
-                NSRectFillUsingOperation(NSMakeRect(left, top, round((x + width) * scale) / scale - left,
-                    round((y + height) * scale) / scale - top), NSCompositingOperationSourceOver)
+                NSRectFillUsingOperation(NSMakeRect(left, top, terminalPixelSpan(x, width, scale),
+                    terminalPixelSpan(y, height, scale)), NSCompositingOperationSourceOver)
             }
             override fun text(value: String, x: Double, y: Double, color: Int, style: Int) {
                 // The shared painter draws decorations; native underlining would composite them twice.
@@ -459,10 +459,13 @@ public class AppKitTerminalView(
             for (row in softwareImageFrame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground)
                 painter.fill(rect.x, rect.y, rect.width, rect.height, rect.color)
             softwareImages.draw(images, TerminalGraphicsLayer.BELOW_TEXT)
+            for (row in softwareImageFrame.rows) for (rect in row.decorations) if (rect.behindText) painter.withOpacity(rect.opacity) {
+                painter.fill(rect.x, rect.y, rect.width, rect.height, rect.color)
+            }
             for (row in softwareImageFrame.rows) for (glyph in row.glyphs) painter.withOpacity(glyph.opacity) {
                 painter.text(glyph.key.text, glyph.x, glyph.y, glyph.color, glyph.key.style)
             }
-            for (row in softwareImageFrame.rows) for (rect in row.decorations) painter.withOpacity(rect.opacity) {
+            for (row in softwareImageFrame.rows) for (rect in row.decorations) if (!rect.behindText) painter.withOpacity(rect.opacity) {
                 painter.fill(rect.x, rect.y, rect.width, rect.height, rect.color)
             }
             softwareImages.draw(images, TerminalGraphicsLayer.ABOVE_TEXT)

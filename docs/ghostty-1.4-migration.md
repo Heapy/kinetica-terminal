@@ -110,10 +110,57 @@ without ever setting SGR 2 and reproduces the same maximum two-level text differ
 fractional/high DPR; the browser reset assertion permits that verified baseline rounding.
 Logs are `/tmp/kinetica-faint-*`, including `kinetica-faint-canvas-redraw-control.log`.
 
-The remaining rendering audit must also address decoration/text intersections: the original
-draws underlines before glyphs and strike after them, whereas the shared painter currently
-places all decorations in the overlay batch. The opacity checks above use separate text and
-decoration samples and do not establish parity for overlapping descenders and colored lines.
+The next rendering check addressed decoration/text intersections. The original's
+`renderer/generic.zig` appends underline and overline before glyphs, and strike afterwards;
+`renderer/cell.zig` appends these to one foreground row list, which is submitted in that order.
+The shared painter now calls `underlay` before text for underline/overline, and keeps strike
+and cursor decorations after text. Retained rectangles carry their layer through frame holds
+and batching. Canvas/AppKit image-composition paths and WebGL/Metal place the underlay batch
+after images behind text and before glyphs. This adds one GPU draw only when underlays exist;
+it does not add a draw per cell. Immediate custom painters inherit the correct call order;
+custom retained painters must honor the new `TerminalPainter.underlay` hook.
+
+`verify-terminal-decoration-order.mjs` failed on the preceding artifact with a full 255/255
+channel error. Its composition oracle captures glyphs and decorations separately, then checks
+their expected overlap against the combined scene. The samples include descenders, full-cell
+blocks and all five colored underline styles, plus strike over color emoji, each with normal
+or faint opacity and with a solid or Kitty-image background. This tests the intersections
+that the preceding opacity-only matrix deliberately kept separate; it does not compare font
+metrics or rasterization to a different terminal's font configuration. Shared tests also check
+immediate call order and shaped/unshaped retained layers, opacity and synchronized-frame release.
+
+The overlap guard also exposed a second rendering defect: strike-only spaces had no ink at
+the browser's measured 19px cell height. Tie-to-even endpoint snapping mapped both 9.5 and
+10.5 to 10, collapsing a one-pixel stroke to zero height. The shared physical-span helper
+now retains at least one physical pixel for spans at least that wide/high; shorter cell-edge
+fragments may still snap away rather than overlapping the next cell. Canvas, AppKit and GPU
+batches use it. Unit cases cover cell heights 15/17/19/21 at DPR 1/1.25/2 and preserve zero
+extent for empty and subpixel edge fragments. The pixel test still requires visible glyph/line intersections;
+it did not weaken that guard when the missing strike was discovered.
+
+The normal/faint overlap matrix also exposed software pattern-phase changes between ordinary
+text runs and geometric blocks: blank-line references and decorated text placed curls at
+different pixels. Ghostty draws a one-cell underline sprite. Curly/dotted/dashed patterns now
+restart per cell in the shared painter, independently of software run grouping and wide
+glyphs. A common regression compares the complete pattern geometry for spaces, ordinary text,
+and mixed text/wide emoji/blocks at fractional cell width. The native/browser overlap samples
+use two full blocks so dotted lines necessarily produce enough intersecting pixels. Browser
+coverage is measured against a captured background, including the area outside the cell grid.
+An additional 12.5px-font check exposed duplicate software compositing of adjacent one-unit
+wave segments after physical snapping (47/255 channel error). Equal-height neighbors are now
+emitted as two-unit spans before snapping, as the GPU recorder already merged them. A common
+coverage invariant checks that no pattern pixel is painted twice at cell widths 7.5/8.4/8.5
+and DPR 1/1.25/2. The permanent faint pixel verifier now covers both font sizes 12.5 and 14.
+Validation passes all 1500 JVM tests, freshly built Release JS tests and 23 focused Native
+tests. The overlap verifier passes all six Canvas/WebGL DPR configurations (144 scenes),
+and Native covers 96 overlap scenes with AppKit and Metal. All twelve browser faint font/DPR
+configurations, six overline configurations and the bundled/system-font glyph verifier also
+pass. Logs are `/tmp/kinetica-decoration-order-*`.
+
+A separate follow-up remains for Canvas default-color repaint outside the cell grid: the
+unused backing area retained the initial RGB 30/30/30 after OSC 11 changed the background to
+black, unlike the GPU frame clear. Capturing that area as part of the composition reference
+keeps the overlap test valid but does not resolve the background repaint discrepancy.
 
 The release behavior review uses the pinned `stream.zig` / `stream_terminal.zig` dispatch,
 keyboard/mouse encoders and graphics implementation as the reference. It checks the terminal

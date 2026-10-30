@@ -12,6 +12,49 @@ import kotlin.math.ceil
 import kotlin.test.*
 
 class NativeGraphicsRenderingTest {
+    @Test fun coloredUnderlinesStayBehindDescendersAndBlocksWhileStrikeCoversEmoji() {
+        NSApplication.sharedApplication()
+        for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    for (backgroundImage in listOf(false, true)) for (faint in listOf(false, true)) for (style in 1..6) {
+                        val strike = style == 6
+                        val text = if (strike) "😀😀" else "gypq██"
+                        val cells = if (strike) 4 else 6
+                        val decoration = if (strike) "9" else "4:$style;58;2;0;255;0"
+                        val pen = "38;2;255;255;255" + if (faint) ";2" else ""
+                        fun render(attributes: String, text: String): ByteArray {
+                            session.reset()
+                            session.write("\u001b[?25l\u001b]11;#000000\u0007" +
+                                (if (backgroundImage) image(44, listOf(0, 0, 120, 255), ",z=-1") else "") +
+                                "\u001b[H\u001b[${pen}${attributes}m$text")
+                            return capture()
+                        }
+                        val background = render("", "")
+                        val glyphs = render("", text)
+                        val line = render(";$decoration", " ".repeat(cells))
+                        val combined = render(";$decoration", text)
+                        var overlaps = 0
+                        for (i in combined.indices step 4) {
+                            val base = background[i].toInt() and 255
+                            val coverage = (((if (strike) line[i] else glyphs[i]).toInt() and 255) - base).toDouble() / (255 - base)
+                            if (coverage > 0.1 && ((if (strike) glyphs[i + 1] else line[i + 1]).toInt() and 255) - (background[i + 1].toInt() and 255) > 30) overlaps++
+                            for (channel in 0..2) {
+                                val behind = (if (strike) glyphs[i + channel] else line[i + channel]).toInt() and 255
+                                val expected = kotlin.math.round(255 * coverage + behind * (1 - coverage)).toInt()
+                                val actual = combined[i + channel].toInt() and 255
+                                assertTrue(kotlin.math.abs(actual - expected) <= 3,
+                                    "Decoration byte ${i + channel}: expected $expected, got $actual; image=$backgroundImage, faint=$faint, style=$style")
+                            }
+                        }
+                        assertTrue(overlaps > 4, "Must intersect real glyph and decoration pixels: count=$overlaps, image=$backgroundImage, faint=$faint, style=$style")
+                    }
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
     @Test fun faintCompositesTextColorGlyphsAndDecorationsOverBackgroundsAndImages() {
         NSApplication.sharedApplication()
         val samples = listOf("" to "Aa😀") + (1..5).map { "4:$it;53;9;58;2;20;210;40;" to "  " }

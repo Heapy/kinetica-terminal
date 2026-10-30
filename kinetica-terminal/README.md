@@ -573,6 +573,7 @@ erase and insert/delete characters/lines, scroll margins, origin and insert mode
 normal/alternate screen save slots and distinct 47/1047/1049 behavior, SGR attributes with
 semicolon/colon 16/256/RGB colors and colored single/double/curly/dotted/dashed underlines,
 independent overline (SGR 53/55) using the effective foreground color,
+underline/overline beneath glyphs with strike and cursor decorations above them,
 faint foreground opacity (SGR 2, reset with 22) on text, color glyphs and decorations,
 OSC 4/104 palette set/query/reset and OSC 10/11/12/110/111/112 dynamic colors,
 DEC line drawing/alignment, title and hyperlink OSC, status/cursor reports, application cursor/keypad keys, function/navigation keys, bracketed
@@ -1112,6 +1113,7 @@ node scripts/verify-terminal-mime-clipboard.mjs
 node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-overline.mjs
 node scripts/verify-terminal-faint.mjs
+node scripts/verify-terminal-decoration-order.mjs
 node scripts/verify-terminal-blocks.mjs
 node scripts/verify-terminal-glyphs.mjs
 node scripts/verify-terminal-shaping.mjs
