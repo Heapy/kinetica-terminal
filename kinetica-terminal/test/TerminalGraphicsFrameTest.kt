@@ -80,6 +80,21 @@ class TerminalGraphicsFrameTest {
         assertEquals(listOf(2, 1, 3), released); assertEquals(0L, cache.bytes)
     }
 
+    @Test fun directTileWritesRespectHostRowStrideAlphaAndEdgeClamping() {
+        val pixels = TerminalGraphicsPixels(1, 2, 32, byteArrayOf(100, 50, -56, -128, 90, 80, 70, 0))
+        val tile = TerminalImageTile(TerminalImageTileKey(Any(), 0, 0), 0, 0, 2, 2)
+        val destination = ByteArray(24) { 42 }
+        pixels.writeTile(tile, premultiplied = true, rowStride = 12) { index, value -> destination[index] = value }
+        assertContentEquals(byteArrayOf(50, 25, 100, -128, 50, 25, 100, -128, 42, 42, 42, 42,
+            0, 0, 0, 0, 0, 0, 0, 0, 42, 42, 42, 42), destination)
+        pixels.writeTile(tile, premultiplied = false, rowStride = 12) { index, value -> destination[index] = value }
+        assertContentEquals(byteArrayOf(100, 50, -56, -128, 100, 50, -56, -128, 42, 42, 42, 42,
+            90, 80, 70, 0, 90, 80, 70, 0, 42, 42, 42, 42), destination)
+        for (stride in listOf(7, Int.MAX_VALUE)) assertFailsWith<IllegalArgumentException> {
+            pixels.writeTile(tile, false, stride) { _, _ -> fail("Validate the host stride before writing") }
+        }
+    }
+
     @Test fun reapplyingHostLimitDoesNotDiscardAnIncompleteCommand() {
         val session = session()
         session.write("\u001b_Ga=T,q=2,i=1,f=24,s=1,v=1;")

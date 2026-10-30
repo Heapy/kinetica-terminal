@@ -7,7 +7,7 @@ import platform.AppKit.NSGraphicsContext
 import platform.CoreFoundation.*
 import platform.CoreGraphics.*
 
-/** Core Graphics images own copied CFData; no image outlives a temporary pinned Kotlin array. */
+/** Core Graphics images retain their CFData; pixels are written directly into its owned buffer. */
 internal class AppKitTerminalImages {
     private val cache = TerminalImageCache<CGImageRef>(64L * 1024 * 1024, release = ::CGImageRelease)
     val bytes: Long get() = cache.bytes
@@ -23,9 +23,12 @@ internal class AppKitTerminalImages {
         for (image in images) if (image.layer == layer) for (draw in image.tiles()) {
             val bitmap = cache.get(draw.tile) {
                 val tile = draw.tile
-                val bytes = image.image.pixels.tileBytes(tile, premultiplied = true)
-                val data = bytes.usePinned { checkNotNull(CFDataCreate(null, it.addressOf(0).reinterpret(), bytes.size.toLong())) }
+                val length = image.image.pixels.tileByteCount(tile).toLong()
+                val data = checkNotNull(CFDataCreateMutable(null, length))
                 try {
+                    CFDataSetLength(data, length)
+                    val bytes = checkNotNull(CFDataGetMutableBytePtr(data))
+                    image.image.pixels.writeTile(tile, premultiplied = true) { index, value -> bytes[index] = value.toUByte() }
                     val provider = checkNotNull(CGDataProviderCreateWithCFData(data))
                     try {
                         val colorSpace = checkNotNull(CGColorSpaceCreateDeviceRGB())

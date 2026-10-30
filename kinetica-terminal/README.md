@@ -66,7 +66,11 @@ retire their bitmap/texture cache entries. WebGL/Metal include retired textures 
 unfinished commands in the 64 MiB budget. Budget pressure completes those commands before
 reclaiming pixels or allocating more tiles; Metal resumes with a load-preserving render pass.
 Ordinary Metal frames remain asynchronous. Image draws copy their small instance data into
-command-owned storage. The budget counts RGBA tile payloads, not driver allocation overhead,
+command-owned storage. Canvas reserves 4 MiB of its budget for one reusable ImageData upload
+buffer and writes pixels directly into it; cached canvases use the remaining 60 MiB. AppKit
+writes directly into the CFData owned by each image provider, without an intermediate Kotlin
+RGBA tile copy. Canvas diagnostics include its upload buffer, released when no images remain
+or the view is disposed. The budget counts RGBA payloads, not driver allocation overhead,
 glyph atlases or decoded session storage.
 The host
 still owns session image data after a view is disposed. Diagnostics expose

@@ -44,8 +44,11 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
     private var clear = true
     private var imagesVisible = false
     private val imageFrame = TerminalGpuFrame()
-    private val imageCache = TerminalImageCache<dynamic>(64L * 1024 * 1024) { it.width = 0; it.height = 0 }
-    override val imageCacheBytes: Long get() = imageCache.bytes
+    private val uploadBytes = TERMINAL_IMAGE_TILE_SIDE.toLong() * TERMINAL_IMAGE_TILE_SIDE * 4
+    private var uploadData: dynamic = null
+    // One reusable ImageData plus all cached canvas pixel payloads share the 64 MiB budget.
+    private val imageCache = TerminalImageCache<dynamic>(64L * 1024 * 1024 - uploadBytes) { it.width = 0; it.height = 0 }
+    override val imageCacheBytes: Long get() = imageCache.bytes + if (uploadData == null) 0 else uploadBytes
     override val imageTileCount: Int get() = imageCache.size
     override var imageUploads: Long = 0
         private set
@@ -69,7 +72,7 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
             measurement?.submitted(0)
             return
         }
-        if (imagesVisible) { imagesVisible = false; imageCache.clear(); clear = true }
+        if (imagesVisible) { imagesVisible = false; imageCache.clear(); uploadData = null; clear = true }
         if (clear) {
             context.fillStyle = terminalCssColor(viewport.theme.background); context.fillRect(0, 0, width, height)
             viewport.markAll(); clear = false
@@ -98,12 +101,20 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
             for (image in images) if (image.layer == layer) for (draw in image.tiles()) {
                 val bitmap = imageCache.get(draw.tile) {
                     val result: dynamic = js("globalThis.document.createElement('canvas')")
-                    result.width = draw.tile.width; result.height = draw.tile.height
-                    val ctx = result.getContext("2d")
-                    val data = ctx.createImageData(draw.tile.width, draw.tile.height)
-                    data.data.set(unsignedBytes(image.image.pixels.tileBytes(draw.tile, premultiplied = false)))
-                    ctx.putImageData(data, 0, 0); imageUploads++
-                    result
+                    try {
+                        result.width = draw.tile.width; result.height = draw.tile.height
+                        val ctx = result.getContext("2d")
+                        if (uploadData == null) uploadData = ctx.createImageData(TERMINAL_IMAGE_TILE_SIDE, TERMINAL_IMAGE_TILE_SIDE)
+                        val bytes = uploadData.data
+                        image.image.pixels.writeTile(draw.tile, premultiplied = false, rowStride = TERMINAL_IMAGE_TILE_SIDE * 4) {
+                            index, value -> bytes[index] = value.toInt() and 255
+                        }
+                        ctx.putImageData(uploadData, 0, 0, 0, 0, draw.tile.width, draw.tile.height); imageUploads++
+                        result
+                    } catch (error: Throwable) {
+                        result.width = 0; result.height = 0
+                        throw error
+                    }
                 }
                 val q = draw.quad
                 context.drawImage(bitmap, q.sourceX, q.sourceY, q.sourceWidth, q.sourceHeight, q.x, q.y, q.width, q.height)
@@ -127,7 +138,7 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         imageCache.endFrame()
         clear = false
     }
-    override fun dispose() { imageCache.clear(); canvas.width = 0; canvas.height = 0 }
+    override fun dispose() { imageCache.clear(); uploadData = null; canvas.width = 0; canvas.height = 0 }
 }
 
 /** WebGL2 owns presentation; a detached 2D canvas only rasterizes cache misses. */

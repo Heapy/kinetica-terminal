@@ -939,6 +939,25 @@ corruption after that prefix, preserve the expansion limit, and verify direct bu
 Validation passes 1029 JVM tests, the fresh Release JS suite, 85 Native graphics tests and
 the browser Canvas/WebGL graphics verifier, including the frame-wide GPU budget stress case.
 
+Software image uploads now write directly into host-owned buffers. Canvas keeps one reusable
+1024×1024 ImageData (4 MiB) and caps its canvas tile cache at the remaining 60 MiB, rather than
+allocating a Kotlin RGBA array and a new ImageData for each upload. Row stride and dirty bounds
+keep narrower edge tiles correct. Diagnostics include the upload buffer; an image-free frame
+or disposal releases it. AppKit fills mutable CFData directly before publishing its image
+provider, removing the simultaneous Kotlin tile/CFData copy. Published bytes remain immutable.
+This accounts for application-owned RGBA payloads, not browser/Core Graphics internal copies,
+compositor/driver overhead or GC/OS reclamation timing. Decoded generations, held frames,
+animation conversion/composition and encoded-transfer buffers still require the wider audit.
+
+Validation passes 1216 JVM tests, the freshly built JS suite and six native image-rendering
+tests covering software/Metal pixels, alpha, orientation, cropping, seams, placeholders,
+animation, synchronized frames and cleanup. The browser stress case now covers both renderers:
+twenty distinct crops exceed the resident budget, yet all twenty visible stripes survive.
+Canvas allocates exactly one ImageData for the whole case and reuses it for every upload;
+its measured canvas-plus-upload peak is 66,434,104 bytes, below 64 MiB (67,108,864 bytes).
+WebGL's independently measured peak remains below that limit, including unfinished commands.
+Eight shared tile/cache tests also pass on Native, and the general browser verifier passes.
+
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
 - [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
 - [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.

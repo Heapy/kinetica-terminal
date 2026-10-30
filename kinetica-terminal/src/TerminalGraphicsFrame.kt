@@ -85,8 +85,10 @@ internal data class TerminalImageTileKey(val generation: Any, val x: Int, val y:
 internal data class TerminalImageTile(val key: TerminalImageTileKey, val left: Int, val top: Int, val width: Int, val height: Int)
 internal data class TerminalImageTileDraw(val tile: TerminalImageTile, val quad: TerminalImageQuad)
 
+internal const val TERMINAL_IMAGE_TILE_SIDE = 1024
+
 /** Tiles have one source-pixel gutter so linear sampling does not introduce seams. */
-internal fun TerminalImageQuad.tiles(side: Int = 1024): List<TerminalImageTileDraw> {
+internal fun TerminalImageQuad.tiles(side: Int = TERMINAL_IMAGE_TILE_SIDE): List<TerminalImageTileDraw> {
     require(side in 4..2048)
     // Ghostty rounds placeholder source spans independently from destination spans. A zero
     // source span still samples a texel boundary with linear filtering. Bake that one axis
@@ -131,16 +133,29 @@ internal fun TerminalImageQuad.tiles(side: Int = 1024): List<TerminalImageTileDr
 
 /** Convert only one bounded tile; never retain a second full RGBA copy of an RGB image. */
 internal fun TerminalGraphicsPixels.tileBytes(tile: TerminalImageTile, premultiplied: Boolean): ByteArray {
+    val bytes = ByteArray(tileByteCount(tile))
+    writeTile(tile, premultiplied) { index, value -> bytes[index] = value }
+    return bytes
+}
+
+internal fun TerminalGraphicsPixels.tileByteCount(tile: TerminalImageTile): Int {
     require(tile.left >= 0 && tile.top >= 0 && tile.width > 0 && tile.height > 0 &&
         tile.width <= 2048 && tile.height <= 2048 &&
         tile.left.toLong() + tile.width <= width.toLong() + 1 && tile.top.toLong() + tile.height <= height.toLong() + 1)
-    val bytes = ByteArray(tile.width * tile.height * 4)
+    return tile.width * tile.height * 4
+}
+
+/** Write directly to host-owned storage, including a reusable upload buffer with padded rows. */
+internal inline fun TerminalGraphicsPixels.writeTile(tile: TerminalImageTile, premultiplied: Boolean,
+    rowStride: Int = tile.width * 4, write: (Int, Byte) -> Unit) {
+    tileByteCount(tile)
+    require(rowStride >= tile.width * 4 && rowStride.toLong() * tile.height <= Int.MAX_VALUE)
     val channels = if (format == 24) 3 else 4
     for (y in 0 until tile.height) for (x in 0 until tile.width) {
         // Independently rounded placeholder source coordinates can extend one pixel beyond
         // the image. Duplicate that edge pixel, matching a clamp-to-edge GPU sampler.
         val source = ((tile.top + y).coerceAtMost(height - 1) * width + (tile.left + x).coerceAtMost(width - 1)) * channels
-        val target = (y * tile.width + x) * 4
+        val target = y * rowStride + x * 4
         if (tile.key.sampleX != null || tile.key.sampleY != null) {
             val pointX = tile.key.sampleX; val pointY = tile.key.sampleY
             val nx = if (pointX == null) 1 else 2; val ny = if (pointY == null) 1 else 2
@@ -155,17 +170,16 @@ internal fun TerminalGraphicsPixels.tileBytes(tile: TerminalImageTile, premultip
                 for (c in 0..2) sums[c] += (data[offset + c].toInt() and 255) * alpha
             }
             val count = nx * ny
-            for (c in 0..2) bytes[target + c] = (if (premultiplied) (sums[c] + count * 127) / (count * 255)
-                else if (alphaSum == 0) 0 else (sums[c] + alphaSum / 2) / alphaSum).toByte()
-            bytes[target + 3] = ((alphaSum + count / 2) / count).toByte()
+            for (c in 0..2) write(target + c, (if (premultiplied) (sums[c] + count * 127) / (count * 255)
+                else if (alphaSum == 0) 0 else (sums[c] + alphaSum / 2) / alphaSum).toByte())
+            write(target + 3, ((alphaSum + count / 2) / count).toByte())
             continue
         }
         val alpha = if (channels == 3) 255 else data[source + 3].toInt() and 255
-        for (channel in 0..2) bytes[target + channel] = if (premultiplied)
-            (((data[source + channel].toInt() and 255) * alpha + 127) / 255).toByte() else data[source + channel]
-        bytes[target + 3] = alpha.toByte()
+        for (channel in 0..2) write(target + channel, if (premultiplied)
+            (((data[source + channel].toInt() and 255) * alpha + 127) / 255).toByte() else data[source + channel])
+        write(target + 3, alpha.toByte())
     }
-    return bytes
 }
 
 /** Bounds resident and command-retained pixel bytes together. GPU owners supply a blocking

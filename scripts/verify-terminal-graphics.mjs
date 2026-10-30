@@ -190,7 +190,9 @@ try {
     const row = await page.evaluate(renderer => renderer === "gpu" ? graphicsPixels.slice(0, 700 * 4) : [...graphicsCanvas.getContext("2d").getImageData(0, 2, 700, 1).data], renderer);
     for (let x = 2; x < 700; x++) assert.deepEqual(row.slice(x * 4, x * 4 + 4), red, `${renderer}: tiled image pixel ${x}`);
     assert.equal(await metric("tiles"), 3);
-    assert((await metric("bytes")) < 2046 * 4 + 32);
+    const uploadBytes = renderer === "software" ? 1024 * 1024 * 4 : 0;
+    assert((await metric("bytes")) >= uploadBytes);
+    assert((await metric("bytes")) < uploadBytes + 2046 * 4 + 32);
     await write(apc("a=d,d=A,q=2"));
     assert.equal(await metric("bytes"), 0);
     await reset();
@@ -228,11 +230,12 @@ try {
     await write("\x1b[5;1Hx");
     await expectPixel(red, "rounded edge source span repeats the last texel");
     await page.evaluate(() => graphicsSampleRow = 2);
-    if (renderer === "gpu") {
+    {
       await reset();
       // One source image, twenty distinct overlapping crop tiles. All fit in decoded storage,
-      // but their GPU representations exceed 64 MiB in a single frame. Do not read pixels per
+      // but their rendered representations exceed 64 MiB in a single frame. Do not read pixels per
       // draw here: that would implicitly synchronize the GPU and hide retained-resource bugs.
+      if (renderer === "gpu") {
       await page.evaluate(() => {
         const gl = graphicsCanvas.getContext("webgl2");
         const allocate = gl.texImage2D.bind(gl), remove = gl.deleteTexture.bind(gl);
@@ -270,6 +273,32 @@ try {
           globalThis.graphicsDeferReadback = false;
         };
       });
+      } else {
+        await page.evaluate(() => {
+          const prototype = CanvasRenderingContext2D.prototype;
+          const create = prototype.createImageData, put = prototype.putImageData;
+          const buffers = new Set();
+          globalThis.graphicsBudget = { peak: 0, allocations: 0, uploads: 0 };
+          const measure = () => {
+            const staging = [...buffers].reduce((sum, buffer) => sum + buffer.byteLength, 0);
+            const backing = [...graphicsResources].reduce((sum, canvas) => sum + canvas.width * canvas.height * 4, 0);
+            graphicsBudget.peak = Math.max(graphicsBudget.peak, staging + backing);
+          };
+          prototype.createImageData = function (...args) {
+            const data = create.apply(this, args);
+            buffers.add(data.data.buffer); graphicsBudget.allocations++; measure();
+            return data;
+          };
+          prototype.putImageData = function (data, ...args) {
+            if (!buffers.has(data.data.buffer)) throw Error("Unaccounted Canvas upload buffer");
+            measure(); graphicsBudget.uploads++;
+            return put.call(this, data, ...args);
+          };
+          globalThis.restoreGraphicsBudgetHooks = () => {
+            prototype.createImageData = create; prototype.putImageData = put;
+          };
+        });
+      }
       const data = Buffer.alloc(1022 * 1022 * 3);
       for (let i = 0; i < data.length; i += 3) data.set(red.slice(0, 3), i);
       const encoded = data.toString("base64");
@@ -280,14 +309,19 @@ try {
       }
       for (let i = 0; i < 20; i++) scene += `\x1b[1;${i * 3 + 1}H` + apc(`a=p,q=2,i=90,p=${i + 1},x=${i},w=${1022 - i},c=2,r=1,C=1`);
       await write(scene);
-      assert.equal(await page.evaluate(() => graphicsDrawsUntilReadback), 0);
+      if (renderer === "gpu") assert.equal(await page.evaluate(() => graphicsDrawsUntilReadback), 0);
       const budget = await page.evaluate(() => graphicsBudget);
-      assert.ok(budget.drains > 0, "Oversized frame must retire GPU commands before reusing budget");
-      assert.ok(budget.peak <= 64 * 1024 * 1024, `All live and command-retained tiles: ${budget.peak}`);
-      console.log(`GPU image budget: peak ${budget.peak} bytes including unfinished commands, ${budget.drains} completion barriers`);
+      if (renderer === "gpu") assert.ok(budget.drains > 0, "Oversized frame must retire GPU commands before reusing budget");
+      else {
+        assert.equal(budget.allocations, 1, "Canvas reuses one upload buffer across all tiles");
+        assert.ok(budget.uploads >= 20, "Exercise every distinct source crop");
+      }
+      assert.ok(budget.peak <= 64 * 1024 * 1024, `${renderer}: tiles plus pending commands or upload buffers: ${budget.peak}`);
+      console.log(`${renderer} image budget: peak ${budget.peak} accounted pixel bytes`);
       // Renderer origins retain fractional font metrics; protocol cell widths are integers.
       // Count the twenty separate solid stripes instead of accumulating rounded cell widths.
-      const pixels = await page.evaluate(() => graphicsPixels);
+      const pixels = await page.evaluate(renderer => renderer === "gpu" ? graphicsPixels :
+        [...graphicsCanvas.getContext("2d").getImageData(0, graphicsSampleRow, graphicsCanvas.width, 1).data], renderer);
       const spans = []; let span = 0;
       for (let x = 0; x < pixels.length; x += 4) {
         if (red.every((value, channel) => pixels[x + channel] === value)) span++;
