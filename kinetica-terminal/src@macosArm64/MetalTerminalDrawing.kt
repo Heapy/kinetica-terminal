@@ -70,6 +70,9 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     private var disposed = false
     private var visible = true
     private var releasePending = false
+    private var presentationSequence = 0L
+    private var lastPresentation = 0L
+    private var presentationRetry: NSTimer? = null
     internal val glyphTextureCount: Int get() = textures.size
     internal val vertexBufferBytes: Long get() = buffers.sumOf { it.length.toLong() }
     private var resetAtlas = true
@@ -92,6 +95,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         if (disposed || this.visible == visible) return
         this.visible = visible
         if (!visible) {
+            cancelPresentationRetry()
             pending = false; releasePending = true
             imageCache.clear()
             if (!busy) releaseResources()
@@ -102,6 +106,10 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         }
     }
 
+    private fun cancelPresentationRetry() {
+        presentationRetry?.invalidate(); presentationRetry = null
+    }
+
     private fun releaseResources() {
         check(!busy)
         releasePending = false
@@ -110,7 +118,8 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         buffers.forEach { it.setPurgeableState(MTLPurgeableStateEmpty) }; buffers.clear()
         atlas.clear(); attributes.clear(); resetAtlas = true
         if (!visible || disposed) {
-            layer.contents = null
+            // CAMetalLayer owns its contents. Assigning null disables drawable presentation
+            // on macOS even after its device and drawable size are restored.
             // CAMetalLayer ignores a zero drawable size; shrink its pool before detaching the device.
             layer.drawableSize = NSMakeSize(1.0, 1.0)
             layer.device = null
@@ -156,11 +165,25 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         val command = encode(drawable.texture as MTLTextureProtocol, viewport.theme.background, images)
         val priorGpuMillis = drainedGpuMillis
         if (!transactional) command.presentDrawable(drawable as MTLDrawableProtocol)
-        if (measurement != null) {
-            drawable.addPresentedHandler { presented ->
-                val time = presented?.presentedTime ?: 0.0
-                NSOperationQueue.mainQueue.addOperationWithBlock {
-                    if (!disposed) probe.observer?.onFramePresented(measurement.id, time)
+        val sequence = ++presentationSequence
+        drawable.addPresentedHandler { presented ->
+            val time = presented?.presentedTime ?: 0.0
+            NSOperationQueue.mainQueue.addOperationWithBlock {
+                if (!disposed) {
+                    if (sequence > lastPresentation) {
+                        lastPresentation = sequence
+                        cancelPresentationRetry()
+                        if (time == 0.0 && visible) {
+                            // Window attachment can drop a drawable. An idle shell may never
+                            // invalidate again; retry on the next frame without spinning the
+                            // main queue while Core Animation is still committing the window.
+                            presentationRetry = NSTimer.timerWithTimeInterval(0.016, repeats = false) {
+                                presentationRetry = null
+                                if (!disposed && visible) invalidate()
+                            }.also { NSRunLoop.mainRunLoop.addTimer(it, NSRunLoopCommonModes) }
+                        }
+                    }
+                    if (measurement != null) probe.observer?.onFramePresented(measurement.id, time)
                 }
             }
         }
@@ -370,6 +393,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
 
     fun dispose() {
         if (disposed) return
+        cancelPresentationRetry()
         disposed = true; pending = false; releasePending = true
         layer.removeFromSuperlayer(); imageCache.clear()
         if (!busy) releaseResources()

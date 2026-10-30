@@ -14,6 +14,7 @@ internal class TerminalApplication(
     quit: () -> Unit = { application.terminate(null) },
     completeTermination: () -> Unit = { application.replyToApplicationShouldTerminate(true) },
     internal val settings: TerminalSettingsStore = TerminalSettingsStore(),
+    private val renderObserver: TerminalRenderObserver? = null,
 ) {
     val shell = AppKitApplication("Kinetica Terminal", nativeApplication = application,
         requestNativeTermination = quit, replyToTermination = { if (it) completeTermination() })
@@ -89,6 +90,7 @@ internal class TerminalApplication(
                 callbacks = WindowCallbacks(boundsChanged = settings::saveBounds,
                     closed = { terminals.remove(terminal) }, release = terminal::close),
                 hostWidgets = appKitTerminalHosts(mapOf("shell" to terminal.session), controls = true,
+                    renderObserver = renderObserver,
                     clipboardPolicy = TerminalClipboardPolicy.WRITE_ONLY,
                     mimeClipboardPolicy = TerminalMimeClipboardPolicy.WRITE_AND_PASTE,
                     notificationPolicy = { true },

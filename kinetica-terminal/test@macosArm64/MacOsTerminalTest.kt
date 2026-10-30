@@ -10,6 +10,47 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsTerminalTest {
+    @Test fun terminalPanePresentsOutputOnFirstShowAndAfterBeingHidden() {
+        val app = NSApplication.sharedApplication()
+        val session = TerminalSession()
+        var presented = 0
+        val contentFrames = mutableSetOf<Long>()
+        val surface = AppKitTerminalView(session, rendering = TerminalRendering.GPU,
+            renderObserver = object : TerminalRenderObserver {
+                override fun onFrameStarted(frameId: Long, viewport: TerminalViewport) {
+                    if ("Initial terminal output" in viewport.visibleText()) contentFrames += frameId
+                }
+                override fun onFramePresented(frameId: Long, hostTimeSeconds: Double) {
+                    if (hostTimeSeconds > 0 && contentFrames.remove(frameId)) presented++
+                }
+            })
+        val pane = AppKitTerminalPane(surface)
+        val window = NSWindow(NSMakeRect(80.0, 80.0, 640.0, 320.0), NSWindowStyleMaskTitled, NSBackingStoreBuffered, false)
+        window.setReleasedWhenClosed(false)
+        window.level = NSFloatingWindowLevel
+        window.contentView = pane
+        window.title = "Kinetica initial frame verification (isolated)"
+        try {
+            runWindowSteps(app, {
+                "visible=${window.visible}, occlusion=${window.occlusionState}, host=${session.potentiallyVisible}, " +
+                    "frames=${surface.submittedGpuFrames}, presented=$presented, layer=${surface.layer}, " +
+                    "device=${(surface.layer as? CAMetalLayer)?.device}, delegate=${surface.layer?.delegate}"
+            }, sequence {
+                window.orderFrontRegardless()
+                window.makeFirstResponder(surface)
+                session.write("Initial terminal output")
+                yield("Initial presented frame" to { presented > 0 })
+                assertContains(surface.accessibilityValue().toString(), "Initial terminal output")
+                window.orderOut(null)
+                yield("Hidden window" to { !session.potentiallyVisible && (surface.layer as CAMetalLayer).device == null })
+                val before = presented
+                contentFrames.clear()
+                window.orderFrontRegardless()
+                yield("Presented frame after restore" to { presented > before })
+            })
+        } finally { pane.dispose(); window.close() }
+    }
+
     @Test fun deccolmChangesTheRealPtyAndMode40RestoresTheMountedHostGrid() {
         NSApplication.sharedApplication()
         val session = TerminalSession()
@@ -198,7 +239,7 @@ class MacOsTerminalTest {
                 surface.setMarkedText("に", NSMakeRange(1u, 0u), NSMakeRange(NSNotFound.toULong(), 0u))
                 surface.displayIfNeeded()
                 val metal = surface.layer as CAMetalLayer
-                val overlay = metal.sublayers!!.single() as CATextLayer
+                val overlay = metal.sublayers!!.filterIsInstance<CATextLayer>().single()
                 assertTrue(metal.geometryFlipped)
                 assertEquals("に", (overlay.string as NSAttributedString).string)
                 assertFalse(overlay.hidden)
