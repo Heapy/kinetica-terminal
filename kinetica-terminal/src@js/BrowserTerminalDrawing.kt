@@ -207,6 +207,7 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     private var size = 14.0; private var cellWidth = 0.0; private var cellHeight = 0.0
     private var family: String? = null
     private var lost = false; private var disposed = false; private var repaint = true
+    private var maxSurfaceWidth = 0; private var maxSurfaceHeight = 0
     private var suspended = false
     private var restoreError: Exception? = null
     private var gpuTimer: BrowserGpuTimer? = null
@@ -223,7 +224,7 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         if (!disposed) {
             lost = false; textures.clear(); atlas.clear()
             program = null; buffer = null; vao = null
-            try { if (!suspended) initializeResources(); repaint = true } catch (error: Exception) { restoreError = error }
+            try { refreshSurfaceLimits(); if (!suspended) initializeResources(); repaint = true } catch (error: Exception) { restoreError = error }
             invalidate()
         }
     }
@@ -238,9 +239,25 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     fun initialize() {
         check(gl != null) { "WebGL2 is unavailable" }
         check((gl.getParameter(gl.MAX_TEXTURE_SIZE) as Number).toInt() >= atlas.size)
+        refreshSurfaceLimits()
         initializeResources()
         canvas.addEventListener("webglcontextlost", onLost)
         canvas.addEventListener("webglcontextrestored", onRestored)
+    }
+
+    private fun refreshSurfaceLimits() {
+        val buffer = (gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as Number).toInt()
+        val viewport = gl.getParameter(gl.MAX_VIEWPORT_DIMS)
+        maxSurfaceWidth = minOf(buffer, (viewport[0] as Number).toInt())
+        maxSurfaceHeight = minOf(buffer, (viewport[1] as Number).toInt())
+        check(maxSurfaceWidth > 0 && maxSurfaceHeight > 0) { "WebGL surface limits are unavailable" }
+    }
+
+    private fun surfaceCssSize(width: Int, height: Int, ratio: Double) {
+        // A smaller actual drawing buffer must be clipped at its physical size,
+        // like the native Metal surface, rather than stretched by the compositor.
+        canvas.style.width = "${width.toDouble() / ratio}px"
+        canvas.style.height = "${height.toDouble() / ratio}px"
     }
 
     private fun shader(type: dynamic, source: String): dynamic {
@@ -279,12 +296,13 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     }
 
     override fun resize(width: Double, height: Double, ratio: Double, fontSize: Double, cellWidth: Double, cellHeight: Double, fontFamily: String?) {
+        val pixelWidth = (width * ratio).toInt().coerceIn(0, maxSurfaceWidth)
+        val pixelHeight = (height * ratio).toInt().coerceIn(0, maxSurfaceHeight)
         if (this.width != width || this.height != height || this.ratio != ratio ||
-            !suspended && (canvas.width != (width * ratio).toInt() || canvas.height != (height * ratio).toInt())) {
-            if (!suspended) resizeBrowserCanvas(canvas, (width * ratio).toInt(), (height * ratio).toInt())
-            // Keep both WebGL and the CSS compositor at one device pixel per texel.
-            canvas.style.width = "${(width * ratio).toInt().toDouble() / ratio}px"
-            canvas.style.height = "${(height * ratio).toInt().toDouble() / ratio}px"; repaint = true
+            !suspended && (canvas.width != pixelWidth || canvas.height != pixelHeight)) {
+            if (!suspended) resizeBrowserCanvas(canvas, pixelWidth, pixelHeight)
+            surfaceCssSize(pixelWidth, pixelHeight, ratio)
+            repaint = true
         }
         if (this.ratio != ratio || size != fontSize || family != fontFamily || this.cellWidth != cellWidth || this.cellHeight != cellHeight) {
             resetShaping(); atlas.clear(); resetTextures(); repaint = true
@@ -298,6 +316,10 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         restoreError?.let { throw it }
         if (lost || disposed || suspended || width <= 0 || height <= 0) return
         if (program == null) initializeResources()
+        // The browser may allocate less than requested even within reported GPU limits.
+        val pixelWidth = (gl.drawingBufferWidth as Number).toInt()
+        val pixelHeight = (gl.drawingBufferHeight as Number).toInt()
+        surfaceCssSize(pixelWidth, pixelHeight, ratio)
         if (shaper == null) fonts?.createShaper(family, size * ratio)?.let {
             shaper = it; frame = TerminalGpuFrame(it::resolve, it::shape); repaint = true
         }
@@ -311,12 +333,12 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         batches.build(frame, atlas, ratio, transparentDefaultBackground = images.isNotEmpty())
         measurement?.let { it.batch = it.checkpoint() }
         val query = measurement?.let { gpuTimer?.begin(it.id) }
-        gl.viewport(0, 0, canvas.width, canvas.height)
+        gl.viewport(0, 0, pixelWidth, pixelHeight)
         val color = viewport.theme.background
         gl.clearColor((color shr 16 and 255) / 255.0, (color shr 8 and 255) / 255.0, (color and 255) / 255.0, 1)
         gl.clear(gl.COLOR_BUFFER_BIT)
         gl.useProgram(program); gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
-        gl.uniform2f(viewportUniform, (canvas.width as Number).toDouble() / ratio, (canvas.height as Number).toDouble() / ratio)
+        gl.uniform2f(viewportUniform, pixelWidth.toDouble() / ratio, pixelHeight.toDouble() / ratio)
         gl.activeTexture(gl.TEXTURE0)
         drawCalls = 0
         imageCache.beginFrame()

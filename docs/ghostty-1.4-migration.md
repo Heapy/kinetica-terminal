@@ -468,6 +468,20 @@ replaced with an offscreen or visibility-bypassing assertion.
 
 ## Memory and lifecycle
 
+- [x] Bound WebGL backing requests by both `MAX_RENDERBUFFER_SIZE` and the per-axis
+      `MAX_VIEWPORT_DIMS`, refreshing limits on context restoration. Viewport coordinates
+      and CSS presentation use actual `drawingBufferWidth/Height`, preserving physical cell
+      geometry when the browser allocates less than requested, as permitted by the
+      [WebGL drawing-buffer specification](https://registry.khronos.org/webgl/specs/1.0.3/#2.2).
+      Oversized surfaces clip at the device boundary instead of stretching a smaller buffer;
+      host geometry and protocol cell dimensions stay independent. Host resize invalidation
+      compares consecutive host measurements, so a capped backing size does not invalidate
+      every unchanged frame. Real Chromium thin-surface tests cover both device-limit axes,
+      DPR 1/1.25/2, exact image pixels, hide/show, recovery and disposal. Additional injected
+      limits exercise independent axes, changed restored capabilities and a real smaller
+      backing buffer beneath unchanged requested attributes. The regression failed before
+      the fix. Validation passes the fresh Release JS suite, `verify-terminal-surface-limits.mjs`,
+      the Canvas/WebGL graphics verifier and the general browser input/rendering verifier.
 - [x] Clamp native Metal drawable dimensions to the device's 2D texture limit, including
       visibility restoration and test readback. The family lookup follows original
       `renderer/metal/Device.zig` and the [Apple feature-set table](https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf):

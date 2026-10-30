@@ -92,6 +92,7 @@ node scripts/verify-terminal-dnd.mjs
 node scripts/verify-terminal-dnd-host.mjs
 node scripts/verify-terminal-window-resize.mjs
 node scripts/verify-terminal-graphics.mjs
+node scripts/verify-terminal-surface-limits.mjs
 ```
 
 Version 0.1.0 of the terminal and the new 0.4.0 framework API are local development

@@ -52,6 +52,7 @@ public class BrowserTerminalView(
     public var cellHeight: Double = 18.0
         private set
     private var pixelRatio = 0.0
+    private var measuredPixelWidth = 0; private var measuredPixelHeight = 0
     private var frame: Int? = null
     private var accessibilityTimer: Int? = null
     private var disposed = false
@@ -362,7 +363,10 @@ public class BrowserTerminalView(
         cellHeight = kotlin.math.ceil(fontSize * 1.3)
         val ratio = (window.devicePixelRatio as Number).toDouble()
         val w = (width * ratio).toInt(); val h = (height * ratio).toInt()
-        if (canvas.width != w || canvas.height != h || pixelRatio != ratio) {
+        // Renderer backing extents may be capped by the device; compare host geometry
+        // with its previous measurement instead of invalidating every capped frame.
+        if (measuredPixelWidth != w || measuredPixelHeight != h || pixelRatio != ratio) {
+            measuredPixelWidth = w; measuredPixelHeight = h
             pixelRatio = ratio
             viewport.markAll()
         }
