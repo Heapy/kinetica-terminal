@@ -224,6 +224,14 @@ in Kotlin; PTY reply hex preserves every original byte independently. No expecte
 re-encoded from the normalized display title. String-feed and byte-feed equivalence has a
 separate common regression; ordinary oracle replay remains whole-byte-buffer and bytewise.
 
+The CSI alias/arity increment adds 34 scenarios / 408 checkpoints, bringing the main corpus
+to 877 scenarios / 4762 checkpoints. `CSI j/k` are compared with the original cursor-left/up
+handlers across default/zero/large counts, margins, reverse wrap and alternate screens.
+Cursor movement, tab movement, erase/insert/delete and scrolling reject excess numeric or
+empty parameters without changing cursor, cells or pending wrap. A trailing empty slot
+remains accepted when it does not increase the original parser's parameter count.
+All 34 cases failed before the implementation change; the prior 843 cases still passed.
+
 The tab/pending-wrap increment adds 59 scenarios / 342 checkpoints, bringing this corpus
 to 461 scenarios / 2615 checkpoints. It covers omitted/explicit/malformed tab-clear parameters,
 default/custom stops, HT/CHT/CBT pending-wrap preservation with DECAWM on/off, and narrow,

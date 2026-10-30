@@ -141,6 +141,11 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 - [x] OSC 5522 clipboard transactions, host authorization, MIME data, aliases, cancellation,
       bounded buffering and acknowledged protocol replies, with AppKit/browser MIME adapters.
 - [x] Reconcile origin-relative CHA/VPA/HPR/VPR, CUB/BS margin behavior and the changed reflow scenarios.
+- [x] Support `CSI j/k` as the original's CUB/CUU aliases, including margins, reverse wrap
+      and alternate screens. Reject excess parameters for cursor movement, tab movement,
+      erase/insert/delete and scrolling before changing cells, cursor or pending wrap.
+      Thirty-four original-library scenarios / 408 checkpoints cover rejection and accepted
+      trailing empty parameters; both whole-stream and bytewise replay match.
 - [x] Extend coverage for parameterless TBC and pending wrap with DECAWM disabled. Tab
       movement/clearing preserves pending wrap; TBC rejects extra parameters. CSI parameter
       counting follows the original parser, which does not append an empty trailing slot.

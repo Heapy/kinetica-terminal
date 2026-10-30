@@ -142112,5 +142112,1501 @@
         "write": "\u001b]2;after\u001b[21t"
       }
     ]
+  },
+  {
+    "name": "csi_arity_upper_a",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3A"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;A"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3A"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;A"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_b",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3B"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;B"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3B"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;B"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_c",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3C"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;C"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3C"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;C"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_d",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3D"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;D"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3D"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;D"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_e",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3E"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;E"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3E"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;E"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_f",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3F"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;F"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3F"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;F"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_g",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3G"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;G"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3G"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;G"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_hpa_backtick",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3`"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;`"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3`"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;`"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_i",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3I"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;I"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3I"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;I"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_lower_j",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;j"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_lower_k",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;k"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_j",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3J"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;J"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3J"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;J"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_k",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3K"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;K"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3K"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;K"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_l",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3L"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;L"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3L"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;L"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_m",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3M"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;M"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3M"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;M"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_p",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3P"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;P"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3P"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;P"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_s",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3S"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;S"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3S"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;S"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_t",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3T"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;T"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3T"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;T"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_x",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3X"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;X"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3X"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;X"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_z",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3Z"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;Z"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3Z"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;Z"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_lower_a",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3a"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;a"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3a"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;a"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_lower_d",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3d"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;d"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3d"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;d"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_lower_e",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3e"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;e"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3e"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;e"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_ich",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3@"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;;@"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3@"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;@"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_upper_h",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3;4H"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3;;H"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3;4H"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3;H"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_arity_lower_f",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3;4f"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3;;f"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[2;3;4f"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H"
+      },
+      {
+        "write": "\u001b[2;3;f"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_alias_j_basic",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[3;5H"
+      },
+      {
+        "write": "\u001b[j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[0j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[65535j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[j"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_alias_j_margins",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[?69h\u001b[2;7s\u001b[2;4r\u001b[?6h\u001b[3;5H"
+      },
+      {
+        "write": "\u001b[j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[0j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[65535j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[j"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_alias_j_reverse_wrap",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[?1045h\u001b[3;5H"
+      },
+      {
+        "write": "\u001b[j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[0j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[65535j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[j"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_alias_j_alternate",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[?1049h\u001b[3;5H"
+      },
+      {
+        "write": "\u001b[j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[0j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[65535j"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[j"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_alias_k_basic",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[3;5H"
+      },
+      {
+        "write": "\u001b[k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[0k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[65535k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[k"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_alias_k_margins",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[?69h\u001b[2;7s\u001b[2;4r\u001b[?6h\u001b[3;5H"
+      },
+      {
+        "write": "\u001b[k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[0k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[65535k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[k"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_alias_k_reverse_wrap",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[?1045h\u001b[3;5H"
+      },
+      {
+        "write": "\u001b[k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[0k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[65535k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[k"
+      },
+      {
+        "write": "!"
+      }
+    ]
+  },
+  {
+    "name": "csi_alias_k_alternate",
+    "columns": 8,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1Habcdefgh\u001b[2;1Hijklmnop\u001b[3;1Hqrstuvwx\u001b[4;1Hyz012345\u001b[2;4H\u001b[?1049h\u001b[3;5H"
+      },
+      {
+        "write": "\u001b[k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[0k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[65535k"
+      },
+      {
+        "write": "!"
+      },
+      {
+        "write": "\u001b[2;8H#"
+      },
+      {
+        "write": "\u001b[k"
+      },
+      {
+        "write": "!"
+      }
+    ]
   }
 ]

@@ -290,6 +290,9 @@ Shift+PageUp/PageDown, and accessibility text are available.
   pinned Ghostty parser. Ground-state text decodes UTF-8 and ignores decoded C1 characters;
   OSC/DCS text payloads retain their separate bounded string handling. String input applies
   the same UTF-8 wire representation within headers, without publishing nested damage.
+- Cursor movement includes `CSI j/k` aliases for left/up. Cursor, tab, erase, insert/delete
+  and scroll commands reject excess parameters before changing terminal state, including
+  pending wrap. A trailing empty parameter follows the original parser's counting rules.
 - `observe` reports changed row ranges once per ordinary write. `onInput` receives outgoing
   `TerminalInputData`, including terminal protocol replies; `onResize` receives dimension changes.
   All return disposable subscriptions. Notifications are synchronous. This replaces the earlier

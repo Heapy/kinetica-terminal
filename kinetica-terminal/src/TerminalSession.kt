@@ -1437,6 +1437,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     private fun csi(final: Char) {
+        // Reject the whole command before changing cursor, cells or pending wrap.
+        // A trailing empty slot is already excluded by VtParser's parameter count.
+        when (final) {
+            'A', 'B', 'C', 'D', 'E', 'F', 'G', '`', 'I', 'j', 'k',
+            'J', 'K', 'L', 'M', 'P', 'S', 'T', 'X', 'Z', 'a', 'd', 'e', '@' ->
+                if (parameterCount > 1) return
+            'H', 'f' -> if (parameterCount > 2) return
+        }
         fun p(i: Int = 0, default: Int = 1): Int = if (i > paramIndex || params[i] == 0) default else params[i]
         val minY = if (origin) top else 0
         val minX = if (origin) left else 0
@@ -1446,12 +1454,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         val downLimit = if (cursorRow <= bottom) bottom else rows - 1
         val selective = privateCsi || protectionMode == PROTECTION_ISO
         when (final) {
-            'A' -> cursorRow = (cursorRow - p()).coerceAtLeast(upLimit)
+            'A', 'k' -> cursorRow = (cursorRow - p()).coerceAtLeast(upLimit)
             'B' -> cursorRow = (cursorRow + p()).coerceAtMost(downLimit)
             'e' -> position(positionRow + p(), positionColumn)
             'C' -> cursorColumn = (cursorColumn + p()).coerceAtMost(if (cursorColumn <= right) right else columns - 1)
             'a' -> position(positionRow, positionColumn + p())
-            'D' -> cursorLeft(p())
+            'D', 'j' -> cursorLeft(p())
             'E' -> { cursorRow = (cursorRow + p()).coerceAtMost(downLimit); carriageReturn() }
             'F' -> { cursorRow = (cursorRow - p()).coerceAtLeast(upLimit); carriageReturn() }
             'G', '`' -> position(positionRow, p())

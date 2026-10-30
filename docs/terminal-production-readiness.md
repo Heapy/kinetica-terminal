@@ -957,6 +957,19 @@ tests, the fresh JS suite and three native enquiry tests. A separate isolated re
 receives and compares all 255 raw bytes twice, including NUL and high bytes, with RIS between
 the requests; both responses remain exact and no transport input is rejected.
 
+The CSI dispatch audit found missing `j/k` cursor-left/up aliases and excess-parameter
+commands that incorrectly changed cursor, cells or pending wrap. The aliases now use the
+existing movement handlers; single-parameter movement/tab/edit/scroll commands and
+two-parameter positioning reject extra parameters before applying any state changes.
+Trailing empty slots retain the original parser's counting behavior.
+
+Thirty-four original-library scenarios / 408 checkpoints failed before the fix while the
+prior 843 oracle tests passed. The new cases exercise numeric/empty excess parameters,
+pending wrap, default/zero/large alias counts, margins, reverse wrap and alternate screens.
+All 1259 JVM tests and the fresh Release JS suite now pass, with original-library fixtures
+and provenance reproducing byte-for-byte. Shared parser/state behavior is exercised through
+whole-buffer and bytewise input; no platform host path changes in this increment.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than
