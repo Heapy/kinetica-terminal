@@ -157,7 +157,7 @@ public class TerminalViewport internal constructor(
     private val observation = session.observe { change ->
         if (!advancingGraphics) cancelGraphicsTimer()
         if (screenEpoch != session.screenEpoch) {
-            resetPointerClicks()
+            if (frozen == null) resetPointerClicks()
             scrollOffset = 0; scrollAnchor = null
         } else if (scrollOffset > 0) {
             val anchor = scrollAnchor
@@ -207,6 +207,7 @@ public class TerminalViewport internal constructor(
         } else {
             cancelResizeTimers(); resizeHeld = false
             cancelSelectionDrag(); frozen?.selection?.clear()
+            restorePointerClicksAfterHold()
             frozen = null
             resetBlink()
         }
@@ -215,28 +216,47 @@ public class TerminalViewport internal constructor(
 
     private fun captureFrame(capture: Boolean = true) {
         cancelGraphicsTimer()
-        cancelSelectionDrag()
+        // Stop autoscroll while holding presentation, but keep a held gesture alive.
+        dragTimer?.dispose(); dragTimer = null; promptClickCandidate = null
         val colors = session.colors.snapshot()
         val first = session.historySize - scrollOffset
         val selected = liveSelection.range()
+        val gesture = liveSelection.snapshot()
+        if (gesture == null) cancelSelectionDrag()
+        val clickRow = pointerClickRow
+        val clickLine = if (clickRow == null || clickRow.recycleEpoch != pointerClickRecycle) -1 else session.indexOfLine(clickRow)
+        val capturedFirst = minOf(first, selected?.start?.line ?: first, gesture?.firstLine ?: first,
+            clickLine.takeIf { it >= 0 } ?: first)
+        val visibleLast = first + session.rows - 1
+        val capturedLast = maxOf(visibleLast, selected?.end?.line ?: visibleLast, gesture?.lastLine ?: visibleLast,
+            clickLine.takeIf { it >= 0 } ?: visibleLast)
         val selectedText = if (selected != null) liveSelection.text() else null
         // A newly mounted view has no completed frame to retain.
-        val lines = Array(session.rows) {
-            if (capture) session.line(first + it).snapshot(colors) else TerminalLine(session.columns, colors)
+        val selectionLines = Array(capturedLast - capturedFirst + 1) { index ->
+            val y = capturedFirst + index
+            if (capture) session.line(y).snapshot(colors).also { if (y !in first..visibleLast) it.compress() }
+            else TerminalLine(session.columns, colors)
         }
+        val lines = Array(session.rows) { selectionLines[first + it - capturedFirst] }
         val copiedText = selected?.takeIf { it.start != it.end }?.let { range ->
             TerminalCopySnapshot(range, Array(range.end.line - range.start.line + 1) { index ->
-                val y = range.start.line + index
-                if (y in first until first + lines.size) lines[y - first]
-                else session.line(y).snapshot(colors).also { it.compress() }
+                selectionLines[range.start.line + index - capturedFirst]
             }, colors.theme)
         }
-        val selection = TerminalSelection({ first }, { first + lines.lastIndex }, { lines[it - first] }, { row ->
-            val index = lines.indexOfFirst { it === row }; if (index < 0) -1 else first + index
+        val selection = TerminalSelection({ capturedFirst }, { capturedLast }, { selectionLines[it - capturedFirst] }, { row ->
+            val index = selectionLines.indexOfFirst { it === row }; if (index < 0) -1 else capturedFirst + index
         }, wordBoundaries = { session.selectionWordBoundaries }, detectedLinksEnabled = { session.detectedLinksEnabled })
         frozen = FrozenFrame(lines, first, session.renderTheme, session.cursorColumn, session.cursorRow,
             capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText, copiedText, colors.theme,
+            selectionLines, capturedFirst, gesture, session.screenEpoch, clickRow, pointerClickRecycle,
             if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList())
+        if (clickLine >= 0) {
+            pointerClickRow = selectionLines[clickLine - capturedFirst]
+            pointerClickRecycle = pointerClickRow!!.recycleEpoch
+        } else {
+            pointerClicks.reset(); pointerClickRow = null
+            if (gesture == null) pointerPressTime = null
+        }
         blinkTimer?.dispose(); blinkTimer = null
     }
 
@@ -262,6 +282,7 @@ public class TerminalViewport internal constructor(
         cancelResizeTimers()
         if (disposed || !resizeHeld || session.synchronizedOutput) return
         resizeHeld = false
+        restorePointerClicksAfterHold()
         cancelSelectionDrag(); frozen?.selection?.clear(); frozen = null
         resetBlink(); markAll()
     }
@@ -342,6 +363,15 @@ public class TerminalViewport internal constructor(
     }
     internal fun resetPointerClicks() { pointerClicks.reset(); pointerClickRow = null; pointerPressTime = null }
 
+    private fun restorePointerClicksAfterHold() {
+        val frame = frozen ?: return
+        val row = frame.liveClickRow
+        if (!frame.interacted && frame.screenEpoch == session.screenEpoch &&
+            (row == null || row.recycleEpoch == frame.liveClickRecycle && session.indexOfLine(row) >= 0)) {
+            pointerClickRow = row; pointerClickRecycle = frame.liveClickRecycle
+        } else resetPointerClicks()
+    }
+
     /** Count actual local presses, independent of the host's clickCount/detail hint. */
     internal fun pressPointerSelection(pointer: TerminalSelectionPointer, timeMillis: Double,
         repeatIntervalMillis: Double, output: Boolean) {
@@ -349,11 +379,11 @@ public class TerminalViewport internal constructor(
         val row = pointerClickRow
         val frame = frozen
         val index = if (row == null || row.recycleEpoch != pointerClickRecycle) -1 else if (frame == null)
-            session.indexOfLine(row) else frame.lines.indexOfFirst { it === row }.let { if (it < 0) -1 else frame.firstLine + it }
+            session.indexOfLine(row) else frame.selectionLines.indexOfFirst { it === row }.let { if (it < 0) -1 else frame.selectionFirst + it }
         val previous = if (index >= 0) TerminalCellPosition(index, pointerClickColumn.coerceAtMost(row!!.columns - 1)) else null
         val count = pointerClicks.press(timeMillis, pointer.x, pointer.y, repeatIntervalMillis, pointer.cellWidth.toDouble(), previous != null)
         val origin = if (count == 1) pointerPosition(pointer).also {
-            pointerClickRow = frame?.lines?.get(it.line - frame.firstLine) ?: session.line(it.line)
+            pointerClickRow = frame?.selectionLine(it.line) ?: session.line(it.line)
             pointerClickRecycle = pointerClickRow!!.recycleEpoch; pointerClickColumn = it.column
         } else checkNotNull(previous)
         beginPointerSelection(pointer, when (count) {
@@ -368,23 +398,30 @@ public class TerminalViewport internal constructor(
         repeatIntervalMillis: Double, rectangle: Boolean): Boolean {
         val previous = pointerPressTime ?: return false
         if (disposed || !timeMillis.isFinite() || !previous.isFinite() ||
-            timeMillis - previous <= repeatIntervalMillis || !activeSelection.canContinuePointer()) return false
+            timeMillis - previous <= repeatIntervalMillis) return false
+        prepareInheritedGesture()
+        if (!activeSelection.canContinuePointer()) return false
         draggingSelection = true; promptClickCandidate = null
         extendPointerSelection(pointer, rectangle)
         return true
     }
     internal fun extendPointerSelection(pointer: TerminalSelectionPointer, rectangle: Boolean) {
         if (disposed || !draggingSelection) return
+        prepareInheritedGesture(); changeFrozenSelection()
         dragPointer = pointer; dragRectangle = rectangle; dragColumn = pointer.column; dragRow = pointer.row
         if (activeSelection.extendPointer(pointerPosition(pointer), pointer.x, pointer.cellWidth, rectangle)) promptClickCandidate = null
         updateDragScroll(); markAll()
     }
     internal fun selectionModifiersChanged(rectangle: Boolean) { dragRectangle = rectangle }
-    internal fun linkHoverAllowedWhileDragging(pointer: TerminalSelectionPointer): Boolean =
-        !draggingSelection || activeSelection.isPointerOrigin(pointerPosition(pointer))
+    internal fun linkHoverAllowedWhileDragging(pointer: TerminalSelectionPointer): Boolean {
+        if (!draggingSelection) return true
+        prepareInheritedGesture()
+        return activeSelection.isPointerOrigin(pointerPosition(pointer))
+    }
     internal fun pointerLinkAt(pointer: TerminalSelectionPointer): TerminalLinkTarget? {
-        if (disposed || !draggingSelection || pointer.column !in 0 until columns || pointer.row !in 0 until rows ||
-            !activeSelection.isPointerClick(pointerPosition(pointer))) return null
+        if (disposed || !draggingSelection || pointer.column !in 0 until columns || pointer.row !in 0 until rows) return null
+        prepareInheritedGesture()
+        if (!activeSelection.isPointerClick(pointerPosition(pointer))) return null
         return linkTargetAt(pointer.column, pointer.row)
     }
     internal fun endPointerSelection(pointer: TerminalSelectionPointer): Boolean {
@@ -399,6 +436,7 @@ public class TerminalViewport internal constructor(
      * The shape may change during a drag. Word, line and output gestures keep their granularity. */
     public fun extendSelection(column: Int, row: Int, rectangle: Boolean) {
         if (disposed || !draggingSelection) return
+        prepareInheritedGesture(); changeFrozenSelection()
         if (promptClickCandidate != (column to row)) promptClickCandidate = null
         dragColumn = column; dragRow = row; dragRectangle = rectangle
         activeSelection.extend(position(column, row, rectangle), rectangle); updateDragScroll(); markAll()
@@ -408,7 +446,9 @@ public class TerminalViewport internal constructor(
      * in that case the previous selection remains. */
     public fun deepPressSelection(): Boolean {
         if (disposed || !draggingSelection) return false
+        prepareInheritedGesture()
         val consumed = activeSelection.deepPress()
+        if (consumed) changeFrozenSelection()
         if (consumed) resetPointerClicks()
         cancelSelectionDrag()
         if (consumed) markAll()
@@ -431,6 +471,10 @@ public class TerminalViewport internal constructor(
     }
     /** Pointer cancellation/focus loss ends autoscrolling but leaves the completed selection. */
     public fun cancelSelectionDrag() { draggingSelection = false; promptClickCandidate = null; dragPointer = null; dragTimer?.dispose(); dragTimer = null }
+    private fun prepareInheritedGesture() {
+        frozen?.let { frame -> frame.inheritedGesture?.let { frame.selection.restore(it); frame.inheritedGesture = null } }
+    }
+    private fun changeFrozenSelection() { frozen?.let { liveSelection.clear(); it.clearInheritedSelection() } }
     public fun clearSelection() {
         cancelSelectionDrag(); liveSelection.clear()
         frozen?.let { it.selection.clear(); it.clearInheritedSelection() }
@@ -463,7 +507,7 @@ public class TerminalViewport internal constructor(
         frame?.inheritedCopyText?.let { return it.data(format, trimTrailingSpaces, codepointMap) }
         val range = selection() ?: return null
         return if (frame == null) terminalCopyData(range, session::line, session.theme, format, trimTrailingSpaces, codepointMap)
-        else terminalCopyData(range, { frame.lines[it - frame.firstLine] }, frame.copyTheme, format, trimTrailingSpaces, codepointMap)
+        else terminalCopyData(range, frame::selectionLine, frame.copyTheme, format, trimTrailingSpaces, codepointMap)
     }
 
     /** A lookup reads visible cells without changing the user's selection or gesture. */
@@ -492,7 +536,9 @@ public class TerminalViewport internal constructor(
     public fun selectAll() { trySelectAll() }
 
     internal fun trySelectAll(): Boolean {
-        if (disposed || !activeSelection.selectAll()) return false
+        if (disposed) return false
+        val frame = frozen
+        if (!(if (frame == null) activeSelection.selectAll() else activeSelection.selectAll(frame.firstLine, frame.firstLine + frame.lines.lastIndex))) return false
         cancelSelectionDrag()
         frozen?.let { liveSelection.clear(); it.clearInheritedSelection() }
         markAll()
@@ -748,8 +794,15 @@ public class TerminalViewport internal constructor(
     private data class FrozenFrame(val lines: Array<TerminalLine>, val firstLine: Int, val theme: TerminalTheme,
         val cursorColumn: Int, val cursorRow: Int, val cursorVisible: Boolean, val cursorStyle: TerminalCursorStyle,
         val selection: TerminalSelection, var inheritedRange: TerminalSelectionRange?, var inheritedText: String?,
-        var inheritedCopyText: TerminalCopySnapshot?, val copyTheme: TerminalTheme, val graphics: List<TerminalGraphicsFrameEntry>) {
-        fun clearInheritedSelection() { inheritedRange = null; inheritedText = null; inheritedCopyText = null }
+        var inheritedCopyText: TerminalCopySnapshot?, val copyTheme: TerminalTheme,
+        val selectionLines: Array<TerminalLine>, val selectionFirst: Int, var inheritedGesture: TerminalSelection.Snapshot?,
+        val screenEpoch: Long, val liveClickRow: TerminalLine?, val liveClickRecycle: Long,
+        val graphics: List<TerminalGraphicsFrameEntry>) {
+        var interacted: Boolean = false
+        fun selectionLine(index: Int): TerminalLine = selectionLines[index - selectionFirst]
+        fun clearInheritedSelection() {
+            inheritedRange = null; inheritedText = null; inheritedCopyText = null; inheritedGesture = null; interacted = true
+        }
     }
 }
 

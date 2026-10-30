@@ -63,8 +63,32 @@ internal class TerminalSelection(
 
     fun range(): TerminalSelectionRange? { reconcile(); return bounds }
 
-    fun selectAll(): Boolean {
-        val range = terminalSelectAllRange(firstLine(), lastLine(), line) ?: return false
+    internal data class Snapshot(val range: TerminalSelectionRange, val start: TerminalCellPosition?,
+        val end: TerminalCellPosition?, val click: TerminalCellPosition?, val mode: TerminalSelectionMode,
+        val pointerX: Double?, val dragged: Boolean, val preserveWhitespace: Boolean) {
+        private val positions get() = listOfNotNull(range.start, range.end, start, end, click)
+        val firstLine: Int get() = positions.minOf { it.line }
+        val lastLine: Int get() = positions.maxOf { it.line }
+    }
+
+    /** Scalar gesture state; restoration rebinds every anchor to the destination's rows. */
+    fun snapshot(): Snapshot? {
+        val range = range() ?: return null
+        return Snapshot(range, anchorStart?.position(), anchorEnd?.position(), clickAnchor?.position(),
+            mode, pointerX, pointerDragged, preserveWrittenWhitespace)
+    }
+
+    fun restore(snapshot: Snapshot) {
+        clear()
+        mode = snapshot.mode; pointerX = snapshot.pointerX; pointerDragged = snapshot.dragged
+        preserveWrittenWhitespace = snapshot.preserveWhitespace
+        anchorStart = snapshot.start?.let(::anchor); anchorEnd = snapshot.end?.let(::anchor)
+        clickAnchor = snapshot.click?.let(::anchor)
+        setRange(snapshot.range)
+    }
+
+    fun selectAll(first: Int = firstLine(), last: Int = lastLine()): Boolean {
+        val range = terminalSelectAllRange(first, last, line) ?: return false
         begin(range.start, TerminalSelectionMode.CHARACTER)
         extend(range.end)
         preserveWrittenWhitespace = true

@@ -87,8 +87,19 @@ Validation passes 1664 JVM tests, fresh Release JS tests and 20 focused Native t
 Dedicated browser Shift-click, existing selection and mouse-clipboard verifiers pass on
 macOS/Linux with Canvas/WebGL. Evidence: `TerminalShiftSelectionTest`, `MacOsSelectionTest`,
 `scripts/verify-terminal-shift-selection.mjs`, `/tmp/kinetica-shift-selection-*`.
-Remaining mouse work includes transferring gesture origins and repeat-click state into inherited
-frozen selections during synchronized output. That gap keeps the input/selection gate open.
+Retained frames now preserve gesture anchors and repeat-click state, including origins in
+history outside the visible viewport and current selection. Held drags, Shift continuation,
+word/deep presses and pending link clicks read captured cells despite hidden output or screen
+switches; current link policy still applies. Snapshot rows are shared with retained copy data,
+and gesture anchors are rebound lazily. Select All remains limited to visible retained rows.
+Selection edits made during a hold are discarded on reveal; untouched holds preserve a valid
+live click sequence. This closes the previously recorded frozen-gesture gap, without closing
+the broader input/selection gate or resource acceptance requirements.
+Validation passes 1674 JVM tests, fresh Release JS tests and 27 focused Native tests. Dedicated
+frozen-gesture, selection and copy-on-select browser checks pass on macOS/Linux with Canvas/WebGL
+and Retina, alongside the full browser verifier. Evidence: `TerminalFrozenSelectionTest`,
+`MacOsSelectionTest`, `scripts/verify-terminal-frozen-gesture.mjs`,
+`/tmp/kinetica-frozen-gesture-*`.
 
 Browser/AppKit now implement Ghostty's right-click actions (context menu, mixed copy,
 paste, copy-or-paste, ignore) and middle-click actions (selection paste, standard paste,

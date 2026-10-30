@@ -10,6 +10,30 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    @Test fun aHeldNativeDragAndItsShiftContinuationSurviveSynchronizedOutput() = withView { session, view, _ ->
+        session.write("0123456789")
+        fun mouse(type: NSEventType, x: Double, time: Double, shift: Boolean = false) {
+            val point = view.bounds.useContents { NSMakePoint(size.width / session.columns * x, size.height / session.rows * 0.5) }
+            val event = assertNotNull(NSEvent.mouseEventWithType(type, view.convertPoint(point, toView = null),
+                if (shift) NSEventModifierFlagShift else 0uL, time, view.window!!.windowNumber, null, 0, 1, 1.0f))
+            when (type) {
+                NSEventTypeLeftMouseDown -> view.mouseDown(event)
+                NSEventTypeLeftMouseDragged -> view.mouseDragged(event)
+                else -> view.mouseUp(event)
+            }
+        }
+        mouse(NSEventTypeLeftMouseDown, 2.2, 0.0)
+        mouse(NSEventTypeLeftMouseDragged, 4.8, 0.1)
+        session.write("\u001b[?2026h\u001b[H\u001b[2Khidden")
+        mouse(NSEventTypeLeftMouseDragged, 7.8, 0.2); mouse(NSEventTypeLeftMouseUp, 7.8, 0.2)
+        assertEquals("234567", view.accessibilitySelectedText())
+        mouse(NSEventTypeLeftMouseDown, 4.8, NSEvent.doubleClickInterval + 1, shift = true)
+        mouse(NSEventTypeLeftMouseUp, 4.8, NSEvent.doubleClickInterval + 1, shift = true)
+        assertEquals("234", view.accessibilitySelectedText())
+        session.write("\u001b[?2026l")
+        assertNull(view.accessibilitySelectedText())
+    }
+
     @Test fun repeatClicksUseActualPressesConfiguredTimeAndCellDistanceInsteadOfNativeHints() = withView { session, view, _ ->
         session.write("alpha beta")
         assertFailsWith<IllegalArgumentException> { view.clickRepeatIntervalMillis = -1 }

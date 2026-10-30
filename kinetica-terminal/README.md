@@ -355,8 +355,13 @@ granularity and using the current rectangle modifier. It can extend, shrink or r
 selection, then keep dragging/autoscrolling. It applies after the repeat-click interval (the
 AppKit system interval, 500 ms in the browser by default); quicker nearby clicks retain double/triple-click
 behavior. Application capture of Shift prevents local continuation. Cleared, invalidated or
-force-click-consumed origins cannot be resumed. Transfer of gesture origins into inherited
-synchronized-output snapshots is still pending.
+force-click-consumed origins cannot be resumed. Synchronized-output snapshots retain the
+gesture's anchors and repeat-click state, including an origin already scrolled into history.
+Held drags, Shift continuation, repeat clicks and pending link clicks use the displayed cells
+despite hidden output or screen changes. Current link policy still applies. Select All within
+a held frame remains limited to its visible rows. Changes made only to the frozen selection
+are discarded when the live frame is revealed; untouched holds retain the live sequence when
+its origin is still valid. A stale frozen gesture never selects newly revealed text.
 
 `view.clickRepeatIntervalMillis` configures the maximum time between consecutive presses;
 `0` uses the platform default above, positive values accept up to `4294967295` milliseconds.
