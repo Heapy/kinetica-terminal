@@ -979,9 +979,22 @@ xterm control-byte set (including NUL, ESC, DEL and common tty control keys) is 
 spaces. Bracketed paste preserves CR and LF verbatim inside the frame. Unbracketed paste
 converts each LF to CR, so CRLF becomes CRCR, matching the original rather than folding line
 endings. Typing/IME through `sendText` and raw `sendInput` do not use this transformation.
-This encoder does not itself request confirmation. Ghostty's host-side unsafe-paste confirmation
-flow is still a separate integration gap; existing browser/AppKit paste actions currently submit
-the encoded text directly.
+This encoder does not itself request confirmation. Ordinary Browser/AppKit clipboard gestures
+apply `TerminalPastePolicy` before encoding: by default CR/LF requires confirmation, except
+when bracketed paste is enabled. An embedded `ESC[201~` always requires confirmation, even in
+bracketed mode. The native sheet/browser modal previews the clipboard text; Cancel and Escape
+send nothing and preserve selection/scroll position. Confirmation submits the captured text
+once using the terminal's current mode. A new clipboard gesture, detach or disposal cancels the
+previous prompt. Empty text does nothing.
+
+Set `view.pastePolicy = TerminalPastePolicy(bracketedSafe = false)` to also confirm multiline
+bracketed paste, or `TerminalPastePolicy(protection = false)` to disable these prompts.
+Embedders can replace `view.pasteConfirmation` with `TerminalPasteConfirmation`; its callback
+runs on the view's thread and its returned `TerminalDisposable` dismisses the prompt when cancelled.
+Explicit `session.paste(text)`, text/file drag-and-drop and mode-5522 metadata events bypass this
+ordinary-text confirmation, matching Ghostty's explicit text-input path. Synthetic browser paste
+events remain ordinary text paste and use the same confirmation policy.
+
 Mode queries report unknown without a MIME host; save/restore and RIS/DECSTR follow Ghostty.
 Up to sixteen gestures can wait behind clipboard I/O. Host replacement, reset and transport
 failure cancel pending gestures and revoke their passwords.

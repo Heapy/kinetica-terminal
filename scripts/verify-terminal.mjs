@@ -342,6 +342,7 @@ try {
       const data = new DataTransfer(); data.setData("text/plain", "a\x00\x03\x1b[201~b\r\n界😀\x7f");
       element.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
     });
+    await page.getByRole("dialog", { name: "Paste into Terminal?" }).getByRole("button", { name: "Paste", exact: true }).click();
     const expected = bracketed ? "\x1b[200~a   [201~b\r\n界😀 \x1b[201~" : "a   [201~b\r\r界😀 ";
     await page.waitForFunction(length => keypadBytes.length === length && kineticaTerminalDemo.transportState().pendingInputBytes === 0, Buffer.byteLength(expected));
     assert.equal(Buffer.from(await page.evaluate(() => keypadBytes)).toString(), expected);

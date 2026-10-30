@@ -1,5 +1,13 @@
 # Upstream terminal test corpus
 
+The paste corpus executes original libghostty-vt `encodePaste`, `isSafePaste` and
+`isSafePasteWith`: 273 cases cover all byte-valued characters, CR/LF combinations,
+Unicode, bracket delimiters/near misses, empty input and larger text. It records 546
+encodings and 819 safety results. Shared tests compare exact output bytes and both
+host-policy settings; dialog lifecycle and real platform gestures have separate tests.
+Regenerate with `python3 scripts/generate-terminal-paste.py /path/to/ghostty /path/to/zig`;
+`ghostty/paste-manifest.json` records the pinned revision and source/artifact hashes.
+
 The XTGETTCAP corpus enumerates the original Ghostty terminfo map (272 static capabilities)
 and replays 309 original-handler cases. Generated runtime replies preserve boolean, numeric,
 literal control and parameterized terminfo representations exactly. Cases cover mixed-case

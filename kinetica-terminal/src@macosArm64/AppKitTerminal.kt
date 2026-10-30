@@ -58,6 +58,14 @@ public class AppKitTerminalView(
     private var cellWidth = 8.0
     private var cellHeight = 19.0
     private var disposed = false
+    public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
+    public var pasteConfirmation: TerminalPasteConfirmation = TerminalPasteConfirmation { text, complete ->
+        presentNativePaste(window, text, complete)
+    }
+    internal var readPasteText: () -> String? = { NSPasteboard.generalPasteboard.stringForType(NSPasteboardTypeString) }
+    private val clipboardPaste = TerminalClipboardPaste(session, { !disposed && window != null },
+        { text, complete -> pasteConfirmation.confirm(text, complete) },
+        { viewport.followOutput(); viewport.clearSelection() })
     private var notifications = notifications
     private fun notificationDelivery(): TerminalNotificationDelivery = notifications ?: AppKitTerminalNotifications().also { notifications = it }
     public fun requestNotificationPermission(complete: (Boolean) -> Unit) {
@@ -219,6 +227,7 @@ public class AppKitTerminalView(
         super.viewDidMoveToWindow()
         if (!ready || disposed) return
         windowResizeBinding.cancelPending()
+        clipboardPaste.cancel()
         clearLinkPointer()
         hoverWindowObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         hoverWindowObservation = window?.let { owner ->
@@ -272,12 +281,15 @@ public class AppKitTerminalView(
     }
     override fun makeBackingLayer(): CALayer = gpu?.layer ?: super.makeBackingLayer()
     override fun isOpaque(): Boolean = true
-    override fun acceptsFirstResponder(): Boolean = true
+    override fun acceptsFirstResponder(): Boolean = !disposed
     override fun resetCursorRects() {
         super.resetCursorRects()
         if (!disposed) addCursorRect(bounds, pointerCursor)
     }
-    override fun becomeFirstResponder(): Boolean { viewport.setFocused(true); session.sendFocus(true); notifications?.clear(); return true }
+    override fun becomeFirstResponder(): Boolean {
+        if (disposed) return false
+        viewport.setFocused(true); session.sendFocus(true); notifications?.clear(); return true
+    }
     override fun resignFirstResponder(): Boolean {
         pressedKeys.clear(); pressedModifiers.clear()
         if (!disposed) { mouseReporter.cancel(); selecting = false; clearLinkPointer(); viewport.setFocused(false); session.sendFocus(false) }
@@ -864,8 +876,9 @@ public class AppKitTerminalView(
     }
     private fun pasteClipboard() {
         if (disposed) return
+        clipboardPaste.cancel()
         if (session.pasteClipboard()) { viewport.followOutput(); viewport.clearSelection(); return }
-        NSPasteboard.generalPasteboard.stringForType(NSPasteboardTypeString)?.let { viewport.followOutput(); viewport.clearSelection(); session.paste(it) }
+        readPasteText()?.let { clipboardPaste.paste(it, pastePolicy) }
     }
     public fun scrollTo(offset: Int) {
         val previous = viewport.scrollOffset
@@ -961,6 +974,7 @@ public class AppKitTerminalView(
         accessibilityStringForRange(range)?.let { NSAttributedString.create(string = it, attributes = mapOf(NSFontAttributeName to font)) }
     public fun dispose() { if (!disposed) {
         disposed = true; selecting = false; clearLinkPointer(); mouseReporter.reset()
+        clipboardPaste.dispose()
         accessibilitySelectionTimer?.invalidate(); accessibilitySelectionTimer = null
         hoverWindowObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; hoverWindowObservation = null
         visibilityBinding.dispose()

@@ -15,7 +15,12 @@ pub fn main(init: std.process.Init) !void {
             const parts = vt.input.encodePaste(mutable, .{ .bracketed = bracketed });
             encoded[index] = try std.mem.concat(alloc, u8, &parts);
         }
-        const result = try std.json.Stringify.valueAlloc(alloc, .{ .name = case.name, .text = case.text, .plain = encoded[0], .bracketed = encoded[1] }, .{});
+        const result = try std.json.Stringify.valueAlloc(alloc, .{
+            .name = case.name, .text = case.text, .plain = encoded[0], .bracketed = encoded[1],
+            .safe = vt.input.isSafePaste(case.text),
+            .safePlain = vt.input.isSafePasteWith(case.text, .{ .bracketed = false }),
+            .safeBracketed = vt.input.isSafePasteWith(case.text, .{ .bracketed = true }),
+        }, .{});
         if (write(1, result.ptr, result.len) != result.len or write(1, "\n", 1) != 1) return error.WriteFailed;
     }
 }

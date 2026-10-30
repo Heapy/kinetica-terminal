@@ -70,8 +70,22 @@ Fixtures and provenance regenerate byte-for-byte. Validation passes all 1640 JVM
 Release JS tests and 42 focused Native tests, including an isolated raw PTY that verifies exact
 bytes; browser paste integration and trusted Canvas/WebGL text-drop/MIME tests also pass.
 Evidence: `test-upstream/ghostty/paste-manifest.json` and `/tmp/kinetica-paste-*`.
-Ghostty's host-side unsafe-paste confirmation policy remains unimplemented in Browser/AppKit;
-byte-encoding parity does not close that separate behavior gap.
+Browser/AppKit now also implement Ghostty's host-side paste confirmation. The default policy
+confirms CR/LF in plain mode and the exact closing bracket marker in either mode; bracketed
+multiline text is trusted by default. Both settings and the prompt presenter are overridable.
+The original text is previewed before encoding, and confirmation uses the current terminal mode.
+Cancel preserves selection and scroll; replacement, detachment and disposal invalidate pending
+callbacks. Empty clipboard text does nothing. Explicit text input/DnD and mode-5522 metadata
+events retain Ghostty's separate bypass paths. Native tests use injected text/private pasteboards
+and isolated windows, including real NSAlert sheet acceptance/cancellation; no installed app or
+user shell is replaced. The browser modal restores the editable caret as well as focus, fixing a
+Chromium case where the first printable character after closing the dialog was otherwise lost.
+Disposed views reject focus restoration so closing their prompts cannot emit new focus input.
+The extended original oracle now covers 273 cases / 546 encodings / 819 safety checks and
+regenerates byte-for-byte. All 1646 JVM tests, fresh Release JS tests, 24 focused Native tests,
+Canvas/WebGL paste-dialog checks, the full browser integration, trusted DnD and MIME-clipboard
+checks pass. Evidence: `scripts/verify-terminal-paste.mjs`,
+`build/reports/terminal-browser-paste.json`, and `/tmp/kinetica-paste-confirm-*`.
 
 Browser select-all now uses Ghostty's platform defaults (Cmd+A / Ctrl+Shift+A), and browser/
 AppKit local editing requires exact modifiers rather than intercepting extra Control/Option/

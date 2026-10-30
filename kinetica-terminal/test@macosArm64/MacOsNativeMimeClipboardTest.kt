@@ -189,6 +189,8 @@ class MacOsNativeMimeClipboardTest {
         val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE,
             mimeClipboard = TerminalNativeMimeClipboard(board),
             mimeClipboardPolicy = TerminalMimeClipboardPolicy.WRITE_AND_PASTE)
+        view.readPasteText = { error("Mode 5522 must not read the ordinary clipboard text") }
+        view.pasteConfirmation = TerminalPasteConfirmation { _, _ -> error("Mode 5522 and DnD do not confirm text paste") }
         val replies = StringBuilder()
         val input = session.onInput {
             val delivered = (it as? TerminalInputData.ProtocolReply)?.trackDelivery()

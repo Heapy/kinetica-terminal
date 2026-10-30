@@ -58,6 +58,13 @@ public class BrowserTerminalView(
     private var frame: Int? = null
     private var accessibilityTimer: Int? = null
     private var disposed = false
+    public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
+    public var pasteConfirmation: TerminalPasteConfirmation = TerminalPasteConfirmation { text, complete ->
+        presentBrowserPaste(root, text, complete)
+    }
+    private val clipboardPaste = TerminalClipboardPaste(session, { !disposed && root.isConnected == true },
+        { text, complete -> pasteConfirmation.confirm(text, complete) },
+        { viewport.followOutput(); viewport.clearSelection() })
     private var notifications = notifications
     private fun notificationDelivery(): TerminalNotificationDelivery = notifications ?: BrowserTerminalNotifications().also { notifications = it }
     public fun requestNotificationPermission(complete: (Boolean) -> Unit) {
@@ -108,7 +115,9 @@ public class BrowserTerminalView(
     private val intersectionObserver: dynamic = newTerminalIntersectionObserver { value ->
         intersecting = value; updateVisibility()
     }
-    private val visibilityObserver: dynamic = newTerminalVisibilityObserver(root, { windowResizeBinding.cancelPending(); dragAndDrop.cancel() }) { updateVisibility() }
+    private val visibilityObserver: dynamic = newTerminalVisibilityObserver(root, {
+        windowResizeBinding.cancelPending(); dragAndDrop.cancel(); clipboardPaste.cancel()
+    }) { updateVisibility() }
     private val pointerObservation = session.onPointerShape { refreshLinkHover() }
     private val linkPolicyObservation = session.onLinkPolicyChanged { refreshLinkHover() }
     private val progressPresentation = TerminalProgressPresentation(session, TerminalScheduler { delay, action ->
@@ -228,11 +237,12 @@ public class BrowserTerminalView(
         }
         listen(input, "paste") { event ->
             event.preventDefault(); event.stopPropagation()
+            clipboardPaste.cancel()
             if (event.isTrusted == true && session.pasteClipboard()) {
                 viewport.followOutput(); viewport.clearSelection()
             } else {
                 val text = event.clipboardData?.getData("text/plain") as? String
-                if (text != null) { viewport.followOutput(); viewport.clearSelection(); session.paste(text) }
+                if (text != null) clipboardPaste.paste(text, pastePolicy)
             }
         }
         listen(root, "copy") { event ->
@@ -600,7 +610,7 @@ public class BrowserTerminalView(
         if (pointer != null && root.hasPointerCapture(pointer) == true) root.releasePointerCapture(pointer)
     }
     private fun focusChanged(value: Boolean) {
-        if (focused == value) return
+        if (disposed || focused == value) return
         if (!value) pressedKeys.clear()
         focused = value; viewport.setFocused(value); session.sendFocus(value)
         if (value) notifications?.clear()
@@ -629,6 +639,7 @@ public class BrowserTerminalView(
     public fun dispose() {
         if (disposed) return
         disposed = true; mouseReporter.reset(); cancelMouse(); viewport.dispose(); resizeObserver.disconnect()
+        clipboardPaste.dispose()
         sizeRefreshObservation.dispose()
         windowResizeBinding.dispose()
         dragAndDrop.dispose()
