@@ -4,7 +4,7 @@
   "source_sha256": "f16351bafe214725fe2c1d5b59f0d93e49905a4b247899fb90d70cff953a2b9b",
   "zig": "0.17.0",
   "ghostty_reference_commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
-  "generator_sha256": "50c34ed022c1a8c15793cb46a234f223f9dc1a84b55b2d1e025a3dc9276bf53d",
+  "generator_sha256": "a7b070ffd8a1cf72682ded97e9159320e74ac0bce7746cbe9781c8db27098f08",
   "bridge_sha256": "53c08a7451a35286a4e2ef5c9ef02b3f3fe1aabfeba6594a51d73aed4b4687a4",
   "flags": [
     "-target",
@@ -55,6 +55,9 @@
     "hb_buffer_allocation_successful",
     "hb_shape",
     "hb_ot_color_glyph_reference_png",
+    "hb_ot_color_has_layers",
+    "hb_ot_color_glyph_get_layers",
+    "hb_ot_color_palette_get_colors",
     "kt_hb_outline",
     "kt_hb_outline_data",
     "kt_hb_outline_length",
@@ -62,7 +65,7 @@
   ],
   "maximum_wasm_memory_bytes": 134217728,
   "artifacts": {
-    "harfbuzz.wasm": "0594659005f51413c991fd7009bbf5c90c398a0c58830013a870fb859641591d",
+    "harfbuzz.wasm": "21ba724630735887dd5c9659e9f2de51ee8a36d244386626b05a139f6fd5da75",
     "licenses/HarfBuzz.txt": "ba8f810f2455c2f08e2d56bb49b72f37fcf68f1f4fade38977cfd7372050ad64",
     "licenses/Zig.txt": "5c537d6853e005298a285d508cff9ac7192cea23576c840d485b2b586a7ff177",
     "licenses/LLVM-libcxx.txt": "539dd7aed86e8a4f12cbdd0e6c50c189c7d74847e4fecc64ce2c6ee3a01da38b",

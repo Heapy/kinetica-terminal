@@ -6,7 +6,7 @@ import kotlin.math.round
 public enum class TerminalRendering { AUTO, GPU, SOFTWARE }
 
 internal data class GlyphKey(val text: String, val columns: Int, val style: Int, val font: Int = -1, val glyph: Int = -1,
-    val constraint: TerminalGlyphConstraint = TerminalGlyphConstraint.NONE)
+    val constraint: TerminalGlyphConstraint = TerminalGlyphConstraint.NONE, val foreground: Int? = null)
 internal data class GlyphBitmap(val width: Int, val height: Int, val rgba: ByteArray, val colored: Boolean,
     val left: Int = 0, val top: Int = 0)
 internal data class AtlasGlyph(val page: Int, val x: Int, val y: Int, val width: Int, val height: Int, val colored: Boolean,
@@ -132,7 +132,8 @@ internal class TerminalGpuFrame(
                 // Its available span is part of atlas identity because it changes rasterization.
                 val right = maxOf(run.offset + run.input.columns, column + available).coerceAtMost(line.columns)
                 current.glyphs += TerminalGlyph(GlyphKey("", available, run.style and (TerminalStyle.BOLD or TerminalStyle.ITALIC),
-                    glyph.font, glyph.glyph, constraint), column * cellWidth, row * cellHeight, foreground(column),
+                    glyph.font, glyph.glyph, constraint, if (glyph.usesForeground) foreground(column) else null),
+                    column * cellWidth, row * cellHeight, foreground(column),
                     glyph.xOffset, glyph.yOffset, run.offset * cellWidth, right * cellWidth)
             }
         }

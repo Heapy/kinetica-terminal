@@ -60,7 +60,7 @@ advances and offsets round separately, as in original Ghostty, before the common
 cluster-to-grid mapper runs. Font-size/scale/family changes, hiding, context loss
 and disposal invalidate face IDs together with the atlas.
 
-The rasterizer draws tight individual outlines or decodes embedded color PNGs
+The rasterizer draws tight individual outlines, COLRv0 palette layers or embedded color PNGs
 through the shared bounded decoder. It records bearings relative to the primary
 font baseline; physical atlas pixels remain unscaled during WebGL sampling.
 `scripts/verify-terminal-shaping.mjs` loads original hash-verified fonts and checks
@@ -112,9 +112,54 @@ The WebGL verifier compares a fitted color emoji with an independent full-cell P
 reference at DPR 1/1.25/2. Both the intermediate PNG canvas and the atlas rasterizer
 use the CPU Canvas path to keep downsampling consistent before texture upload.
 
-Still open: the color-font format audit, especially browser COLR/SVG coverage.
-The configured browser rasterizer currently consumes outlines and embedded PNGs;
+Still open: the remaining color-font format audit, especially COLRv1/SVG and sbix coverage.
+The configured browser rasterizer consumes outlines, COLRv0 layers and embedded PNGs;
 the CSS-only and software paths do not apply these shaped-atlas constraints.
+
+## Color font formats
+
+The shaped browser path reads COLRv0 layers and default CPAL palette colors through
+HarfBuzz. It paints outlines in layer order with unpremultiplied palette alpha before
+converting the result to the GPU's premultiplied pixels. Palette index `0xffff` uses
+the cell's effective foreground; only those glyphs include foreground in their atlas
+key. Fixed palette colors, including gray, stay untinted. Embedded color PNGs also
+stay untinted when their artwork happens to be gray. Layer metadata exported from
+WASM is copied, limited to 4,096 layers, and disposed handles reject access. The
+browser bounds the foreground-dependence cache to 512 entries and the combined
+outline data processed for one rasterization to 1,048,576 floats.
+
+`scripts/generate-terminal-color-fonts.py` creates original rectangle artwork as a
+1,768-byte COLRv0 font, with a pinned FontTools build dependency and deterministic
+timestamps. The manifest contains the independent geometry, palettes and hashes.
+`verify-terminal-color-fonts.mjs` checks the runtime's layer data and actual WebGL
+pixels against those rectangles at DPR 1/1.25/2. Cases cover translucent overlays,
+fixed gray, foreground-only layers, an empty monochrome base glyph, ordinary text,
+SGR replacement and cache reuse, font-size changes, hiding and restoration. Native
+Canvas `fillText` is checked against the same color rectangles; its monochrome
+hinting is deliberately outside that comparison. The observed maximum color-channel
+difference is one level. This exercises the native-browser drawing API used by
+Ghostty's `web_canvas` backend.
+
+The independent original-Ghostty probe records a narrower result for its desktop
+backends on this particular fixture. FreeType identifies A–E as color glyphs, but
+the original `Face.renderGlyph` returns `WrongAtlas` for A–D and an empty bitmap for
+E. Its outline path converts the rendered bitmap to gray before checking the atlas
+format. CoreText classifies these COLRv0 glyphs as text and paints their monochrome
+fallback outlines; its color classifier checks sbix/SVG, not COLR. These are evidence
+about this fixture and pinned revision, not a claim that all color fonts behave the
+same way. No Ghostty source is patched to obtain these results. See
+`test-upstream/color-fonts/ghostty-{freetype,coretext}.json` for the original pixels,
+errors, backend/toolchain metadata and source hashes.
+
+Reproduce the artwork and desktop probes:
+
+```bash
+python3 -m venv build/color-font-tools
+build/color-font-tools/bin/pip install --require-hashes --only-binary=:all: -r scripts/terminal-color-fonts-requirements.txt
+build/color-font-tools/bin/python scripts/generate-terminal-color-fonts.py --check
+python3 scripts/generate-terminal-color-font-oracle.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig --check
+python3 scripts/generate-terminal-color-font-oracle.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig --backend coretext --check
+```
 
 ## Original reference
 

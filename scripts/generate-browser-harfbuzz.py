@@ -23,7 +23,8 @@ hb_font_get_variation_glyph hb_font_get_glyph_extents hb_font_get_h_extents
 hb_buffer_create hb_buffer_destroy hb_buffer_reset hb_buffer_add_utf16 hb_buffer_set_direction
 hb_buffer_set_cluster_level hb_buffer_guess_segment_properties hb_buffer_get_length
 hb_buffer_get_glyph_infos hb_buffer_get_glyph_positions hb_buffer_allocation_successful hb_shape
-hb_ot_color_glyph_reference_png kt_hb_outline kt_hb_outline_data kt_hb_outline_length kt_hb_outline_destroy""".split()
+hb_ot_color_glyph_reference_png hb_ot_color_has_layers hb_ot_color_glyph_get_layers hb_ot_color_palette_get_colors
+kt_hb_outline kt_hb_outline_data kt_hb_outline_length kt_hb_outline_destroy""".split()
 FLAGS = ["-target", "wasm32-wasi", "-mexec-model=reactor", "-O2", "-fno-exceptions", "-fno-rtti",
          "-fno-threadsafe-statics", "-DHB_NO_MT", "-DHB_NO_MMAP", "-DHB_NO_GETENV", "-DHB_NO_SETLOCALE",
          "-Wl,--strip-all", "-Wl,--max-memory=134217728"]

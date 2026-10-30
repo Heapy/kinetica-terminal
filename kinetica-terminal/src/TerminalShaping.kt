@@ -28,7 +28,7 @@ internal data class TerminalRawGlyph(val font: Int, val glyph: Int, val index: I
 
 /** A font glyph positioned relative to a terminal column, independently of its natural advance. */
 internal data class TerminalShapedGlyph(val font: Int, val glyph: Int, val column: Int,
-    val xOffset: Int, val yOffset: Int, val emoji: Boolean = false)
+    val xOffset: Int, val yOffset: Int, val emoji: Boolean = false, val usesForeground: Boolean = false)
 
 internal data class TerminalResolvedFontCell(val font: Int, val text: String)
 internal data class TerminalFontRun(val offset: Int, val style: Int, val font: Int, val input: TerminalShapingText)

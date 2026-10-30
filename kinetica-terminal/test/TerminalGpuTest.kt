@@ -3,6 +3,26 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalGpuTest {
+    @Test fun colorLayersUsingForegroundHaveDistinctAtlasEntries() {
+        val session = TerminalSession(8, 1)
+        session.write("\u001b[?25l\u001b[31mA\u001b[32mA")
+        val viewport = TerminalViewport(session, {})
+        val frame = TerminalGpuFrame({ text, _ -> TerminalResolvedFontCell(0, text) }) { run ->
+            listOf(TerminalShapedGlyph(0, 42, 0, 0, 0, usesForeground = true))
+        }
+        frame.update(viewport, 8.0, 16.0)
+        val (red, green) = frame.rows[0].glyphs
+        assertNotEquals(red.key, green.key)
+        assertEquals(red.color, red.key.foreground)
+        assertEquals(green.color, green.key.foreground)
+        assertEquals(2, frame.keys.size)
+        session.write("\u001b[1;1H\u001b[32mA")
+        frame.update(viewport, 8.0, 16.0)
+        assertEquals(1, frame.keys.size)
+        assertEquals(green.key, frame.keys.single())
+        viewport.dispose()
+    }
+
     @Test fun symbolFittingUsesAvailableBlankAndChangesAtlasIdentity() {
         val session = TerminalSession(8, 2)
         session.write("\u001b[?25l\uea61\r\n\uea61X")

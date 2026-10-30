@@ -118,6 +118,7 @@ internal class BrowserTerminalShaper(
     private val sources: List<BrowserTerminalFont>, private val faces: List<dynamic>, private val primary: String,
 ) {
     private val resolved = linkedMapOf<Pair<String, Int>, TerminalResolvedFontCell>()
+    private val foregroundGlyphs = linkedMapOf<Pair<Int, Int>, Boolean>()
     private var disposed = false
 
     fun resolve(text: String, style: Int): TerminalResolvedFontCell {
@@ -170,7 +171,19 @@ internal class BrowserTerminalShaper(
             x += advance; y += pixel(value.yAdvance)
         }
         val emoji = sources[run.font].presentation == BrowserTerminalFontPresentation.EMOJI
-        return terminalPositionGlyphs(run.input, raw).map { if (emoji) it.copy(emoji = true) else it }
+        return terminalPositionGlyphs(run.input, raw).map {
+            it.copy(emoji = emoji, usesForeground = usesForeground(it.font, it.glyph))
+        }
+    }
+
+    private fun usesForeground(font: Int, glyph: Int): Boolean {
+        if (faces[font].hasColorLayers != true) return false
+        val key = font to glyph
+        return foregroundGlyphs.getOrPut(key) {
+            if (foregroundGlyphs.size == 512) foregroundGlyphs.remove(foregroundGlyphs.keys.first())
+            val layers: dynamic = faces[font].colorLayers(glyph)
+            layers != null && (0 until (layers.length as Number).toInt()).any { layers[it].color == null }
+        }
     }
 
     fun rasterize(key: GlyphKey, canvas: dynamic, context: dynamic, cellWidth: Double, cellHeight: Double, maxSize: Int): GlyphBitmap {
@@ -206,8 +219,41 @@ internal class BrowserTerminalShaper(
         val width = right - left; val height = top - bottom
         check(width in 1..maxSize && height in 1..maxSize) { "Browser glyph exceeds the bounded atlas" }
         canvas.width = width; canvas.height = height
-        val png: dynamic = face.colorPng(key.glyph)
-        if (png != null) {
+        val layers: dynamic = if (face.hasColorLayers == true) face.colorLayers(key.glyph) else null
+        val png: dynamic = if (layers == null) face.colorPng(key.glyph) else null
+        fun outlineTransform() {
+            context.setTransform(scaleX / 64, 0, 0, -scaleY / 64,
+                x - left - original.x * scaleX, top - y + (original.y - baselineBottom) * scaleY)
+        }
+        var outlineBudget = 1 shl 20
+        fun drawOutline(glyph: Int, color: String) {
+            val outline: dynamic = face.outline(glyph)
+            val length = (outline.length as Number).toInt()
+            check(length <= outlineBudget) { "Browser color glyph exceeds the outline limit" }
+            outlineBudget -= length
+            context.fillStyle = color; context.beginPath()
+            var i = 0
+            fun next(): Double = (outline[i++] as Number).toDouble()
+            while (i < length) when (next().toInt()) {
+                0 -> context.moveTo(next(), next())
+                1 -> context.lineTo(next(), next())
+                2 -> context.quadraticCurveTo(next(), next(), next(), next())
+                3 -> context.bezierCurveTo(next(), next(), next(), next(), next(), next())
+                4 -> context.closePath()
+                else -> error("Invalid HarfBuzz outline")
+            }
+            context.fill()
+        }
+        if (layers != null) {
+            outlineTransform()
+            for (i in 0 until (layers.length as Number).toInt()) {
+                val layer = layers[i]
+                val color: dynamic = layer.color
+                val css = if (color == null) "#${checkNotNull(key.foreground).toString(16).padStart(6, '0')}" else
+                    "rgba(${color[0]},${color[1]},${color[2]},${(color[3] as Number).toDouble() / 255})"
+                drawOutline((layer.glyph as Number).toInt(), css)
+            }
+        } else if (png != null) {
             val bytes = ByteArray((png.length as Number).toInt()) { (png[it] as Number).toByte() }
             val image = decodeTerminalGraphicsPng(bytes, TerminalGraphicsDecodeLimits(
                 maxEncodedBytes = 4 * 1024 * 1024, maxDecodedBytes = 4 * 1024 * 1024, maxDimension = 1024))
@@ -222,30 +268,16 @@ internal class BrowserTerminalShaper(
                 context.drawImage(source, x - left, top - y - bounds.height, bounds.width, bounds.height)
             } finally { source.width = 0; source.height = 0 }
         } else {
-            val outline: dynamic = face.outline(key.glyph)
-            context.setTransform(scaleX / 64, 0, 0, -scaleY / 64,
-                x - left - original.x * scaleX, top - y + (original.y - baselineBottom) * scaleY)
-            context.fillStyle = "white"; context.beginPath()
-            var i = 0
-            fun next(): Double = (outline[i++] as Number).toDouble()
-            while (i < (outline.length as Number).toInt()) when (next().toInt()) {
-                0 -> context.moveTo(next(), next())
-                1 -> context.lineTo(next(), next())
-                2 -> context.quadraticCurveTo(next(), next(), next(), next())
-                3 -> context.bezierCurveTo(next(), next(), next(), next(), next(), next())
-                4 -> context.closePath()
-                else -> error("Invalid HarfBuzz outline")
-            }
-            context.fill()
+            outlineTransform(); drawOutline(key.glyph, "white")
         }
         val pixels: dynamic = context.getImageData(0, 0, width, height).data
         return glyphBitmap(width, height, ByteArray(width * height * 4) { (pixels[it] as Number).toByte() })
-            .copy(left = left, top = baseline.roundToInt() - top)
+            .let { it.copy(left = left, top = baseline.roundToInt() - top, colored = layers != null || png != null || it.colored) }
     }
 
     fun dispose() {
         if (disposed) return
-        disposed = true; resolved.clear(); faces.forEach { it.dispose() }
+        disposed = true; resolved.clear(); foregroundGlyphs.clear(); faces.forEach { it.dispose() }
     }
 }
 

@@ -2,7 +2,7 @@
 
 This self-hosted WASM reactor provides full HarfBuzz 11.0.0, the version pinned by
 Ghostty 1.4.0. `terminal-harfbuzz.mjs` owns fonts and a reusable shaping buffer, and
-returns copied glyph positions, outlines, metrics and color PNG data. It has no
+returns copied glyph positions, outlines, metrics, COLRv0 layers and color PNG data. It has no
 dependency on the Kinetica UI framework or a package CDN.
 
 `BrowserTerminalView.configureShapingFonts` connects this runtime to WebGL font
@@ -38,6 +38,10 @@ coordinates are in 26.6 units (divide by 64 for pixels), with positive Y upwards
 Outline commands are a packed `Float32Array`: `0,x,y` moves, `1,x,y` draws a line,
 `2,cx,cy,x,y` draws a quadratic curve, `3,c1x,c1y,c2x,c2y,x,y` draws a cubic curve,
 and `4` closes a contour. `colorPng(glyph)` returns a copied `Uint8Array` or `null`.
+`hasColorLayers` reports COLRv0 data. `colorLayers(glyph)` returns `null` or a copied
+array of `{glyph, color}` in paint order; `color` is unpremultiplied `[r,g,b,a]`
+from CPAL palette zero, or `null` for the current text foreground. Color layers
+must be composited before atlas upload, and fixed palette colors must not be tinted.
 `nominalGlyph(codepoint, variationSelector = 0)` returns a glyph ID or `null`.
 `setSize(pixels)` updates the font's scale and PPEM; existing renderer caches must
 be invalidated when the size changes.
@@ -51,7 +55,7 @@ the runtime also disposes remaining fonts and drops its WASM instance. Operation
 on disposed handles fail. Results remain valid after subsequent calls or disposal.
 WASM memory has a binary-enforced 128 MiB maximum. Font input is limited to 32 MiB
 per font and 64 MiB of owned font data per runtime; glyph outlines are limited to
-1,048,576 floats. Repeated create/shape/outline/dispose cycles reuse the heap without
+1,048,576 floats; one COLRv0 glyph is limited to 4,096 layers. Repeated create/shape/outline/dispose cycles reuse the heap without
 depending on JavaScript finalization. These limits do not include caller-owned
 font bytes or renderer caches.
 
@@ -75,6 +79,7 @@ static server serving the repository root:
 
 ```sh
 KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-browser-harfbuzz.mjs
+KINETICA_BROWSER_BASE_URL=http://127.0.0.1:4188 node scripts/verify-terminal-color-fonts.mjs
 ```
 
 Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` when using an existing Chromium installation.

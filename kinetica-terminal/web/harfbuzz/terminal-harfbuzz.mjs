@@ -82,6 +82,34 @@ export async function createTerminalHarfBuzz({ wasmBytes, wasmUrl = new URL("./h
       };
       const font = {
         glyphCount,
+        get hasColorLayers() { liveFont(); return !!h.hb_ot_color_has_layers(h.hb_font_get_face(pointer)); },
+        // COLRv0 layers in paint order. Null color is OpenType's current foreground.
+        colorLayers(glyph) {
+          validGlyph(glyph);
+          const face = h.hb_font_get_face(pointer);
+          const count = h.hb_ot_color_glyph_get_layers(face, glyph, 0, 0, 0);
+          if (!count) return null;
+          if (count > 4096) throw new RangeError("Terminal color glyph exceeds the layer limit");
+          return scratch(4 + count * 8, data => {
+            words()[data / 4] = count;
+            h.hb_ot_color_glyph_get_layers(face, glyph, 0, data, data + 4);
+            if (words()[data / 4] !== count) throw new Error("Incomplete color glyph layers");
+            const layers = words().slice(data / 4 + 1, data / 4 + 1 + count * 2);
+            return Array.from({ length: count }, (_, i) => {
+              const layerGlyph = layers[i * 2], index = layers[i * 2 + 1];
+              validGlyph(layerGlyph);
+              const color = index === 0xffff ? null : scratch(8, output => {
+                words()[output / 4] = 1;
+                h.hb_ot_color_palette_get_colors(face, 0, index, output, output + 4);
+                if (words()[output / 4] !== 1) throw new Error("Invalid color glyph palette entry");
+                // HB_COLOR is HB_TAG(b, g, r, a), independent of host byte order.
+                const value = words()[output / 4 + 1];
+                return [(value >>> 8) & 255, (value >>> 16) & 255, value >>> 24, value & 255];
+              });
+              return { glyph: layerGlyph, color };
+            });
+          });
+        },
         setSize(size) {
           liveFont();
           if (!Number.isFinite(size) || size <= 0 || size > 4096) throw new RangeError("Invalid font size");
