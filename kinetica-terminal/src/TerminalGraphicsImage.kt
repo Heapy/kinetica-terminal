@@ -19,7 +19,9 @@ internal class TerminalGraphicsDecodeLimits(
     init { require(maxEncodedBytes >= 0 && maxDecodedBytes >= 0 && maxDimension in 1..10_000) }
 }
 
-/** Decodes a complete transmission. Chunk assembly and external-media access belong to the caller. */
+/** Decodes a complete transmission. Chunk assembly and external-media access belong to the caller.
+ * With [takeDataOwnership], the caller relinquishes the input buffer; exact raw pixels can reuse it.
+ * Borrowed input (the default), PNG, compressed input and excess frame tails still need owned output. */
 internal fun decodeTerminalGraphicsImage(
     format: Int,
     width: Long,
@@ -29,6 +31,7 @@ internal fun decodeTerminalGraphicsImage(
     limits: TerminalGraphicsDecodeLimits = TerminalGraphicsDecodeLimits(),
     animationFrame: Boolean = false,
     allocateInflated: (Int) -> ByteArray = { ByteArray(it) },
+    takeDataOwnership: Boolean = false,
 ): TerminalGraphicsPixels {
     if (format != 24 && format != 32 && format != 100) graphicsDecodeFailure(TerminalGraphicsDecodeError.UNSUPPORTED_FORMAT)
     if (data.size > limits.maxEncodedBytes) graphicsDecodeFailure(TerminalGraphicsDecodeError.RESOURCE_LIMIT)
@@ -45,7 +48,8 @@ internal fun decodeTerminalGraphicsImage(
     if (!compressed) {
         if (format == 100) return decodeTerminalGraphicsPng(data, limits)
         validateLength(data.size)
-        return TerminalGraphicsPixels(width.toInt(), height.toInt(), format, data.copyOfRange(0, length))
+        val pixels = if (takeDataOwnership && data.size == length) data else data.copyOfRange(0, length)
+        return TerminalGraphicsPixels(width.toInt(), height.toInt(), format, pixels)
     }
     // PNG needs its encoded chunks for the second decode stage. Raw pixels need only their
     // declared prefix; the inflater still maintains history/checksum and validates every byte.

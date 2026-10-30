@@ -69,6 +69,7 @@ internal class TerminalGraphicsStorage(
     private val decodeLimits: TerminalGraphicsDecodeLimits = TerminalGraphicsDecodeLimits(),
     private val removed: (TerminalGraphicsStoredImage) -> Unit = {},
     private val media: TerminalGraphicsMedia? = null,
+    private val allocateTransfer: (Int) -> ByteArray = { ByteArray(it) },
 ) {
     init { require(limit >= 0) }
     private val images = mutableMapOf<Long, TerminalGraphicsStoredImage>()
@@ -163,7 +164,7 @@ internal class TerminalGraphicsStorage(
         val load: Loading
         if (current != null) {
             // Failure to append leaves the previous chunks intact, as in Ghostty.
-            if (!current.data.append(command.data)) return failed("EINVAL: invalid data")
+            if (!current.data.append(command.data, final = !command.moreChunks)) return failed("EINVAL: invalid data")
             if (command.moreChunks) return TerminalGraphicsTransferResult(quiet = quiet, pending = true)
             load = current
             loading = null
@@ -180,8 +181,8 @@ internal class TerminalGraphicsStorage(
             validateMedium(command)?.let { return startFailure(it) }
             val data = try { transmissionData(command) }
             catch (error: TerminalGraphicsMediaException) { return startFailure(error.messageForProtocol()) }
-            val bytes = GraphicsTransferBytes(decodeLimits.maxEncodedBytes)
-            if (!bytes.append(data)) return startFailure("EINVAL: invalid data")
+            val bytes = GraphicsTransferBytes(decodeLimits.maxEncodedBytes, allocateTransfer)
+            if (!bytes.append(data, final = !command.moreChunks)) return startFailure("EINVAL: invalid data")
             val implicit = target == null && command.imageId == 0L && command.imageNumber == 0L
             val id = target?.id ?: if (command.imageId != 0L) command.imageId else nextId(implicit)
             load = Loading(command.withoutData(), id, implicit, quiet, bytes, target?.generation)
@@ -191,7 +192,7 @@ internal class TerminalGraphicsStorage(
             }
         }
         if (load.header.action == 'f') return completeFrame(load, quiet)
-        val pixels = try { decode(load.header, load.data.take()) }
+        val pixels = try { decode(load.header, load.data.take(), takeDataOwnership = true) }
         catch (error: TerminalGraphicsDecodeException) { return failed(error.messageForProtocol()) }
         if (pixels.data.size > limit) return failed("ENOMEM: out of memory")
         evictTo(limit.toLong() - pixels.data.size)
@@ -256,9 +257,9 @@ internal class TerminalGraphicsStorage(
         return result.bytes
     }
 
-    private fun decode(command: TerminalGraphicsCommand, bytes: ByteArray): TerminalGraphicsPixels =
+    private fun decode(command: TerminalGraphicsCommand, bytes: ByteArray, takeDataOwnership: Boolean = false): TerminalGraphicsPixels =
         decodeTerminalGraphicsImage(command.format, command.unsigned('s'), command.unsigned('v'), command.compressed, bytes, decodeLimits,
-            animationFrame = command.action == 'f')
+            animationFrame = command.action == 'f', takeDataOwnership = takeDataOwnership)
 
     private class Loading(val header: TerminalGraphicsCommand, val id: Long, val implicit: Boolean,
         var quiet: Int, val data: GraphicsTransferBytes, val targetGeneration: Any? = null)
@@ -290,7 +291,7 @@ internal class TerminalGraphicsStorage(
         fun failed(message: String) = TerminalGraphicsTransferResult(response.copy(message = message), quiet)
         val target = find(load.header)?.takeIf { it.generation === load.targetGeneration }
             ?: return failed("ENOENT: image not found")
-        val pixels = try { decode(load.header, load.data.take()) }
+        val pixels = try { decode(load.header, load.data.take(), takeDataOwnership = true) }
         catch (error: TerminalGraphicsDecodeException) { return failed(error.messageForProtocol()) }
         if (pixels.width > target.pixels.width || pixels.height > target.pixels.height)
             return failed("EINVAL: frame dimensions exceed image")
@@ -358,18 +359,27 @@ private fun TerminalGraphicsDecodeException.messageForProtocol(): String = when 
     TerminalGraphicsDecodeError.DECOMPRESSION_FAILED -> "EINVAL: decompression failed"
 }
 
-private class GraphicsTransferBytes(private val limit: Int) {
+private class GraphicsTransferBytes(private val limit: Int, private val allocate: (Int) -> ByteArray) {
     private var bytes = ByteArray(0)
     var size = 0
         private set
     val capacity: Int get() = bytes.size
-    fun append(data: ByteArray): Boolean {
+    fun append(data: ByteArray, final: Boolean): Boolean {
         if (data.size > limit - size) return false
         val required = size + data.size
-        if (required > bytes.size) bytes = bytes.copyOf(maxOf(required.toLong(), maxOf(256L, bytes.size.toLong() * 2)).coerceAtMost(limit.toLong()).toInt())
+        if (required > bytes.size) {
+            // The final chunk needs no growth reserve, so take() can transfer the exact buffer.
+            val capacity = if (final) required else
+                maxOf(required.toLong(), maxOf(256L, bytes.size.toLong() * 2)).coerceAtMost(limit.toLong()).toInt()
+            bytes = resized(capacity)
+        }
         data.copyInto(bytes, size)
         size = required
         return true
     }
-    fun take(): ByteArray = (if (size == bytes.size) bytes else bytes.copyOf(size)).also { bytes = ByteArray(0); size = 0 }
+    private fun resized(capacity: Int): ByteArray = allocate(capacity).also {
+        require(it.size == capacity)
+        bytes.copyInto(it, endIndex = size)
+    }
+    fun take(): ByteArray = (if (size == bytes.size) bytes else resized(size)).also { bytes = ByteArray(0); size = 0 }
 }

@@ -46,6 +46,31 @@ class TerminalGraphicsImageTest {
         }
     }
 
+    @Test fun relinquishedRawBuffersBecomePixelsOnlyWhenTheirLengthIsExact() {
+        for (format in listOf(24, 32)) for (frame in listOf(false, true)) {
+            val input = ByteArray(6 * format / 8) { (it * 41).toByte() }
+            val expected = input.copyOf()
+            val pixels = decodeTerminalGraphicsImage(format, 2, 3, false, input, smallLimits,
+                animationFrame = frame, takeDataOwnership = true)
+            assertSame(input, pixels.data, "An owned, exact raw buffer needs no second full allocation")
+            assertContentEquals(expected, pixels.data)
+            val excess = expected + byteArrayOf(99, 98)
+            if (frame) {
+                val cropped = decodeTerminalGraphicsImage(format, 2, 3, false, excess, smallLimits,
+                    animationFrame = true, takeDataOwnership = true)
+                assertNotSame(excess, cropped.data)
+                assertContentEquals(expected, cropped.data)
+                assertEquals(expected.size, cropped.data.size, "Discarded frame tails must not stay resident")
+            } else failure(TerminalGraphicsDecodeError.INVALID_DATA) {
+                decodeTerminalGraphicsImage(format, 2, 3, false, excess, smallLimits, takeDataOwnership = true)
+            }
+            failure(TerminalGraphicsDecodeError.RESOURCE_LIMIT) {
+                decodeTerminalGraphicsImage(format, 2, 3, false, expected,
+                    TerminalGraphicsDecodeLimits(expected.size, expected.size - 1), takeDataOwnership = true)
+            }
+        }
+    }
+
     @Test fun zlibCompressedRawAndPngPayloads() {
         for (format in listOf(24, 32)) {
             val pixels = ByteArray(format / 8 * 6) { (it * 59).toByte() }

@@ -226,6 +226,13 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       including cleanup after read/decode failure and rejected paths/ranges.
 - [ ] Complete the existing decoded storage and frame-wide renderer resource audit.
 
+The transfer-buffer audit removes a redundant full RGB/RGBA decode copy: exact completed
+buffers move from the transfer owner to immutable pixels. Final chunks grow to exact capacity,
+while borrowed inputs remain copied and excessive raw frame tails remain trimmed. Allocation
+and lifetime regressions cover single/chunked loads, caller mutation and retained old images.
+This does not combine encoded-input, resident-image, composition and held-frame budgets;
+the original's RGB-root conversion can still exceed the nominal resident limit.
+
 The native media corpus has 61 cases: 57 compare original-reader bytes/errors and cleanup.
 Four regular/temporary-file seeks past EOF with omitted size crash the original Zig 0.17
 safe build with integer overflow. Those crashes are recorded rather than treated as conformance

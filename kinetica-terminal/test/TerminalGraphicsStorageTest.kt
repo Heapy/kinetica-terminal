@@ -68,6 +68,52 @@ class TerminalGraphicsStorageTest {
         assertEquals(0, storage.retainedLoadingBytes); assertFalse(storage.hasPendingTransfer)
     }
 
+    @Test fun completeRawTransfersPublishOneOwnedCopyAndPreserveHeldContent() {
+        for (format in listOf(24, 32)) {
+            val allocations = mutableListOf<ByteArray>()
+            val storage = TerminalGraphicsStorage(4096, allocateTransfer = { size ->
+                ByteArray(size).also { allocations += it }
+            })
+            val original = ByteArray(256 * format / 8) { (it * 41).toByte() }
+            val command = parse("a=t,i=31,f=$format,s=256,v=1;${Base64.encode(original)}")
+            val image = assertNotNull(storage.transmit(command).image)
+            assertEquals(listOf(original.size), allocations.map { it.size })
+            assertSame(allocations.single(), image.pixels.data, "Decode must adopt the completed transfer buffer")
+            assertNotSame(command.data, image.pixels.data, "Command payloads remain borrowed")
+            val held = image.renderContent
+            command.data.fill(0)
+            assertContentEquals(original, image.pixels.data)
+            val replacement = assertNotNull(storage.transmit(command).image)
+            assertContentEquals(ByteArray(original.size), replacement.pixels.data)
+            assertContentEquals(original, held.pixels.data, "Replacement must not reuse a held generation's buffer")
+            assertEquals(original.size.toLong(), storage.totalBytes)
+            assertEquals(0, storage.retainedLoadingBytes)
+        }
+    }
+
+    @Test fun chunkCompletionUsesExactCapacityAndTransfersTheFinalBuffer() {
+        for ((length, firstSize) in listOf(12 to 3, 768 to 17, 768 to 400)) {
+            val allocations = mutableListOf<ByteArray>()
+            val storage = TerminalGraphicsStorage(4096, allocateTransfer = { size ->
+                ByteArray(size).also { allocations += it }
+            })
+            val original = ByteArray(length) { (it * 41).toByte() }
+            val first = parse("a=t,i=31,f=24,s=${length / 3},v=1,m=1;${Base64.encode(original.copyOfRange(0, firstSize))}")
+            assertTrue(storage.transmit(first).pending)
+            first.data.fill(0)
+            val last = parse(";${Base64.encode(original.copyOfRange(firstSize, length))}")
+            val image = assertNotNull(storage.transmit(last).image)
+            last.data.fill(0)
+            assertEquals(listOf(maxOf(256, firstSize), length), allocations.map { it.size })
+            assertSame(allocations.last(), image.pixels.data)
+            assertContentEquals(original, image.pixels.data)
+            assertFalse(storage.hasPendingTransfer)
+            assertEquals(0, storage.retainedLoadingBytes)
+            storage.clear()
+            assertContentEquals(original, image.pixels.data, "Released storage cannot mutate a retained image")
+        }
+    }
+
     @Test fun failedAppendKeepsPriorChunksButAbortAndCompletionReleaseMemory() {
         val storage = TerminalGraphicsStorage(32, TerminalGraphicsDecodeLimits(3, 32))
         storage.transmit(parse("a=t,i=31,f=24,s=1,v=1,m=1;AQ=="))

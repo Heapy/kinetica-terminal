@@ -1038,6 +1038,23 @@ fixtures and provenance reproduce byte-for-byte. All 1218 JVM tests, the fresh J
 graphics checks on Canvas/WebGL pass, including animation, held frames and resource budgets.
 All ten native animation tests and six software/Metal pixel-rendering tests also pass.
 
+Completed raw image/frame transfers now relinquish their exact owned buffer to the decoder,
+removing a second full RGB/RGBA pixel copy. A final chunk that grows the accumulator allocates
+only its final length; a partially used growth buffer is trimmed once before ownership moves.
+Command and external-media buffers remain borrowed and are copied into transfer-owned storage.
+Standalone borrowed-input decoding still copies, and oversized raw frame tails are trimmed
+rather than retained in published pixels. PNG and zlib decoding keep their existing paths.
+
+Allocation guards prove that a complete raw upload makes one transfer-owned allocation and
+publishes that exact buffer. Chunked tests cover both final growth and trimming, and verify
+that mutating command payloads, replacing/removing an image and retaining an old render
+generation never changes published bytes. Decoder tests cover RGB/RGBA, images/frames,
+excess/invalid lengths and resource limits. All 1352 JVM tests, the fresh JS suite, 16 native
+storage/decoder tests, six native software/Metal pixel tests and both browser graphics
+renderers pass. Existing original-library oracles remain unchanged. This removes a transient
+copy without claiming a combined peak-memory bound; RGB-root conversion still follows the
+original admission order and can exceed the nominal resident limit.
+
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
 - [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
 - [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.
