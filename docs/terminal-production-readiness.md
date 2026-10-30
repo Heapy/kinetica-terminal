@@ -1082,6 +1082,23 @@ JVM, JS and Native. All 1355 JVM tests and the fresh JS suite pass; the new orig
 fixtures and provenance reproduce byte-for-byte. Combined transient/held-frame accounting
 remains a separate open gate.
 
+The retained-generation audit found an additional decoded-memory owner in tile-cache keys:
+their generation identity was the `TerminalGraphicsPixels` object itself. Thus a small crop
+could retain the complete source after the session and viewport stopped using it. Immutable
+pixels now carry a separate identity token with no back-reference; tile keys retain only
+that token. Rewrapping/selecting the same pixels preserves cache identity, while replacement
+buffers cannot alias an old uploaded tile.
+
+A JVM weak-reference regression failed before the change: a live four-byte tile cache kept
+its one-MiB source reachable. Afterward the source object and array are collectable while the
+cached pixels remain readable without another upload. A common cache regression checks reuse
+across content wrappers and separation of replacement buffers. All 1369 JVM tests, the fresh
+JS suite, nine native frame/cache tests, six native software/Metal pixel tests and Canvas/WebGL
+graphics verifiers pass, including animation, render holds and tile reuse. This removes cache
+keys from decoded-source ownership; viewport frozen frames and explicitly retained caller
+snapshots remain owners. Synchronized-output and resize holds share one viewport slot, cleared
+on release/disposal. Combined transient and host-resource accounting is not declared complete.
+
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
 - [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
 - [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.

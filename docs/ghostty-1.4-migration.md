@@ -243,6 +243,13 @@ host-limit differences: reapplying the same limit must evict an over-limit image
 a positive limit must preserve an unfinished APC command. Disabling graphics still releases
 capture/storage. Broader combined transient and retained-frame accounting remains open.
 
+The retained-generation audit found that tile-cache keys held entire decoded source images,
+even for tiny crops. Keys now retain a detached identity token owned by the immutable pixel
+buffer, with no reference back to it. A live four-byte cached crop no longer retains its
+one-MiB source, verified with JVM weak references; cache reuse and held-image correctness
+remain covered on JS and Native. Viewport synchronized/resize holds share one frozen-frame
+slot, while caller-retained snapshots remain explicit owners of their pixels.
+
 The native media corpus has 61 cases: 57 compare original-reader bytes/errors and cleanup.
 Four regular/temporary-file seeks past EOF with omitted size crash the original Zig 0.17
 safe build with integer overflow. Those crashes are recorded rather than treated as conformance

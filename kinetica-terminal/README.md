@@ -78,6 +78,10 @@ writes directly into the CFData owned by each image provider, without an interme
 RGBA tile copy. Canvas diagnostics include its upload buffer, released when no images remain
 or the view is disposed. The budget counts RGBA payloads, not driver allocation overhead,
 glyph atlases or decoded session storage.
+Tile-cache keys retain a detached identity token, so caching a small crop does not keep the
+full decoded source alive. Unchanged immutable pixels reuse the token across frame selection;
+replacement pixels get a new identity. Synchronized/resize snapshots still own the pixels
+they need until their hold ends or the viewport is disposed.
 The host
 still owns session image data after a view is disposed. Diagnostics expose
 `data-terminal-image-bytes`, `data-terminal-image-tiles` and cumulative

@@ -80,6 +80,24 @@ class TerminalGraphicsFrameTest {
         assertEquals(listOf(2, 1, 3), released); assertEquals(0L, cache.bytes)
     }
 
+    @Test fun tileIdentitySurvivesContentWrappersWithoutAliasingReplacementPixels() {
+        val pixels = TerminalGraphicsPixels(1, 1, 32, byteArrayOf(10, 20, 30, -1))
+        val replacement = TerminalGraphicsPixels(1, 1, 32, pixels.data.copyOf())
+        fun tile(content: TerminalGraphicsImageContent) = TerminalImageQuad(content,
+            TerminalGraphicsLayer.ABOVE_TEXT, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0).tiles().single().tile
+        val original = tile(TerminalGraphicsImageContent(1, pixels))
+        val rewrapped = tile(TerminalGraphicsImageContent(2, pixels))
+        val replaced = tile(TerminalGraphicsImageContent(1, replacement))
+        val cache = TerminalImageCache<Int>(8) {}
+        cache.beginFrame()
+        assertEquals(1, cache.get(original) { 1 })
+        assertEquals(1, cache.get(rewrapped) { fail("The same immutable pixels reuse their uploaded tile") })
+        assertEquals(2, cache.get(replaced) { 2 })
+        assertEquals(1, cache.get(original) { fail("Returning to an unchanged buffer must preserve tile identity") })
+        assertEquals(2, cache.size)
+        cache.endFrame(); cache.clear()
+    }
+
     @Test fun directTileWritesRespectHostRowStrideAlphaAndEdgeClamping() {
         val pixels = TerminalGraphicsPixels(1, 2, 32, byteArrayOf(100, 50, -56, -128, 90, 80, 70, 0))
         val tile = TerminalImageTile(TerminalImageTileKey(Any(), 0, 0), 0, 0, 2, 2)

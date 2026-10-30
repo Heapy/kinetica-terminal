@@ -5,7 +5,7 @@ package io.heapy.kinetica.terminal
 internal data class TerminalGraphicsImageContent(val id: Long, val pixels: TerminalGraphicsPixels) {
     // Frame selection can return to the same immutable buffer and reuse its cached texture.
     // This is independent of the image-generation counter used for transfer identity checks.
-    val generation: Any get() = pixels
+    val generation: Any get() = pixels.renderGeneration
 }
 
 /** Immutable placement snapshot; decoded pixels are owned by their immutable content generation. */

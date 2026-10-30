@@ -1,7 +1,10 @@
 package io.heapy.kinetica.terminal
 
 /** Owned, tightly packed, unpremultiplied RGB/RGBA bytes. No host or renderer objects. */
-internal class TerminalGraphicsPixels(val width: Int, val height: Int, val format: Int, val data: ByteArray)
+internal class TerminalGraphicsPixels(val width: Int, val height: Int, val format: Int, val data: ByteArray) {
+    // Tile caches keep only this detached identity, never the full decoded source buffer.
+    val renderGeneration: Any = Any()
+}
 
 internal enum class TerminalGraphicsDecodeError {
     UNSUPPORTED_FORMAT, DIMENSIONS_REQUIRED, DIMENSIONS_TOO_LARGE, INVALID_DATA,
