@@ -273,6 +273,14 @@ and consume no-op navigation at history boundaries. Hidden text exposes the visi
 assistive technology, without announcing every output chunk; the input advertises its navigation
 bindings through `aria-keyshortcuts`.
 
+Cmd+J on macOS scrolls back to the current selection in both browser and AppKit surfaces.
+It preserves the selected text and puts its first retained row at the top (or returns to the
+bottom viewport when the selection is in the active screen), following Ghostty's
+`scroll_to_selection`. With no selection, the shortcut remains available to the application.
+Embedders on either platform can call `scrollToSelection()`; it returns true for an available
+selection even if no scroll was needed, and false for absent/invalidated selections, frozen
+presentation frames or disposed views.
+
 Both hosts preserve numeric-keypad identity in `TerminalKey.keypad`. `ESC =` / `ESC >` and
 DEC mode 66 select application/numeric keypad mode; DECRQM reports the selected state.
 Following Ghostty, mode 1035 defaults to enabled and forces numeric encoding. Applications
@@ -365,7 +373,10 @@ accessibility-tree exposure, focus, range stability, synchronized output and dis
 both Canvas and WebGL. This does not establish screen-reader announcement/navigation behavior.
 `node scripts/verify-terminal-navigation.mjs` checks platform-specific viewport/prompt shortcuts,
 updated AX output, focus, Kitty press/repeat/release isolation, exact modifier/keypad matching,
-keyboard lock, composition, alternate screens and synchronized-output holds.
+keyboard lock, composition, alternate screens and synchronized-output holds. It also checks
+Cmd+J after pointer selection and new output, selection preservation, and application input
+when no selection is available. Native accessibility tests dispatch Cmd+J through an isolated
+NSWindow and check the revealed/selected text and absence of Kitty input events.
 
 ## Engine and lifecycle
 

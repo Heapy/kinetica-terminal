@@ -531,6 +531,8 @@ public class AppKitTerminalView(
         val control = flags and NSEventModifierFlagControl != 0uL
         val raw = event.charactersIgnoringModifiers.orEmpty()
         val chars = if (command || control) terminalShortcutKey(raw, event.keyCode.toInt()) else raw
+        if (command && !shift && !control && flags and NSEventModifierFlagOption == 0uL &&
+            !hasMarkedText() && chars.lowercase() == "j" && scrollToSelection()) return
         if (command) {
             when (chars.lowercase()) {
                 "c" -> copySelection(); "v" -> pasteClipboard(); "a" -> viewport.selectAll()
@@ -849,6 +851,12 @@ public class AppKitTerminalView(
         if (viewport.scrollOffset != previous) onScrollActivity?.invoke()
     }
     public fun reveal(match: TerminalSearchMatch): Boolean = viewport.selectMatch(match)
+    public fun scrollToSelection(): Boolean {
+        val previous = viewport.scrollOffset
+        return viewport.scrollToSelection().also {
+            if (viewport.scrollOffset != previous) onScrollActivity?.invoke()
+        }
+    }
     public fun jumpToPrompt(direction: Int): Boolean = viewport.jumpToPrompt(direction).also {
         if (it) onScrollActivity?.invoke()
     }

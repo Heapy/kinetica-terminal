@@ -84,6 +84,47 @@ try {
       assert.equal(await input.evaluate(element => document.activeElement === element), true);
       assert.deepEqual(await drain(), []);
 
+      // Ghostty's macOS Cmd+J reveals an existing selection without changing it.
+      // Select through the real pointer path; no test-only selection API is involved.
+      await consumed("Home");
+      const point = await page.evaluate(() => {
+        const rect = document.querySelector("canvas").getBoundingClientRect();
+        const cell = kineticaTerminalDemo.cellMetrics();
+        return { x: rect.x + cell.width * 2, y: rect.y + cell.height * 1.5 };
+      });
+      await page.mouse.click(point.x, point.y, { clickCount: 3 });
+      const copy = () => page.evaluate(() => {
+        const data = new DataTransfer();
+        document.querySelector("[data-terminal]").dispatchEvent(new ClipboardEvent("copy", {
+          clipboardData: data, bubbles: true, cancelable: true,
+        }));
+        return data.getData("text/plain");
+      });
+      const selected = await copy();
+      assert.equal(selected, "output-0");
+      await consumed("End");
+      await write("later output\r\n");
+      await drain(); // Pointer input itself can produce negotiated terminal reports.
+      await key("j", { metaKey: true }, { code: "KeyJ" });
+      if (mac) {
+        assert.equal(await offset(), (await page.evaluate(() => kineticaTerminalDemo.history())) - 1);
+        assert.equal(await copy(), selected);
+        assert.deepEqual(await drain(), []);
+        await page.waitForFunction(() => document.querySelector('[role="log"]').textContent.startsWith("output-0\n"));
+        await consumed("End");
+        await key("j", { metaKey: true, shiftKey: true }, { code: "KeyJ" });
+        assert.equal(await offset(), 0);
+        assert.ok((await drain()).length > 0, "Extra modifiers remain application input");
+      } else {
+        assert.equal(await offset(), 0);
+        assert.ok((await drain()).length > 0, "Cmd+J is a macOS default only");
+      }
+      // Forwarded input clears selection. Cmd+J must now fall through to Kitty,
+      // including release, instead of becoming an unconditional swallowed shortcut.
+      await key("j", { metaKey: true }, { code: "KeyJ" });
+      const unselected = Buffer.from(await drain()).toString();
+      assert.ok(unselected.includes("\x1b[106;9") && unselected.includes(":3"));
+
       // Additional modifiers, the other platform's bindings, and keypad identity
       // remain available to terminal applications, including their release events.
       for (const [name, mods, extra] of [
@@ -102,7 +143,7 @@ try {
       // KAM blocks application input, not local viewport controls.
       await page.evaluate(() => kineticaTerminalDemo.allowKeyboardLock(true));
       await write("\x1b[2h");
-      await consumed("Home"); assert.equal(await offset(), history);
+      await consumed("Home"); assert.equal(await offset(), history + 1);
       await consumed("End"); assert.equal(await offset(), 0);
       await write("\x1b[2l");
       // No local shortcut may interrupt IME composition.

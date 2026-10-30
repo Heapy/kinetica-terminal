@@ -60,6 +60,19 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Ghostty's `scroll_to_selection` is now available through the shared viewport and both view
+wrappers, with the macOS Cmd+J default in browser/AppKit. It resolves the existing normalized
+selection anchors, positions the first selected row at the viewport top (clamped to the active
+screen), and preserves the selected text. Absent/invalidated selections, atomic holds and disposed
+views return false; an already revealed selection still consumes its binding. Shared tests cover
+reverse/rectangular selections, retained output, invalidation, history removal, alternate screens
+and disposal. A native test dispatches Cmd+J through NSWindow and checks accessible text and
+Kitty event isolation; browser tests use real pointer selection, new output, exact modifiers and
+no-selection fallthrough across Mac/Linux and Canvas/WebGL. Validation passes 1637 JVM tests,
+fresh Release JS tests, 47 focused Native tests, and browser navigation, selection, accessibility
+and existing integration checks. Logs: `/tmp/kinetica-selection-navigation-*`; browser reports
+remain under `build/reports`. Full screen-reader acceptance remains open.
+
 Browser viewport navigation now follows the pinned Ghostty 1.4 defaults: platform-specific
 history boundaries, full-page scrolling and previous/next shell prompts (including the macOS
 Cmd+Shift aliases). Matching uses physical keys and exact modifiers; Kitty press/repeat/release

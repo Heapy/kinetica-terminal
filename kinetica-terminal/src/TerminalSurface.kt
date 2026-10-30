@@ -424,6 +424,17 @@ public class TerminalViewport internal constructor(
 
     public fun scrollTo(offset: Int) { scroll(offset.coerceIn(0, session.historySize) - scrollOffset) }
 
+    /** Reveal the existing selection's first row without replacing the selection.
+     * Returns true when a selection is available, including one already in view.
+     * Atomic presentation holds and disposed views cannot navigate. */
+    public fun scrollToSelection(): Boolean {
+        if (disposed || frozen != null) return false
+        val range = liveSelection.range() ?: return false
+        if (range.start == range.end || range.rectangle && range.start.column == range.end.column) return false
+        scrollTo(session.historySize - range.start.line)
+        return true
+    }
+
     /** Move the viewport to a shell prompt: -1 for previous, +1 for next. Requires OSC 133 marks. */
     public fun jumpToPrompt(direction: Int): Boolean {
         require(direction == -1 || direction == 1)

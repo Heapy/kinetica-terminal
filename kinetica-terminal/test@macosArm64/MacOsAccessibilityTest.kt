@@ -8,6 +8,46 @@ import platform.Foundation.*
 import kotlin.test.*
 
 class MacOsAccessibilityTest {
+    @Test fun commandJRevealsExistingSelectionWithoutSendingKittyEvents() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession()
+        val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE)
+        val window = NSWindow(NSMakeRect(0.0, 0.0, 640.0, 320.0), NSWindowStyleMaskTitled, NSBackingStoreBuffered, false)
+        window.setReleasedWhenClosed(false); window.contentView = view
+        val output = StringBuilder()
+        val subscription = session.onInput { output.append(it.toByteArray().decodeToString()) }
+        var scrolls = 0
+        view.onScrollActivity = { scrolls++ }
+        fun key(flags: ULong = NSEventModifierFlagCommand, repeat: Boolean = false, release: Boolean = false) =
+            requireNotNull(NSEvent.keyEventWithType(if (release) NSEventTypeKeyUp else NSEventTypeKeyDown,
+                NSMakePoint(0.0, 0.0), flags, 0.0, window.windowNumber, null, "j", "j", repeat, 38u))
+        try {
+            assertTrue(window.makeFirstResponder(view))
+            repeat(80) { session.write("row-$it\r\n") }
+            assertTrue(view.reveal(session.search("row-3").matches.first()))
+            view.scrollTo(0)
+            session.write("later\r\n\u001b[>31u")
+            scrolls = 0
+            window.sendEvent(key()); window.sendEvent(key(repeat = true)); window.sendEvent(key(release = true))
+            assertEquals(session.historySize - 3, view.scrollOffset)
+            assertTrue((view.accessibilityValue() as String).startsWith("row-3\n"))
+            assertEquals("row-3", view.accessibilitySelectedText())
+            assertEquals(1, scrolls, "Only an actual viewport change reports scroll activity")
+            assertEquals("", output.toString())
+            // The binding is performable and exact: extra modifiers or no selection reach the application.
+            view.scrollTo(0)
+            view.keyDown(key(NSEventModifierFlagCommand or NSEventModifierFlagControl))
+            view.keyUp(key(NSEventModifierFlagCommand or NSEventModifierFlagControl, release = true))
+            assertEquals(0, view.scrollOffset)
+            assertTrue(output.isNotEmpty())
+            output.clear(); view.clearSelection()
+            view.keyDown(key()); view.keyUp(key(release = true))
+            assertTrue(output.contains("\u001b[106;9"))
+            assertTrue(output.contains(":3"))
+            assertFalse(view.scrollToSelection())
+        } finally { subscription.dispose(); view.dispose(); window.close() }
+    }
+
     @Test fun textQueriesUseOneUtf16CoordinateSpaceAndRejectInvalidRanges() {
         NSApplication.sharedApplication()
         val session = TerminalSession()

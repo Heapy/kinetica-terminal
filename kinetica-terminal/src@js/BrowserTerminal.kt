@@ -29,6 +29,7 @@ public class BrowserTerminalView(
         set(value) { field = value; refreshLinkHover() }
     public val scrollOffset: Int get() = viewport.scrollOffset
     public fun jumpToPrompt(direction: Int): Boolean = viewport.jumpToPrompt(direction)
+    public fun scrollToSelection(): Boolean = viewport.scrollToSelection()
     private val document: dynamic = js("globalThis.document")
     private val window: dynamic = js("globalThis.window")
     public val view: Element = document.createElement("div").unsafeCast<Element>()
@@ -132,7 +133,7 @@ public class BrowserTerminalView(
         input.style.cssText = "position:absolute;opacity:0;width:1px;height:1em;padding:0;border:0;resize:none;overflow:hidden;"
         input.setAttribute("aria-label", "Terminal input")
         input.setAttribute("aria-keyshortcuts", if (window.navigator.platform.startsWith("Mac"))
-            "Meta+Home Meta+End Meta+PageUp Meta+PageDown Meta+ArrowUp Meta+ArrowDown Meta+Shift+ArrowUp Meta+Shift+ArrowDown"
+            "Meta+Home Meta+End Meta+PageUp Meta+PageDown Meta+ArrowUp Meta+ArrowDown Meta+Shift+ArrowUp Meta+Shift+ArrowDown Meta+j"
         else "Shift+Home Shift+End Shift+PageUp Shift+PageDown Control+Shift+ArrowUp Control+Shift+ArrowDown")
         input.setAttribute("autocomplete", "off"); input.setAttribute("autocapitalize", "off")
         input.setAttribute("spellcheck", "false")
@@ -470,6 +471,7 @@ public class BrowserTerminalView(
             else key.shift && !key.control && !key.meta
         val prompt = if (mac) key.meta && !key.control
             else key.control && key.shift && !key.meta
+        if (mac && scroll && key.key.lowercase() == "j") return viewport.scrollToSelection()
         when (key.physicalCode?.takeIf { it.isNotEmpty() } ?: key.key) {
             "Home" -> if (scroll) viewport.scrollTo(session.historySize) else return false
             "End" -> if (scroll) viewport.scrollTo(0) else return false
