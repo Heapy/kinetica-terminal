@@ -27,6 +27,14 @@ internal fun browserFont(size: Double, style: Int = 0, family: String? = null): 
 }
 internal fun terminalCssColor(rgb: Int): String = "#" + rgb.toString(16).padStart(6, '0')
 
+private fun resizeBrowserCanvas(canvas: dynamic, width: Int, height: Int) {
+    // Each assignment resets the backing bitmap independently. Shrink first so
+    // changing aspect ratio never requests the new width at the old, larger height.
+    if (height < (canvas.height as Number).toInt()) canvas.height = height
+    if (canvas.width != width) canvas.width = width
+    if (canvas.height != height) canvas.height = height
+}
+
 internal fun createBrowserTerminalDrawing(mode: TerminalRendering, invalidate: () -> Unit,
     probe: TerminalRenderProbe = TerminalRenderProbe(null)): BrowserTerminalDrawing {
     if (mode == TerminalRendering.SOFTWARE) return CanvasTerminalDrawing(probe)
@@ -73,7 +81,7 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
             this.width = width; this.height = height; this.ratio = ratio; size = fontSize
             canvas.style.width = "${width}px"; canvas.style.height = "${height}px"
             if (!suspended) {
-                canvas.width = (width * ratio).toInt(); canvas.height = (height * ratio).toInt()
+                resizeBrowserCanvas(canvas, (width * ratio).toInt(), (height * ratio).toInt())
                 context.setTransform(ratio, 0, 0, ratio, 0, 0)
             }
             clear = true
@@ -273,7 +281,7 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     override fun resize(width: Double, height: Double, ratio: Double, fontSize: Double, cellWidth: Double, cellHeight: Double, fontFamily: String?) {
         if (this.width != width || this.height != height || this.ratio != ratio ||
             !suspended && (canvas.width != (width * ratio).toInt() || canvas.height != (height * ratio).toInt())) {
-            if (!suspended) { canvas.width = (width * ratio).toInt(); canvas.height = (height * ratio).toInt() }
+            if (!suspended) resizeBrowserCanvas(canvas, (width * ratio).toInt(), (height * ratio).toInt())
             // Keep both WebGL and the CSS compositor at one device pixel per texel.
             canvas.style.width = "${(width * ratio).toInt().toDouble() / ratio}px"
             canvas.style.height = "${(height * ratio).toInt().toDouble() / ratio}px"; repaint = true

@@ -468,6 +468,14 @@ replaced with an offscreen or visibility-bypassing assertion.
 
 ## Memory and lifecycle
 
+- [x] Resize browser backing canvases by shrinking an axis before growing the other.
+      Canvas/WebGL previously requested the new width at the old height during tall-to-wide
+      changes: a DPR-2 regression requested 28,730,880 RGBA bytes between surfaces requiring
+      at most 12,026,880 bytes each. Real browser tests now intercept backing-size assignments
+      in both directions and require every intermediate area to fit the larger endpoint,
+      while checking unchanged image pixels. The Release JS suite and Canvas/WebGL graphics
+      verifier pass. This bounds intermediate requested area, not browser allocation overhead
+      or the maximum final host surface size; the broader resource audit remains open.
 - [x] Hidden browser views release image caches and canvas backing storage; WebGL also releases
       its atlas, buffers and program. AppKit clears software caches; Metal waits for submitted
       commands before purging image/atlas/buffer resources and detaching its layer device.

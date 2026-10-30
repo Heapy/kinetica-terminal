@@ -396,6 +396,40 @@ try {
     assert.equal(await page.locator("[data-terminal]").getAttribute("data-terminal-rendering-error"), null);
     assert.deepEqual(errors, []);
     await write("\x1b[H" + image(10, red.slice(0, 3)));
+    // A tall-to-wide resize must not allocate the new width at the old height.
+    // Track requested backing extents, independently of the browser's lazy allocation.
+    await page.evaluate(() => {
+      const prototype = HTMLCanvasElement.prototype;
+      const descriptors = ["width", "height"].map(key => [key, Object.getOwnPropertyDescriptor(prototype, key)]);
+      globalThis.graphicsSurfaceSizes = [];
+      for (const [key, descriptor] of descriptors) Object.defineProperty(prototype, key, {
+        ...descriptor,
+        set(value) {
+          descriptor.set.call(this, value);
+          if (this === graphicsCanvas) graphicsSurfaceSizes.push([this.width, this.height]);
+        },
+      });
+      globalThis.restoreGraphicsSurfaceHooks = () => {
+        for (const [key, descriptor] of descriptors) Object.defineProperty(prototype, key, descriptor);
+      };
+    });
+    try {
+      for (const [width, height] of [[600, 1400], [1400, 600], [600, 1400]]) {
+        const before = await page.evaluate(() => {
+          graphicsSurfaceSizes.length = 0;
+          return [graphicsCanvas.width, graphicsCanvas.height];
+        });
+        await page.setViewportSize({ width, height });
+        await painted();
+        const { sizes, after } = await page.evaluate(() => ({ sizes: graphicsSurfaceSizes,
+          after: [graphicsCanvas.width, graphicsCanvas.height] }));
+        assert.ok(sizes.length > 0, `${renderer}: resize must change backing dimensions`);
+        const limit = Math.max(before[0] * before[1], after[0] * after[1]);
+        for (const size of sizes) assert.ok(size[0] * size[1] <= limit,
+          `${renderer}: intermediate backing ${size} exceeds old/new surface areas ${before} / ${after}`);
+        await expectPixel(red, "aspect-ratio resize preserves image pixels");
+      }
+    } finally { await page.evaluate(() => restoreGraphicsSurfaceHooks()); }
     await page.evaluate(() => kineticaTerminalDemo.dispose());
     assert.equal(await page.evaluate(renderer => renderer === "gpu" ? graphicsResources.size : [...graphicsResources].filter(canvas => canvas.width !== 0 || canvas.height !== 0).length, renderer), 0, `${renderer}: dispose releases image resources`);
     await page.close();
