@@ -60,12 +60,8 @@ internal fun terminalDetectedLinkAt(row: Int, column: Int, first: Int, last: Int
             }
         }
     }
-    for (match in terminalUrl.findAll(text)) {
-        var url = match.value.trimEnd('.', ',', ';', ':', '!', '?')
-        for ((close, open) in listOf(')' to '(', ']' to '[', '}' to '{')) {
-            while (url.endsWith(close) && url.count { it == close } > url.count { it == open }) url = url.dropLast(1)
-        }
-        if (offset in match.range.first until match.range.first + url.length) {
+    for (match in terminalLinkMatches(text)) {
+        if (offset in match.start until match.end) {
             fun position(offset: Int, end: Boolean): TerminalCellPosition {
                 var current = 0
                 for (y in range.start.line..range.end.line) {
@@ -80,14 +76,12 @@ internal fun terminalDetectedLinkAt(row: Int, column: Int, first: Int, last: Int
                 }
                 error("Matched URL offset outside its terminal cells")
             }
-            return TerminalDetectedLink(url, TerminalSelectionRange(position(match.range.first, false),
-                position(match.range.first + url.length - 1, true)))
+            return TerminalDetectedLink(text.substring(match.start, match.end), TerminalSelectionRange(position(match.start, false),
+                position(match.end - 1, true)))
         }
     }
     return null
 }
-
-private val terminalUrl = Regex("https?://[^\\s<>\"']+", RegexOption.IGNORE_CASE)
 
 private class LogicalTerminalLine(val first: Int, val last: Int, val text: String, val starts: IntArray) {
     fun position(offset: Int, end: Boolean, line: (Int) -> TerminalLine): TerminalCellPosition {

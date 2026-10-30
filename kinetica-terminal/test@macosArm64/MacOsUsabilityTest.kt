@@ -174,6 +174,12 @@ class MacOsUsabilityTest {
             view.mouseDown(checkNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseDown, promptPoint,
                 NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
             assertEquals(listOf("https://prompt.example"), opened, "Cmd-click must not append input text to the prompt URL")
+            for (target in listOf("mailto:me@example.org", "ssh://example.org/a", "../test folder/file.txt")) {
+                opened.clear(); session.reset(); session.write(target)
+                view.mouseDown(checkNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseDown, promptPoint,
+                    NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
+                assertEquals(listOf(target), opened, "The host receives the complete detected target")
+            }
         } finally { subscription.dispose(); view.dispose(); window.close() }
     }
 

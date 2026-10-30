@@ -448,8 +448,8 @@ Shift+PageUp/PageDown, and accessibility text are available.
   Dragging beyond the top/bottom autoscrolls at 50 ms intervals, up to ten rows per tick.
   Release, pointer cancellation, focus loss, synchronized-output hold and disposal stop the timer.
   Committed keyboard/IME/paste input clears selection; copying leaves it intact.
-- Double clicking recognized HTTP(S) text selects its complete visible URL, including matched
-  parentheses and query punctuation, across soft wraps. Releasing without moving retains that
+- Double clicking a recognized URL or path selects its complete visible text, including matched
+  parentheses, query punctuation and path spaces, across soft wraps. Releasing without moving retains that
   selection; dragging resumes word selection. OSC 8 labels still use their visible text and
   never substitute a hidden target URI into the selection.
 - `session.selectionWordChars` replaces the word delimiters with the Unicode code points in
@@ -926,7 +926,7 @@ asynchronously for all owned PTYs to reap their children before AppKit terminate
 - Cmd+plus (or Cmd+=), Cmd+minus and Cmd+0 zoom/reset the current terminal. Cmd+comma opens
   Settings for the installed monospace font, size and theme; settings apply to every window
   and persist across launches. Window position and size are also saved.
-- Cmd+click opens OSC 8 links and detected HTTP(S) URLs using Ghostty 1.4's macOS policy:
+- Cmd+click opens OSC 8 links and detected URL schemes using Ghostty 1.4's macOS policy:
   web/mail targets are validated, local paths are canonicalized and checked for executable
   or active content, and custom URL schemes require confirmation. Blocked targets can only
   be copied as normalized, escaped text. Pending confirmations are cancelled on view disposal
@@ -946,7 +946,7 @@ The common engine exposes `search`, `hyperlinkAt`, `configureTheme`, `clearScree
 and viewport selection/reveal methods for hosts with their own controls.
 `session.osc8LinksEnabled = false` disables OSC 8 activation through session/viewport
 `hyperlinkAt`, including existing history, alternate-screen rows and synchronized snapshots.
-Visible HTTP(S) text detection remains available. Raw `TerminalLine.hyperlink` metadata is
+Visible URL/path detection remains available. Raw `TerminalLine.hyperlink` metadata is
 retained, so re-enabling the setting restores explicit links; terminal resets preserve this
 host policy. Hosts implementing link previews, highlighting or link-specific copying should
 use `hyperlinkAt` to respect the setting.
@@ -954,6 +954,13 @@ Detected URLs stop at every OSC 133 prompt/input/output boundary, including acro
 and in synchronized snapshots. Adjacent command text cannot become part of a prompt URL.
 Explicit OSC 8 targets retain priority, and ordinary literal search continues across semantic
 boundaries.
+The default recognizer follows Ghostty's case-sensitive grammar for HTTP(S), mailto, FTP, file,
+SSH, Git, tel, magnet, IPFS/IPNS, Gemini, Gopher and news schemes, plus absolute, dot-relative,
+home-prefixed, environment-prefixed and dotted relative paths. Oniguruma's Unicode classes are
+generated from the pinned original, so matching does not depend on the platform regex library.
+`hyperlinkAt` returns matched text unchanged; path resolution and opening are host responsibilities.
+The default AppKit opener still requires an absolute URL, so detected raw file paths currently
+need a host override before activation. Detection and double-click copying work in both views.
 
 ## Run and verify
 

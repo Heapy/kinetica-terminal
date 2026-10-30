@@ -100,10 +100,22 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       with whole and bytewise input, custom delimiters and supplementary code points.
       Generation reproduces byte-for-byte. Validation passes 1392 JVM tests, fresh Release JS
       tests, 40 focused Native tests and Canvas/WebGL gestures/copy checks with host policy changes.
-- [ ] Match the complete default URL/path recognizer in `src/config/url.zig`, including
-      non-HTTP schemes, rooted/relative paths, environment-variable prefixes, spaced path
-      segments and the original punctuation/Unicode rules. Kinetica currently detects HTTP(S)
-      text; semantic range parity alone does not establish recognizer parity.
+- [x] Match the default URL/path grammar in `src/config/url.zig`, including non-HTTP schemes,
+      rooted/relative paths, environment-variable prefixes, spaced path segments and original
+      case/punctuation/Unicode rules. A portable scanner replaces platform regex behavior;
+      original Oniguruma 6.9.9 supplies 6018 inputs / 5069 matches and separate word, bracketed
+      word and digit classes over all 1,112,064 Unicode scalar values. Shared link lookup and
+      double-click selection use the same matched ranges, including wide cells and soft wraps.
+      Validation passes 1395 JVM tests, fresh Release JS tests, 45 focused Native tests and
+      Canvas/WebGL double-click/copy checks. Fixtures, tables, manifest and notices regenerate
+      byte-for-byte; the original oracle exits successfully before its output is accepted.
+- [ ] Complete native activation of detected file paths: resolve relative paths against the
+      terminal working directory as `Surface.resolvePathForOpening` does, then pass file URLs
+      through the existing safe-opening policy. The recognizer currently returns raw matched
+      text to host callbacks; detection/selection does not imply default file opening works.
+- [ ] Keep deferred confirmation of plain-text non-HTTP links independent of `link-osc8`
+      while preserving revocation of pending explicit OSC 8 requests. The current AppKit
+      confirmation guard checks `osc8LinksEnabled` for every custom-scheme request.
 - [x] Bound detected URLs by OSC 133 semantic-content transitions, including transitions
       within a row and across soft wraps. Explicit OSC 8 targets retain priority; literal
       search still spans semantic boundaries. The original `Screen.selectLine` oracle covers

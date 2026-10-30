@@ -100,6 +100,11 @@ try {
     await page.evaluate(() => kineticaTerminalDemo.selectionWordChars(" "));
     await click(7, 0, 2);
     assert.equal(await copy(), "(two);three", "Host word-boundary policy reaches the browser view");
+    for (const target of ["mailto:me@example.org", "ssh://example.org/a", "/tmp/test folder/file.txt", "src/a.kt:42"]) {
+      await reset(`(${target})`);
+      await click(3, 0, 2);
+      assert.equal(await copy(), target, "Detected paths and non-HTTP schemes override word boundaries");
+    }
 
     await reset(Array.from({ length: 80 }, (_, i) => `line-${i}\r\n`).join(""));
     await move(4, 2); await page.mouse.down(); await move(4, -2);
@@ -143,7 +148,7 @@ try {
     await page.evaluate(() => kineticaTerminalDemo.dispose());
     await page.waitForTimeout(180); await page.mouse.up();
     assert.equal(await page.locator("#app > *").count(), 0);
-    report.renderers.push({ renderer, selection: "passed", semanticLines: "passed", doubleClickUrls: "passed", wordBoundaries: "passed", autoscroll: "passed", cancellation: "passed", pixels: "passed" });
+    report.renderers.push({ renderer, selection: "passed", semanticLines: "passed", doubleClickUrls: "passed", detectedPaths: "passed", wordBoundaries: "passed", autoscroll: "passed", cancellation: "passed", pixels: "passed" });
     await page.close();
   }
   assert.deepEqual(report.errors, []);

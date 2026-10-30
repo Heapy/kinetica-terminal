@@ -1,5 +1,34 @@
 # Ghostty differential oracle
 
+## Default URL/path matcher oracle
+
+`links-manifest.json` pins the unmodified `src/config/url.zig` expression and Ghostty's
+Oniguruma 6.9.9 package. The helper compiles an unchanged copy of the expression and links the
+original package; its results contain every non-overlapping match, retaining original-string
+lookbehind context. The Python generator converts byte offsets to Kotlin UTF-16 offsets.
+
+```sh
+python3 scripts/generate-terminal-links.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig
+bash scripts/engine.sh test -m kinetica-terminal -p jvm --include-classes='*TerminalLinkMatcherTest'
+```
+
+The corpus includes all original positive/negative inputs, scheme/path/punctuation combinations,
+Latin-1 and supplementary Unicode cases, and deterministic token fuzzing: 6018 inputs / 5069
+matches. Three anchored original expressions classify every Unicode scalar for `\w`, `[\w]`
+and `\d`. The first two differ in Oniguruma; sharing one platform Unicode predicate is incorrect.
+The generated tables, fixture, helpers, expression, dependency pin, relevant C sources and license
+have recorded hashes. The BSD notice is retained in source and packaged in `META-INF/LICENSES`.
+Generation reproduces fixtures, tables, manifest and notices byte-for-byte.
+
+Oniguruma is built in `fast` mode and the Zig helper in `safe` mode. The initial 3021-input
+experiment produced byte-identical records in both modes, but the C `safe` build trapped during
+`onig_end` after producing all results. The checked-in generator requires a successful exit and
+uses the release-mode C build; it does not accept the partial output from a failed process.
+The Kotlin runtime contains the portable scanner and generated character tables, not Oniguruma.
+
+These tests establish matching and offset behavior, not path resolution or external application
+launching. Common/native/browser tests separately exercise link lookup and double-click copying.
+
 ## Line/word selection and semantic link-boundary oracle
 
 `semantic-line-manifest.json` pins original `Screen.selectLine` with the same options used by

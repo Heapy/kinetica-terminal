@@ -10,6 +10,15 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    @Test fun nativeDoubleClicksRecognizePathsWithSpacesAndOtherSchemes() = withView { session, view, mouse ->
+        for (link in listOf("mailto:me@example.org", "../test folder/file.txt", "ssh://example.org/a", "src/config/url.zig")) {
+            session.reset(); session.write("($link)")
+            mouse(NSEventTypeLeftMouseDown, 3, 0, 2)
+            mouse(NSEventTypeLeftMouseUp, 3, 0, 2)
+            assertEquals(link, view.accessibilitySelectedText())
+        }
+    }
+
     @Test fun nativeWordBoundariesGroupDelimitersAndHonorHostSettings() = withView { session, view, mouse ->
         session.write("one  (two);three")
         mouse(NSEventTypeLeftMouseDown, 3, 0, 2)

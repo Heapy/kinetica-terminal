@@ -1,0 +1,31 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "oniguruma": "6.9.9",
+  "onigurumaOptimize": "fast",
+  "zig": "0.17.0",
+  "cases": 6018,
+  "matches": 5069,
+  "unicodeScalars": 1112064,
+  "pattern": "(?:https?://|mailto:|ftp://|file:|ssh:|git://|ssh://|tel:|magnet:|ipfs://|ipns://|gemini://|gopher://|news:)(?:(?:\\[[:0-9a-fA-F]+(?:[:0-9a-fA-F]*)+\\](?::[0-9]+)?)|[\\w\\-.~:/?#@!$&*+,;=%]+(?:[\\(\\[]\\w*[\\)\\]])?)+(?<![,.])|(?:\\.\\.\\/|\\.\\/|(?<!\\w)~\\/|(?:[\\w][\\w\\-.]*\\/)*(?<!\\w)\\$[A-Za-z_]\\w*\\/|\\.[\\w][\\w\\-.]*\\/|(?<![\\w~\\/])\\/(?!\\/))(?:(?=[\\w\\-.~:\\/?#@!$&*+;=%]*\\.)[\\w\\-.~:\\/?#@!$&*+;=%]+(?:(?<!:) (?!\\w+:\\/\\/)(?!\\.{0,2}\\/)(?!~\\/)[\\w\\-.~:\\/?#@!$&*+;=%]*[\\/.])*(?<!:)|(?![\\w\\-.~:\\/?#@!$&*+;=%]*\\.)[\\w\\-.~:\\/?#@!$&*+;=%]+(?:(?<!:) (?!\\w+:\\/\\/)(?!\\.{0,2}\\/)(?!~\\/)[\\w\\-.~:\\/?#@!$&*+;=%]+)*(?<!:))|(?=[\\w\\-.~:\\/?#@!$&*+;=%]*\\.)(?<!\\$\\d*)(?<!\\w)[\\w][\\w\\-.]*\\/[\\w\\-.~:\\/?#@!$&*+;=%]+(?<!:)",
+  "wordRanges": 773,
+  "classWordRanges": 771,
+  "digitRanges": 64,
+  "helperSha256": "2313de0179c29d080c996bb3909a19acb38ed45525305e05738b2e9633214489",
+  "generatorSha256": "d4c4591f1c5d939f30a7e550d4f8517c2401cb1a4cf9a6917b7bb71efae8ee6d",
+  "fixtureSha256": "d374ea4ca89456076f27a0a45ebbf5d98ee0524f688ed5d221c35b33ed5b8b98",
+  "characterDataSha256": "246f259c4853e14daf31f22d394a979b0c85332600e6dd8da6f45bcc3c7cbd36",
+  "sources": {
+    "src/config/url.zig": "4fdeee2f4c749eb6aa1c971b9e360bae845a1220cbfe0ef82d6fb7db3ebd2a88",
+    "pkg/oniguruma/build.zig.zon": "bc851cd6de7c55484822ee8eb45651885717940bc66c5d1a7a3150f0803f91af",
+    "pkg/oniguruma/regex.zig": "a1fd102bb0e1ee40ddfe590c88d9e0dc74ea8bb5c79f27d6ea6acef7ffe1b0b7",
+    "src/Surface.zig": "a63a77a8c01598366d82498661cfbb9244391036578422e7b3b37cbdc737b318"
+  },
+  "onigurumaPackage": "N-V-__8AAHjwMQDBXnLq3Q2QhaivE0kE2aD138vtX2Bq1g7c",
+  "onigurumaSources": {
+    "COPYING": "70ba5469ea0bab6e18a32d7009068f996503168d27be57747e08da34337ff26f",
+    "src/unicode.c": "381aacfe8feaf7d307c0a729bbb2a903e706866cb3c99a5422f003ff7fa97dff",
+    "src/unicode_property_data.c": "118d65a0c0358a418998b9ff1628aac2038f7b9eefc2b0d2a6236a8cb81b7a58",
+    "src/regparse.c": "f13f7428b4258e05d148dd16a9eb94fb4bb0700e3003063fdb7b52af668689a4",
+    "src/regexec.c": "0f58bcf0d3fcd3642a5c9d79436fa75df33641175941f890495afce62782901a"
+  }
+}

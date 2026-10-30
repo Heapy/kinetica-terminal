@@ -3,6 +3,28 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalNavigationTest {
+    @Test fun recognizedSchemesAndPathsUseTheSameCellsForLinksAndDoubleClicks() {
+        val links = listOf("mailto:me@example.org", "ssh://host/path", "tel:+12345", "magnet:?xt=urn:example",
+            "ipfs://hash", "file:///tmp/file.txt", "/tmp/test folder/file.txt", "../relative/file.kt:42",
+            "\$HOME/src/file.kt", "src/config/url.zig", ".config/ghostty/config", "~/notes.md", "https://example.org/界e\u0301")
+        for (columns in listOf(80, 13)) {
+            val session = TerminalSession(columns, 8)
+            val viewport = TerminalViewport(session, {})
+            try {
+                for (link in links) {
+                    session.reset(); session.write("($link)")
+                    for (y in 0 until session.lineCount) for (x in 0 until columns) {
+                        val line = session.line(y)
+                        if ((!line.hasText(x) && line.width(x) != 0) || line.isSpacerHead(x) || line.codePoint(x) in listOf(40, 41)) continue
+                        assertEquals(link, viewport.hyperlinkAt(x, y), "$link cell=$x,$y columns=$columns")
+                        viewport.beginSelection(x, y, TerminalSelectionMode.WORD); viewport.endSelection(x, y)
+                        assertEquals(link, viewport.selectedText(), "$link selected cell=$x,$y columns=$columns")
+                    }
+                }
+            } finally { viewport.dispose() }
+        }
+    }
+
     @Test fun urlSelectionMapsWideGraphemesAndResumesWordDragging() {
         val session = TerminalSession(8, 10)
         val viewport = TerminalViewport(session, {})
@@ -84,7 +106,7 @@ class TerminalNavigationTest {
                 session.reset()
                 session.write(osc("A") + prompt + osc("B") + "/suffix")
                 assertEquals(prompt, session.hyperlinkAt(0, 0))
-                assertNull(session.hyperlinkAt(prompt.length / columns, prompt.length % columns))
+                assertEquals("/suffix", session.hyperlinkAt(prompt.length / columns, prompt.length % columns))
                 session.reset()
                 session.write("\u001b]8;;ssh://explicit.example\u001b\\" + osc("A") + prompt + osc("B") + input)
                 assertEquals("ssh://explicit.example", session.hyperlinkAt(0, 0), "Explicit OSC 8 target has priority")
