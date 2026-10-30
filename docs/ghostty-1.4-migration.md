@@ -295,6 +295,23 @@ visible frame, but `screencapture` fails with `could not create image from windo
 hashes. This does not prove pixels, physical presentation latency or the open load-performance
 gates. Earlier attempts selected the old root-project binary and are not current-build evidence.
 
+The subsequent October 30 recheck at `2f45267` closes that external capture blocker. It uses
+the freshly linked engine-only binary (SHA-256
+`9a47732dc816e9675726228dad93bce21e9a511206eedd0556b6dbad9204f09f`). The first capture
+now succeeds, but offline Vision OCR exceeds its ten-second deadline (`run-q51qgz7r`).
+Running that same OCR helper against the saved PNG completes with the expected `BEFORE`
+text; the unchanged verifier then passes all three occlusion/hide stages (`run-sfxkha7l`).
+Eight resize stages verify actual text, ink geometry and background for Metal and AppKit
+(`run-jxzjvbdp`). Continuous resize passes 713 captured frames (`run-zdg7c473`); an isolated
+real `htop` PTY passes 715 (`run-tks3_q1r`), both with zero detected anomalous frames.
+Their render traces include 39 and 29 distinct grids respectively, ruling out one unchanged
+held frame throughout the resize.
+All report paths are under `build/reports/terminal-window/`; reports retain source/binary
+hashes, and the stream reports retain individual frame measurements. The saved htop image
+was visually inspected and contains its colored UI. These are WindowServer pixel checks
+and a TUI-content heuristic, not physical scanout, hardware gestures or load-performance
+acceptance. No installed application or existing shell was replaced or terminated.
+
 - [x] Double-click a recognized visible HTTP(S) link as one complete selection, following
       `Surface`'s override of ordinary word selection. Soft wraps, wide/combined cells and
       OSC 133 boundaries retain their cell mapping. OSC 8 target URIs and activation policy

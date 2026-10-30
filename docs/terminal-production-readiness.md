@@ -151,8 +151,9 @@ responses. Placements support replacement, internal IDs, virtual records and rel
 chains with cycle/depth checks and saturating offsets. Parent deletion cascades through a
 reverse-edge index; uppercase deletion, replacement and eviction apply their distinct image
 lifetime rules. Static deletion selectors, ED2/22J, screen switches, reset, full/margin scrolling
-and IL/DL are connected to the engine's row operations. A single APC capture is limited to
-1 MiB, and each screen has at most 16,384 placements; existing image transfer/decode/storage
+and IL/DL are connected to the engine's row operations. A single graphics APC capture is limited to
+65 MiB (raised from this increment's original 1 MiB to match Ghostty 1.4), and each screen
+has at most 16,384 placements as an embedding policy; existing image transfer/decode/storage
 limits still apply. Disabled storage does not capture payloads or answer capability queries.
 
 An original-library session corpus covers 196 scenarios and 2017 checkpoints. Both engines
@@ -920,6 +921,14 @@ alone at its first visible-window check. The UI-adapter integration test and fiv
 sample tests pass; three sample tests time out waiting for a key window. The system session
 query confirms `CGSSessionScreenIsLocked=1`. These visibility/focus checks must be rerun in
 an unlocked desktop session; this increment does not claim a fully green desktop suite.
+
+The later October 30 native checks and external pixel runs are recorded in the
+[migration validation](ghostty-1.4-migration.md). At `2f45267`, the current engine-only
+binary passes actual occlusion/hide captures, all eight Metal/AppKit resize stages,
+713 continuous-resize captures and 715 isolated htop captures with zero detected anomalies.
+The earlier capture failure is no longer reproduced. A first OCR timeout remains recorded;
+offline recognition completed on that saved image before the unchanged verifier passed.
+These results do not replace the separate hardware interaction and performance gates.
 
 XTSHIFTESCAPE (`CSI > 0/1 s`) now controls application Shift mouse capture. The terminal keeps
 the original tri-state request separately from host policy: omitted/zero disables capture,
