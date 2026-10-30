@@ -3,6 +3,49 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalNavigationTest {
+    @Test fun detectedLinksStopAtSemanticPromptBoundariesAcrossWrapsAndFrozenFrames() {
+        fun osc(value: String) = "\u001b]133;$value\u0007"
+        val prompt = "https://prompt.example"
+        val input = "https://input.example"
+        val output = "https://output.example"
+        for (columns in listOf(80, 13)) {
+            val session = TerminalSession(columns, 8)
+            val viewport = TerminalViewport(session, {})
+            try {
+                session.write(osc("A") + prompt + osc("B") + input + osc("C") + output)
+                for ((offset, url) in listOf(0 to prompt, prompt.length to input, (prompt.length + input.length) to output)) {
+                    assertEquals(url, session.hyperlinkAt(offset / columns, offset % columns))
+                    assertEquals(url, viewport.hyperlinkAt(offset % columns, offset / columns))
+                }
+                assertEquals(1, session.search("prompt.examplehttps").matches.size, "Literal search still spans semantic boundaries")
+                session.write("\u001b[?2026h\u001b[Hchanged")
+                assertEquals(prompt, viewport.hyperlinkAt(0, 0), "Frozen links use frozen semantic metadata")
+                session.write("\u001b[?2026l")
+                session.reset()
+                session.write(osc("A") + prompt + osc("B") + "/suffix")
+                assertEquals(prompt, session.hyperlinkAt(0, 0))
+                assertNull(session.hyperlinkAt(prompt.length / columns, prompt.length % columns))
+                session.reset()
+                session.write("\u001b]8;;ssh://explicit.example\u001b\\" + osc("A") + prompt + osc("B") + input)
+                assertEquals("ssh://explicit.example", session.hyperlinkAt(0, 0), "Explicit OSC 8 target has priority")
+                session.osc8LinksEnabled = false
+                assertEquals(prompt, session.hyperlinkAt(0, 0), "Disabled OSC 8 falls back to the bounded visible region")
+                assertEquals(input, session.hyperlinkAt(prompt.length / columns, prompt.length % columns))
+            } finally { viewport.dispose() }
+        }
+    }
+
+    @Test fun semanticLinkOffsetsPreserveWideCellsCombiningMarksAndWrapSpacers() {
+        val session = TerminalSession(8, 6)
+        val url = "https://a.example/界e\u0301"
+        session.write("\u001b]133;A\u0007$\u001b]133;B\u0007$url\u001b]133;C\u0007/suffix")
+        for (y in 0 until session.lineCount) for (x in 0 until session.columns) {
+            val line = session.line(y)
+            if (line.semanticContent(x) == TerminalSemanticContent.INPUT && line.codePoint(x) != 32)
+                assertEquals(url, session.hyperlinkAt(y, x), "cell=$x,$y")
+        }
+    }
+
     @Test fun osc8HostPolicyAppliesToExistingAndFrozenRowsWithoutRemovingMetadata() {
         val session = TerminalSession(80, 3)
         val viewport = TerminalViewport(session, {})

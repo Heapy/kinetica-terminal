@@ -82,6 +82,17 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Confirmed terminal behavior to implement or reconcile
 
+- [x] Bound detected URLs by OSC 133 semantic-content transitions, including transitions
+      within a row and across soft wraps. Explicit OSC 8 targets retain priority; literal
+      search still spans semantic boundaries. The original `Screen.selectLine` oracle covers
+      26 scenarios / 47 checkpoints / 1392 cell ranges, checking semantic metadata before
+      ranges with whole and bytewise input. It matches libghostty-vt's initial disabled prompt
+      redraw policy and separately exercises OSC 133 redraw `0`, `1` and `last`.
+      Generation is byte-for-byte reproducible. Validation passes 1388 JVM tests, fresh Release
+      JS tests and 18 focused Native tests, including the actual AppKit Cmd-click callback.
+- [ ] Align ordinary line-selection gestures with original `Screen.selectLine` semantic
+      boundaries and whitespace trimming. The detected-link range oracle above uses
+      `whitespace = null`; it does not establish parity for triple-click or dragged selection.
 - [x] Match Ghostty 1.4's macOS safe-opening policy for links supplied by terminal output.
       The default `AppKitTerminalView.openLink` validates web/mail targets, rejects unsafe
       characters, canonicalizes local paths and resolves symlinks, and rejects special,

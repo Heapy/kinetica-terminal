@@ -37,9 +37,20 @@ internal fun terminalHyperlinkAt(row: Int, column: Int, first: Int, last: Int, l
     val cell = line(row)
     val x = if (cell.width(column) == 0) (column - 1).coerceAtLeast(0) else column
     if (osc8Enabled) cell.hyperlink(x)?.let { return it.uri }
-    val logical = terminalLogicalLine(row, first, last, line)
-    val offset = logical.offset(row, x, line)
-    for (match in terminalUrl.findAll(logical.text)) {
+    val range = terminalSemanticLineRange(row, x, first, last, line)
+    var offset = 0
+    val text = buildString {
+        for (y in range.start.line..range.end.line) {
+            val value = line(y)
+            val from = if (y == range.start.line) range.start.column else 0
+            val to = if (y == range.end.line) range.end.column else value.columns
+            for (column in from until to) {
+                if (y == row && column == x) offset = length
+                if (value.width(column) > 0 && !value.isSpacerHead(column)) value.appendTextTo(this, column)
+            }
+        }
+    }
+    for (match in terminalUrl.findAll(text)) {
         var url = match.value.trimEnd('.', ',', ';', ':', '!', '?')
         for ((close, open) in listOf(')' to '(', ']' to '[', '}' to '{')) {
             while (url.endsWith(close) && url.count { it == close } > url.count { it == open }) url = url.dropLast(1)
@@ -52,12 +63,6 @@ internal fun terminalHyperlinkAt(row: Int, column: Int, first: Int, last: Int, l
 private val terminalUrl = Regex("https?://[^\\s<>\"']+", RegexOption.IGNORE_CASE)
 
 private class LogicalTerminalLine(val first: Int, val last: Int, val text: String, val starts: IntArray) {
-    fun offset(row: Int, column: Int, line: (Int) -> TerminalLine): Int {
-        val value = line(row)
-        var offset = starts[row - first]
-        for (x in 0 until column) if (value.width(x) > 0 && !value.isSpacerHead(x)) offset += value.text(x).length
-        return offset
-    }
     fun position(offset: Int, end: Boolean, line: (Int) -> TerminalLine): TerminalCellPosition {
         var low = 0
         var high = starts.size

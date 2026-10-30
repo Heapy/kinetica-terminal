@@ -935,6 +935,10 @@ Visible HTTP(S) text detection remains available. Raw `TerminalLine.hyperlink` m
 retained, so re-enabling the setting restores explicit links; terminal resets preserve this
 host policy. Hosts implementing link previews, highlighting or link-specific copying should
 use `hyperlinkAt` to respect the setting.
+Detected URLs stop at every OSC 133 prompt/input/output boundary, including across soft wraps
+and in synchronized snapshots. Adjacent command text cannot become part of a prompt URL.
+Explicit OSC 8 targets retain priority, and ordinary literal search continues across semantic
+boundaries.
 
 ## Run and verify
 

@@ -1,5 +1,30 @@
 # Ghostty differential oracle
 
+## Semantic link-boundary oracle
+
+`semantic-line-manifest.json` pins original `Screen.selectLine` with the same options used by
+`Surface.linkAtPin`: no whitespace trimming and semantic boundaries enabled. Regenerate with:
+
+```sh
+python3 scripts/generate-terminal-semantic-line.py build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig
+bash scripts/engine.sh test -m kinetica-terminal -p jvm --include-classes='*TerminalSemanticLineTest'
+```
+
+The 26 scenarios / 47 checkpoints compare 1392 cell ranges, replayed both whole and bytewise.
+They cover every ordering of prompt/input/output, mid-row and soft-wrap boundaries, history,
+resize/reflow, wide cells, combining characters, wrap spacers, blank seams, erasure, input-until-EOL,
+alternate screens, resets and explicit prompt redraw modes (`0`, `1`, `last`). Initial prompt
+redraw is disabled, matching the original libghostty-vt C initializer and Kinetica's default;
+the standalone Zig terminal defaults to enabled. Per-cell semantic content and per-row prompt
+markers are compared before ranges, including after resize. Expected ranges come directly from original selections; the helper
+only converts inclusive end columns to exclusive ones. The manifest hashes the generator, helper,
+fixtures and relevant original sources. Generation reproduces byte-for-byte.
+
+This corpus verifies the candidate-text boundaries used for detected links, not equivalence of
+the host URL regex or complete mouse-selection gestures. Common URL tests cover actual matching,
+frozen frames, explicit OSC 8 precedence and the disabled-OSC-8 fallback; the AppKit Cmd-click
+test verifies the bounded target passed to the host callback without opening external applications.
+
 ## Native link-policy oracle
 
 `native-links-manifest.json` pins the original macOS `UntrustedURL.swift` from Ghostty

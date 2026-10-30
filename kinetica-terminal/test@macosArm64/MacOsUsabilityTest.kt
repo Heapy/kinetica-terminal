@@ -168,6 +168,12 @@ class MacOsUsabilityTest {
                 view.menuForEvent(rightClick).performActionForItemAtIndex(1)
                 assertEquals("\u001b[200~вставка\u001b[201~", input.last())
             } finally { clipboard.clearContents(); if (saved.isNotEmpty()) clipboard.writeObjects(saved) }
+            opened.clear(); session.reset()
+            session.write("\u001b]133;A\u0007https://prompt.example\u001b]133;B\u0007/suffix")
+            val promptPoint = view.convertPoint(NSMakePoint(12.0, 5.0), toView = null)
+            view.mouseDown(checkNotNull(NSEvent.mouseEventWithType(NSEventTypeLeftMouseDown, promptPoint,
+                NSEventModifierFlagCommand, 0.0, window.windowNumber, null, 0, 1, 1.0f)))
+            assertEquals(listOf("https://prompt.example"), opened, "Cmd-click must not append input text to the prompt URL")
         } finally { subscription.dispose(); view.dispose(); window.close() }
     }
 
