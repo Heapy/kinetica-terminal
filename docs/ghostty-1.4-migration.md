@@ -176,6 +176,29 @@ Validation passes freshly built Release JS tests, all six background configurati
 six decoration-overlap configurations and all twelve faint font/DPR configurations.
 The implementation change is confined to the browser renderer. Logs are `/tmp/kinetica-background-*`.
 
+The AppKit accessibility follow-up checks the pinned `SurfaceView_AppKit.swift` accessibility
+extension and selection-change subscription. Kinetica previously exposed only visible text and
+selected text. It now also provides help text, character count, visible/selected ranges, line
+lookup, plain substrings and font-attributed substrings, plus 100-ms debounced selection-change
+notifications. Disposal cancels pending notifications; normal output without a selection does
+not announce selection changes. The notification key resolves cell anchors without copying the
+selected scrollback on every damage event.
+
+All ranges consistently use UTF-16 offsets into the visible physical-row text, including emoji
+and combining marks. This deliberately avoids mixing Swift grapheme counts with NSRange indices.
+Cell positions, rather than a substring search, identify repeated text. A selection outside the
+viewport is clipped; rectangular selections expose individual row ranges and an enclosing
+singular range. Clipboard-formatted selected text still joins soft wraps and can include history.
+Held frames retain both their text and selection coordinates. Invalid/overflowing substring
+ranges and ranges splitting a surrogate pair return null.
+
+Validation passes 1505 JVM tests, the freshly built Release JS suite, and 12 focused Native
+tests: five common range/Unicode/wrap/scroll/hold cases, three direct AppKit query/notification
+cases and four existing native usability cases. These are platform-contract regressions based
+on the original query families, not an original-Ghostty AX fixture comparison. Full VoiceOver
+and browser screen-reader acceptance remains open in the production checklist.
+Logs are `/tmp/kinetica-accessibility-*`.
+
 The release behavior review uses the pinned `stream.zig` / `stream_terminal.zig` dispatch,
 keyboard/mouse encoders and graphics implementation as the reference. It checks the terminal
 capabilities and relevant input/state changes against executable regression families rather

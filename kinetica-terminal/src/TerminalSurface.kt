@@ -276,6 +276,13 @@ public class TerminalViewport internal constructor(
     private fun visibleLine(row: Int): TerminalLine = frozen?.lines?.get(row) ?: session.line(firstLine + row)
     public fun visibleText(): String = (0 until rows).joinToString("\n") { visibleLine(it).text() }
 
+    internal fun accessibleText(): TerminalAccessibleText = terminalAccessibleText(rows, firstLine, ::visibleLine, selection())
+
+    // Cheap notification key: never copy a potentially very large scrollback selection
+    // on each damage event. Selection watches invalidate overwritten text themselves.
+    internal fun accessibleSelectionKey(): Pair<Int, TerminalSelectionRange>? =
+        selection()?.takeIf { it.start != it.end && (!it.rectangle || it.start.column != it.end.column) }?.let { firstLine to it }
+
     public fun dispose() {
         if (!disposed) {
             disposed = true; linkHover = null; hoverColumn = -1; hoverRow = -1; observation.dispose(); holdObservation.dispose(); linkPolicyObservation.dispose(); historyCompression.dispose()

@@ -339,6 +339,16 @@ convenience for `BOTH`; an explicit `optionAsAlt` wins. When both Option keys ar
 wins, matching Ghostty; aggregate-only synthetic flags default to left. Drag selection, wheel scrolling,
 Shift+PageUp/PageDown, and accessibility text are available.
 
+The AppKit surface exposes an accessibility text area with a help description, visible text,
+UTF-16 character count/range, line lookup, plain and font-attributed substrings, and selection
+ranges. These ranges index the visible physical rows (including their newline separators);
+scrollback selections are clipped to that text. Rectangular selections expose one range per
+nonempty row through `accessibilitySelectedTextRanges`; the singular range encloses them.
+Selected text retains clipboard formatting, including soft-wrap joining and offscreen selected
+output. Wide/combined glyphs and synchronized-output snapshots preserve their cell mapping.
+Selection-change notifications debounce for 100 ms and are cancelled on disposal. This mirrors
+the query families in Ghostty's AppKit runtime, with consistent UTF-16 offsets for NSRange.
+
 ## Engine and lifecycle
 
 - Confine a session and its observers to one thread. Mounted surfaces and the macOS transport
@@ -994,8 +1004,9 @@ This is an initial VT implementation, not complete xterm conformance. Known limi
   Local selection supports character/word/line/output dragging, configurable word separators
   and autoscroll. Rectangular ranges are exposed through the viewport API and platform
   modifier gestures.
-- Accessibility exposes current screen text; it does not yet provide xterm.js-level navigation
-  and announcement behavior.
+- AppKit accessibility provides the text/selection queries described above. The browser exposes
+  visible output and a focused input element; it does not yet provide xterm.js-level navigation
+  and announcement behavior. Full VoiceOver/browser screen-reader acceptance remains open.
 
 ## Native application shortcuts
 

@@ -77,6 +77,11 @@ public class AppKitTerminalView(
     private val pressedModifiers = mutableSetOf<UShort>()
     private var interpretingKey: Pair<UShort, TerminalKey>? = null
     public var onViewportChanged: (() -> Unit)? = null
+    private var accessibilitySelectionKey: Pair<Int, TerminalSelectionRange>? = null
+    private var accessibilitySelectionTimer: NSTimer? = null
+    internal var notifyAccessibilitySelectionChanged: () -> Unit = {
+        NSAccessibilityPostNotification(this, NSAccessibilitySelectedTextChangedNotification)
+    }
     internal var onScrollActivity: (() -> Unit)? = null
     internal var launchLink: (NSURL) -> Unit = { NSWorkspace.sharedWorkspace.openURL(it) }
     internal var presentLink: (NativeLinkDecision, String, (Boolean) -> Unit) -> TerminalDisposable =
@@ -372,6 +377,15 @@ public class AppKitTerminalView(
 
     private fun invalidateRows() {
         if (!ready || disposed) return
+        val selectionKey = viewport.accessibleSelectionKey()
+        if (selectionKey != accessibilitySelectionKey) {
+            accessibilitySelectionKey = selectionKey
+            accessibilitySelectionTimer?.invalidate()
+            accessibilitySelectionTimer = NSTimer.timerWithTimeInterval(0.1, repeats = false) {
+                accessibilitySelectionTimer = null
+                if (!disposed) notifyAccessibilitySelectionChanged()
+            }.also { NSRunLoop.mainRunLoop.addTimer(it, NSRunLoopCommonModes) }
+        }
         refreshLinkHover()
         updateVisibility()
         onViewportChanged?.invoke()
@@ -882,9 +896,39 @@ public class AppKitTerminalView(
         pasteFilePaths(paths); window?.makeFirstResponder(this); return true
     }
     override fun accessibilityValue(): Any? = viewport.visibleText()
-    override fun accessibilitySelectedText(): String? = viewport.selectedText()
+    override fun accessibilityHelp(): String = "Terminal content area"
+    override fun accessibilitySelectedText(): String? = viewport.selectedText().takeIf { it.isNotEmpty() }
+    override fun accessibilityNumberOfCharacters(): Long = viewport.visibleText().length.toLong()
+    override fun accessibilityVisibleCharacterRange(): CValue<NSRange> =
+        NSMakeRange(0u, viewport.visibleText().length.toULong())
+    override fun accessibilitySelectedTextRange(): CValue<NSRange> {
+        val ranges = viewport.accessibleText().selections
+        return if (ranges.isEmpty()) NSMakeRange(0u, 0u) else
+            NSMakeRange(ranges.first().start.toULong(), (ranges.last().end - ranges.first().start).toULong())
+    }
+    override fun accessibilitySelectedTextRanges(): List<*> = viewport.accessibleText().selections.map {
+        NSValue.valueWithRange(NSMakeRange(it.start.toULong(), (it.end - it.start).toULong()))
+    }
+    override fun accessibilityLineForIndex(index: Long): Long {
+        val text = viewport.visibleText()
+        if (index < 0 || index > text.length) return NSNotFound
+        return text.take(index.toInt()).count { it == '\n' }.toLong()
+    }
+    override fun accessibilityStringForRange(range: CValue<NSRange>): String? {
+        val text = viewport.visibleText()
+        return range.useContents {
+            if (location > text.length.toULong() || length > text.length.toULong() - location) return@useContents null
+            val start = location.toInt(); val end = start + length.toInt()
+            fun splitsSurrogate(index: Int): Boolean = index > 0 && index < text.length &&
+                text[index - 1].isHighSurrogate() && text[index].isLowSurrogate()
+            if (splitsSurrogate(start) || splitsSurrogate(end)) null else text.substring(start, end)
+        }
+    }
+    override fun accessibilityAttributedStringForRange(range: CValue<NSRange>): NSAttributedString? =
+        accessibilityStringForRange(range)?.let { NSAttributedString.create(string = it, attributes = mapOf(NSFontAttributeName to font)) }
     public fun dispose() { if (!disposed) {
         disposed = true; selecting = false; clearLinkPointer(); mouseReporter.reset()
+        accessibilitySelectionTimer?.invalidate(); accessibilitySelectionTimer = null
         hoverWindowObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; hoverWindowObservation = null
         visibilityBinding.dispose()
         visibilityObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; visibilityObservation = null
