@@ -154,3 +154,11 @@ whole string to `fillText` alone cannot provide the required terminal-grid mappi
 The original FreeType/HarfBuzz and CoreText corpora supply shaping evidence. Native
 GPU integration now has real pixel coverage; browser shaping and its renderer pixels
 remain open gates.
+
+The [browser HarfBuzz runtime](../kinetica-terminal/web/harfbuzz/README.md) supplies
+a reproducible full HarfBuzz 11.0.0 WASM build with explicit font ownership, bounded
+memory, raw glyph positions, outline commands and color PNG extraction. Node and
+Chromium both match all 194 original font runs / 1146 glyphs, including fallback
+mark positioning that the probed stock harfbuzzjs build omitted. This runtime still
+needs browser font loading/selection and connection to the common grid mapper and
+WebGL atlas; it does not yet change the active browser renderer.
