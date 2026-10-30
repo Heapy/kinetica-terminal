@@ -131,6 +131,9 @@ public class BrowserTerminalView(
         viewport.setFocused(false)
         input.style.cssText = "position:absolute;opacity:0;width:1px;height:1em;padding:0;border:0;resize:none;overflow:hidden;"
         input.setAttribute("aria-label", "Terminal input")
+        input.setAttribute("aria-keyshortcuts", if (window.navigator.platform.startsWith("Mac"))
+            "Meta+Home Meta+End Meta+PageUp Meta+PageDown Meta+ArrowUp Meta+ArrowDown Meta+Shift+ArrowUp Meta+Shift+ArrowDown"
+        else "Shift+Home Shift+End Shift+PageUp Shift+PageDown Control+Shift+ArrowUp Control+Shift+ArrowDown")
         input.setAttribute("autocomplete", "off"); input.setAttribute("autocapitalize", "off")
         input.setAttribute("spellcheck", "false")
         accessible.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:pre;"
@@ -175,10 +178,8 @@ public class BrowserTerminalView(
             val selection = if (clipboardShortcut && key.key.lowercase() == "c") viewport.selectedText() else ""
             if (selection.isNotEmpty()) {
                 copy(selection); event.preventDefault()
-            } else if (key.shift && key.key == "PageUp") {
-                viewport.scroll(session.rows - 1); event.preventDefault()
-            } else if (key.shift && key.key == "PageDown") {
-                viewport.scroll(1 - session.rows); event.preventDefault()
+            } else if (navigateViewport(key)) {
+                event.preventDefault()
             } else if (session.sendKey(key)) {
                 pressedKeys.add((event.code as? String) ?: key.key)
                 if (key.key !in listOf("Shift", "Control", "Alt", "Meta", "CapsLock", "NumLock", "AltGraph")) {
@@ -458,6 +459,27 @@ public class BrowserTerminalView(
         root.setAttribute("data-terminal-fonts", (shapingFonts?.fontCount ?: 0).toString())
         root.setAttribute("data-terminal-font-bytes", (shapingFonts?.fontBytes ?: 0).toString())
         root.setAttribute("data-terminal-font-memory", (shapingFonts?.memoryBytes ?: 0).toString())
+    }
+
+    /** Ghostty's platform defaults consume navigation even at a history boundary.
+     * Match physical keys and exact modifiers so keypad/TUI bindings still reach the PTY. */
+    private fun navigateViewport(key: TerminalKey): Boolean {
+        if (key.alt) return false
+        val mac = window.navigator.platform.startsWith("Mac") as Boolean
+        val scroll = if (mac) key.meta && !key.control && !key.shift
+            else key.shift && !key.control && !key.meta
+        val prompt = if (mac) key.meta && !key.control
+            else key.control && key.shift && !key.meta
+        when (key.physicalCode?.takeIf { it.isNotEmpty() } ?: key.key) {
+            "Home" -> if (scroll) viewport.scrollTo(session.historySize) else return false
+            "End" -> if (scroll) viewport.scrollTo(0) else return false
+            "PageUp" -> if (scroll) viewport.scroll(session.rows) else return false
+            "PageDown" -> if (scroll) viewport.scroll(-session.rows) else return false
+            "ArrowUp" -> if (prompt) viewport.jumpToPrompt(-1) else return false
+            "ArrowDown" -> if (prompt) viewport.jumpToPrompt(1) else return false
+            else -> return false
+        }
+        return true
     }
 
     private fun key(event: dynamic): TerminalKey {

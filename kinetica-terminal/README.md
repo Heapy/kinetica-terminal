@@ -263,8 +263,15 @@ network connection, or choose an authentication or WebSocket framing protocol.
 
 Keyboard input uses a textarea with IME composition support. Drag to select, use the platform
 copy shortcut to copy, and paste normally. By default, Shift bypasses application mouse reporting for
-local selection; Shift+PageUp/PageDown and the wheel navigate scrollback. Hidden text exposes
-the visible output to assistive technology, without announcing every output chunk.
+local selection; the wheel navigates scrollback. Browser keyboard navigation follows Ghostty's
+platform defaults: on macOS, Cmd+Home/End reach the history boundaries, Cmd+PageUp/PageDown
+scroll one full page, and Cmd+Up/Down (also Cmd+Shift+Up/Down) visit shell prompts. On other
+platforms, use Shift+Home/End, Shift+PageUp/PageDown and Ctrl+Shift+Up/Down respectively.
+These bindings match exact modifiers and physical keys, leaving keypad keys and additional
+modifier combinations available to terminal applications. They stay local under keyboard lock
+and consume no-op navigation at history boundaries. Hidden text exposes the visible output to
+assistive technology, without announcing every output chunk; the input advertises its navigation
+bindings through `aria-keyshortcuts`.
 
 Both hosts preserve numeric-keypad identity in `TerminalKey.keypad`. `ESC =` / `ESC >` and
 DEC mode 66 select application/numeric keypad mode; DECRQM reports the selected state.
@@ -356,6 +363,9 @@ rewrite it; output updates replace only the changed span, preserving DOM reading
 outside that span. `node scripts/verify-terminal-accessibility.mjs` checks Chromium
 accessibility-tree exposure, focus, range stability, synchronized output and disposal with
 both Canvas and WebGL. This does not establish screen-reader announcement/navigation behavior.
+`node scripts/verify-terminal-navigation.mjs` checks platform-specific viewport/prompt shortcuts,
+updated AX output, focus, Kitty press/repeat/release isolation, exact modifier/keypad matching,
+keyboard lock, composition, alternate screens and synchronized-output holds.
 
 ## Engine and lifecycle
 
@@ -1139,6 +1149,7 @@ python3 -m http.server 4173 --bind 127.0.0.1
 node build/artifacts/CompiledWebArtifact/kinetica-terminaljsTestrelease/kotlin-output/kinetica-terminal_test.mjs
 node scripts/verify-terminal.mjs
 node scripts/verify-terminal-accessibility.mjs
+node scripts/verify-terminal-navigation.mjs
 node scripts/verify-terminal-mime-clipboard.mjs
 node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-overline.mjs

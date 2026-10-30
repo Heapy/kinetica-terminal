@@ -60,6 +60,18 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Browser viewport navigation now follows the pinned Ghostty 1.4 defaults: platform-specific
+history boundaries, full-page scrolling and previous/next shell prompts (including the macOS
+Cmd+Shift aliases). Matching uses physical keys and exact modifiers; Kitty press/repeat/release
+events stay local for consumed bindings, while extra modifiers and keypad keys reach applications.
+The input advertises these bindings through `aria-keyshortcuts`. The browser navigation verifier
+checks Mac/Linux bindings in Canvas/WebGL, accessible output after scrolling, retained input
+focus, keyboard lock, IME, atomic holds, alternate screens and missing prompt marks. Fresh Release
+JS tests, the existing browser integration and accessibility stability verifier pass. Evidence:
+`build/reports/terminal-browser-navigation.json` and `terminal-browser-accessibility.json`.
+This closes the viewport/prompt keyboard wiring gap, not screen-reader reading navigation or
+announcement/physical assistive-technology acceptance.
+
 Offline clean-export verification now passes all 1635 JVM tests, fresh Release JS tests
 and all 1773 Native tests, including live TUI cases. The export contains no imported
 project artifacts or upstream clones; IP networking is denied, and existing compiler/
@@ -105,7 +117,8 @@ AX text/log exposure, input focus, range preservation before/after edits, synchr
 holds and disposal in both Canvas and WebGL. Fresh Release JS tests and the full existing
 browser integration suite pass. Evidence is `terminal-browser-accessibility.json`; the
 reproducible check is `scripts/verify-terminal-accessibility.mjs`. Announcements, browser
-navigation and real screen-reader acceptance remain open.
+screen-reader reading navigation and real screen-reader acceptance remain open; viewport/prompt
+keyboard shortcuts are now covered by the navigation increment above.
 
 The next malformed-input probe exposed DCS payload decoding before DECRQSS byte-limit
 validation. DCS now consumes original bytes, preserving C1 bytes as payload and counting
