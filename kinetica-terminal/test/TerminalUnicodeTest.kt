@@ -5,6 +5,36 @@ import kotlin.io.encoding.Base64
 import kotlinx.serialization.json.*
 
 class TerminalUnicodeTest {
+    @Test fun emojiPresentationMatchesEveryArchivedUnicodeCodepoint() {
+        val expected = BooleanArray(0x110000)
+        for (record in unicodeEmojiPresentationCases().lines()) {
+            val bounds = record.substringBefore(';').trim().split("..")
+            val start = bounds.first().toInt(16)
+            val end = bounds.last().toInt(16)
+            for (code in start..end) expected[code] = true
+        }
+        assertTrue(expected.any { it })
+        for (code in expected.indices) {
+            val actual = terminalEmojiPresentation(code)
+            if (actual != expected[code]) {
+                assertEquals(expected[code], actual, "Emoji presentation of U+${code.toString(16)}")
+            }
+        }
+        assertFalse(terminalEmojiPresentation(-1))
+        assertFalse(terminalEmojiPresentation(0x110000))
+        assertFalse(terminalEmojiPresentation(Int.MAX_VALUE))
+    }
+
+    @Test fun emojiPresentationIsIndependentOfWidthAndSelectors() {
+        assertTrue(terminalEmojiPresentation(0x1f600)) // grinning face
+        assertTrue(terminalEmojiPresentation(0x1f1e6)) // regional indicator
+        assertTrue(terminalEmojiPresentation(0x231a)) // watch
+        assertFalse(terminalEmojiPresentation(0x263a)) // text smiley
+        assertFalse(terminalEmojiPresentation(0x2764)) // text heart
+        assertFalse(terminalEmojiPresentation(0x4e00)) // wide CJK
+        assertFalse(terminalEmojiPresentation(0xfe0f)) // selector is not an emoji base
+    }
+
     @Test fun configuredGraphemeModeIsRestoredByReset() {
         val session = TerminalSession(graphemeClustering = true)
         session.write("👨‍👩‍👧‍👦")

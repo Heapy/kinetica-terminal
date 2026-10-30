@@ -29,6 +29,9 @@ internal object GraphemeClass {
 
 internal fun graphemeClass(code: Int): Int = TerminalUnicodeData.properties(code) ushr 4
 
+/** Default emoji presentation, before a cluster's explicit VS15/VS16 override. */
+internal fun terminalEmojiPresentation(code: Int): Boolean = TerminalEmojiPresentationData.contains(code)
+
 /** Bit zero is the boundary; remaining bits are the next state. Initial state is zero. */
 internal fun graphemeStep(previous: Int, next: Int, state: Int, terminalTailoring: Boolean = true): Int {
     val a = graphemeClass(previous)
