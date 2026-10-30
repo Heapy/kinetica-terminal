@@ -4,6 +4,9 @@ import kotlin.math.ceil
 import kotlin.math.round
 
 internal abstract class BrowserTerminalDrawing {
+    protected var fonts: BrowserTerminalFontSet? = null
+    open fun configureFonts(value: BrowserTerminalFontSet?) { fonts = value }
+    open val shaping: Boolean get() = false
     val canvas: dynamic = js("globalThis.document.createElement('canvas')")
     abstract val name: String
     open val glyphCount: Int get() = 0
@@ -103,7 +106,8 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
                     round((y + height) * ratio) / ratio - top)
             }
             override fun text(value: String, x: Double, y: Double, color: Int, style: Int) {
-                context.font = browserFont(size, style, family); context.fillStyle = terminalCssColor(color); context.fillText(value, x, y + 1)
+                context.font = fonts?.cssFont(size, style, family) ?: browserFont(size, style, family)
+                context.fillStyle = terminalCssColor(color); context.fillText(value, x, y + 1)
             }
         }, cellWidth, cellHeight)
         measurement?.submitted(0)
@@ -146,7 +150,8 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         for (row in imageFrame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground) fill(rect)
         layer(TerminalGraphicsLayer.BELOW_TEXT)
         for (row in imageFrame.rows) for (glyph in row.glyphs) {
-            context.font = browserFont(size, glyph.key.style, family); context.fillStyle = terminalCssColor(glyph.color)
+            context.font = fonts?.cssFont(size, glyph.key.style, family) ?: browserFont(size, glyph.key.style, family)
+            context.fillStyle = terminalCssColor(glyph.color)
             context.fillText(glyph.key.text, glyph.x, glyph.y + 1)
         }
         for (row in imageFrame.rows) for (rect in row.decorations) fill(rect)
@@ -154,7 +159,7 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         imageCache.endFrame()
         clear = false
     }
-    override fun dispose() { imageCache.clear(); uploadData = null; canvas.width = 0; canvas.height = 0 }
+    override fun dispose() { imageCache.clear(); uploadData = null; fonts = null; canvas.width = 0; canvas.height = 0 }
 }
 
 /** WebGL2 owns presentation; a detached 2D canvas only rasterizes cache misses. */
@@ -164,7 +169,18 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     private val raster: dynamic = js("globalThis.document.createElement('canvas')")
     private val rasterContext: dynamic = raster.getContext("2d", js("({willReadFrequently:true})"))
     private val atlas = TerminalGlyphAtlas()
-    private val frame = TerminalGpuFrame()
+    private var frame = TerminalGpuFrame()
+    private var shaper: BrowserTerminalShaper? = null
+    override val shaping: Boolean get() = shaper != null
+    override fun configureFonts(value: BrowserTerminalFontSet?) {
+        if (fonts === value) return
+        resetShaping(); super.configureFonts(value)
+        atlas.clear(); resetTextures(); repaint = true
+    }
+    private fun resetShaping() {
+        frame = TerminalGpuFrame()
+        shaper?.dispose(); shaper = null
+    }
     private val batches = TerminalGpuBatches()
     private val textures = mutableListOf<dynamic>()
     private val imageCache = TerminalImageCache<dynamic>(64L * 1024 * 1024,
@@ -192,7 +208,8 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     override var drawCalls: Int = 0
         private set
     private val onLost: (dynamic) -> Unit = {
-        event -> event.preventDefault(); lost = true; imageCache.clear(); imageCache.completed(); gpuTimer?.contextLost(); gpuTimer = null; invalidate()
+        event -> event.preventDefault(); lost = true; imageCache.clear(); imageCache.completed(); gpuTimer?.contextLost(); gpuTimer = null
+        resetShaping(); invalidate()
     }
     private val onRestored: (dynamic) -> Unit = {
         if (!disposed) {
@@ -262,7 +279,7 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
             canvas.style.height = "${(height * ratio).toInt().toDouble() / ratio}px"; repaint = true
         }
         if (this.ratio != ratio || size != fontSize || family != fontFamily || this.cellWidth != cellWidth || this.cellHeight != cellHeight) {
-            atlas.clear(); resetTextures(); repaint = true
+            resetShaping(); atlas.clear(); resetTextures(); repaint = true
         }
         this.width = width; this.height = height; this.ratio = ratio; size = fontSize
         family = fontFamily
@@ -273,6 +290,9 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         restoreError?.let { throw it }
         if (lost || disposed || suspended || width <= 0 || height <= 0) return
         if (program == null) initializeResources()
+        if (shaper == null) fonts?.createShaper(family, size * ratio)?.let {
+            shaper = it; frame = TerminalGpuFrame(it::resolve, it::shape); repaint = true
+        }
         val measurement = probe.begin(viewport, name)
         if (repaint) { viewport.markAll(); repaint = false }
         val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, ratio, viewport.columns, viewport.rows) }
@@ -366,6 +386,11 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
         gl.texSubImage2D(gl.TEXTURE_2D, 0, entry.x, entry.y, bitmap.width, bitmap.height, gl.RGBA, gl.UNSIGNED_BYTE, unsignedBytes(bitmap.rgba))
     }
     private fun rasterize(key: GlyphKey): GlyphBitmap {
+        if (key.font >= 0) {
+            val bitmap = checkNotNull(shaper).rasterize(key, raster, rasterContext, cellHeight * ratio, atlas.size - 2)
+            rasterizations++
+            return bitmap
+        }
         val width = ceil(cellWidth * key.columns * ratio).toInt().coerceAtLeast(1)
         val height = ceil(cellHeight * ratio).toInt().coerceAtLeast(1)
         raster.width = width; raster.height = height
@@ -389,13 +414,15 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
             textures.forEach { gl.deleteTexture(it) }; gl.deleteBuffer(buffer); gl.deleteVertexArray(vao); gl.deleteProgram(program)
         }
         program = null; buffer = null; vao = null; viewportUniform = null; texturedUniform = null
-        textures.clear(); atlas.clear(); raster.width = 0; raster.height = 0; canvas.width = 0; canvas.height = 0
+        textures.clear(); atlas.clear(); resetShaping()
+        raster.width = 0; raster.height = 0; canvas.width = 0; canvas.height = 0
     }
 
     override fun dispose() {
         if (disposed) return
         disposed = true
         releaseResources()
+        fonts = null
         canvas.removeEventListener("webglcontextlost", onLost); canvas.removeEventListener("webglcontextrestored", onRestored)
     }
 

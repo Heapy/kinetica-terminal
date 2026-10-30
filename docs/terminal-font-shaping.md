@@ -1,8 +1,8 @@
 # Terminal font shaping
 
 The Metal renderer shapes multi-cell runs and rasterizes individual glyphs. WebGL
-still uses one terminal grapheme per `GlyphKey`, so browser programming ligatures
-remain an open compatibility requirement. Software text grouping passes some longer
+does the same when its host installs SFNT faces with `configureShapingFonts`;
+CSS-only system-font configurations retain the per-grapheme path. Software text grouping passes some longer
 strings to the platform, but does not provide Ghostty's font selection, cluster
 mapping and alignment to terminal cells.
 
@@ -18,7 +18,7 @@ run planner preserves style, cursor, selection and fallback-font boundaries whil
 allowing background changes, and excludes geometric block drawing from font glyphs.
 Shaped atlas entries identify a face and glyph, carry pixel bearings and offsets,
 and clip both geometry and UVs to the run and row without rescaling device pixels.
-WebGL keeps the per-cell path until it supplies those callbacks.
+Both Metal and the configured WebGL shaper supply those callbacks.
 Common tests compare primary-font run boundaries and cluster inputs in 42 original
 Ghostty cases, and verify fallback substitution, clean-row retention and pixel clipping.
 Validation: 1429 JVM tests, fresh Release JS tests and the Chromium WebGL glyph
@@ -47,6 +47,34 @@ reuse, fractional metrics, color emoji, images, and font/visibility resets. A re
 isolated window presents output on its first show and again after being hidden.
 The additional window checks cover continuous resize, retained frames, occlusion,
 visibility reporting, window-size requests and existing navigation interactions.
+
+## Browser GPU integration
+
+`BrowserTerminalFontSet` owns a self-hosted HarfBuzz runtime, immutable font sources
+and uniquely named CSS FontFaces for measurement, IME and software fallback.
+Loading/replacement is atomic; stale and failed requests dispose their resources.
+`BrowserTerminalShaper` resolves a face for the entire grapheme using the pinned
+Unicode Emoji_Presentation table and explicit selectors, then regular-style and
+missing-glyph fallback. Its resolution cache is limited to 512 entries. Raw 26.6
+advances and offsets round separately, as in original Ghostty, before the common
+cluster-to-grid mapper runs. Font-size/scale/family changes, hiding, context loss
+and disposal invalidate face IDs together with the atlas.
+
+The rasterizer draws tight individual outlines or decodes embedded color PNGs
+through the shared bounded decoder. It records bearings relative to the primary
+font baseline; physical atlas pixels remain unscaled during WebGL sampling.
+`scripts/verify-terminal-shaping.mjs` loads original hash-verified fonts and checks
+the active WebGL surface at DPR 1, 1.25 and 2: repeated glyphs are pixel-identical,
+`F`, `g` and `é` match an independent full-canvas CPU outline reference within two
+color levels, and color emoji reach the framebuffer. The test also checks VS15/16,
+background/style/cursor run boundaries, failed and superseded loads, font size,
+hide/restore, context loss/recovery, clearing and view disposal. No test may pass
+by silently switching to the software painter.
+
+Still open: demo font delivery/default configuration, broader live selection and
+long-run coverage, and the final comparison of glyph fitting and color-font formats
+with Ghostty's renderer constraints. These are not established by the basic pixel
+and lifecycle checks above.
 
 ## Original reference
 
@@ -151,14 +179,13 @@ run/glyph expectations remain unchanged; the corpus adds raw shaping data.
 An isolated probe of installed Chromium 149 found only the standard Canvas
 `TextMetrics` fields, with no glyph-index or cluster-mapping API exposed. Passing a
 whole string to `fillText` alone cannot provide the required terminal-grid mapping.
-The original FreeType/HarfBuzz and CoreText corpora supply shaping evidence. Native
-GPU integration now has real pixel coverage; browser shaping and its renderer pixels
-remain open gates.
+The original FreeType/HarfBuzz and CoreText corpora supply shaping evidence. Native and configured browser
+GPU integration now have real pixel coverage. The broader browser gates listed
+above remain open.
 
 The [browser HarfBuzz runtime](../kinetica-terminal/web/harfbuzz/README.md) supplies
 a reproducible full HarfBuzz 11.0.0 WASM build with explicit font ownership, bounded
 memory, raw glyph positions, outline commands and color PNG extraction. Node and
 Chromium both match all 194 original font runs / 1146 glyphs, including fallback
-mark positioning that the probed stock harfbuzzjs build omitted. This runtime still
-needs browser font loading/selection and connection to the common grid mapper and
-WebGL atlas; it does not yet change the active browser renderer.
+mark positioning that the probed stock harfbuzzjs build omitted. The runtime is connected
+to the active WebGL renderer through the explicitly loaded font set described above.

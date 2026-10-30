@@ -2,6 +2,7 @@ package io.heapy.kinetica.terminal
 
 import org.w3c.dom.Element
 import kotlin.math.floor
+import kotlin.js.Promise
 
 /** A framework-independent terminal surface. Append [view] to a sized DOM container.
  * Dispose the surface before removing its element; the application owns the session/transport. */
@@ -43,6 +44,8 @@ public class BrowserTerminalView(
     private val measureContext: dynamic = document.createElement("canvas").getContext("2d")
     private var fontSize = 14.0
     private var fontFamily: String? = null
+    private var shapingFonts: BrowserTerminalFontSet? = null
+    private var fontLoadGeneration = 0
     private var cellWidth = 8.0
     private var cellHeight = 18.0
     private var pixelRatio = 0.0
@@ -308,7 +311,36 @@ public class BrowserTerminalView(
         if (fontSize != size || fontFamily != family) { fontSize = size; fontFamily = family; pixelRatio = 0.0; resize() }
     }
 
-    private fun font(style: Int = 0): String = browserFont(fontSize, style, fontFamily)
+    /** Load a self-hosted terminal-harfbuzz.mjs and SFNT faces for WebGL shaping.
+     * A failed load leaves the previous set active. A newer load, clear or dispose
+     * supersedes this request; its promise rejects and its resources are released.
+     * The view owns the loaded resources. CSS-only system fonts retain legacy rendering. */
+    public fun configureShapingFonts(moduleUrl: String, fonts: List<BrowserTerminalFont>): Promise<Unit> {
+        check(!disposed)
+        val generation = ++fontLoadGeneration
+        return BrowserTerminalFontSet.load(moduleUrl, fonts) { !disposed && generation == fontLoadGeneration }.then { loaded ->
+            if (disposed || generation != fontLoadGeneration) {
+                loaded.dispose()
+                error("Terminal font load was superseded")
+            }
+            val previous = shapingFonts
+            drawing.configureFonts(loaded)
+            shapingFonts = loaded
+            previous?.dispose()
+            pixelRatio = 0.0; viewport.markAll(); resize(); schedule()
+        }
+    }
+
+    /** Cancel pending loads and return to CSS/system-font rendering. */
+    public fun clearShapingFonts() {
+        fontLoadGeneration++
+        drawing.configureFonts(null)
+        shapingFonts?.dispose(); shapingFonts = null
+        if (!disposed) { pixelRatio = 0.0; viewport.markAll(); resize(); schedule() }
+    }
+
+    private fun font(style: Int = 0): String = shapingFonts?.cssFont(fontSize, style, fontFamily)
+        ?: browserFont(fontSize, style, fontFamily)
 
     private fun configureCanvas() {
         canvas.style.cssText = "position:absolute;inset:0;"
@@ -375,7 +407,8 @@ public class BrowserTerminalView(
                     if (rendering != TerminalRendering.AUTO || drawing.name == "canvas2d") throw error
                     root.setAttribute("data-terminal-rendering-error", error.message.orEmpty())
                     val previous = canvas
-                    drawing.dispose(); drawing = CanvasTerminalDrawing(renderProbe); configureCanvas()
+                    drawing.dispose(); drawing = CanvasTerminalDrawing(renderProbe)
+                    drawing.configureFonts(shapingFonts); configureCanvas()
                     root.replaceChild(canvas, previous)
                     viewport.markAll(); resize(); drawing.draw(viewport)
                 }
@@ -396,6 +429,10 @@ public class BrowserTerminalView(
         root.setAttribute("data-terminal-image-bytes", drawing.imageCacheBytes.toString())
         root.setAttribute("data-terminal-image-tiles", drawing.imageTileCount.toString())
         root.setAttribute("data-terminal-image-uploads", drawing.imageUploads.toString())
+        root.setAttribute("data-terminal-shaping", drawing.shaping.toString())
+        root.setAttribute("data-terminal-fonts", (shapingFonts?.fontCount ?: 0).toString())
+        root.setAttribute("data-terminal-font-bytes", (shapingFonts?.fontBytes ?: 0).toString())
+        root.setAttribute("data-terminal-font-memory", (shapingFonts?.memoryBytes ?: 0).toString())
     }
 
     private fun key(event: dynamic): TerminalKey {
@@ -554,6 +591,8 @@ public class BrowserTerminalView(
         frame?.let { window.cancelAnimationFrame(it) }; accessibilityTimer?.let { window.clearTimeout(it) }
         listeners.forEach { it() }; listeners.clear()
         drawing.dispose()
+        fontLoadGeneration++
+        shapingFonts?.dispose(); shapingFonts = null
     }
 }
 

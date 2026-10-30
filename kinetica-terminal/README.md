@@ -181,6 +181,40 @@ that element, measures its monospace font, and scales the canvas for device pixe
 Each mounted view currently determines the dimensions of its session; use separate sessions
 for independently sized terminals.
 
+To shape programming ligatures and whole graphemes in WebGL, serve the checked-in
+`web/harfbuzz/` directory (including licenses) and supply the actual SFNT font files:
+
+```kotlin
+surface.configureShapingFonts("/assets/harfbuzz/terminal-harfbuzz.mjs", listOf(
+    BrowserTerminalFont("JetBrains Mono", regularFontBytes),
+    BrowserTerminalFont("JetBrains Mono", boldFontBytes, style = TerminalStyle.BOLD),
+    BrowserTerminalFont("Noto Color Emoji", colorEmojiBytes,
+        presentation = BrowserTerminalFontPresentation.EMOJI),
+    BrowserTerminalFont("Noto Emoji", textEmojiBytes),
+)).then { surface.configureFont("JetBrains Mono", 14.0) }
+// surface.clearShapingFonts() restores CSS/system-font rendering.
+```
+
+The method returns a promise and installs the whole set only after validation and
+CSS FontFace loading succeed. Failure preserves the previous set. A newer load,
+clear or disposal supersedes pending loads, whose promises reject. The view owns
+the runtime and registered CSS faces; `dispose()` releases them. Source objects
+copy their input bytes. Each set accepts at most 64 faces, 32 MiB per face and
+64 MiB total source bytes; WASM memory is capped at 128 MiB. CSS FontFace storage,
+the retained source bytes and the glyph atlas are separate allocations. Hiding or
+losing the WebGL context releases active HarfBuzz faces; restoring recreates them
+in the same bounded WASM heap. Clearing or disposing drops that heap as well.
+
+The first regular text face is the default primary family. Configured families
+select their matching faces; other supplied families provide fallback. Missing
+bold/italic faces fall back to regular. Unicode emoji presentation and VS15/VS16
+select text/emoji faces, and each candidate must cover the complete grapheme.
+Outlines and embedded color PNGs are rasterized into the atlas. The Canvas software
+fallback uses the registered CSS faces with its existing text grouping. Without
+an installed font set, or with an unlisted family, the view retains CSS rendering.
+Diagnostics expose `data-terminal-shaping`, `data-terminal-fonts`,
+`data-terminal-font-bytes` (active WASM font data) and `data-terminal-font-memory`.
+
 Wire a binary transport with `BrowserTerminalConnection(session, transport, onInputRejected,
 onFailure)`. The factory supplies browser timers to the common `TerminalStreamConnection`.
 Implement `TerminalByteTransport` for your WebSocket framing:
@@ -1046,6 +1080,7 @@ node scripts/verify-terminal-mime-clipboard.mjs
 node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-blocks.mjs
 node scripts/verify-terminal-glyphs.mjs
+node scripts/verify-terminal-shaping.mjs
 node scripts/verify-terminal-selection.mjs
 node scripts/verify-terminal-links.mjs
 node scripts/verify-terminal-hover.mjs

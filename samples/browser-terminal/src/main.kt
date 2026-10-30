@@ -166,5 +166,17 @@ fun main() {
     api.rerender = { app.render() }; api.dispose = { connection?.dispose(); input.dispose(); app.dispose() }
     api.fontSize = { value: Double -> fontSize = value; app.render() }
     api.fontFamily = { value: String? -> fontFamily = value; app.render() }
+    api.shapingFonts = { moduleUrl: String, values: dynamic ->
+        val fonts = (0 until (values.length as Number).toInt()).map { index ->
+            val value = values[index]
+            val bytes = value.data
+            BrowserTerminalFont(value.family as String,
+                ByteArray((bytes.length as Number).toInt()) { (bytes[it] as Number).toByte() },
+                (value.style as? Number)?.toInt() ?: 0,
+                if (value.emoji == true) BrowserTerminalFontPresentation.EMOJI else BrowserTerminalFontPresentation.TEXT)
+        }
+        checkNotNull(surface).configureShapingFonts(moduleUrl, fonts)
+    }
+    api.clearShapingFonts = { surface?.clearShapingFonts() }
     js("globalThis").kineticaTerminalDemo = api
 }

@@ -5,10 +5,11 @@ Ghostty 1.4.0. `terminal-harfbuzz.mjs` owns fonts and a reusable shaping buffer,
 returns copied glyph positions, outlines, metrics and color PNG data. It has no
 dependency on the Kinetica UI framework or a package CDN.
 
-The runtime is preparation for WebGL shaping, **not yet connected to the terminal
-view**. Font loading/selection, cluster-to-grid mapping and atlas rasterization are
-the next integration steps. CSS system-font family names alone cannot supply the
-font bytes required by HarfBuzz.
+`BrowserTerminalView.configureShapingFonts` connects this runtime to WebGL font
+selection, cluster-to-grid mapping and individual-glyph atlas rasterization. The
+host supplies font bytes and this module's URL; CSS system-font family names alone
+cannot supply the font bytes required by HarfBuzz. See the
+[embedding API](../../README.md#browser) and [integration checks](../../../docs/terminal-font-shaping.md#browser-gpu-integration).
 
 ## API
 
