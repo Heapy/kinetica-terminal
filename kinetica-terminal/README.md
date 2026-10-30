@@ -454,6 +454,12 @@ Shift+PageUp/PageDown, and accessibility text are available.
   intervening prompts; dragging onto a prompt/input region restores the original block.
   Written spaces survive, unwritten trailing cells are excluded, and no final newline is
   added. Without shell markers there is no output block to select.
+- Hosts can extend a character selection with `extendSelection(column, row, rectangle = true)`.
+  Coordinates are cell boundaries, with the larger column excluded. Each selected row uses
+  the same column interval; wide glyphs intersecting either edge are copied and painted whole.
+  Shape changes during a drag, history anchors, autoscroll and frozen frames are supported.
+  Copy follows Ghostty's unwrapped formatter, including its treatment of soft wraps and
+  trailing unwritten cells. Platform modifier gestures are still being integrated.
 - Double clicking a recognized URL or path selects its complete visible text, including matched
   parentheses, query punctuation and path spaces, across soft wraps. Releasing without moving retains that
   selection; dragging resumes word selection. OSC 8 labels still use their visible text and
@@ -910,8 +916,9 @@ This is an initial VT implementation, not complete xterm conformance. Known limi
   DECRQSS supports cursor style, SGR attributes and vertical/horizontal margins;
   its SGR report omits underline color, matching the pinned Ghostty reference.
 - Mouse input surfaces support clicks, dragging, wheel and all-motion tracking.
-  Local selection supports character/word/line dragging and autoscroll; rectangular selection
-  and configurable word separators are not implemented.
+  Local selection supports character/word/line/output dragging, configurable word separators
+  and autoscroll. Rectangular ranges are exposed through the viewport API; platform modifier
+  gestures are still being integrated.
 - Accessibility exposes current screen text; it does not yet provide xterm.js-level navigation
   and announcement behavior.
 

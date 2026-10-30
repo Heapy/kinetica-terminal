@@ -11,7 +11,8 @@ internal data class TerminalCellPosition(val line: Int, val column: Int) : Compa
         if (line != other.line) line.compareTo(other.line) else column.compareTo(other.column)
 }
 
-internal data class TerminalSelectionRange(val start: TerminalCellPosition, val end: TerminalCellPosition)
+internal data class TerminalSelectionRange(val start: TerminalCellPosition, val end: TerminalCellPosition,
+    val rectangle: Boolean = false)
 
 /** Row references are anchors, not snapshots: selected cells invalidate before being overwritten.
  * Watches grow/shrink only at the selection's edges. Ordinary scrolling resolves history anchors
@@ -29,8 +30,11 @@ internal class TerminalSelection(
     private inner class Watch(val row: TerminalLine) {
         var first = 0
         var end = row.columns + 1
+        var boundary = false
         val recycle = row.recycleEpoch
-        val subscription = row.observeText { from, to -> if (from < end && to > first) invalid = true }
+        val subscription = row.observeText { from, to ->
+            if (from < end && to > first || boundary && from <= row.columns && to > row.columns) invalid = true
+        }
     }
     private val watches = ArrayDeque<Watch>()
     private var watchFirst = 0
@@ -67,8 +71,17 @@ internal class TerminalSelection(
         setRange(link?.range ?: unit ?: TerminalSelectionRange(origin.start, origin.start))
     }
 
-    fun extend(position: TerminalCellPosition) {
+    fun extend(position: TerminalCellPosition, rectangle: Boolean = false) {
         reconcile()
+        if (mode == TerminalSelectionMode.CHARACTER && rectangle) {
+            val origin = anchorStart?.position() ?: return
+            val y = position.line.coerceIn(firstLine(), lastLine())
+            val x = position.column.coerceIn(0, line(y).columns)
+            setRange(TerminalSelectionRange(
+                TerminalCellPosition(minOf(origin.line, y), minOf(origin.column, x)),
+                TerminalCellPosition(maxOf(origin.line, y), maxOf(origin.column, x)), rectangle = true))
+            return
+        }
         if (mode == TerminalSelectionMode.OUTPUT) {
             val origin = clickAnchor?.position() ?: return
             val initial = terminalOutputRange(origin, firstLine(), lastLine(), line) ?: return
@@ -111,7 +124,7 @@ internal class TerminalSelection(
     fun text(): String {
         val range = range() ?: return ""
         if (range.start == range.end) return ""
-        if (mode != TerminalSelectionMode.CHARACTER) return terminalSelectionText(range, line)
+        if (range.rectangle || mode != TerminalSelectionMode.CHARACTER) return terminalSelectionText(range, line)
         return buildString {
             for (y in range.start.line..range.end.line) {
                 val row = line(y)
@@ -149,7 +162,7 @@ internal class TerminalSelection(
         }
         val delta = index - watchFirst
         watchFirst = index
-        bounds = TerminalSelectionRange(old.start.copy(line = old.start.line + delta), old.end.copy(line = old.end.line + delta))
+        bounds = old.copy(start = old.start.copy(line = old.start.line + delta), end = old.end.copy(line = old.end.line + delta))
     }
 
     private fun setRange(range: TerminalSelectionRange) {
@@ -163,9 +176,23 @@ internal class TerminalSelection(
         if (watches.isEmpty()) watchFirst = first
         while (watchFirst > first) { watchFirst--; watches.addFirst(Watch(line(watchFirst))) }
         while (watchFirst + watches.size <= end) watches.addLast(Watch(line(watchFirst + watches.size)))
-        watches.first().first = range.start.column
-        // Include the hard/soft line boundary only when copying it matters.
-        watches.last().end = range.end.column
+        if (range.rectangle || bounds?.rectangle == true) {
+            for ((offset, watch) in watches.withIndex()) {
+                val row = watch.row
+                val from = range.start.column
+                val to = range.end.column
+                watch.first = if (!range.rectangle) 0 else
+                    if (from < row.columns && row.width(from) == 0) from - 1 else from
+                watch.end = if (!range.rectangle) row.columns + 1 else
+                    if (to < row.columns && row.width(to) == 0) to + 1 else to
+                watch.boundary = range.rectangle && offset < watches.size - 1
+            }
+        }
+        if (!range.rectangle) {
+            watches.first().first = range.start.column
+            // Include the hard/soft line boundary only when copying it matters.
+            watches.last().end = range.end.column
+        }
         bounds = range
     }
 
@@ -201,13 +228,15 @@ internal class TerminalSelection(
 // ScreenFormatter's plain, unwrapped, untrimmed output: written spaces survive;
 // trailing empty cells/rows do not. No newline is synthesized after the selection.
 internal fun terminalSelectionText(range: TerminalSelectionRange, line: (Int) -> TerminalLine): String = buildString {
+    if (range.rectangle && range.start.column == range.end.column) return@buildString
     var blankRows = 0
     var blankCells = 0
     for (y in range.start.line..range.end.line) {
         val row = line(y)
-        val from = if (y == range.start.line) range.start.column else 0
-        val to = if (y == range.end.line) range.end.column else row.columns
-        if (y == range.start.line && row.isSpacerHead(from)) continue
+        var from = if (range.rectangle || y == range.start.line) range.start.column else 0
+        val to = if (range.rectangle || y == range.end.line) range.end.column else row.columns
+        if ((range.rectangle || y == range.start.line) && row.isSpacerHead(from)) continue
+        if (from < row.columns && row.width(from) == 0) from--
         if ((from until to).none { row.hasText(it) && !row.isSpacerHead(it) }) { blankRows++; continue }
         repeat(blankRows) { append('\n') }; blankRows = if (row.wrapped) 0 else 1
         if (y == range.start.line || !line(y - 1).wrapped) blankCells = 0

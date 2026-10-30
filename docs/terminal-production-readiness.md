@@ -1416,8 +1416,10 @@ assertion failed once; repeated runs passed, and it now awaits observed scroll p
 testing cancellation rather than assuming a timer fires within 120 ms. This is not latency
 evidence. Reports and inspected screenshots are under `build/reports/terminal-selection/`.
 The existing browser keypad/IME, binary mouse/chord, focus, context-loss and rendering suite
-also passes. Rectangular selection, broader keyboard acceptance
-and assistive-technology navigation remain outside this completed selection-anchor gate.
+also passes. The shared viewport now supports rectangular ranges with original-reference
+copy checks, per-row mutation watches, wide-glyph highlighting and frozen/autoscroll tests.
+Rectangular platform gestures, broader keyboard acceptance and assistive-technology
+navigation remain outside this completed selection-anchor gate.
 
 Unicode properties are generated from seven archived, hashed UCD 18.0.0 snapshot
 files pinned by Ghostty's uucode dependency. All 853 original grapheme boundary

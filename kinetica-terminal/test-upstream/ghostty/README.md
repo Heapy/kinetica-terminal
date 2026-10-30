@@ -83,6 +83,12 @@ output before the first prompt, missing prompts, blank output, continuation prom
 same-row semantic changes, wide glyphs and written spaces. Output drags restore the original
 block when their target has no selectable output. The manifest pins `input/key_mods.zig`;
 AppKit and browser event tests separately verify the platform-specific modified triple-click.
+The same snapshots also compare 6804 original rectangular `Selection` ranges and their
+`selectionString(trim = false)` results. Each is replayed with all four corner orientations.
+This covers geometry and plain-text formatting, including wide tails, wrap spacers, soft
+wraps, blank cells and history. It does not yet cover rectangular pointer thresholds or
+platform modifier dispatch. Kotlin fixture literals are split below the JVM constant-size
+limit by the generator, then reassembled without changing their JSON contents.
 Common URL tests cover actual matching,
 frozen frames, explicit OSC 8 precedence and the disabled-OSC-8 fallback; the AppKit Cmd-click
 test verifies the bounded target passed to the host callback without opening external applications.

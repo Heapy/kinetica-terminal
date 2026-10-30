@@ -132,6 +132,7 @@ public class TerminalViewport internal constructor(
     private var draggingSelection = false
     private var promptClickCandidate: Pair<Int, Int>? = null
     private var dragColumn = 0
+    private var dragRectangle = false
     private var dragRow = 0
     private var dragTimer: TerminalDisposable? = null
     private var disposed = false
@@ -283,16 +284,19 @@ public class TerminalViewport internal constructor(
         cancelSelectionDrag()
         frozen?.let { liveSelection.clear(); it.inheritedRange = null; it.inheritedText = null }
         activeSelection.begin(position(column, row), mode)
-        draggingSelection = true; dragColumn = column; dragRow = row
+        draggingSelection = true; dragColumn = column; dragRow = row; dragRectangle = false
         promptClickCandidate = if (mode == TerminalSelectionMode.CHARACTER && frozen == null &&
             column in 0 until columns && row in 0 until rows) column to row else null
         markAll()
     }
-    public fun extendSelection(column: Int, row: Int) {
+    public fun extendSelection(column: Int, row: Int) { extendSelection(column, row, rectangle = false) }
+    /** Extend by cell boundaries; rectangle applies only to CHARACTER gestures.
+     * The shape may change during a drag. Word, line and output gestures keep their granularity. */
+    public fun extendSelection(column: Int, row: Int, rectangle: Boolean) {
         if (disposed || !draggingSelection) return
         if (promptClickCandidate != (column to row)) promptClickCandidate = null
-        dragColumn = column; dragRow = row
-        activeSelection.extend(position(column, row)); updateDragScroll(); markAll()
+        dragColumn = column; dragRow = row; dragRectangle = rectangle
+        activeSelection.extend(position(column, row, rectangle), rectangle); updateDragScroll(); markAll()
     }
     /** Consume a held local pointer gesture and select the word at its original press.
      * Returns true for a consumed gesture even when an unwritten cell has no word;
@@ -312,7 +316,7 @@ public class TerminalViewport internal constructor(
     private fun finishSelection(column: Int, row: Int, reportPromptClick: Boolean): Boolean {
         // Release alone must not synthesize a drag: a double-click link override
         // persists until an actual movement resumes word-wise selection.
-        if (column != dragColumn || row != dragRow) extendSelection(column, row)
+        if (column != dragColumn || row != dragRow) extendSelection(column, row, dragRectangle)
         val range = activeSelection.range()
         val report = reportPromptClick && !disposed && frozen == null && promptClickCandidate != null &&
             (range == null || range.start == range.end)
@@ -426,7 +430,7 @@ public class TerminalViewport internal constructor(
             if (!disposed && draggingSelection && frozen == null) {
                 scrollOffset = (scrollOffset + dragScrollAmount()).coerceIn(0, session.historySize)
                 rememberScrollAnchor(); resetBlink()
-                activeSelection.extend(position(dragColumn, dragRow))
+                activeSelection.extend(position(dragColumn, dragRow, dragRectangle), dragRectangle)
                 if (!activeSelection.hasAnchor) cancelSelectionDrag() else updateDragScroll()
                 markAll()
             }
@@ -533,11 +537,17 @@ public class TerminalViewport internal constructor(
         }
     }
 
-    private fun position(column: Int, row: Int) = TerminalCellPosition(
-        firstLine + row.coerceIn(0, rows - 1), when { row < 0 -> 0; row >= rows -> columns; else -> column.coerceIn(0, columns) })
+    private fun position(column: Int, row: Int, rectangle: Boolean = false) = TerminalCellPosition(
+        firstLine + row.coerceIn(0, rows - 1), when { rectangle -> column.coerceIn(0, columns)
+            row < 0 -> 0; row >= rows -> columns; else -> column.coerceIn(0, columns) })
     private fun selection(): TerminalSelectionRange? = frozen?.inheritedRange ?: activeSelection.range()
     private fun selected(selection: TerminalSelectionRange?, row: Int, column: Int): Boolean {
         if (selection == null) return false
+        if (selection.rectangle) {
+            if (row !in selection.start.line..selection.end.line || selection.start.column == selection.end.column) return false
+            val width = maxOf(1, visibleLine(row - firstLine).width(column))
+            return column < selection.end.column && column + width > selection.start.column
+        }
         val p = TerminalCellPosition(row, column)
         return p >= selection.start && p < selection.end
     }

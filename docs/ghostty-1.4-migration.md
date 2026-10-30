@@ -27,6 +27,17 @@ Sources: [release notes](https://ghostty.org/docs/install/release-notes/1-4-0),
 - [x] Run shared JVM/JS checks, relevant Native tests and fresh browser rendering/input checks for the C-reference migration.
 - [ ] Complete the release-note/source audit for remaining emulation and input differences.
 
+- [x] Add rectangular ranges to the shared selection engine and viewport API. Original
+      Ghostty supplies 6804 rectangle/text expectations, checked in four corner orientations
+      with whole-stream and bytewise input. Regression tests cover per-row wide-glyph
+      highlighting, mutation watches, dynamic shape changes, frozen frames, history anchors
+      and autoscroll without changing columns.
+      Validation: 1404 JVM tests, fresh Release JS tests and existing Canvas/WebGL gesture
+      regressions. The rectangle corpus regenerates byte-for-byte. Browser gesture checks
+      here cover existing modes; rectangular platform events remain the next gate.
+- [ ] Connect rectangular pointer gestures with original pixel thresholds and platform
+      modifier policy (Option on macOS; Ctrl+Alt elsewhere).
+
 - [x] Select complete command output with Cmd+triple-click on macOS and Ctrl+triple-click
       on other browser platforms, following original `Surface`, `Screen.selectOutput` and
       `SelectionGesture` behavior. Dragging extends by command blocks and returns to the

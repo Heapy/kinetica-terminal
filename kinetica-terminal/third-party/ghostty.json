@@ -9,6 +9,7 @@
     "src/terminal/parse_table.zig",
     "src/terminal/Screen.zig",
     "src/terminal/SelectionGesture.zig",
+    "src/terminal/Selection.zig",
     "src/terminal/selection_codepoints.zig",
     "src/terminal/formatter.zig",
     "src/config/url.zig",

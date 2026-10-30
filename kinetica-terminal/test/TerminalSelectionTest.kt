@@ -3,6 +3,70 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalSelectionTest {
+    @Test fun rectangleAutoscrollPreservesColumnsAndAnchorsThroughOutput() {
+        val session = TerminalSession(8, 3).also { it.scrollbackCompression = false }
+        session.write((0..9).joinToString("\r\n") { "x${it}yz" })
+        val clock = Clock(); val viewport = TerminalViewport(session, {}, clock)
+        try {
+            viewport.beginSelection(1, 1); viewport.extendSelection(3, -1, rectangle = true)
+            assertEquals("7y\n8y", viewport.selectedText())
+            clock.advance(50)
+            assertEquals("6y\n7y\n8y", viewport.selectedText())
+            viewport.endSelection(3, -1)
+            assertEquals(0, clock.pending)
+            session.write("\r\nxAyz")
+            assertEquals("6y\n7y\n8y", viewport.selectedText())
+            viewport.beginSelection(1, 0, TerminalSelectionMode.WORD)
+            viewport.extendSelection(3, 1, rectangle = true)
+            assertEquals("x6yz\nx7yz", viewport.selectedText(), "Rectangle geometry applies only to character gestures")
+        } finally { viewport.dispose() }
+    }
+
+    @Test fun rectanglesCopyAndPaintWholeWideGlyphsOnEachRowAndKeepFrozenShape() {
+        val session = TerminalSession(8, 4)
+        val viewport = TerminalViewport(session, {})
+        try {
+            session.write("a界xy\r\nabc界z\r\n0123456")
+            viewport.beginSelection(2, 0); viewport.extendSelection(4, 2, rectangle = true)
+            assertEquals("界x\nc界\n23", viewport.selectedText())
+            val frame = TerminalGpuFrame(); frame.update(viewport, 8.0, 16.0)
+            assertEquals(listOf(TerminalRect(8.0, 0.0, 24.0, 16.0, session.theme.selection)),
+                frame.rows[0].backgrounds.filter { it.color == session.theme.selection })
+            assertEquals(listOf(TerminalRect(16.0, 16.0, 24.0, 16.0, session.theme.selection)),
+                frame.rows[1].backgrounds.filter { it.color == session.theme.selection })
+            assertEquals(listOf(TerminalRect(16.0, 32.0, 16.0, 16.0, session.theme.selection)),
+                frame.rows[2].backgrounds.filter { it.color == session.theme.selection })
+            session.write("\u001b[?2026h\u001b[Hchanged")
+            assertEquals("界x\nc界\n23", viewport.selectedText())
+            frame.update(viewport, 8.0, 16.0)
+            assertEquals(listOf(TerminalRect(16.0, 32.0, 16.0, 16.0, session.theme.selection)),
+                frame.rows[2].backgrounds.filter { it.color == session.theme.selection })
+            viewport.beginSelection(4, 2); viewport.extendSelection(2, 0, rectangle = true)
+            assertEquals("界x\nc界\n23", viewport.selectedText())
+        } finally { viewport.dispose() }
+    }
+
+    @Test fun rectangleWatchesTrackEachRowAndShapeChangesRestoreInteriorWatches() {
+        val session = TerminalSession(8, 4)
+        val viewport = TerminalViewport(session, {})
+        try {
+            session.write("0123456\r\nabcdefg\r\nABCDEFG")
+            viewport.beginSelection(2, 0); viewport.extendSelection(4, 2, rectangle = true)
+            session.write("\u001b[2;1Hx\u001b[2;7Hy")
+            assertEquals("23\ncd\nCD", viewport.selectedText(), "Writes outside the rectangle preserve it")
+            viewport.extendSelection(4, 2, rectangle = false)
+            assertEquals("23456\nxbcdefy\nABCD", viewport.selectedText())
+            session.write("\u001b[2;1Hz")
+            assertEquals("", viewport.selectedText(), "An interior row becomes fully watched after changing shape")
+            viewport.beginSelection(2, 0); viewport.extendSelection(4, 2, rectangle = true)
+            session.write("\u001b[2;3H!")
+            assertEquals("", viewport.selectedText(), "Every rectangle row watches its selected columns")
+            viewport.beginSelection(2, 0); viewport.extendSelection(4, 2, rectangle = true)
+            session.line(1).wrapped = true
+            assertEquals("", viewport.selectedText(), "A wrap boundary changes copied text")
+        } finally { viewport.dispose() }
+    }
+
     @Test fun outputSelectionExpandsByCommandsAndReturnsToOriginalBlockOnPromptDrag() {
         val session = TerminalSession(30, 6)
         val viewport = TerminalViewport(session, {})

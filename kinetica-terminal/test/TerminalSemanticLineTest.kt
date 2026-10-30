@@ -50,6 +50,20 @@ class TerminalSemanticLineTest {
                     assertEquals(result.getValue("text").jsonPrimitive.content, selection.text(), context)
                 }
                 try {
+                    for ((rectangleIndex, rectangle) in expected.getValue("rectangles").jsonArray.withIndex()) {
+                        val value = rectangle.jsonObject
+                        val p = value.getValue("range").jsonArray.map { it.jsonPrimitive.int }
+                        val range = TerminalSelectionRange(TerminalCellPosition(p[1], p[0]), TerminalCellPosition(p[3], p[2]), true)
+                        for (reverseX in listOf(false, true)) for (reverseY in listOf(false, true)) {
+                            val start = TerminalCellPosition(if (reverseY) p[3] else p[1], if (reverseX) p[2] else p[0])
+                            val end = TerminalCellPosition(if (reverseY) p[1] else p[3], if (reverseX) p[0] else p[2])
+                            selection.begin(start, TerminalSelectionMode.CHARACTER)
+                            selection.extend(end, rectangle = true)
+                            val context = "$label rectangle=$rectangleIndex reverseX=$reverseX reverseY=$reverseY"
+                            assertEquals(range, selection.range(), context)
+                            assertEquals(value.getValue("text").jsonPrimitive.content, selection.text(), context)
+                        }
+                    }
                     for ((cell, selected) in expected.getValue("deepPress").jsonArray.withIndex()) {
                         selection.begin(TerminalCellPosition(cell / session.columns, cell % session.columns), TerminalSelectionMode.CHARACTER)
                         assertTrue(selection.deepPress(), "$label deep press=$cell consumes valid anchor")
