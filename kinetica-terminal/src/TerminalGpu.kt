@@ -5,7 +5,8 @@ import kotlin.math.round
 /** AUTO selects the platform GPU renderer and falls back when it cannot be used. */
 public enum class TerminalRendering { AUTO, GPU, SOFTWARE }
 
-internal data class GlyphKey(val text: String, val columns: Int, val style: Int, val font: Int = -1, val glyph: Int = -1)
+internal data class GlyphKey(val text: String, val columns: Int, val style: Int, val font: Int = -1, val glyph: Int = -1,
+    val constraint: TerminalGlyphConstraint = TerminalGlyphConstraint.NONE)
 internal data class GlyphBitmap(val width: Int, val height: Int, val rgba: ByteArray, val colored: Boolean,
     val left: Int = 0, val top: Int = 0)
 internal data class AtlasGlyph(val page: Int, val x: Int, val y: Int, val width: Int, val height: Int, val colored: Boolean,
@@ -125,9 +126,14 @@ internal class TerminalGpuFrame(
             if (run.font < 0) continue
             for (glyph in shape(run)) {
                 val column = run.offset + glyph.column
-                current.glyphs += TerminalGlyph(GlyphKey("", 0, run.style and (TerminalStyle.BOLD or TerminalStyle.ITALIC),
-                    glyph.font, glyph.glyph), column * cellWidth, row * cellHeight, foreground(column),
-                    glyph.xOffset, glyph.yOffset, run.offset * cellWidth, (run.offset + run.input.columns) * cellWidth)
+                val constraint = terminalGlyphConstraint(line.codePoint(column), glyph.emoji)
+                val available = if (constraint.active) terminalGlyphConstraintWidth(line, column) else 0
+                // Symbol constraints may intentionally use a blank beyond the font run.
+                // Its available span is part of atlas identity because it changes rasterization.
+                val right = maxOf(run.offset + run.input.columns, column + available).coerceAtMost(line.columns)
+                current.glyphs += TerminalGlyph(GlyphKey("", available, run.style and (TerminalStyle.BOLD or TerminalStyle.ITALIC),
+                    glyph.font, glyph.glyph, constraint), column * cellWidth, row * cellHeight, foreground(column),
+                    glyph.xOffset, glyph.yOffset, run.offset * cellWidth, right * cellWidth)
             }
         }
         return true

@@ -169,28 +169,42 @@ internal class BrowserTerminalShaper(
                 advance.toDouble(), (x + pixel(value.xOffset)).toDouble(), (y + pixel(value.yOffset)).toDouble())
             x += advance; y += pixel(value.yAdvance)
         }
-        return terminalPositionGlyphs(run.input, raw)
+        val emoji = sources[run.font].presentation == BrowserTerminalFontPresentation.EMOJI
+        return terminalPositionGlyphs(run.input, raw).map { if (emoji) it.copy(emoji = true) else it }
     }
 
-    fun rasterize(key: GlyphKey, canvas: dynamic, context: dynamic, cellHeight: Double, maxSize: Int): GlyphBitmap {
+    fun rasterize(key: GlyphKey, canvas: dynamic, context: dynamic, cellWidth: Double, cellHeight: Double, maxSize: Int): GlyphBitmap {
         check(!disposed)
         val face = faces[key.font]
         val extents: dynamic = face.extents(key.glyph)
         if (extents == null) return GlyphBitmap(1, 1, ByteArray(4), false)
         fun coordinate(value: dynamic) = (value as Number).toDouble() / 64
-        val x = coordinate(extents.xBearing); val y = coordinate(extents.yBearing)
+        val originalX = coordinate(extents.xBearing); val originalY = coordinate(extents.yBearing)
         val w = coordinate(extents.width); val h = coordinate(extents.height)
         if (w == 0.0 || h == 0.0) return GlyphBitmap(1, 1, ByteArray(4), false)
-        val left = floor(minOf(x, x + w)).toInt() - 1
-        val right = ceil(maxOf(x, x + w)).toInt() + 1
-        val bottom = floor(minOf(y, y + h)).toInt() - 1
-        val top = ceil(maxOf(y, y + h)).toInt() + 1
-        val width = right - left; val height = top - bottom
-        check(width in 1..maxSize && height in 1..maxSize) { "Browser glyph exceeds the bounded atlas" }
         val primaryIndex = sources.indexOfFirst { it.family == primary && it.style == 0 }.takeIf { it >= 0 } ?: 0
         val metrics: dynamic = faces[primaryIndex].horizontalExtents()
         val baseline = if (metrics == null) cellHeight * 0.8 else
             (cellHeight + coordinate(metrics.ascender) + coordinate(metrics.descender)) / 2
+        val baselineBottom = cellHeight - baseline.roundToInt()
+        val original = TerminalGlyphBounds(kotlin.math.abs(w), kotlin.math.abs(h), minOf(originalX, originalX + w),
+            minOf(originalY, originalY + h) + baselineBottom)
+        val ascent = if (metrics == null) cellHeight * 0.8 else coordinate(metrics.ascender)
+        val descent = if (metrics == null) -cellHeight * 0.2 else coordinate(metrics.descender)
+        val gap = if (metrics == null) 0.0 else coordinate(metrics.lineGap)
+        val faceHeight = ascent - descent + gap
+        val cap = faces[primaryIndex].nominalGlyph('H'.code)
+        val capExtents: dynamic = if (cap == null) null else faces[primaryIndex].extents(cap)
+        val capHeight = if (capExtents == null) ascent * 0.75 else kotlin.math.abs(coordinate(capExtents.height))
+        val grid = TerminalGlyphMetrics(cellWidth, cellHeight, cellWidth, faceHeight,
+            baselineBottom - (gap / 2 - descent), faceHeight, (2 * capHeight + faceHeight) / 3)
+        val bounds = key.constraint.constrain(original, grid, key.columns)
+        val scaleX = bounds.width / original.width; val scaleY = bounds.height / original.height
+        val x = bounds.x; val y = bounds.y - baselineBottom
+        val left = floor(x).toInt() - 1; val right = ceil(x + bounds.width).toInt() + 1
+        val bottom = floor(y).toInt() - 1; val top = ceil(y + bounds.height).toInt() + 1
+        val width = right - left; val height = top - bottom
+        check(width in 1..maxSize && height in 1..maxSize) { "Browser glyph exceeds the bounded atlas" }
         canvas.width = width; canvas.height = height
         val png: dynamic = face.colorPng(key.glyph)
         if (png != null) {
@@ -200,15 +214,17 @@ internal class BrowserTerminalShaper(
             val source: dynamic = js("globalThis.document.createElement('canvas')")
             try {
                 source.width = image.width; source.height = image.height
-                val ctx = source.getContext("2d")
+                // Keep both sides of the atlas resample on Canvas's CPU path.
+                val ctx = source.getContext("2d", js("({willReadFrequently:true})"))
                 val data = ctx.createImageData(image.width, image.height)
                 for (i in image.data.indices) data.data[i] = image.data[i].toInt() and 255
                 ctx.putImageData(data, 0, 0)
-                context.drawImage(source, x - left, top - y, w, -h)
+                context.drawImage(source, x - left, top - y - bounds.height, bounds.width, bounds.height)
             } finally { source.width = 0; source.height = 0 }
         } else {
             val outline: dynamic = face.outline(key.glyph)
-            context.setTransform(1.0 / 64, 0, 0, -1.0 / 64, -left, top)
+            context.setTransform(scaleX / 64, 0, 0, -scaleY / 64,
+                x - left - original.x * scaleX, top - y + (original.y - baselineBottom) * scaleY)
             context.fillStyle = "white"; context.beginPath()
             var i = 0
             fun next(): Double = (outline[i++] as Number).toDouble()

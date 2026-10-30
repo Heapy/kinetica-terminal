@@ -99,6 +99,28 @@ try {
      let worst=0, mismatch=null;
      for(let y=0;y<reference.height;y++)for(let x=0;x<Math.floor(cellWidth*3*devicePixelRatio);x++)for(let c=0;c<3;c++){const delta=Math.abs(pixel(plain,x,y,c)-expected[(y*width+x)*4+c]);if(delta>worst){worst=delta;mismatch={x,y,c,actual:pixel(plain,x,y,c),expected:expected[(y*width+x)*4+c]};}}
      check(worst<=2,`Outline-to-WebGL pixel mismatch: ${worst}, ${JSON.stringify(mismatch)}`);
+     // Independent full-cell reference: color emoji must cover and center in the
+     // primary face box with Ghostty's 2.5% left/right padding, not be cropped.
+     const fitted=await paint('😀');
+     const emojiFace=trace.faces.findLast(record=>record.bytes===fonts[1].data.length&&!record.disposed).font;
+     const emojiGlyph=emojiFace.nominalGlyph(0x1f600),extents=emojiFace.extents(emojiGlyph);
+     const naturalWidth=Math.abs(extents.width/64),naturalHeight=Math.abs(extents.height/64);
+     const faceHeight=(metrics.ascender-metrics.descender+metrics.lineGap)/64;
+     const scale=Math.min(1.95*cellWidth*devicePixelRatio/naturalWidth,faceHeight/naturalHeight);
+     const fittedWidth=naturalWidth*scale,fittedHeight=naturalHeight*scale;
+     const emojiImage=await createImageBitmap(new Blob([emojiFace.colorPng(emojiGlyph)],{type:'image/png'}));
+     const emojiSource=document.createElement('canvas');emojiSource.width=emojiImage.width;emojiSource.height=emojiImage.height;
+     const emojiContext=emojiSource.getContext('2d',{willReadFrequently:true});emojiContext.drawImage(emojiImage,0,0);emojiImage.close();
+     ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#1e1e1e';ctx.fillRect(0,0,reference.width,reference.height);
+     ctx.drawImage(emojiSource,(2*cellWidth*devicePixelRatio-fittedWidth)/2,
+      baseline-((metrics.ascender+metrics.descender)/64+fittedHeight)/2,fittedWidth,fittedHeight);
+     const emojiExpected=ctx.getImageData(0,0,reference.width,reference.height).data;
+     let emojiWorst=0,emojiMismatch=null;
+     for(let y=0;y<reference.height;y++)for(let x=0;x<Math.floor(cellWidth*3*devicePixelRatio);x++)for(let c=0;c<3;c++) {
+      const delta=Math.abs(pixel(fitted,x,y,c)-emojiExpected[(y*width+x)*4+c]);
+      if(delta>emojiWorst){emojiWorst=delta;emojiMismatch={x,y,c,actual:pixel(fitted,x,y,c),expected:emojiExpected[(y*width+x)*4+c]};}
+     }
+     check(emojiWorst<=3,`Fitted color emoji differs from full-cell reference at DPR ${devicePixelRatio}: ${emojiWorst}, ${JSON.stringify(emojiMismatch)}`);
      await paint('a\x1b[41m===>\x1b[49mb');
      check(trace.calls.some(call=>call.name==='shape'&&call.args[0]==='a===>b'),'Background changes must preserve ligatures');
      await paint('a\x1b[1m===>\x1b[0mb');
@@ -132,7 +154,7 @@ try {
      demo.dispose();check(owned.runtime.memoryBytes===0&&document.fonts.size===originalCssFaces,'View disposal must release font resources');
      failed=false;try{await unfinished;}catch{failed=true;}check(failed,'Disposal must supersede unfinished font loads');
      check(globalThis.shapingTrace.every(entry=>entry.runtime.memoryBytes===0)&&document.fonts.size===originalCssFaces,'No disposed or superseded view may retain font resources');
-     return {ratio:devicePixelRatio,ink,color,worst};
+     return {ratio:devicePixelRatio,ink,color,worst,emojiWorst};
     } finally {gl.drawArraysInstanced=draw;}
    },{names});
    assert.deepEqual(errors,[]);console.log('WebGL shaping:',result);

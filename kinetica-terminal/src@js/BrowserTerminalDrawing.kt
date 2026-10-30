@@ -387,7 +387,7 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
     }
     private fun rasterize(key: GlyphKey): GlyphBitmap {
         if (key.font >= 0) {
-            val bitmap = checkNotNull(shaper).rasterize(key, raster, rasterContext, cellHeight * ratio, atlas.size - 2)
+            val bitmap = checkNotNull(shaper).rasterize(key, raster, rasterContext, cellWidth * ratio, cellHeight * ratio, atlas.size - 2)
             rasterizations++
             return bitmap
         }

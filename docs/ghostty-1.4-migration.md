@@ -149,7 +149,9 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       outlines/color PNGs. Browser pixels and font lifecycle pass at DPR 1, 1.25 and 2.
       The demo now enables a pinned local font set with real style, emoji and CJK faces.
       Default-font checks cover pointer selection, 513-character runs, disposal and
-      failed/corrupt asset fallback. The final glyph fitting/color-format audit remains
+      failed/corrupt asset fallback. Both shaped GPU paths now apply original symbol,
+      emoji and Nerd Font fitting rules; 2,250 geometry cases and 759 terminal rows
+      match the independent original constraint oracle. The color-format audit remains
       open; see the shaping reference.
 - [x] Implement shared hover identity, range tracking and decorations. Reopened implicit
       OSC 8 links remain independent; explicit nonempty IDs match by ID plus URI across

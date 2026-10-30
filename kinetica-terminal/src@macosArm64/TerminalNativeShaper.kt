@@ -23,6 +23,8 @@ internal class TerminalNativeShaper(font: NSFont) {
         return faces[index]
     }
 
+    fun isEmojiFont(index: Int): Boolean = CTFontGetSymbolicTraits(face(index)) and kCTFontColorGlyphsTrait != 0u
+
     /** Resolve one complete terminal grapheme before run boundaries are chosen. */
     fun resolve(text: String): TerminalResolvedFontCell {
         check(!disposed)

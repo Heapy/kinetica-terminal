@@ -1,0 +1,27 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
+  "helperSha256": "9ded10aa6f272389ea75f7bb04b333a4dd98cdfa6d1648129912d9937c9753f1",
+  "generatorSha256": "1b991c125752b12239fe9d79d515e87e08742fe5603d8d7ae3f850989a0ce7ec",
+  "buildTemplateSha256": "9d887a3bfc304a1d8c443656844b01850dfd660103e98b69d8b26def1bbc09a2",
+  "ranges": 459,
+  "constraints": 276,
+  "geometryCases": 2250,
+  "rowCases": 759,
+  "sources": {
+    "src/font/Glyph.zig": "977d93d7a55c82f976880d2d6692ec934abd1e95a236a5db6e5c3dcee5895334",
+    "src/font/Metrics.zig": "cb38c0d9a5799d6b71585d070f12d0809036d082c0fef400aefd1dd1a51bc013",
+    "src/font/nerd_font_attributes.zig": "5697546f6606aaeb230b07ab5649c90e1af1e3ac6657cc37c8c4fcfec2715573",
+    "src/font/nerd_font_tables.zig": "16ba97d3820044de2f8b8ac36d1141d9cf3234f662b226e201ad53003ce5f4be",
+    "src/unicode/symbols_table.zig": "913391113e2715088dbfa9c09363bff4de361228d27d7b4b9db6bb48202ae1c0",
+    "src/unicode/symbols_uucode.zig": "f5f7d25177340eca614c537739f63808a6ad37ea55a5088e87ff319f60ffa484",
+    "src/unicode/lut.zig": "170f7acae4205ec2eb3b63071e61adf56687922cb3100e36a6eb9cf0ecf30b70",
+    "src/build/uucode_config.zig": "6f8f2458d29d63944606fb6fdd3c390c62470f911d24fa731e9aecd8e9329e1a",
+    "src/build/SharedDeps.zig": "946d6d8762629e26fe42b832cf10e329644fe0b6bc41cd9d3f30577692a24488",
+    "build.zig.zon": "195967ceee17309c61737edb8ed0565746a02814a4d3dd1881ef0c39b9e947a4",
+    "src/renderer/cell.zig": "86835a9aebebf969547c4efac3fdb4cbde7c9a6e527c2384b20944685344b3ff",
+    "src/renderer/generic.zig": "07796ed3c5852e834442d64b1b2f79d35868b469b81c69f82bd390dad3896b1e",
+    "src/font/SharedGrid.zig": "772d83dd1203ff60a2244f218108f58e52e51f5793eacdfa3d7d9b90395765be"
+  },
+  "fixtureSha256": "2e330a876e76e238f319466278f6c7fe32707bbd40d38ceeb6e64f21ab917e4e"
+}

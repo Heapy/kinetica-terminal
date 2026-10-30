@@ -11,6 +11,7 @@ import platform.Metal.*
 import platform.QuartzCore.*
 import platform.posix.memcpy
 import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 /** All mutable state is main-thread confined. One asynchronous frame owns the reusable buffers. */
 internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = TerminalRenderProbe(null),
@@ -60,7 +61,8 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     private fun clearShapers() { shapers.values.forEach { it.dispose() }; shapers.clear() }
     internal val shapingFontCount: Int get() = shapers.values.sumOf { it.fontCount }
     private val frame = TerminalGpuFrame({ text, style -> shaper(style).resolve(text) }) { run ->
-        shaper(run.style).shape(run.input, run.font)
+        val current = shaper(run.style)
+        current.shape(run.input, run.font).map { if (current.isEmojiFont(it.font)) it.copy(emoji = true) else it }
     }
     private val batches = TerminalGpuBatches()
     private val textures = mutableListOf<MTLTextureProtocol>()
@@ -360,7 +362,12 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     private fun rasterize(key: GlyphKey): GlyphBitmap {
         val font = fontProvider(fontFamily, fontSize * scale, 0)
         val baseline = (cellHeight * scale + font.ascender + font.descender) / 2.0
-        val bitmap = terminalRasterizeNativeGlyph(shaper(key.style).face(key.font), key.glyph, baseline, atlas.size - 2)
+        val faceHeight = font.ascender - font.descender + font.leading
+        val metrics = TerminalGlyphMetrics(cellWidth * scale, cellHeight * scale, cellWidth * scale, faceHeight,
+            cellHeight * scale - baseline.roundToInt() - (font.leading / 2 - font.descender),
+            faceHeight, (2 * font.capHeight + faceHeight) / 3)
+        val bitmap = terminalRasterizeNativeGlyph(shaper(key.style).face(key.font), key.glyph, baseline, atlas.size - 2,
+            key.constraint, metrics, key.columns)
         rasterizations++
         return bitmap
     }

@@ -87,9 +87,34 @@ graphics layers/resource cleanup. The isolated live PTY run passes Vim, Neovim,
 less and tmux, including Unicode input, mouse targeting and resizing. The repeated
 glyph pixel test separately covers both bundled and system fonts at DPR 1/1.25/2.
 
-Still open: the final comparison of glyph fitting and color-font formats with
-Ghostty's renderer constraints. These are not established by the pixel and
-lifecycle checks above.
+## Glyph fitting
+
+The shaped Metal and WebGL paths now apply Ghostty 1.4's glyph constraints before
+rasterization. Symbol glyphs shrink to their available span; emoji faces use centered
+cover sizing with 2.5% horizontal padding. Generated Nerd Font rules retain group
+geometry, padding, aspect limits, icon heights and stretch alignment to the grid.
+A symbol can use a following blank unless the previous non-graphics symbol prevents
+it. The available span and constraint participate in atlas identity, so inserting a
+neighbor invalidates the fitted glyph without reusing the wider bitmap. Ordinary
+text retains its existing bearings and pixel rasterization.
+
+`scripts/generate-terminal-glyph-constraints.py` executes the pinned original
+`font/Glyph.zig`, Nerd Font lookup and `renderer/cell.zig` width selection. Its
+manifest records upstream source hashes, generator/helper and build template hashes.
+The generated lookup covers every Unicode codepoint using 459 ranges and 276 distinct
+constraints. Common tests compare 2,250 geometry cases and 759 terminal rows with
+the original output, including fractional metrics, negative padding, scale groups,
+wide-font stretch limits, neighboring symbols, graphics, blanks and wide spacers.
+Run with `--check` to rebuild the oracle and verify byte-identical generated files.
+Native tests also compare a fitted atlas glyph with an independent direct CoreText
+transform, alongside the unchanged `F`, `g` and `é` pixel references.
+The WebGL verifier compares a fitted color emoji with an independent full-cell PNG
+reference at DPR 1/1.25/2. Both the intermediate PNG canvas and the atlas rasterizer
+use the CPU Canvas path to keep downsampling consistent before texture upload.
+
+Still open: the color-font format audit, especially browser COLR/SVG coverage.
+The configured browser rasterizer currently consumes outlines and embedded PNGs;
+the CSS-only and software paths do not apply these shaped-atlas constraints.
 
 ## Original reference
 

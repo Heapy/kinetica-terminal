@@ -3,6 +3,40 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalGpuTest {
+    @Test fun symbolFittingUsesAvailableBlankAndChangesAtlasIdentity() {
+        val session = TerminalSession(8, 2)
+        session.write("\u001b[?25l\uea61\r\n\uea61X")
+        val viewport = TerminalViewport(session, {})
+        val frame = TerminalGpuFrame({ text, _ -> TerminalResolvedFontCell(if (text == "X") 1 else 0, text) }) { run ->
+            listOf(TerminalShapedGlyph(run.font, 42, 0, 0, 0))
+        }
+        frame.update(viewport, 8.0, 16.0)
+        val wide = frame.rows[0].glyphs.single()
+        val narrow = frame.rows[1].glyphs.first()
+        assertEquals(2, wide.key.columns)
+        assertEquals(1, narrow.key.columns)
+        assertEquals(16.0, wide.clipRight)
+        assertEquals(8.0, narrow.clipRight)
+        assertNotEquals(wide.key, narrow.key)
+        assertEquals(TerminalGlyphSizing.FIT_COVER1, wide.key.constraint.size)
+        session.write("\u001b[1;2HX")
+        frame.update(viewport, 8.0, 16.0)
+        assertEquals(narrow.key, frame.rows[0].glyphs.first().key)
+        viewport.dispose()
+    }
+
+    @Test fun colorFaceOverridesTheCodepointConstraint() {
+        val session = TerminalSession(4, 1)
+        session.write("\u001b[?25l\u263a")
+        val viewport = TerminalViewport(session, {})
+        val frame = TerminalGpuFrame({ text, _ -> TerminalResolvedFontCell(0, text) }) { run ->
+            listOf(TerminalShapedGlyph(run.font, 42, 0, 0, 0, emoji = true))
+        }
+        frame.update(viewport, 8.0, 16.0)
+        assertEquals(TerminalGlyphConstraint.EMOJI, frame.rows[0].glyphs.single().key.constraint)
+        viewport.dispose()
+    }
+
     @Test fun shapedRunsReplaceCellGlyphsAndRetainCleanRows() {
         val session = TerminalSession(8, 2)
         session.write("\u001b[?25l==\r\nkeep\u001b[1;1H")
