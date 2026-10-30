@@ -83,6 +83,7 @@ public class AppKitTerminalView(
     private var visibilityObservation: NSObjectProtocol? = null
     private val visibilityBinding = session.attachVisibility(false)
     private var visibilityRefreshQueued = false
+    private var graphicsVisible = false
     private val resizeHoldObservation = session.onRenderHold { held ->
         if (!held && ready && !disposed) applyPendingGridSize()
     }
@@ -139,6 +140,7 @@ public class AppKitTerminalView(
             try {
                 val renderer = MetalTerminalDrawing(renderProbe) { if (!disposed) setNeedsDisplay(true) }
                 gpu = renderer
+                renderer.setVisible(false)
                 layerContentsPlacement = NSViewLayerContentsPlacementTopLeft
                 wantsLayer = true
                 layerContentsRedrawPolicy = NSViewLayerContentsRedrawDuringViewResize
@@ -174,7 +176,7 @@ public class AppKitTerminalView(
     override fun viewDidUnhide() { super.viewDidUnhide(); if (ready) refreshVisibilityAfterTransition() }
     private fun refreshVisibilityAfterTransition() {
         if (!ready || disposed) return
-        updateVisibility()
+        if (!updateVisibility()) releaseHiddenResources()
         if (visibilityRefreshQueued) return
         visibilityRefreshQueued = true
         // AppKit can reuse a cached backing surface while completing unhide/attachment.
@@ -190,9 +192,19 @@ public class AppKitTerminalView(
         val owner = window
         val visible = owner != null && owner.visible && !owner.miniaturized &&
             owner.occlusionState and NSWindowOcclusionStateVisible != 0uL && !hiddenOrHasHiddenAncestor
+        if (visible != graphicsVisible) {
+            graphicsVisible = visible
+            gpu?.setVisible(visible)
+            if (!visible) releaseHiddenResources()
+        }
         viewport.setVisible(visible)
         visibilityBinding.setVisible(visible)
         return visible
+    }
+    private fun releaseHiddenResources() {
+        gpu?.setVisible(false)
+        softwareImages.clear(); softwareImagesVisible = false
+        attributes.clear(); colors.clear(); compositionLayer?.string = null
     }
     override fun makeBackingLayer(): CALayer = gpu?.layer ?: super.makeBackingLayer()
     override fun isOpaque(): Boolean = true
@@ -315,7 +327,7 @@ public class AppKitTerminalView(
 
     override fun updateLayer() {
         if (disposed) return
-        updateVisibility()
+        if (!updateVisibility()) return
         gpu?.let { renderer ->
             try {
                 // Metal is the view's backing layer, so there is no separate AppKit
@@ -347,7 +359,9 @@ public class AppKitTerminalView(
 
     override fun drawRect(dirtyRect: CValue<NSRect>) {
         if (disposed) return
-        updateVisibility()
+        // Explicit offscreen snapshots have no window; queued hidden-window draws must
+        // not repopulate the caches just released by the visibility notification.
+        if (!updateVisibility() && (window != null || hiddenOrHasHiddenAncestor)) return
         if (gpu != null) { updateLayer(); return }
         val measurement = renderProbe.begin(viewport, "appkit")
         color(viewport.theme.background).setFill(); NSRectFill(dirtyRect)

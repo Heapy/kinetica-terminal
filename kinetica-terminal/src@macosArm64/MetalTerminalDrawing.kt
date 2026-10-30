@@ -68,6 +68,10 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     private var busy = false
     private var pending = false
     private var disposed = false
+    private var visible = true
+    private var releasePending = false
+    internal val glyphTextureCount: Int get() = textures.size
+    internal val vertexBufferBytes: Long get() = buffers.sumOf { it.length.toLong() }
     private var resetAtlas = true
     private var failure: String? = null
     private var background: Int? = null
@@ -84,6 +88,35 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
     var submittedFrames: Int = 0
         private set
 
+    fun setVisible(visible: Boolean) {
+        if (disposed || this.visible == visible) return
+        this.visible = visible
+        if (!visible) {
+            pending = false; releasePending = true
+            imageCache.clear()
+            if (!busy) releaseResources()
+        } else {
+            layer.device = device as objcnames.protocols.MTLDeviceProtocol
+            layer.drawableSize = NSMakeSize(ceil(width * scale), ceil(height * scale))
+            resetAtlas = true
+        }
+    }
+
+    private fun releaseResources() {
+        check(!busy)
+        releasePending = false
+        imageCache.clear(); imageCache.completed()
+        textures.forEach { it.setPurgeableState(MTLPurgeableStateEmpty) }; textures.clear()
+        buffers.forEach { it.setPurgeableState(MTLPurgeableStateEmpty) }; buffers.clear()
+        atlas.clear(); attributes.clear(); resetAtlas = true
+        if (!visible || disposed) {
+            layer.contents = null
+            // CAMetalLayer ignores a zero drawable size; shrink its pool before detaching the device.
+            layer.drawableSize = NSMakeSize(1.0, 1.0)
+            layer.device = null
+        }
+    }
+
     fun resize(width: Double, height: Double, scale: Double, fontSize: Double, cellWidth: Double, cellHeight: Double,
         managesLayerFrame: Boolean = true, fontFamily: String? = null) {
         if (this.scale != scale || this.fontSize != fontSize || this.fontFamily != fontFamily || this.cellWidth != cellWidth || this.cellHeight != cellHeight) resetAtlas = true
@@ -93,13 +126,13 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
         CATransaction.begin(); CATransaction.setDisableActions(true)
         if (managesLayerFrame) layer.frame = NSMakeRect(0.0, 0.0, width, height)
         layer.contentsScale = scale
-        layer.drawableSize = NSMakeSize(ceil(width * scale), ceil(height * scale))
+        if (visible) layer.drawableSize = NSMakeSize(ceil(width * scale), ceil(height * scale))
         CATransaction.commit()
     }
 
     fun draw(viewport: TerminalViewport, synchronizePresentation: Boolean = false) {
         failure?.let { error(it) }
-        if (disposed || width <= 0 || height <= 0) return
+        if (disposed || !visible || width <= 0 || height <= 0) return
         if (background != viewport.theme.background) {
             background = viewport.theme.background
             val rgb = viewport.theme.background
@@ -139,9 +172,10 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
             NSOperationQueue.mainQueue.addOperationWithBlock {
                 busy = false
                 imageCache.completed()
+                if (releasePending) releaseResources()
                 if (!disposed) {
                     if (message != null) failure = "Terminal Metal frame failed: $message"
-                    if (pending || failure != null) { pending = false; invalidate() }
+                    if (visible && (pending || failure != null)) { pending = false; invalidate() }
                     if (measurement != null) probe.observer?.onGpuTime(measurement.id, gpuTime)
                 }
             }
@@ -318,7 +352,7 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
 
     /** Readback for native pixel tests only; normal presentation only waits under image-budget pressure. */
     internal fun snapshot(viewport: TerminalViewport): ByteArray {
-        check(!busy && !disposed)
+        check(!busy && !disposed && visible)
         val images = prepare(viewport)
         val pixelWidth = ceil(width * scale).toInt(); val pixelHeight = ceil(height * scale).toInt()
         val descriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(MTLPixelFormatBGRA8Unorm,
@@ -336,10 +370,10 @@ internal class MetalTerminalDrawing(private val probe: TerminalRenderProbe = Ter
 
     fun dispose() {
         if (disposed) return
-        disposed = true; pending = false
-        layer.removeFromSuperlayer(); imageCache.clear(); textures.clear(); buffers.clear(); atlas.clear(); attributes.clear()
-        if (!busy) imageCache.completed()
-        // Submitted command buffers retain their resources until completion.
+        disposed = true; pending = false; releasePending = true
+        layer.removeFromSuperlayer(); imageCache.clear()
+        if (!busy) releaseResources()
+        // Keep resources reachable until the submitted command completes, then mark them empty.
     }
 
     companion object {

@@ -50,6 +50,8 @@ class NativeGraphicsRenderingTest {
         val uploads: Int
         fun capture(): ByteArray // RGBA, top-left origin.
         fun scrollTo(offset: Int)
+        fun setVisible(visible: Boolean)
+        fun drawWhileHidden()
         fun dispose()
     }
     private fun metal(scale: Double): Surface = object : Surface {
@@ -67,6 +69,8 @@ class NativeGraphicsRenderingTest {
             for (i in bytes.indices step 4) { val blue = bytes[i]; bytes[i] = bytes[i + 2]; bytes[i + 2] = blue }
         }
         override fun scrollTo(offset: Int) = viewport.scrollTo(offset)
+        override fun setVisible(visible: Boolean) = renderer.setVisible(visible)
+        override fun drawWhileHidden() = renderer.draw(viewport)
         override fun dispose() { renderer.dispose(); viewport.dispose() }
     }
     private fun software(): Surface = object : Surface {
@@ -94,6 +98,8 @@ class NativeGraphicsRenderingTest {
             return bytes
         }
         override fun scrollTo(offset: Int) = view.scrollTo(offset)
+        override fun setVisible(visible: Boolean) { view.hidden = !visible }
+        override fun drawWhileHidden() { capture() }
         override fun dispose() = view.dispose()
     }
 
@@ -107,6 +113,93 @@ class NativeGraphicsRenderingTest {
         (0..3).map { bytes[(y * width + x) * 4 + it].toInt() and 255 }
     private fun Surface.reset() { session.reset(); session.write("\u001b[?25l\u001b]11;#0a14c8\u0007") }
     private fun Surface.expect(color: List<Int>, message: String) = assertEquals(color, pixel(capture(), width), message)
+
+    @Test fun hiddenNativeSurfacesReleaseImagesAndRestoreHeldPixels() {
+        NSApplication.sharedApplication()
+        for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    reset(); session.write("Hello\u001b[H" + image(1, red))
+                    val initial = capture()
+                    assertTrue(bytes > 0); assertTrue(tiles > 0)
+                    session.write("\u001b[?2026h" + image(1, green))
+                    repeat(3) {
+                        setVisible(false)
+                        drawWhileHidden()
+                        assertEquals(0L, bytes, "Hidden image payload")
+                        assertEquals(0, tiles, "Hidden image tiles")
+                        val previousUploads = uploads
+                        setVisible(true)
+                        assertContentEquals(initial, capture(), "Reconstruct the held image and text")
+                        assertTrue(uploads > previousUploads, "Reupload after resources were reclaimed")
+                    }
+                    session.write("\u001b[?2026l")
+                    expect(green, "Release displays the updated image")
+                    setVisible(false); dispose()
+                    assertEquals(0L, bytes); assertEquals(0, tiles)
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
+    @Test fun hiddenMetalReleasesAtlasBuffersAndDrawableAndRestoresWithoutResize() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession(20, 6)
+        val viewport = TerminalViewport(session, {})
+        val renderer = MetalTerminalDrawing {}
+        try {
+            renderer.resize(160.0, 96.0, 2.0, 14.0, 8.0, 16.0)
+            session.write("\u001b[?25lHello")
+            val expected = renderer.snapshot(viewport)
+            assertTrue(renderer.glyphTextureCount > 0); assertTrue(renderer.vertexBufferBytes > 0)
+            renderer.setVisible(false)
+            assertEquals(0, renderer.glyphTextureCount); assertEquals(0L, renderer.vertexBufferBytes)
+            assertEquals(0, renderer.glyphCount); assertNull(renderer.layer.device)
+            renderer.resize(160.0, 96.0, 2.0, 14.0, 8.0, 16.0)
+            assertEquals(1.0, renderer.layer.drawableSize.useContents { width })
+            renderer.setVisible(true)
+            assertNotNull(renderer.layer.device)
+            assertEquals(320.0, renderer.layer.drawableSize.useContents { width })
+            assertContentEquals(expected, renderer.snapshot(viewport))
+        } finally { renderer.dispose(); viewport.dispose() }
+    }
+
+    @Test fun metalHidingAndDisposalWaitForSubmittedCommands() {
+        NSApplication.sharedApplication()
+        for (resume in listOf(false, true)) {
+            val session = TerminalSession(20, 6)
+            session.resize(20, 6, TerminalCellSize(8, 16))
+            session.setGraphicsStorageLimit(1024)
+            val viewport = TerminalViewport(session, {})
+            val renderer = MetalTerminalDrawing {}
+            try {
+                renderer.resize(160.0, 96.0, 1.0, 14.0, 8.0, 16.0)
+                session.write("\u001b[?25lHello\u001b[H" + image(1, red))
+                renderer.draw(viewport)
+                assertEquals(1, renderer.submittedFrames, "Submit an actual Metal command")
+                assertTrue(renderer.imageUploads > 0, "The command samples an image")
+                renderer.setVisible(false)
+                assertTrue(renderer.imageCacheBytes > 0, "In-flight images remain owned until completion")
+                assertTrue(renderer.glyphTextureCount > 0, "In-flight glyphs remain owned until completion")
+                assertTrue(renderer.vertexBufferBytes > 0, "In-flight buffers remain owned until completion")
+                if (resume) renderer.setVisible(true) else renderer.dispose()
+                val deadline = NSDate.dateWithTimeIntervalSinceNow(5.0).timeIntervalSince1970
+                while (renderer.vertexBufferBytes > 0 && NSDate().timeIntervalSince1970 < deadline) {
+                    NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.01))
+                }
+                assertEquals(0L, renderer.imageCacheBytes)
+                assertEquals(0L, renderer.vertexBufferBytes)
+                assertEquals(0, renderer.glyphTextureCount)
+                if (resume) {
+                    assertNotNull(renderer.layer.device, "Completion must not detach a resumed layer")
+                    assertEquals(160.0, renderer.layer.drawableSize.useContents { width })
+                    val pixels = renderer.snapshot(viewport)
+                    assertEquals(red, listOf(pixels[10], pixels[9], pixels[8], pixels[11]).map { it.toInt() and 255 })
+                } else assertNull(renderer.layer.device)
+            } finally { renderer.dispose(); viewport.dispose() }
+        }
+    }
 
     @Test fun reverseVideoReachesSoftwareAndMetalPixelsWithoutRecoloringImages() {
         NSApplication.sharedApplication()

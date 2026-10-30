@@ -69,6 +69,15 @@ buffers and shader program. Showing the terminal reconstructs the same pixels, i
 a synchronized-output frame holding an older image generation. Context restoration while
 hidden must not allocate those resources again.
 
+`NativeGraphicsRenderingTest` checks the corresponding AppKit image-cache and Metal
+image/atlas/buffer lifecycle, including exact held-frame pixels after repeated hide/show
+cycles at 1x, 1.25x and 2x scale. A submitted Metal command retains its resources until
+completion, even if hidden or disposed; showing it before completion must keep the layer
+usable. Hidden Metal layers detach their device and shrink drawable dimensions to 1x1
+(CAMetalLayer ignores zero dimensions). Queued hidden-view draws do not rebuild caches.
+These tests work offscreen; live window visibility and occlusion remain covered separately
+by `NativeGraphicsTimingTest` and `MacOsRenderObserverTest` and require an unlocked desktop.
+
 The [mouse Shift capture corpus](mouse-shift-manifest.json) contains 17 XTSHIFTESCAPE scenarios /
 86 checkpoints from the original terminal stream and tri-state input flag. It covers defaults,
 invalid parameters/headers, cancellation, partial sequences, screen switches, saves and resets.
