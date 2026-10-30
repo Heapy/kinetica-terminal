@@ -51,6 +51,29 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     public val cursorSemanticContent: TerminalSemanticContent get() = semantic.content
     public val hasSemanticPrompts: Boolean get() = semantic.seen
     public val promptClickMode: TerminalPromptClick? get() = semantic.click
+    /** Host policy for negotiated OSC 133 prompt clicks. Survives terminal resets. */
+    public var cursorClickToMove: Boolean = true
+
+    // Surface.zig maybePromptClick / PageList.PromptIterator.nextLeftUp in pinned Ghostty.
+    internal fun sendPromptClick(column: Int, line: Int, viewportRow: Int): Boolean {
+        if (!cursorClickToMove || !cursorAtPrompt) return false
+        val mode = promptClickMode
+        if (mode != TerminalPromptClick.ABSOLUTE && mode != TerminalPromptClick.RELATIVE) return false
+        var prompt = historySize + cursorRow
+        while (prompt >= 0 && this.line(prompt).promptMarker == TerminalPromptMarker.NONE) prompt--
+        if (prompt < 0) return false
+        if (this.line(prompt).promptMarker == TerminalPromptMarker.CONTINUATION) {
+            val continuation = prompt
+            while (prompt > 0 && this.line(prompt).promptMarker == TerminalPromptMarker.CONTINUATION &&
+                this.line(prompt - 1).promptMarker != TerminalPromptMarker.NONE) prompt--
+            // Match the upstream iterator when the start of the prompt was pruned.
+            if (prompt == 0 && this.line(prompt).promptMarker == TerminalPromptMarker.CONTINUATION) prompt = continuation
+        }
+        if (line < prompt) return false
+        val row = if (mode == TerminalPromptClick.ABSOLUTE) viewportRow + 1 else line - prompt + 1
+        sendProtocolBytes("\u001b[<0;${column + 1};${row}M".encodeToByteArray())
+        return true
+    }
     // Like libghostty-vt, an embedded engine cannot assume shell redraw support until negotiated.
     public var promptRedraw: TerminalPromptRedraw = TerminalPromptRedraw.NONE
         private set

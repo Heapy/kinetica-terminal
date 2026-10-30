@@ -414,7 +414,7 @@ public class BrowserTerminalView(
                     if (selecting) viewport.beginSelection(x, y) else viewport.clearSelection()
                 }
             } else {
-                if (button == 0 && selecting) { viewport.endSelection(x, y); selecting = false }
+                if (button == 0 && selecting) { viewport.endPointerSelection(x, y); selecting = false }
                 else mouse(event, button, release = true)
             }
         }

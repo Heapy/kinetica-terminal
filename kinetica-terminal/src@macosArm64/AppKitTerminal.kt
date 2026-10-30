@@ -574,7 +574,7 @@ public class AppKitTerminalView(
     override fun mouseUp(event: NSEvent) {
         if (disposed) return
         val (x, y) = cell(event)
-        if (selecting) viewport.endSelection(x, y) else mouse(event, 0, release = true)
+        if (selecting) viewport.endPointerSelection(x, y) else mouse(event, 0, release = true)
         selecting = false
     }
     override fun rightMouseDown(event: NSEvent) {

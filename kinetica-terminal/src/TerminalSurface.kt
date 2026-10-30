@@ -129,6 +129,7 @@ public class TerminalViewport internal constructor(
         { session.selectionEpoch }, { session.lineOrderEpoch })
     private val activeSelection: TerminalSelection get() = frozen?.selection ?: liveSelection
     private var draggingSelection = false
+    private var promptClickCandidate: Pair<Int, Int>? = null
     private var dragColumn = 0
     private var dragRow = 0
     private var dragTimer: TerminalDisposable? = null
@@ -277,17 +278,31 @@ public class TerminalViewport internal constructor(
         frozen?.let { liveSelection.clear(); it.inheritedRange = null; it.inheritedText = null }
         activeSelection.begin(position(column, row), mode)
         draggingSelection = true; dragColumn = column; dragRow = row
+        promptClickCandidate = if (mode == TerminalSelectionMode.CHARACTER && frozen == null &&
+            column in 0 until columns && row in 0 until rows) column to row else null
         markAll()
     }
     public fun extendSelection(column: Int, row: Int) {
         if (disposed || !draggingSelection) return
+        if (promptClickCandidate != (column to row)) promptClickCandidate = null
         dragColumn = column; dragRow = row
         activeSelection.extend(position(column, row)); updateDragScroll(); markAll()
     }
     /** Complete a local drag while retaining its text selection. */
-    public fun endSelection(column: Int, row: Int) { extendSelection(column, row); cancelSelectionDrag() }
+    public fun endSelection(column: Int, row: Int) { finishSelection(column, row, false) }
+    /** Release a local left-button gesture, including negotiated OSC 133 click reporting.
+     * Call only when the press was handled locally, never after an application mouse press. */
+    public fun endPointerSelection(column: Int, row: Int): Boolean = finishSelection(column, row, true)
+    private fun finishSelection(column: Int, row: Int, reportPromptClick: Boolean): Boolean {
+        extendSelection(column, row)
+        val range = activeSelection.range()
+        val report = reportPromptClick && !disposed && frozen == null && promptClickCandidate != null &&
+            (range == null || range.start == range.end)
+        cancelSelectionDrag()
+        return report && session.sendPromptClick(column, firstLine + row, row)
+    }
     /** Pointer cancellation/focus loss ends autoscrolling but leaves the completed selection. */
-    public fun cancelSelectionDrag() { draggingSelection = false; dragTimer?.dispose(); dragTimer = null }
+    public fun cancelSelectionDrag() { draggingSelection = false; promptClickCandidate = null; dragTimer?.dispose(); dragTimer = null }
     public fun clearSelection() {
         cancelSelectionDrag(); liveSelection.clear()
         frozen?.let { it.selection.clear(); it.inheritedRange = null; it.inheritedText = null }

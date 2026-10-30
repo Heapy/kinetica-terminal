@@ -510,6 +510,27 @@ try {
     await readMouse();
     await page.evaluate(controls => { kineticaTerminalDemo.reset(); kineticaTerminalDemo.write(controls); }, controls);
   };
+  // OSC 133 click_events uses a local release, independent of mouse tracking and modifiers.
+  for (const mode of [1, 2]) {
+    await resetMouse(`output\r\n\x1b]133;A;click_events=${mode}\x07$ \x1b]133;B\x07abc`);
+    await moveCell(4, 1); await page.mouse.down();
+    assert.deepEqual(await readMouse(), []);
+    await page.mouse.up();
+    assert.deepEqual(await readMouse(), Array.from(Buffer.from(`\x1b[<0;5;${mode === 1 ? 2 : 1}M`)));
+    await moveCell(4, 0); await page.mouse.down(); await page.mouse.up();
+    assert.deepEqual(await readMouse(), [], "Click before the current prompt is local");
+    await moveCell(4, 1); await page.mouse.down(); await moveCell(5, 1); await moveCell(4, 1); await page.mouse.up();
+    assert.deepEqual(await readMouse(), [], "Returning to the press cell does not turn a drag into a click");
+    await page.mouse.down({ clickCount: 2 }); await page.mouse.up({ clickCount: 2 });
+    assert.deepEqual(await readMouse(), [], "Word selection does not report a prompt click");
+    await page.keyboard.down("Shift"); await page.keyboard.down("Alt");
+    await moveCell(5, 1); await page.mouse.down(); await page.mouse.up();
+    await page.keyboard.up("Alt"); await page.keyboard.up("Shift");
+    assert.deepEqual(await readMouse(), Array.from(Buffer.from(`\x1b[<0;6;${mode === 1 ? 2 : 1}M`)));
+    await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?1000h\x1b[?1006h"));
+    await page.mouse.down(); await page.mouse.up();
+    assert.deepEqual(await readMouse(), Array.from(Buffer.from("\x1b[<0;6;2M\x1b[<0;6;2m")), "Tracking owns both press and release");
+  }
   await resetMouse("\x1b[?1000h");
   await moveCell(95, 1); await page.mouse.down(); await page.mouse.up();
   assert.deepEqual(await readMouse(), [27, 91, 77, 32, 128, 34, 27, 91, 77, 35, 128, 34]);

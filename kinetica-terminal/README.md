@@ -713,7 +713,14 @@ soft wraps preserve input state while `I` ends input at an explicit line feed.
 `onSemanticPrompt` delivers accepted commands after applying state, even during render holds.
 Its bounded options expose command IDs, errors, exit codes, prompt kinds and click preferences;
 `commandLineBytes()` decodes `cmdline`/`cmdline_url` without executing anything. Invalid encodings
-return null. Click preferences are metadata for custom hosts; they do not synthesize mouse/key input.
+return null. Both views implement `click_events=1/2`: a completed local left click sends
+an unmodified SGR press with a viewport-relative row (`1`) or a row relative to the current
+prompt, including retained history (`2`). Dragging, word/line selection, cancelled gestures,
+alternate screens and frozen frames do not report prompt clicks. Application mouse tracking
+owns its press/release pair. Set `session.cursorClickToMove=false` to disable this host behavior;
+the policy survives terminal resets. Custom views use `endPointerSelection` after a local press
+and `beginSelection`; programmatic `endSelection` remains selection-only. The older `cl` modes
+are still metadata and do not yet synthesize cursor keys.
 
 Like libghostty-vt, a new embedded session assumes no shell redraw support. `A/N;redraw=1`,
 `redraw=0` and `redraw=last` select full, disabled or current-line prompt clearing on primary

@@ -101,6 +101,16 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       OSC 0/2 validation and limits: 2047 captured bytes, valid UTF-8, then a 1024-byte
       retained title. Replies preserve a partial UTF-8 suffix; display text uses replacement.
       CSI 22/23 t title stacks remain ignored, as in both upstream terminal handlers.
+- [x] OSC 133 `click_events=1/2` host reporting on a completed local left click. Both views
+      send an unmodified SGR press with viewport or prompt-relative rows, including history.
+      Drags that return to their start, word/line selection, cancelled gestures, frozen frames,
+      alternate screens and application-owned mouse gestures do not synthesize a prompt click.
+      Host `cursorClickToMove` policy survives resets. The original terminal/prompt iterator
+      and extracted Surface coordinate helper generate 32 cases / 586 checkpoints, replayed
+      whole and bytewise; artifacts reproduce byte-for-byte. Validation: 1372 JVM tests,
+      fresh JS tests, three Native common prompt tests, three AppKit selection tests, four
+      Native mouse/PTY tests and the Chromium input/rendering verifier.
+- [ ] Implement older OSC 133 `cl=line/m/v/w` click-to-cursor key synthesis; these remain metadata.
 - [x] XTWINOPS resize request (`CSI 8;rows;columns t`) core observer contract, with raw
       zero/omitted dimensions, unsigned 16-bit limits and no automatic terminal resize.
       Twenty-three original-library cases cover payloads, rejected headers, cancellation,

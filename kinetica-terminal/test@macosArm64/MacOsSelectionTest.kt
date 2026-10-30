@@ -10,6 +10,34 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    @Test fun nativePromptClicksReportOnReleaseButDragsAndTrackedPressesDoNot() = withView { session, _, mouse ->
+        val replies = mutableListOf<String>()
+        val subscription = session.onInput { replies += it.toByteArray().decodeToString() }
+        try {
+            for (mode in 1..2) {
+                session.reset()
+                session.write("output\r\n\u001b]133;A;click_events=$mode\u0007$ \u001b]133;B\u0007abc")
+                replies.clear()
+                mouse(NSEventTypeLeftMouseDown, 4, 1, 1)
+                assertTrue(replies.isEmpty())
+                mouse(NSEventTypeLeftMouseUp, 4, 1, 1)
+                assertEquals(listOf("\u001b[<0;5;${if (mode == 1) 2 else 1}M"), replies)
+                replies.clear()
+                mouse(NSEventTypeLeftMouseDown, 4, 1, 1)
+                mouse(NSEventTypeLeftMouseDragged, 5, 1, 1)
+                mouse(NSEventTypeLeftMouseDragged, 4, 1, 1)
+                mouse(NSEventTypeLeftMouseUp, 4, 1, 1)
+                mouse(NSEventTypeLeftMouseDown, 4, 1, 2)
+                mouse(NSEventTypeLeftMouseUp, 4, 1, 2)
+                assertTrue(replies.isEmpty())
+                session.write("\u001b[?1000h\u001b[?1006h")
+                mouse(NSEventTypeLeftMouseDown, 4, 1, 1)
+                mouse(NSEventTypeLeftMouseUp, 4, 1, 1)
+                assertEquals(listOf("\u001b[<0;5;2M", "\u001b[<0;5;2m"), replies)
+            }
+        } finally { subscription.dispose() }
+    }
+
     @Test fun nativeClickCountsSelectWordsLogicalLinesAndWideGlyphs() = withView { session, view, mouse ->
         session.write("alpha-beta gamma\r\nnext")
         mouse(NSEventTypeLeftMouseDown, 2, 0, 2)

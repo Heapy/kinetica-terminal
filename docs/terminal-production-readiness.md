@@ -1139,7 +1139,15 @@ DECALN recording, covering 173 new checkpoints. It compares row and cell markers
 classification, input termination, screen transitions, margins, erasure and resize redraw.
 Separate common tests cover command metadata/decoding, observer disposal, prompt navigation
 and host Clear Screen. Native sample commands and the browser host exercise navigation;
-click options are exposed as metadata, without automatic click-to-cursor input synthesis.
+click options were initially exposed as metadata. The subsequent Ghostty 1.4 prompt-click
+increment implements `click_events=1/2` in both hosts (the older `cl` cursor-key modes remain open).
+Its separate original-library corpus covers 32 cases / 586 checkpoints, including prompt rows
+in history, soft wraps, continuation boundaries, output, erasure, reset and alternate screens.
+The terminal parser and prompt iterator run unmodified; the small coordinate helper is extracted
+verbatim from pinned Surface.zig. The adapter models an already completed local click, while
+common gesture tests, real Chromium pointer events and isolated AppKit mouse callbacks validate
+host arbitration. The increment passes 1372 JVM tests, fresh JS tests, three Native common prompt
+tests, three AppKit selection tests, four Native mouse/PTY tests and the browser verifier.
 Validation passes 479 JVM tests, the freshly built JS suite, all 279 Native oracle scenarios,
 six Native common semantic tests and seven native application tests. The browser verifier
 passes prompt navigation alongside its existing rendering/input/lifecycle checks. All 282
