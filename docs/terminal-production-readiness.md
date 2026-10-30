@@ -993,6 +993,27 @@ omitted, zero, excessive, out-of-range and colon parameters. The increment adds 
 582 checkpoints; the main corpus now contains 979 cases / 6073 states. All 1367 JVM tests and
 the fresh Release JS suite pass, and fixtures/provenance reproduce byte-for-byte.
 
+The 1.4 release-note audit also found an unimplemented APC family: Glyph Protocol (`25a1`).
+The new shared handler recognizes support, query, register and clear independently of Kitty
+image enablement. It validates the supported simple TrueType `glyf` subset, retains owned
+contours/points and normalized registration metadata in a bounded session-wide FIFO, preserves
+entries on rejected replacements, and clears them on RIS (not DECSTR or screen switches).
+Like the pinned Ghostty implementation, it does not yet rasterize those outlines or apply
+their width to cells, and coverage queries report only glossary entries, not system fonts.
+
+The original parser/executor/outline decoder produces 170 scenarios / 496 checkpoints,
+replayed whole and bytewise. Comparisons include exact replies, glossary size, decoded points
+and contour endpoints, metrics and width, numeric syntax, last-option precedence, strict
+Base64 padding, registration verbosity, namespace boundaries, malformed/composite/hinted
+glyphs, 64 KiB payload and individual allocation limits, 1 MiB APC capture, replacement/FIFO
+eviction and terminal lifecycle. Common checks additionally verify bounded capture cleanup
+and host image-policy independence; browser transport and isolated native PTY scenarios
+exercise the actual request/reply path. This closes the Glyph Protocol gap, not the broader
+release/source or graphics resource audit.
+Validation passes 1375 JVM tests, the fresh JS suite, three Native common tests, the real
+native PTY exchange and the Chromium input/rendering verifier. Generated fixtures and
+source provenance reproduce byte-for-byte.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than

@@ -226,6 +226,16 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Graphics and external media
 
+- [x] Experimental Glyph Protocol (`APC 25a1`) support, query, register and clear commands.
+      Original Ghostty parsing/execution/outline decoding produce 170 cases / 496 checkpoints
+      comparing wire replies, glossary occupancy, decoded contours/points and authored metrics.
+      The corpus covers numeric/options/Base64 edge cases, reply suppression, PUA boundaries,
+      simple/compound/hinted/malformed glyphs, payload/outline/APC limits, FIFO replacement,
+      alternate screens and RIS/DECSTR. Glyphs are retained but not rendered, matching the
+      pinned implementation; no system-font coverage or layout override is claimed.
+      Validation: 1375 JVM tests, fresh JS tests, three Native common tests, one real PTY
+      exchange, Chromium transport/UI checks and reproducible fixtures/provenance.
+
 - [x] Verify image/frame continuation identity against the actual release executor. Wire
       chunked frames still pin `Image.generation` in `graphics_exec.zig` and reject a changed
       target. The new stable `Image.transmission` belongs to `ImageStorage.PendingImage`

@@ -353,6 +353,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
     // Keep recognition disabled until a graphics-capable host explicitly enables storage.
     private val graphicsApc = TerminalGraphicsApc(1024 * 1024) { graphicsState.execute(it) }
+    internal val glyphProtocol = TerminalGlyphProtocol(::sendProtocolBytes, ::damageAll)
+    private val glyphApc = TerminalGlyphApc(glyphProtocol::command)
+    internal val retainedGlyphCommandBytes: Int get() = glyphApc.retainedBytes
     internal val retainedGraphicsCommandBytes: Int get() = graphicsApc.retainedPayloadBytes
     internal fun setGraphicsStorageLimit(bytes: Int) {
         require(bytes >= 0)
@@ -369,9 +372,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         override fun print(code: Int) = this@TerminalSession.print(code)
         override fun execute(code: Int) { controlEpoch++; executeControl(code) }
         override fun escape(final: Int, intermediates: Int) { controlEpoch++; escapeSequence(final, intermediates) }
-        override fun apcStart() { if (graphicsState.storage.enabled) graphicsApc.start() else graphicsApc.reset() }
-        override fun apcPut(code: Int) = graphicsApc.feed(code)
-        override fun apcEnd(terminator: Int) { controlEpoch++; graphicsApc.end(terminator) }
+        override fun apcStart() {
+            if (graphicsState.storage.enabled) graphicsApc.start() else graphicsApc.reset()
+            glyphApc.start()
+        }
+        override fun apcPut(code: Int) { graphicsApc.feed(code); glyphApc.feed(code) }
+        override fun apcEnd(terminator: Int) { controlEpoch++; graphicsApc.end(terminator); glyphApc.end(terminator) }
         override fun kittyDnd(bytes: ByteArray, length: Int, terminator: Int) {
             controlEpoch++
             var separator = 0
@@ -1031,6 +1037,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     }
 
     public fun reset() {
+        glyphProtocol.reset()
         capabilityReplies.cancel()
         dndReplies.cancel(); kittyDnd.reset()
         statusLineSelected = false; checksumFlags = defaultChecksumFlags

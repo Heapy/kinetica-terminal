@@ -439,6 +439,21 @@ Shift+PageUp/PageDown, and accessibility text are available.
 
 ## Compatibility scope
 
+The experimental Glyph Protocol (`APC 25a1`) supports `s/q/r/c`: format discovery,
+glossary coverage, `glyf` registration and clearing. It follows Ghostty 1.4's current
+scope: validated outlines and metrics are retained, but neither rasterization nor cell-width
+overrides use the glossary yet, and queries do not claim system-font coverage. Registrations
+are session-wide across both screens; DECSTR preserves them and RIS clears them. Failed
+replacements retain the old entry. Replacement moves an entry to the end of the 1024-slot
+FIFO; a full glossary evicts its oldest registration.
+
+Glyph APC capture is bounded to 1 MiB, decoded payloads to 64 KiB, and each outline array
+to at most 64 KiB. Private-use namespaces, format/metrics/options, strict Base64 padding,
+contour endpoints, point flags and coordinate data are validated before registration.
+Composite glyphs and hinting are rejected with protocol error replies. Glyph recognition
+is independent of whether a host has enabled Kitty image storage. Unsupported APC prefixes
+and cancelled/oversized commands retain no glyph capture buffer.
+
 Implemented: streaming UTF-8, CR/LF/BS/tab, delayed autowrap, cursor positioning/save/restore,
 erase and insert/delete characters/lines, scroll margins, origin and insert modes, independent
 normal/alternate screen save slots and distinct 47/1047/1049 behavior, SGR attributes with

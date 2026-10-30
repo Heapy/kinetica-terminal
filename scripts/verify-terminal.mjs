@@ -510,6 +510,11 @@ try {
     await readMouse();
     await page.evaluate(controls => { kineticaTerminalDemo.reset(); kineticaTerminalDemo.write(controls); }, controls);
   };
+  await resetMouse("\x1b_25a1;s\x1b\\\x1b_25a1;r;cp=e0a0;AAAAAAAAAAAAAA==\x1b\\\x1b_25a1;q;cp=e0a0\x1b\\");
+  assert.deepEqual(await readMouse(), Array.from(Buffer.from(
+    "\x1b_25a1;s;fmt=glyf\x1b\\\x1b_25a1;r;cp=e0a0;status=0\x1b\\\x1b_25a1;q;cp=e0a0;status=glossary\x1b\\")));
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b_25a1;c\x1b\\\x1b_25a1;q;cp=e0a0\x1b\\"));
+  assert.deepEqual(await readMouse(), Array.from(Buffer.from("\x1b_25a1;c;status=0\x1b\\\x1b_25a1;q;cp=e0a0;status=\x1b\\")));
   // OSC 133 click_events uses a local release, independent of mouse tracking and modifiers.
   for (const mode of [1, 2]) {
     await resetMouse(`output\r\n\x1b]133;A;click_events=${mode}\x07$ \x1b]133;B\x07abc`);

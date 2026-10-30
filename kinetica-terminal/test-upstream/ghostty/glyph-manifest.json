@@ -1,0 +1,21 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
+  "cases": 170,
+  "snapshots": 496,
+  "helperSha256": "201dfefbd6bef3bbb09e8d020060e436517964399360ad5f8d01a590a882fdb0",
+  "generatorSha256": "34818d8d34e13691ce064578a9cff2fc4262129810f0b15f0f65cded6a63e763",
+  "fixtureSha256": "d21b96bf20f108e9abbbbc5d18afe85c7ab3abb38161437d7c6109945d699e86",
+  "sources": {
+    "src/terminal/Terminal.zig": "68b23d077e45ec680e158691409705bdfbf6d2fc45322cd30c7153265b8aad70",
+    "src/terminal/stream_terminal.zig": "1b58936b58f1b553e800fcd1390ed2c62f9ec600998c73ddabc71529131786fd",
+    "src/terminal/stream.zig": "084e0d3f5d10bd84f9eef31a97ceb976d2abb54e8b4fe139f403a5af91539055",
+    "src/terminal/Parser.zig": "92e0f0fe1939f2030c83a3d7e2f334d90fa6d5e4988760c4b465da54ef57c808",
+    "src/terminal/apc.zig": "cec5429ad5e50c363f0b7a428c536887291d950de99da1ffb12334b77d428ac6",
+    "src/terminal/apc/glyph/request.zig": "a2d66399d91cadaca99322a6bd976270a84fe282b3409f7372d03812a56ad957",
+    "src/terminal/apc/glyph/execute.zig": "e732775765fe397b58dc16c2ed27765b497c0f0eb288aa1de18251f5db9e7540",
+    "src/terminal/apc/glyph/Glossary.zig": "ae0ca5cdce0d75a2ca8ac5123c0b199256d72a74211b6ca2af52ebd66ef8a45a",
+    "src/terminal/apc/glyph/response.zig": "bb0b08c8f49b01cfbeac6ae8c03e0c31928da0258c51886a73f713a924090338",
+    "src/font/opentype/glyf.zig": "7ed3656633073659e97fff36c19898534b59787cfa840555d57a0372918f2b56"
+  }
+}
