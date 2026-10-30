@@ -11,12 +11,16 @@ class TerminalGraphicsAccountingTest {
         it.startsWith("limit_during_") || it == "conversion_on_both_screens"
     }
 
+    @Test fun aggregateConversionAndLimitEpochsMatchOriginalStorage() = replay { it.startsWith("aggregate_conversion_") }
+
     private fun replay(include: (String) -> Boolean) {
         for (encoded in terminalGraphicsAccountingFixtures()) {
             val case = Json.parseToJsonElement(Base64.decode(encoded).decodeToString()).jsonObject
             val name = case.getValue("name").jsonPrimitive.content
             if (!include(name)) continue
             for (bytewise in listOf(false, true)) {
+                assertEquals(case.getValue("apcLimit").jsonPrimitive.int, TERMINAL_GRAPHICS_APC_BYTES,
+                    "Default graphics capture limit must match the pinned original")
                 val session = TerminalSession(12, 6)
                 session.setGraphicsStorageLimit(case.getValue("limit").jsonPrimitive.int)
                 val replies = StringBuilder()
@@ -47,6 +51,7 @@ class TerminalGraphicsAccountingTest {
                     }
                     assertEquals(case.getValue("snapshots").jsonArray[index], actual, context)
                     assertEquals(images.sumOf { it.animation.byteCount }, storage.totalBytes, "$context accounted frames")
+                    assertTrue(storage.totalBytes * 3 <= storage.limit.toLong() * 4, "$context RGB conversion ceiling")
                 }
             }
         }

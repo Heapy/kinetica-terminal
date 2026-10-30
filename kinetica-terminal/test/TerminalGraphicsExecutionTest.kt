@@ -124,7 +124,10 @@ class TerminalGraphicsExecutionTest {
         val terminal = TerminalSession()
         terminal.setGraphicsStorageLimit(100)
         terminal.write("\u001b_Ga=t,i=1,f=24,s=1,v=1;")
-        repeat(257) { terminal.write("A".repeat(4096)) }
+        val block = ByteArray(64 * 1024) { 'A'.code.toByte() }
+        repeat(TERMINAL_GRAPHICS_APC_BYTES / block.size) { terminal.write(block) }
+        assertEquals(TERMINAL_GRAPHICS_APC_BYTES, terminal.retainedGraphicsCommandBytes)
+        terminal.write("A") // Exactly one byte over the original default capture limit.
         assertEquals(0, terminal.retainedGraphicsCommandBytes)
         terminal.write("\u001b\\ok")
         assertEquals(0, terminal.graphicsState.storage.imageCount)

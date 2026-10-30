@@ -611,7 +611,20 @@ window. These checks supplement, rather than replace, the live window gates.
       forms without a leading slash) and canonical `/private/tmp` temporary-file handling.
 - [x] Add original-library external-media comparisons and real native lifecycle regressions,
       including cleanup after read/decode failure and rejected paths/ranges.
-- [ ] Complete the existing decoded storage and frame-wide renderer resource audit.
+- [x] Complete the existing decoded storage and frame-wide renderer resource audit.
+      The [ownership report](terminal-graphics-memory.md) accounts for both screens,
+      pending transfers, held generations, decode/composition scratch, frame-wide tile
+      resources and host-dependent presentation surfaces. It proves resident pixel bytes
+      stay within 4/3 of the configured limit after RGB-root conversion; this is not a
+      process-memory or driver-allocation limit. Broader production/performance gates remain open.
+- [x] Match the original 65 MiB graphics APC limit instead of silently dropping unchunked
+      images above 1 MiB. The accounting oracle reads the original default directly;
+      regressions exercise large complete/fragmented commands, cancellation and overflow
+      at exactly one byte above the limit. Three new aggregate-conversion scenarios bring
+      accounting coverage to 30 cases / 243 checkpoints, with byte-for-byte regeneration.
+      Validation: all 1478 JVM tests, fresh Release JS tests, focused Native capture,
+      accounting, image, execution and software/Metal tests, and actual Canvas/WebGL
+      graphics pixels, pressure, holds and disposal checks pass.
 
 The transfer-buffer audit removes a redundant full RGB/RGBA decode copy: exact completed
 buffers move from the transfer owner to immutable pixels. Final chunks grow to exact capacity,

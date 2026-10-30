@@ -393,7 +393,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         return delay
     }
     // Keep recognition disabled until a graphics-capable host explicitly enables storage.
-    private val graphicsApc = TerminalGraphicsApc(1024 * 1024) { graphicsState.execute(it) }
+    private val graphicsApc = TerminalGraphicsApc(TERMINAL_GRAPHICS_APC_BYTES) { graphicsState.execute(it) }
     internal val glyphProtocol = TerminalGlyphProtocol(::sendProtocolBytes, ::damageAll)
     private val glyphApc = TerminalGlyphApc(glyphProtocol::command)
     internal val retainedGlyphCommandBytes: Int get() = glyphApc.retainedBytes

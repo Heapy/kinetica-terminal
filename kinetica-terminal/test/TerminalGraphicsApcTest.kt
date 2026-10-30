@@ -1,6 +1,7 @@
 package io.heapy.kinetica.terminal
 
 import kotlin.test.*
+import kotlin.io.encoding.Base64
 
 class TerminalGraphicsApcTest {
     private class Stream(limit: Int = 4096) {
@@ -19,6 +20,35 @@ class TerminalGraphicsApcTest {
             override fun apcEnd(terminator: Int) { endings += terminator; apc.end(terminator) }
         })
         fun write(value: String) = value.encodeToByteArray().forEach { parser.accept(it.toInt() and 255) }
+    }
+
+    @Test fun aSingleImageLargerThanOneMibOfBase64ReachesStorageAndCancellationReleasesCapture() {
+        val session = TerminalSession(8, 4)
+        session.setGraphicsStorageLimit(1024 * 1024)
+        val pixels = ByteArray(2048 * 129 * 3) { (it * 41).toByte() }
+        val encoded = Base64.encode(pixels)
+        assertTrue(encoded.length > 1024 * 1024)
+        val replies = StringBuilder()
+        session.onInput { replies.append(it.toByteArray().decodeToString()) }
+        val wire = "\u001b_Ga=t,i=1,f=24,s=2048,v=129;$encoded\u001b\\".encodeToByteArray()
+        for (fragmentSize in listOf(wire.size, 8191)) {
+            replies.clear()
+            var offset = 0
+            while (offset < wire.size) {
+                val end = minOf(wire.size, offset + fragmentSize)
+                session.write(wire.copyOfRange(offset, end)); offset = end
+            }
+            assertEquals("\u001b_Gi=1;OK\u001b\\", replies.toString())
+            assertContentEquals(pixels, assertNotNull(session.graphicsState.storage.image(1)).pixels.data)
+        }
+        val pending = Stream(TERMINAL_GRAPHICS_APC_BYTES)
+        pending.write("\u001b_Ga=t,i=2,f=24,s=2048,v=129;$encoded")
+        assertTrue(pending.apc.retainedPayloadBytes >= encoded.length)
+        pending.write("\u0018")
+        assertEquals(0, pending.apc.retainedPayloadBytes)
+        assertTrue(pending.commands.isEmpty())
+        pending.write("\u001b_Gi=3;YQ==\u001b\\")
+        assertEquals(3, pending.commands.single().imageId)
     }
 
     @Test fun allIntroducersUseTheSharedApcStateAndNeverPrintPayloads() {

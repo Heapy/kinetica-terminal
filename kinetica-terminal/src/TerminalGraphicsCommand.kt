@@ -5,6 +5,9 @@ package io.heapy.kinetica.terminal
 
 import kotlin.io.encoding.Base64
 
+// Pinned Ghostty apc.Protocol.kitty.defaultMaxBytes(), including unchunked images.
+internal const val TERMINAL_GRAPHICS_APC_BYTES = 65 * 1024 * 1024
+
 /** Internal wire representation. Numeric fields preserve all 32 bits, including signed z/H/V. */
 internal class TerminalGraphicsCommand(
     val action: Char,

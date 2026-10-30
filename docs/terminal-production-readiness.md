@@ -1142,7 +1142,7 @@ also includes ancillary padding that leaves spare capacity in the inflated colle
 - [ ] Explicit host policy for file, temporary-file and shared-memory transmission media.
 - [ ] Browser Canvas/WebGL and AppKit/Metal images, cache disposal, context recovery and render holds.
 - [x] Bound WebGL/Metal RGBA tile payloads across distinct crops and unfinished commands, including resources retired from the LRU.
-- [ ] Complete the decoded/transient-buffer and software-renderer backing-resource audit; tile payload accounting excludes driver overhead and glyph atlases.
+- [x] Complete the decoded/transient-buffer and software-renderer backing-resource audit; see the [ownership report](terminal-graphics-memory.md). Tile payload accounting excludes driver overhead and glyph atlases; host geometry and caller-held snapshots remain separate owners, with no aggregate RSS promise.
 - [ ] Original-libghostty image/placement oracle and real platform pixel/resource regressions.
 
 WebGL and Metal now charge both resident tiles and retired tiles referenced by unfinished

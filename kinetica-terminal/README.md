@@ -64,7 +64,11 @@ converting an RGB root to RGBA can exceed this nominal limit, even if the subseq
 append is rejected. Reapplying the same limit reconciles that excess by eviction. Changes to
 a positive limit preserve an unfinished APC command and chunked transfer; disabling graphics
 releases capture and storage. Encoded transfers, decode/composition scratch and retained render snapshots
-are separate from the resident counter. Complete raw transfers hand their owned buffer to the
+are separate from the resident counter. A single graphics APC accepts up to 65 MiB of Base64
+payload, matching Ghostty 1.4; chunked transfers have their separate 400 MiB limit. The
+[graphics memory audit](../docs/terminal-graphics-memory.md) documents simultaneous owners,
+the bounded RGB conversion overrun and host-dependent presentation surfaces.
+Complete raw transfers hand their owned buffer to the
 decoder without another full pixel copy; caller-owned input remains isolated. Each browser
 renderer separately owns a 64 MiB LRU cache of bounded image tiles with sampling gutters.
 The native renderers use the same budget and tiling. Offscreen/deleted tiles and disposed views

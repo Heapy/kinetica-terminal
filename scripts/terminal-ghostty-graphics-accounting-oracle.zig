@@ -65,7 +65,7 @@ pub fn main(init: std.process.Init) !void {
                 .images = images.items,
             });
         }
-        const result = try std.json.Stringify.valueAlloc(alloc, .{ .name = case.name, .snapshots = snapshots.items }, .{});
+        const result = try std.json.Stringify.valueAlloc(alloc, .{ .name = case.name, .apcLimit = vt.apc.Protocol.kitty.defaultMaxBytes(), .snapshots = snapshots.items }, .{});
         if (write(1, result.ptr, result.len) != result.len or write(1, "\n", 1) != 1) return error.WriteFailed;
     }
 }
