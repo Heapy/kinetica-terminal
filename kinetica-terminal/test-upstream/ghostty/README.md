@@ -232,6 +232,15 @@ empty parameters without changing cursor, cells or pending wrap. A trailing empt
 remains accepted when it does not increase the original parser's parameter count.
 All 34 cases failed before the implementation change; the prior 843 cases still passed.
 
+The CSI final-dispatch/zero-count increment adds 90 scenarios / 729 checkpoints, bringing
+the main corpus to 967 scenarios / 5491 checkpoints. Every final byte from `0x40` to `0x7e`
+is sent with no parameters, zero and excess parameters after a pending wrap, followed by
+ASCII, wide and combining output. Before the fix, 31 of these 63 cases failed while all
+prior 877 cases passed. Another 27 cases compare omitted and zero counts for HPR/VPR,
+CHT/CBT, DCH, IL/DL and SU/SD in the middle of lines, with margins and on alternate screens.
+The oracle distinguishes commands where zero is a no-op from positioning commands that
+still clear pending wrap. Whole-buffer and bytewise replay compare every intermediate state.
+
 The tab/pending-wrap increment adds 59 scenarios / 342 checkpoints, bringing this corpus
 to 461 scenarios / 2615 checkpoints. It covers omitted/explicit/malformed tab-clear parameters,
 default/custom stops, HT/CHT/CBT pending-wrap preservation with DECAWM on/off, and narrow,

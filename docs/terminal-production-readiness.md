@@ -970,6 +970,19 @@ All 1259 JVM tests and the fresh Release JS suite now pass, with original-librar
 and provenance reproducing byte-for-byte. Shared parser/state behavior is exercised through
 whole-buffer and bytewise input; no platform host path changes in this increment.
 
+The next CSI audit compares all 63 final bytes with omitted, zero and excess parameters
+after pending wrap. It exposed 31 failing cases: unimplemented finals incorrectly cancelled
+wrap, and several commands treated an explicit zero as one. Dispatch now returns without
+changing state for unimplemented finals. HPR/VPR preserve a zero movement count while still
+applying positioning's wrap reset; zero CHT/CBT, DCH, IL/DL and SU/SD leave the text and
+cursor in place. This also avoids splitting wide cells at margins for zero edit/scroll counts.
+
+The increment adds 90 original-library cases / 729 checkpoints, including 27 omitted-versus-
+zero comparisons in the middle of lines, with margins and on alternate screens. The prior
+877 oracle cases passed before the fix. All 1349 JVM tests and the fresh Release JS suite
+pass after it; regenerated fixtures and provenance reproduce byte-for-byte. The main C
+corpus now contains 967 cases / 5491 intermediate states, each replayed whole and bytewise.
+
 Graphics acceptance work:
 
 Compressed raw RGB/RGBA decoding now retains only the declared pixel prefix, rather than

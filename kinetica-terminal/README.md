@@ -293,6 +293,9 @@ Shift+PageUp/PageDown, and accessibility text are available.
 - Cursor movement includes `CSI j/k` aliases for left/up. Cursor, tab, erase, insert/delete
   and scroll commands reject excess parameters before changing terminal state, including
   pending wrap. A trailing empty parameter follows the original parser's counting rules.
+  Unimplemented CSI finals preserve pending wrap. HPR/VPR, tab movement, deletion, line
+  insertion/deletion and scrolling distinguish an omitted count (one) from explicit zero;
+  zero relative positioning still clears pending wrap, as in Ghostty.
 - `observe` reports changed row ranges once per ordinary write. `onInput` receives outgoing
   `TerminalInputData`, including terminal protocol replies; `onResize` receives dimension changes.
   All return disposable subscriptions. Notifications are synchronous. This replaces the earlier

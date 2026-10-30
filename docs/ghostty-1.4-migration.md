@@ -146,6 +146,11 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       erase/insert/delete and scrolling before changing cells, cursor or pending wrap.
       Thirty-four original-library scenarios / 408 checkpoints cover rejection and accepted
       trailing empty parameters; both whole-stream and bytewise replay match.
+- [x] Preserve pending wrap for unimplemented CSI finals. Distinguish omitted counts from
+      explicit zero for HPR/VPR, CHT/CBT, DCH, IL/DL and SU/SD: zero relative movement still
+      applies positioning semantics, while zero tab/edit/scroll counts leave text in place.
+      Ninety original-library scenarios / 729 checkpoints cover all 63 CSI final bytes and
+      explicit-zero behavior in the middle of lines, at margins and on alternate screens.
 - [x] Extend coverage for parameterless TBC and pending wrap with DECAWM disabled. Tab
       movement/clearing preserves pending wrap; TBC rejects extra parameters. CSI parameter
       counting follows the original parser, which does not append an empty trailing slot.

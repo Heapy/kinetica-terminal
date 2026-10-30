@@ -143608,5 +143608,2912 @@
         "write": "!"
       }
     ]
+  },
+  {
+    "name": "csi_final_dispatch_40",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[@"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0@"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535@"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_41",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[A"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0A"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535A"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_42",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[B"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0B"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535B"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_43",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[C"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0C"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535C"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_44",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[D"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0D"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535D"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_45",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[E"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0E"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535E"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_46",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[F"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0F"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535F"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_47",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[G"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0G"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535G"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_48",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[H"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0H"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535H"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_49",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[I"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0I"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535I"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_4a",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[J"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0J"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535J"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_4b",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[K"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0K"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535K"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_4c",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[L"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0L"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535L"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_4d",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[M"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0M"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535M"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_4e",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[N"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0N"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535N"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_4f",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[O"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0O"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535O"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_50",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[P"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0P"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535P"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_51",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[Q"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0Q"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535Q"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_52",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[R"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0R"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535R"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_53",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[S"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0S"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535S"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_54",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[T"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0T"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535T"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_55",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[U"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0U"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535U"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_56",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[V"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0V"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535V"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_57",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[W"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0W"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535W"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_58",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[X"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0X"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535X"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_59",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[Y"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0Y"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535Y"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_5a",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0Z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535Z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_5b",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[["
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0["
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535["
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_5c",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[\\"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0\\"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535\\"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_5d",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[]"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0]"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535]"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_5e",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[^"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0^"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535^"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_5f",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[_"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0_"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535_"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_60",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[`"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0`"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535`"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_61",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[a"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0a"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535a"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_62",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[b"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0b"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535b"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_63",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[c"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0c"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535c"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_64",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[d"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0d"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535d"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_65",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[e"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0e"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535e"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_66",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[f"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0f"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535f"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_67",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[g"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0g"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535g"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_68",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[h"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0h"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535h"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_69",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[i"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0i"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535i"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_6a",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[j"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0j"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535j"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_6b",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[k"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0k"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535k"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_6c",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[l"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0l"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535l"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_6d",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[m"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0m"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535m"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_6e",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[n"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0n"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535n"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_6f",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[o"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0o"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535o"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_70",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[p"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0p"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535p"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_71",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[q"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0q"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535q"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_72",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[r"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0r"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535r"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_73",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[s"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0s"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535s"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_74",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[t"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0t"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535t"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_75",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[u"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0u"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535u"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_76",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[v"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0v"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535v"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_77",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[w"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0w"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535w"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_78",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[x"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0x"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535x"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_79",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[y"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0y"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535y"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_7a",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_7b",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[{"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0{"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535{"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_7c",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[|"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0|"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535|"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_7d",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[}"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0}"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535}"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_final_dispatch_7e",
+    "columns": 8,
+    "rows": 3,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[~"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[0~"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bcabcdefgh"
+      },
+      {
+        "write": "\u001b[65535;65535;65535~"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_61_middle",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0a"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[a"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_61_margins",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[0a"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[a"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_61_alternate",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0a"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[a"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_65_middle",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0e"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[e"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_65_margins",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[0e"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[e"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_65_alternate",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0e"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[e"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_50_middle",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0P"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[P"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_50_margins",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[0P"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[P"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_50_alternate",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0P"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[P"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_4c_middle",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0L"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[L"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_4c_margins",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[0L"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[L"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_4c_alternate",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0L"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[L"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_4d_middle",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0M"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[M"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_4d_margins",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[0M"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[M"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_4d_alternate",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0M"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[M"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_53_middle",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0S"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[S"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_53_margins",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[0S"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[S"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_53_alternate",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0S"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[S"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_54_middle",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0T"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[T"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_54_margins",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[0T"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[T"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_54_alternate",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0T"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[T"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_49_middle",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0I"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[I"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_49_margins",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[0I"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[I"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_49_alternate",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0I"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[I"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_5a_middle",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0Z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_5a_margins",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[0Z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?69h\u001b[3;10s\u001b[2;4r\u001b[?6h\u001b[2;3H"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
+  },
+  {
+    "name": "csi_zero_5a_alternate",
+    "columns": 12,
+    "rows": 4,
+    "history": 20,
+    "events": [
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[0Z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      },
+      {
+        "write": "\u001bc\u001b[1;1HAB\u754cefghijkl\u001b[2;1HMN\u754cqrstuvwx\u001b[3;1HYZ0123456789\u001b[4;1Habcdefghijkl\u001b[?1049h\u001b[2;1HAB\u754cefghijkl\u001b[2;5H"
+      },
+      {
+        "write": "\u001b[Z"
+      },
+      {
+        "write": "X\u754c\u0301"
+      }
+    ]
   }
 ]

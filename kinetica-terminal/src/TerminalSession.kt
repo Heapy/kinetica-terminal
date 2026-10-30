@@ -1446,6 +1446,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             'H', 'f' -> if (parameterCount > 2) return
         }
         fun p(i: Int = 0, default: Int = 1): Int = if (i > paramIndex || params[i] == 0) default else params[i]
+        // Some count-based commands distinguish an explicit zero from an omitted count.
+        val count = if (parameterCount == 0) 1 else params[0]
         val minY = if (origin) top else 0
         val minX = if (origin) left else 0
         val positionRow = (cursorRow - minY).coerceAtLeast(0) + 1
@@ -1456,9 +1458,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         when (final) {
             'A', 'k' -> cursorRow = (cursorRow - p()).coerceAtLeast(upLimit)
             'B' -> cursorRow = (cursorRow + p()).coerceAtMost(downLimit)
-            'e' -> position(positionRow + p(), positionColumn)
+            'e' -> position(positionRow + count, positionColumn)
             'C' -> cursorColumn = (cursorColumn + p()).coerceAtMost(if (cursorColumn <= right) right else columns - 1)
-            'a' -> position(positionRow, positionColumn + p())
+            'a' -> position(positionRow, positionColumn + count)
             'D', 'j' -> cursorLeft(p())
             'E' -> { cursorRow = (cursorRow + p()).coerceAtMost(downLimit); carriageReturn() }
             'F' -> { cursorRow = (cursorRow - p()).coerceAtLeast(upLimit); carriageReturn() }
@@ -1484,8 +1486,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 resetCursorWrap()
             }
             '@' -> insertCharacters(p())
-            'P' -> if (cursorColumn in left..right) {
-                val n = p().coerceAtMost(right + 1 - cursorColumn)
+            'P' -> if (count > 0 && cursorColumn in left..right) {
+                val n = count.coerceAtMost(right + 1 - cursorColumn)
                 val line = screen[cursorRow]
                 splitCellBoundary(cursorRow, cursorColumn); splitCellBoundary(cursorRow, cursorColumn + n)
                 splitCellBoundary(cursorRow, right + 1)
@@ -1493,10 +1495,10 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 line.clear(right + 1 - n, right + 1, -1, bg, 0)
                 resetCursorWrap(); damage(cursorRow)
             }
-            'L', 'M' -> if (cursorRow in top..bottom && cursorColumn in left..right) {
+            'L', 'M' -> if (count > 0 && cursorRow in top..bottom && cursorColumn in left..right) {
                 val restoreGraphics = graphicsState.preservePositions()
                 val oldTop = top; top = cursorRow
-                if (final == 'L') scrollDown(p(), adjustGraphics = false) else scrollUp(p(), retainHistory = false, adjustGraphics = false)
+                if (final == 'L') scrollDown(count, adjustGraphics = false) else scrollUp(count, retainHistory = false, adjustGraphics = false)
                 restoreGraphics()
                 if (left == 0 && right == columns - 1) for (y in top..bottom) {
                     screen[y].wrapped = false; screen[y].wrapContinuation = false
@@ -1504,8 +1506,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 top = oldTop
                 cursorColumn = left; pendingWrap = false
             }
-            'S' -> scrollUp(p())
-            'T' -> scrollDown(p())
+            'S' -> if (count > 0) scrollUp(count)
+            'T' -> if (count > 0) scrollDown(count)
             'b' -> if (parameterCount <= 1) previousCharacter?.let { code -> repeat(p()) { print(code) } }
             'r' -> if (!privateCsi && parameterCount <= 2) {
                 val first = p() - 1; val last = p(1, rows).coerceAtMost(rows) - 1
@@ -1524,8 +1526,8 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             'g' -> if (parameterCount <= 1) {
                 if (params[0] == 3) tabs.fill(false) else if (params[0] == 0) tabs[cursorColumn] = false
             }
-            'I' -> tab(p())
-            'Z' -> repeat(p().coerceAtMost(columns)) {
+            'I' -> tab(count)
+            'Z' -> repeat(count.coerceAtMost(columns)) {
                 if (cursorColumn > minX) do { cursorColumn-- } while (cursorColumn > minX && !tabs[cursorColumn])
             }
             'n' -> if (parameterCount == 1) when (params[0]) {
@@ -1544,6 +1546,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 19 -> reportSize(9)
                 21 -> if (titleReporting) sendProtocolBytes(byteArrayOf(27, 93, 108) + titleBytes + byteArrayOf(27, 92))
             }
+            else -> return
         }
         // Tab movement/clearing preserves pending wrap, even after leaving the margin.
         if (final !in "mhsncluJKbtrLMSTPIZg") pendingWrap = false
