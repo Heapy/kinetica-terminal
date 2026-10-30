@@ -82,6 +82,20 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Confirmed terminal behavior to implement or reconcile
 
+- [x] Native Force Click selects the original press's word, consumes further dragging and
+      stops autoscroll. It bypasses the double-click URL override, honors current word
+      delimiters, and preserves the prior selection when the pressed cell has no word.
+      Consumed gestures cannot emit prompt-click reports; application mouse capture retains
+      its press/release stream. The next local click sequence starts afresh even if AppKit
+      continues its native click count. Original `SelectionGesture.deepPress` is exercised at
+      2787 positions with state-consumption assertions; fixtures reproduce byte-for-byte.
+      Validation passes 1398 JVM tests, fresh Release JS tests, 60 focused Native tests and
+      Canvas/WebGL selection checks. Native synthetic pressure events reach the real callback
+      and exercise real autoscroll timers; physical trackpad acceptance is not claimed.
+- [ ] Complete native Quick Look integration after pressure-based selection. Original
+      `SurfaceView_AppKit.pressureChange` optionally invokes Quick Look when the system force-click
+      preference is enabled; selection and preview are separate responsibilities.
+
 - [x] Double-click a recognized visible HTTP(S) link as one complete selection, following
       `Surface`'s override of ordinary word selection. Soft wraps, wide/combined cells and
       OSC 133 boundaries retain their cell mapping. OSC 8 target URIs and activation policy

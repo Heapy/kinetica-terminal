@@ -100,6 +100,7 @@ pub fn build(b: *std.Build) void {
         initialPromptRedraw=False,
         cases=len(corpus), snapshots=sum(len(c["snapshots"]) for c in corpus),
         ranges=sum(len(s["ranges"]) for c in corpus for s in c["snapshots"]),
+        deepPresses=sum(len(s["deepPress"]) for c in corpus for s in c["snapshots"]),
         wordGestureSteps=sum(sum(len(g) for g in s["wordGestures"]) for c in corpus for s in c["snapshots"]),
         gestureSteps=sum(sum(len(g) for g in s["gestures"]) for c in corpus for s in c["snapshots"]),
         helperSha256=digest(helper), generatorSha256=digest(Path(__file__)), fixtureSha256=digest(fixture),

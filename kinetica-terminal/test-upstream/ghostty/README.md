@@ -31,6 +31,15 @@ launching. Common/native/browser tests separately exercise link lookup and doubl
 
 ## Line/word selection and semantic link-boundary oracle
 
+The same snapshots now exercise original `SelectionGesture.deepPress` at every cell. Besides
+the selected range/text, the helper verifies that deep press clears the click count/time and
+tracked pin, marks the gesture as dragged, stops autoscroll, and makes repeated pressure and
+subsequent dragging return no replacement selection. There are 2787 original deep presses;
+the Kotlin corpus runs them with whole-stream and bytewise input. Host tests separately cover
+existing drag/autoscroll cancellation, blank anchors, frozen text and custom word boundaries.
+AppKit tests deliver synthetic `NSEvent` subclasses to the actual pressure callback and use
+real mouse callbacks/timers; they do not claim physical trackpad or Quick Look acceptance.
+
 `semantic-line-manifest.json` pins original `Screen.selectLine` with the same options used by
 `Surface.linkAtPin`: no whitespace trimming and semantic boundaries enabled. Regenerate with:
 

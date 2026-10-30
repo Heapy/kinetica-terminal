@@ -294,6 +294,16 @@ public class TerminalViewport internal constructor(
         dragColumn = column; dragRow = row
         activeSelection.extend(position(column, row)); updateDragScroll(); markAll()
     }
+    /** Consume a held local pointer gesture and select the word at its original press.
+     * Returns true for a consumed gesture even when an unwritten cell has no word;
+     * in that case the previous selection remains. */
+    public fun deepPressSelection(): Boolean {
+        if (disposed || !draggingSelection) return false
+        val consumed = activeSelection.deepPress()
+        cancelSelectionDrag()
+        if (consumed) markAll()
+        return consumed
+    }
     /** Complete a local drag while retaining its text selection. */
     public fun endSelection(column: Int, row: Int) { finishSelection(column, row, false) }
     /** Release a local left-button gesture, including negotiated OSC 133 click reporting.

@@ -10,6 +10,57 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    private class PressureEvent(private val pressureStage: Long) : NSEvent() {
+        override fun stage(): Long = pressureStage
+    }
+
+    @Test fun nativeForceClickSelectsOriginalWordAndConsumesTheHeldGesture() = withView { session, view, mouse ->
+        session.write("alpha-beta gamma")
+        view.pressureChangeWithEvent(PressureEvent(2))
+        assertEquals("", view.accessibilitySelectedText(), "Pressure without a held press does nothing")
+        mouse(NSEventTypeLeftMouseDown, 2, 0, 1)
+        mouse(NSEventTypeLeftMouseDragged, 14, 0, 1)
+        val dragged = view.accessibilitySelectedText()
+        view.pressureChangeWithEvent(PressureEvent(1)); assertEquals(dragged, view.accessibilitySelectedText())
+        view.pressureChangeWithEvent(PressureEvent(2)); assertEquals("alpha-beta", view.accessibilitySelectedText())
+        mouse(NSEventTypeLeftMouseDragged, 18, 1, 1)
+        view.pressureChangeWithEvent(PressureEvent(2))
+        mouse(NSEventTypeLeftMouseUp, 18, 1, 1)
+        assertEquals("alpha-beta", view.accessibilitySelectedText())
+        // AppKit may continue its native click count, while Ghostty clears its selection sequence.
+        mouse(NSEventTypeLeftMouseDown, 2, 0, 2)
+        mouse(NSEventTypeLeftMouseUp, 2, 0, 2)
+        assertEquals("", view.accessibilitySelectedText())
+        mouse(NSEventTypeLeftMouseDown, 2, 0, 3)
+        mouse(NSEventTypeLeftMouseUp, 2, 0, 3)
+        assertEquals("alpha-beta", view.accessibilitySelectedText())
+    }
+
+    @Test fun nativeForceClickStopsTimersAndNeverSynthesizesPromptOrMouseReports() = withView { session, view, mouse ->
+        val replies = StringBuilder()
+        val subscription = session.onInput { replies.append(it.toByteArray().decodeToString()) }
+        try {
+            repeat(80) { session.write("line-$it\r\n") }
+            mouse(NSEventTypeLeftMouseDown, 2, 2, 1)
+            mouse(NSEventTypeLeftMouseDragged, 4, -2, 1)
+            view.pressureChangeWithEvent(PressureEvent(2))
+            val selected = view.accessibilitySelectedText(); val visible = view.accessibilityValue()
+            pump(180); assertEquals(visible, view.accessibilityValue()); assertEquals(selected, view.accessibilitySelectedText())
+            mouse(NSEventTypeLeftMouseUp, 4, -2, 1)
+            session.reset(); session.write("\u001b]133;A;click_events=1\u0007$ \u001b]133;B\u0007hello")
+            mouse(NSEventTypeLeftMouseDown, 4, 0, 1)
+            view.pressureChangeWithEvent(PressureEvent(2))
+            mouse(NSEventTypeLeftMouseUp, 4, 0, 1)
+            assertEquals("hello", view.accessibilitySelectedText()); assertEquals("", replies.toString())
+            session.write("\u001b[?1000h\u001b[?1006h")
+            mouse(NSEventTypeLeftMouseDown, 4, 0, 1)
+            view.pressureChangeWithEvent(PressureEvent(2))
+            mouse(NSEventTypeLeftMouseUp, 4, 0, 1)
+            assertEquals("\u001b[<0;5;1M\u001b[<0;5;1m", replies.toString())
+            assertEquals("", view.accessibilitySelectedText())
+        } finally { subscription.dispose() }
+    }
+
     @Test fun nativeDoubleClicksRecognizePathsWithSpacesAndOtherSchemes() = withView { session, view, mouse ->
         for (link in listOf("mailto:me@example.org", "../test folder/file.txt", "ssh://example.org/a", "src/config/url.zig")) {
             session.reset(); session.write("($link)")

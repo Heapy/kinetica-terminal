@@ -1,4 +1,4 @@
-// Line selection and plain-text formatting adapted from Ghostty (MIT).
+// Selection gestures and plain-text formatting adapted from Ghostty (MIT).
 // Copyright (c) 2024 Mitchell Hashimoto, Ghostty contributors.
 // Pinned sources and license: ../third-party/ghostty.json and GHOSTTY-LICENSE.
 package io.heapy.kinetica.terminal
@@ -83,6 +83,17 @@ internal class TerminalSelection(
         val end = anchorEnd?.position() ?: return
         val focus = unit(position) ?: return
         setRange(normalize(TerminalSelectionRange(minOf(start, focus.start), maxOf(end, focus.end))))
+    }
+
+    /** Force click uses the original press's word, without the double-click URL override. */
+    fun deepPress(): Boolean {
+        reconcile()
+        val origin = clickAnchor?.position() ?: return false
+        val word = terminalWordRange(origin, firstLine(), lastLine(), line, wordBoundaries())
+        clickAnchor = null; anchorStart = null; anchorEnd = null
+        if (word != null) { mode = TerminalSelectionMode.WORD; setRange(normalize(word)) }
+        // An unwritten cell produces no replacement selection, but still consumes the gesture.
+        return true
     }
 
     fun text(): String {

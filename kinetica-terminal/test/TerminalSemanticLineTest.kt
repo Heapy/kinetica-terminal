@@ -50,6 +50,14 @@ class TerminalSemanticLineTest {
                     assertEquals(result.getValue("text").jsonPrimitive.content, selection.text(), context)
                 }
                 try {
+                    for ((cell, selected) in expected.getValue("deepPress").jsonArray.withIndex()) {
+                        selection.begin(TerminalCellPosition(cell / session.columns, cell % session.columns), TerminalSelectionMode.CHARACTER)
+                        assertTrue(selection.deepPress(), "$label deep press=$cell consumes valid anchor")
+                        checkSelected(selected, "$label deep press=$cell")
+                        assertFalse(selection.deepPress(), "$label repeated deep press=$cell")
+                        selection.extend(TerminalCellPosition(session.lineCount - 1, session.columns - 1))
+                        checkSelected(selected, "$label drag after deep press=$cell")
+                    }
                     for (mode in TerminalSelectionMode.entries.filter { it != TerminalSelectionMode.CHARACTER }) {
                         val selections = if (mode == TerminalSelectionMode.LINE) "selected" else "words"
                         val gestures = if (mode == TerminalSelectionMode.LINE) "gestures" else "wordGestures"

@@ -3,6 +3,51 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalSelectionTest {
+    @Test fun deepPressSelectsOriginalWordConsumesDragAndStopsAutoscroll() {
+        val session = TerminalSession(30, 4).also { it.scrollbackCompression = false }
+        val clock = Clock()
+        val viewport = TerminalViewport(session, {}, clock)
+        try {
+            session.write((0..30).joinToString("\r\n") { "alpha-$it beta" })
+            viewport.beginSelection(2, 1); viewport.extendSelection(8, -2)
+            assertTrue(clock.pending > 0)
+            val original = session.line(session.historySize + 1).text().substringBefore(' ')
+            assertTrue(viewport.deepPressSelection())
+            assertEquals(original, viewport.selectedText()); assertEquals(0, clock.pending)
+            val offset = viewport.scrollOffset
+            viewport.extendSelection(20, 3); clock.advance(1000)
+            assertEquals(original, viewport.selectedText()); assertEquals(offset, viewport.scrollOffset)
+            assertFalse(viewport.deepPressSelection()); assertFalse(viewport.endPointerSelection(20, 3))
+            session.reset(); session.write("https://example.org")
+            viewport.beginSelection(2, 0, TerminalSelectionMode.WORD)
+            assertEquals("https://example.org", viewport.selectedText())
+            assertTrue(viewport.deepPressSelection()); assertEquals("https", viewport.selectedText())
+            viewport.beginSelection(2, 0); viewport.cancelSelectionDrag()
+            assertFalse(viewport.deepPressSelection())
+            viewport.beginSelection(2, 0); session.write("\u001b[?1049h")
+            assertFalse(viewport.deepPressSelection(), "Screen switching cancels the original anchor")
+        } finally { viewport.dispose() }
+    }
+
+    @Test fun deepPressOnBlankConsumesGestureAndFrozenSelectionUsesVisibleText() {
+        val session = TerminalSession(20, 4)
+        val viewport = TerminalViewport(session, {})
+        try {
+            session.write("alpha-beta gamma")
+            viewport.beginSelection(1, 2); viewport.extendSelection(6, 0)
+            val before = viewport.selectedText()
+            assertTrue(viewport.deepPressSelection())
+            assertEquals(before, viewport.selectedText(), "No word retains the existing selection")
+            viewport.extendSelection(0, 0); assertEquals(before, viewport.selectedText())
+            session.write("\u001b[?2026h\u001b[Hchanged")
+            viewport.beginSelection(7, 0)
+            session.selectionWordChars = "- "
+            assertTrue(viewport.deepPressSelection()); assertEquals("beta", viewport.selectedText())
+            session.write("\u001b[?2026l")
+            assertFalse(viewport.deepPressSelection())
+        } finally { viewport.dispose() }
+    }
+
     @Test fun wordBoundaryPolicySupportsUnicodeChangesFrozenFramesAndResets() {
         val session = TerminalSession(30, 4)
         val viewport = TerminalViewport(session, {})

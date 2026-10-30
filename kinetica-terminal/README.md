@@ -452,6 +452,11 @@ Shift+PageUp/PageDown, and accessibility text are available.
   parentheses, query punctuation and path spaces, across soft wraps. Releasing without moving retains that
   selection; dragging resumes word selection. OSC 8 labels still use their visible text and
   never substitute a hidden target URI into the selection.
+- On macOS, Force Click during a local left-button gesture selects the word at the original
+  press, stops autoscroll and consumes further dragging until release. It uses word delimiters,
+  including inside URLs, and does not send a shell prompt-click report. Application-captured
+  mouse gestures remain application gestures. Other hosts may call `viewport.deepPressSelection()`.
+  This provides pressure-based selection; native Quick Look integration remains pending.
 - `session.selectionWordChars` replaces the word delimiters with the Unicode code points in
   a host-provided string; for example, `" \t"` keeps punctuation inside words. NUL is always a
   delimiter. Supplementary code points are supported; multi-code-point graphemes are treated

@@ -78,6 +78,8 @@ public class AppKitTerminalView(
     private var marked = ""
     private var markedSelection = NSMakeRange(0u, 0u)
     private var selecting = false
+    private var leftClickCount = 0L
+    private var forceClickCountOffset = 0L
     private val mouseReporter = TerminalMouseReporter(session)
     private val verticalScroll = TerminalScrollAccumulator()
     private val horizontalScroll = TerminalScrollAccumulator()
@@ -577,6 +579,8 @@ public class AppKitTerminalView(
 
     override fun mouseDown(event: NSEvent) {
         if (disposed) return
+        leftClickCount = event.clickCount
+        if (leftClickCount <= 1) forceClickCountOffset = 0
         window?.makeFirstResponder(this)
         val (x, y) = cell(event)
         if (event.modifierFlags and NSEventModifierFlagCommand != 0uL) {
@@ -595,7 +599,7 @@ public class AppKitTerminalView(
             }
         }
         selecting = !mouse(event, 0)
-        if (selecting) viewport.beginSelection(x, y, when (event.clickCount.toInt()) {
+        if (selecting) viewport.beginSelection(x, y, when ((leftClickCount - forceClickCountOffset).coerceAtLeast(1).toInt()) {
             0, 1 -> TerminalSelectionMode.CHARACTER
             2 -> TerminalSelectionMode.WORD
             else -> TerminalSelectionMode.LINE
@@ -605,6 +609,11 @@ public class AppKitTerminalView(
         if (disposed) return
         val (x, y) = cell(event)
         if (selecting) viewport.extendSelection(x, y) else mouse(event, 0, motion = true)
+    }
+    override fun pressureChangeWithEvent(event: NSEvent) {
+        if (!disposed && selecting && event.stage == 2L && viewport.deepPressSelection()) {
+            forceClickCountOffset = leftClickCount
+        }
     }
     override fun mouseUp(event: NSEvent) {
         if (disposed) return

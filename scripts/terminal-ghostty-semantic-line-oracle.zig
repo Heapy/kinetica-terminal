@@ -6,7 +6,7 @@ const Event = struct { text: ?[]const u8 = null, resize: ?[2]u16 = null };
 const Case = struct { name: []const u8, columns: u16, rows: u16, events: []const Event, word_boundaries: ?[]const u21 = null };
 const Selected = struct { range: [4]u32, text: []const u8 };
 const GestureStep = struct { position: [2]u32, selected: ?Selected };
-const Snapshot = struct { columns: u16, lines: u32, semantics: []const u32, markers: []const u32, ranges: []const [6]u32, selected: []const ?Selected, gestures: []const []const GestureStep, words: []const ?Selected, wordGestures: []const []const GestureStep };
+const Snapshot = struct { columns: u16, lines: u32, semantics: []const u32, markers: []const u32, ranges: []const [6]u32, selected: []const ?Selected, gestures: []const []const GestureStep, words: []const ?Selected, wordGestures: []const []const GestureStep, deepPress: []const ?Selected };
 fn selected(screen: *vt.Screen, alloc: std.mem.Allocator, selection: ?vt.Selection) !?Selected {
     var sel = selection orelse return null;
     defer sel.deinit(screen);
@@ -39,6 +39,7 @@ pub fn main(init: std.process.Init) !void {
             var markers: std.ArrayList(u32) = .empty;
             var selections: std.ArrayList(?Selected) = .empty;
             var words: std.ArrayList(?Selected) = .empty;
+            var deep_presses: std.ArrayList(?Selected) = .empty;
             for (0..lines) |y| for (0..terminal.cols) |x| {
                 const pin = screen.pages.pin(.{ .screen = .{ .x = @intCast(x), .y = @intCast(y) } }).?;
                 const rac = pin.rowAndCell();
@@ -51,6 +52,25 @@ pub fn main(init: std.process.Init) !void {
                 try ranges.append(alloc, .{ @intCast(x), @intCast(y), start.x, start.y, @as(u32, end.x) + 1, end.y });
                 try selections.append(alloc, try selected(screen, alloc, screen.selectLine(.{ .pin = pin })));
                 try words.append(alloc, try selected(screen, alloc, screen.selectWord(pin, boundaries)));
+                var gesture: vt.SelectionGesture = .init;
+                defer gesture.deinit(&terminal);
+                _ = try gesture.press(&terminal, .{
+                    .time = null, .pin = pin, .xpos = @floatFromInt(x), .ypos = @floatFromInt(y),
+                    .max_distance = 1, .repeat_interval = 0, .word_boundary_codepoints = boundaries,
+                    .behaviors = &.{ .cell, .cell, .cell },
+                });
+                try deep_presses.append(alloc, try selected(screen, alloc, gesture.deepPress(&terminal, .{ .word_boundary_codepoints = boundaries })));
+                if (gesture.left_click_count != 0 or gesture.left_click_time != null or
+                    !gesture.left_click_dragged or gesture.left_drag_autoscroll != .none or gesture.left_click_pin != null)
+                    return error.DeepPressDidNotConsumeGesture;
+                if (gesture.deepPress(&terminal, .{ .word_boundary_codepoints = boundaries }) != null)
+                    return error.RepeatedDeepPressSelected;
+                const focus = screen.pages.pin(.{ .screen = .{ .x = terminal.cols - 1, .y = lines - 1 } }).?;
+                if (gesture.drag(&terminal, .{
+                    .pin = focus, .xpos = @floatFromInt(terminal.cols - 1), .ypos = @floatFromInt(lines - 1),
+                    .rectangle = false, .word_boundary_codepoints = boundaries,
+                    .geometry = .{ .columns = terminal.cols, .cell_width = 1, .padding_left = 0, .screen_height = @intCast(lines) },
+                }) != null) return error.DragAfterDeepPressSelected;
             };
             var gesture_sets: [2][]const []const GestureStep = undefined;
             for ([_]vt.SelectionGesture.Behavior{ .line, .word }, 0..) |behavior, mode| {
@@ -87,7 +107,7 @@ pub fn main(init: std.process.Init) !void {
                 };
                 gesture_sets[mode] = gestures.items;
             }
-            try snapshots.append(alloc, .{ .columns = terminal.cols, .lines = @intCast(lines), .semantics = semantics.items, .markers = markers.items, .ranges = ranges.items, .selected = selections.items, .gestures = gesture_sets[0], .words = words.items, .wordGestures = gesture_sets[1] });
+            try snapshots.append(alloc, .{ .columns = terminal.cols, .lines = @intCast(lines), .semantics = semantics.items, .markers = markers.items, .ranges = ranges.items, .selected = selections.items, .gestures = gesture_sets[0], .words = words.items, .wordGestures = gesture_sets[1], .deepPress = deep_presses.items });
         }
         const result = try std.json.Stringify.valueAlloc(alloc, .{ .name = case.name, .snapshots = snapshots.items }, .{});
         if (write(1, result.ptr, result.len) != result.len or write(1, "\n", 1) != 1) return error.WriteFailed;
