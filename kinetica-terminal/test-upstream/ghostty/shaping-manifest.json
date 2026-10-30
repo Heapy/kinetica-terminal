@@ -1,0 +1,33 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "zig": "0.17.0",
+  "backend": "freetype",
+  "points": 12,
+  "cases": 77,
+  "runs": 195,
+  "glyphs": 1147,
+  "helperSha256": "edb55b29eca3f9ba4f42f7522a664e162e9c8dcd454431c266fa7b69f6b3c1db",
+  "generatorSha256": "d9f8435c7548b72751f2726a5d45b69e94876d500c05e566b94f53c38a42fa3d",
+  "fixtureSha256": "282aa3995933eb320af80fb287786591559b142da07f6b5d2b9dcd3e5a9b815c",
+  "sources": {
+    "src/font/shaper/run.zig": "db733c86a1c4454ee17bb838f6af889d3bffa0d693b6e09f22ab3765695462b7",
+    "src/font/shaper/harfbuzz.zig": "cce3a6e6ac8492f4c402401aafe2c1ea2b078c0faf7b900bc7d54659cb6480fc",
+    "src/font/shaper/feature.zig": "d46a11fdde224f0d036a56238e92511f4c0e59395e08657c99fb659f2fb87e32",
+    "src/font/CodepointResolver.zig": "898b7742b0a871e214e72279cf498bd301ac3a16fc9ab0da79ff8c9a62522d93",
+    "src/font/SharedGrid.zig": "772d83dd1203ff60a2244f218108f58e52e51f5793eacdfa3d7d9b90395765be",
+    "src/font/Collection.zig": "a4986b62c585edc55924f9a78baae35a403f924a6ecd338cbf01662a3a571b9e",
+    "src/font/face/freetype.zig": "5d0d125a2d7ef02302d5ceaab918bbeb01a11cbbae66340170ba7e654b15c7a3",
+    "src/terminal/render.zig": "813c385b4282728d26c37f2a3ddf3c988909f0b437f5dab3ba4b3a0542d4d9c0",
+    "build.zig.zon": "195967ceee17309c61737edb8ed0565746a02814a4d3dd1881ef0c39b9e947a4",
+    "pkg/freetype/build.zig.zon": "46ce4eb4a795e07ac2b89fd2a648fa23e651aedf940e28c9c4e57f9e0afce325",
+    "pkg/harfbuzz/build.zig.zon": "44a91d0e5b1dde44f39bd5b76ce19ec2edb82160cf4a889f1a6d378c990274a8",
+    "pkg/libpng/build.zig.zon": "4546494e09ee5459dca7caf363521545d96aaff65d07d84ab22b74ee80a9e4de",
+    "pkg/zlib/build.zig.zon": "ec984b740c5bc72bdb6e4afe45130bd3fe1d5a83eada1c36ece319b48883b69b",
+    "src/font/res/JetBrainsMonoNoNF-Regular.ttf": "a0bf60ef0f83c5ed4d7a75d45838548b1f6873372dfac88f71804491898d138f",
+    "src/font/res/Inconsolata-Regular.ttf": "12b440cdc81f2582dc87dc1ade098919f608d7c72f5ef7829b76d171fddc426f",
+    "src/font/res/MonaspaceNeon-Regular.otf": "9e3c617497419fbf2d39f449d1a16ce98ef31c88acdca535ed4c3eff548f0c0a",
+    "src/font/res/KawkabMono-Regular.ttf": "e16e63326d6827e5d3cf23b9dbf021c24568bf27be2ba8c642af124b030e982a",
+    "src/font/res/NotoColorEmoji.ttf": "72a635cb3d2f3524c51620cdde406b217204e8a6a06c6a096ff8ed4b5fd6e27b",
+    "src/font/res/NotoEmoji-Regular.ttf": "cd07743a4c93d8da929afdd28c1d368f11da478a1093146a13610081c2a58440"
+  }
+}

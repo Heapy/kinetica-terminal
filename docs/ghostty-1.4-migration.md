@@ -133,6 +133,9 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 - [ ] Shape multi-cell font runs in GPU renderers, including programming ligatures.
       The current per-cell `TerminalGpu` glyph keys cannot form a ligature across cells;
       original Ghostty `renderer/generic.zig` uses a font-shaper run iterator and cluster mapping.
+      The [font shaping reference](terminal-font-shaping.md) records original run boundaries,
+      font identities, glyph substitutions and terminal-grid offsets using embedded fonts.
+      This reference preparation does not close the renderer implementation requirement.
 - [x] Implement shared hover identity, range tracking and decorations. Reopened implicit
       OSC 8 links remain independent; explicit nonempty IDs match by ID plus URI across
       disjoint visible rows. Copies, reflow and frozen snapshots retain identity. The original
