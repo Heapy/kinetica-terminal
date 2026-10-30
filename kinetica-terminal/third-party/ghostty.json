@@ -30,6 +30,7 @@
     "src/terminfo/Source.zig",
     "src/terminfo/ghostty.zig",
     "src/input/key_encode.zig",
+    "src/input/key.zig",
     "src/input/paste.zig",
     "src/input/key_mods.zig",
     "src/surface_mouse.zig",

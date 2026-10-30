@@ -60,6 +60,25 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Browser/AppKit now expose `selectionClearOnCopy` (default false) and `selectionClearOnTyping`
+(default true), following pinned `Surface.copy_to_clipboard`, `keyCallback`, `preeditCallback`
+and the corresponding Config fields. Explicit copies clear immediately after dispatch when
+enabled, even on a rejected/failed clipboard write; automatic copy-on-select does not clear.
+Asynchronous completions cannot clear a newer selection. Disabling clear-on-typing retains
+selection for typed text and IME, while encoded Escape remains unconditional. Pure modifiers,
+consumed empty encodings and KAM-blocked keys do not clear or scroll; encoded Kitty releases
+apply the same input policy as presses, including forwarded Command combinations on AppKit.
+Lock keys follow Ghostty's non-modifier classification. Starting/changing/ending preedit applies
+the typing policy before commitment. Existing paste/DnD and selection invalidation remain
+independent. An internal sendKey overload distinguishes actual bytes from handled empty events
+without changing the public Boolean contract. Tests also verify effect-before-delivery ordering.
+Validation passes 1659 JVM tests, fresh Release JS tests and 39 focused Native tests covering
+keyboard/IME, clipboard, lookup, selection and navigation. Browser selection-policy checks pass
+across macOS/Linux shortcuts and Canvas/WebGL, including delayed clipboard rejection and KAM;
+the full browser terminal verifier also passes. Evidence: `TerminalKeyboardTest`,
+`MacOsSelectionPolicyTest`, `scripts/verify-terminal-selection-policy.mjs` and
+`/tmp/kinetica-selection-policy-*`.
+
 Copy-on-select now implements Ghostty 1.4's none/primary/clipboard/both policies in Browser
 and AppKit views. Left gestures copy only at release; Select All and newly committed context-menu
 selections also copy. Automatic copies always use mixed format, independently of explicit-copy

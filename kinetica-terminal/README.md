@@ -349,6 +349,19 @@ Custom hosts can call `viewport.selectForContextMenu(column, row, linkModifiers)
 its Boolean result says whether a new selection was committed. Clipboard failure does not clear
 the selection or prevent attempting the other destination under `BOTH`.
 
+`view.selectionClearOnCopy` defaults to `false`. When enabled, explicit keyboard/menu/DOM
+copy clears the selection immediately after dispatching the copy attempt, including when the
+host rejects the write. Automatic copy-on-select keeps it. Completion of an asynchronous
+clipboard request never clears a selection made afterward.
+`view.selectionClearOnTyping` defaults to `true`. Set it to `false` to retain selection while
+typing or composing IME text. Escape still clears it when that key actually sends input.
+Empty/blocked key events and pure modifiers preserve selection; encoded Kitty release events
+use the same policy as presses. Lock keys are not pure modifiers. Starting/updating/ending
+preedit applies the typing policy before any text is committed. Paste, dropped text, screen
+clearing and selection invalidation retain their separate behavior. The public
+`TerminalSession.sendKey` Boolean still means handled, including consumed events with no bytes;
+host input effects run only after a nonempty encoding is ready for delivery.
+
 Cmd+J on macOS scrolls back to the current selection in both browser and AppKit surfaces.
 It preserves the selected text and puts its first retained row at the top (or returns to the
 bottom viewport when the selection is in the active screen), following Ghostty's

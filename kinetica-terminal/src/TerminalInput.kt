@@ -161,12 +161,23 @@ private fun legacyControlKey(event: TerminalKey): String? {
 }
 
 /** Returns true for consumed keys, including those suppressed by an opted-in KAM lock. */
-public fun TerminalSession.sendKey(event: TerminalKey): Boolean {
+public fun TerminalSession.sendKey(event: TerminalKey): Boolean = sendKey(event) {}
+
+/** Host effects run only for nonempty, unblocked input, after encoding and before delivery.
+ * The public Boolean still means handled: consumed empty events must not fall through to IME. */
+internal fun TerminalSession.sendKey(event: TerminalKey, beforeWrite: () -> Unit): Boolean {
     if (keyboardInputBlocked) return true
     return encodeKey(event)?.let {
-        if (it.isNotEmpty()) sendInput(it)
+        if (it.isNotEmpty()) { beforeWrite(); sendInput(it) }
         true
     } ?: false
+}
+
+/** Ghostty Key.modifier excludes lock keys, which can emit ordinary Kitty key events. */
+internal val TerminalKey.selectionModifier: Boolean get() = when (physicalCode?.takeIf { it.isNotEmpty() } ?: key) {
+    "Shift", "ShiftLeft", "ShiftRight", "Control", "ControlLeft", "ControlRight",
+    "Alt", "AltLeft", "AltRight", "AltGraph", "Meta", "MetaLeft", "MetaRight" -> true
+    else -> false
 }
 
 /** Committed typing/IME text. Raw host input and protocol replies use [sendInput] instead. */

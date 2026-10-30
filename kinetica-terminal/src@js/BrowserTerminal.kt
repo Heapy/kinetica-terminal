@@ -61,6 +61,8 @@ public class BrowserTerminalView(
     public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
     public var copyTrimTrailingSpaces: Boolean = true
     public var copyFormat: TerminalCopyFormat = TerminalCopyFormat.MIXED
+    public var selectionClearOnCopy: Boolean = false
+    public var selectionClearOnTyping: Boolean = true
     public var copyOnSelect: TerminalCopyOnSelect = if (window.navigator.platform.startsWith("Linux"))
         TerminalCopyOnSelect.PRIMARY else TerminalCopyOnSelect.NONE
     public var copyCodepointMap: List<TerminalClipboardCodepointMap> = emptyList()
@@ -201,11 +203,8 @@ public class BrowserTerminalView(
                 copySelection(); event.preventDefault()
             } else if (navigateViewport(key)) {
                 event.preventDefault()
-            } else if (session.sendKey(key)) {
+            } else if (sendTypedKey(key)) {
                 pressedKeys.add((event.code as? String) ?: key.key)
-                if (key.key !in listOf("Shift", "Control", "Alt", "Meta", "CapsLock", "NumLock", "AltGraph")) {
-                    viewport.followOutput(); viewport.clearSelection()
-                }
                 event.preventDefault()
             } else {
                 pressedKeys.add((event.code as? String) ?: key.key)
@@ -216,7 +215,7 @@ public class BrowserTerminalView(
             event.stopPropagation()
             val identity = (event.code as? String) ?: event.key as String
             if (pressedKeys.remove(identity) && !composing && event.isComposing != true) {
-                session.sendKey(key(event).copy(action = TerminalKeyAction.RELEASE))
+                sendTypedKey(key(event).copy(action = TerminalKeyAction.RELEASE))
             }
         }
         listen(input, "input") { event ->
@@ -226,21 +225,23 @@ public class BrowserTerminalView(
                 input.value = ""
                 val duplicateComposition = value == suppressComposition &&
                     (event.inputType == "insertCompositionText" || event.inputType == "insertFromComposition")
-                if (value.isNotEmpty() && !duplicateComposition) { viewport.followOutput(); viewport.clearSelection(); session.sendText(value) }
+                if (!duplicateComposition) sendTypedText(value)
                 suppressComposition = null
             }
         }
-        listen(input, "compositionstart") { composing = true; pressedKeys.clear() }
+        listen(input, "compositionstart") { composing = true; pressedKeys.clear(); clearSelectionForPreedit() }
         listen(input, "compositionupdate") { event ->
+            if (composing || !(event.data as? String).isNullOrEmpty()) clearSelectionForPreedit()
             composition.textContent = (event.data as? String).orEmpty()
             composition.style.display = "block"; composition.style.font = font()
             composition.style.left = input.style.left; composition.style.top = input.style.top
         }
         listen(input, "compositionend") { event ->
+            if (composing) clearSelectionForPreedit()
             composing = false
             composition.style.display = "none"; composition.textContent = ""
             val text = (event.data as? String).orEmpty()
-            if (text.isNotEmpty()) { viewport.followOutput(); viewport.clearSelection(); session.sendText(text) }
+            sendTypedText(text)
             input.value = ""; suppressComposition = text
         }
         listen(input, "paste") { event ->
@@ -259,6 +260,7 @@ public class BrowserTerminalView(
                     event.clipboardData?.clearData()
                     data.text?.let { event.clipboardData?.setData("text/plain", it) }
                     data.html?.let { event.clipboardData?.setData("text/html", it) }
+                    if (selectionClearOnCopy) viewport.clearSelection()
                 }
                 event.preventDefault(); event.stopPropagation()
             }
@@ -636,9 +638,21 @@ public class BrowserTerminalView(
         focused = value; viewport.setFocused(value); session.sendFocus(value)
         if (value) notifications?.clear()
     }
-    private fun copySelectionAutomatically() = copySelection(TerminalCopyFormat.MIXED, copyOnSelect.locations)
+    private fun beforeTypedInput(key: TerminalKey? = null) {
+        if (key?.selectionModifier == true) return
+        viewport.followOutput()
+        if (selectionClearOnTyping || key?.key == "Escape") viewport.clearSelection()
+    }
+    private fun sendTypedKey(key: TerminalKey): Boolean = session.sendKey(key) { beforeTypedInput(key) }
+    private fun sendTypedText(text: String) {
+        if (disposed || session.keyboardInputBlocked || text.isEmpty()) return
+        beforeTypedInput(); session.sendText(text)
+    }
+    private fun clearSelectionForPreedit() { if (selectionClearOnTyping) viewport.clearSelection() }
+    private fun copySelectionAutomatically() = copySelection(TerminalCopyFormat.MIXED, copyOnSelect.locations, clearAfter = false)
     private fun copySelection(format: TerminalCopyFormat = copyFormat,
-        locations: List<TerminalClipboardLocation> = listOf(TerminalClipboardLocation.STANDARD)) {
+        locations: List<TerminalClipboardLocation> = listOf(TerminalClipboardLocation.STANDARD),
+        clearAfter: Boolean = selectionClearOnCopy) {
         if (locations.isEmpty()) return
         val data = viewport.copyData(format, copyTrimTrailingSpaces, copyCodepointMap) ?: return
         val contents = data.contents()
@@ -650,6 +664,7 @@ public class BrowserTerminalView(
                 }
             }
         }
+        if (clearAfter) viewport.clearSelection()
     }
     private fun updateProgress() {
         val report = progressPresentation.report

@@ -61,6 +61,8 @@ public class AppKitTerminalView(
     public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
     public var copyTrimTrailingSpaces: Boolean = true
     public var copyFormat: TerminalCopyFormat = TerminalCopyFormat.MIXED
+    public var selectionClearOnCopy: Boolean = false
+    public var selectionClearOnTyping: Boolean = true
     public var copyOnSelect: TerminalCopyOnSelect = TerminalCopyOnSelect.NONE
     public var copyCodepointMap: List<TerminalClipboardCodepointMap> = emptyList()
         set(value) { field = value.toList() }
@@ -561,7 +563,7 @@ public class AppKitTerminalView(
                 "k" -> if (shift) clearHistory(null) else clearScreen(null)
                 else -> if (session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2) {
                     val terminalKey = terminalKey(event)
-                    if (session.sendKey(terminalKey)) pressedKeys[event.keyCode] = terminalKey
+                    if (sendTypedKey(terminalKey)) pressedKeys[event.keyCode] = terminalKey
                 } else super.keyDown(event)
             }
             return
@@ -579,9 +581,9 @@ public class AppKitTerminalView(
         val optionPressed = flags and NSEventModifierFlagOption != 0uL
         val interpretText = (extendedKeyboard || optionPressed) && terminalKey.key.terminalCodepoints().size == 1 &&
             !control && !command && !(optionAsAlt.applies(flags) && optionPressed)
-        if (!hasMarkedText() && !interpretText && session.sendKey(terminalKey)) {
+        if (!hasMarkedText() && !interpretText && sendTypedKey(terminalKey)) {
             pressedKeys[event.keyCode] = terminalKey
-            viewport.followOutput(); viewport.clearSelection(); return
+            return
         }
         interpretingKey = if (!hasMarkedText()) event.keyCode to terminalKey else null
         try { interpretKeyEvents(listOf(event)) } finally { interpretingKey = null }
@@ -647,7 +649,7 @@ public class AppKitTerminalView(
         if (disposed) return
         val pressed = pressedKeys.remove(event.keyCode) ?: return
         val flags = event.modifierFlags
-        session.sendKey(pressed.copy(action = TerminalKeyAction.RELEASE,
+        sendTypedKey(pressed.copy(action = TerminalKeyAction.RELEASE,
             shift = flags and NSEventModifierFlagShift != 0uL, control = flags and NSEventModifierFlagControl != 0uL,
             alt = flags and NSEventModifierFlagOption != 0uL, meta = flags and NSEventModifierFlagCommand != 0uL,
             capsLock = flags and NSEventModifierFlagCapsLock != 0uL, optionAsAlt = optionAsAlt.applies(flags)))
@@ -665,7 +667,7 @@ public class AppKitTerminalView(
         val pressed = pressedModifiers.add(event.keyCode)
         if (!pressed) pressedModifiers.remove(event.keyCode)
         val flags = event.modifierFlags
-        session.sendKey(TerminalKey(identity, physicalCode = identity,
+        sendTypedKey(TerminalKey(identity, physicalCode = identity,
             action = if (pressed) TerminalKeyAction.PRESS else TerminalKeyAction.RELEASE,
             shift = flags and NSEventModifierFlagShift != 0uL, control = flags and NSEventModifierFlagControl != 0uL,
             alt = flags and NSEventModifierFlagOption != 0uL, meta = flags and NSEventModifierFlagCommand != 0uL,
@@ -673,22 +675,29 @@ public class AppKitTerminalView(
     }
 
     override fun insertText(string: Any, replacementRange: CValue<NSRange>) {
+        if (disposed) return
         val value = if (string is NSAttributedString) string.string else string.toString()
         val pending = interpretingKey
-        marked = ""; viewport.followOutput(); viewport.clearSelection()
+        unmarkText()
         if (pending != null && (session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2)) {
             val key = pending.second.copy(text = value)
-            if (!session.sendKey(key)) session.sendText(value)
+            if (!sendTypedKey(key)) sendTypedText(value)
             pressedKeys[pending.first] = key
-        } else session.sendText(value)
+        } else sendTypedText(value)
         viewport.markAll()
     }
     override fun setMarkedText(string: Any, selectedRange: CValue<NSRange>, replacementRange: CValue<NSRange>) {
+        if (disposed) return
         interpretingKey = null
-        marked = if (string is NSAttributedString) string.string else string.toString()
+        val value = if (string is NSAttributedString) string.string else string.toString()
+        if (marked.isNotEmpty() || value.isNotEmpty()) clearSelectionForPreedit()
+        marked = value
         markedSelection = selectedRange; viewport.markAll()
     }
-    override fun unmarkText() { marked = ""; viewport.markAll() }
+    override fun unmarkText() {
+        if (marked.isNotEmpty()) clearSelectionForPreedit()
+        marked = ""; viewport.markAll()
+    }
     override fun hasMarkedText(): Boolean = marked.isNotEmpty()
     override fun markedRange(): CValue<NSRange> = if (marked.isEmpty()) NSMakeRange(NSNotFound.toULong(), 0u) else NSMakeRange(0u, marked.length.toULong())
     override fun selectedRange(): CValue<NSRange> = markedSelection
@@ -725,7 +734,7 @@ public class AppKitTerminalView(
             "insertNewline:" -> "Enter"; "insertTab:" -> "Tab"; "deleteBackward:" -> "Backspace"; "cancelOperation:" -> "Escape"
             else -> return
         }
-        viewport.followOutput(); viewport.clearSelection(); session.sendKey(TerminalKey(key))
+        sendTypedKey(TerminalKey(key))
     }
 
     override fun mouseDown(event: NSEvent) {
@@ -877,13 +886,26 @@ public class AppKitTerminalView(
                 event.modifierFlags and NSEventModifierFlagControl != 0uL)
         }
     }
-    private fun copySelectionAutomatically() = copySelection(TerminalCopyFormat.MIXED, copyOnSelect.locations)
+    private fun beforeTypedInput(key: TerminalKey? = null) {
+        if (key?.selectionModifier == true) return
+        viewport.followOutput()
+        if (selectionClearOnTyping || key?.key == "Escape") viewport.clearSelection()
+    }
+    private fun sendTypedKey(key: TerminalKey): Boolean = if (disposed) true else session.sendKey(key) { beforeTypedInput(key) }
+    private fun sendTypedText(text: String) {
+        if (disposed || session.keyboardInputBlocked || text.isEmpty()) return
+        beforeTypedInput(); session.sendText(text)
+    }
+    private fun clearSelectionForPreedit() { if (selectionClearOnTyping) viewport.clearSelection() }
+    private fun copySelectionAutomatically() = copySelection(TerminalCopyFormat.MIXED, copyOnSelect.locations, clearAfter = false)
     private fun copySelection(format: TerminalCopyFormat = copyFormat,
-        locations: List<TerminalClipboardLocation> = listOf(TerminalClipboardLocation.STANDARD)) {
+        locations: List<TerminalClipboardLocation> = listOf(TerminalClipboardLocation.STANDARD),
+        clearAfter: Boolean = selectionClearOnCopy) {
         if (locations.isEmpty()) return
         viewport.copyData(format, copyTrimTrailingSpaces, copyCodepointMap)?.let {
             val contents = it.contents()
             for (location in locations) runCatching { copyClipboard.write(location, contents) {} }
+            if (clearAfter) viewport.clearSelection()
         }
     }
     private fun pasteClipboard() {

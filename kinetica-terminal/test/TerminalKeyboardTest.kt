@@ -3,6 +3,33 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalKeyboardTest {
+    @Test fun hostInputEffectsRunOnlyForEncodedUnblockedBytes() {
+        val session = TerminalSession()
+        val order = mutableListOf<String>()
+        session.onInput { order += it.toByteArray().decodeToString() }
+        fun send(key: TerminalKey) = session.sendKey(key) { order += "effect" }
+        assertFalse(send(TerminalKey("a")), "Plain text belongs to the IME path")
+        assertTrue(send(TerminalKey("Enter", action = TerminalKeyAction.RELEASE)))
+        assertTrue(send(TerminalKey("a", alt = true, text = "", optionAsAlt = false)))
+        assertTrue(order.isEmpty(), "Handled empty encodings have no input effects")
+        assertTrue(send(TerminalKey("Enter"))); assertEquals(listOf("effect", "\r"), order)
+        order.clear(); session.keyboardLockAllowed = true; session.write("\u001b[2h")
+        assertTrue(send(TerminalKey("Escape"))); assertTrue(order.isEmpty())
+        session.write("\u001b[2l\u001b[>31u")
+        assertTrue(send(TerminalKey("a", action = TerminalKeyAction.RELEASE)))
+        assertEquals(listOf("effect", "\u001b[97;1:3u"), order)
+    }
+
+    @Test fun selectionModifiersFollowPhysicalModifierIdentityButExcludeLockKeys() {
+        for (key in listOf("Shift", "Control", "Alt", "Meta", "AltGraph")) {
+            assertTrue(TerminalKey(key).selectionModifier)
+            assertTrue(TerminalKey(key, physicalCode = "").selectionModifier)
+        }
+        for (key in listOf("ShiftLeft", "ShiftRight", "ControlLeft", "ControlRight", "AltLeft", "AltRight", "MetaLeft", "MetaRight"))
+            assertTrue(TerminalKey("Unidentified", physicalCode = key).selectionModifier)
+        for (key in listOf("CapsLock", "NumLock", "ScrollLock", "Escape", "Enter", "a")) assertFalse(TerminalKey(key).selectionModifier)
+    }
+
     @Test fun explicitOptionPolicyIsIndependentOfLayoutConsumption() {
         val session = TerminalSession()
         val plainOption = TerminalKey("a", alt = true, text = "å", unshiftedCodepoint = 97, optionAsAlt = false)
