@@ -36,10 +36,15 @@ class MacOsTerminfoTest {
         try {
             assertEquals(name, session.terminfoName)
             val start = TimeSource.Monotonic.markNow()
-            while (exit == null && start.elapsedNow().inWholeSeconds < 20) {
+            // This exchanges about 4.7 MiB through the real, paced PTY writer. An isolated
+            // correct run takes 19 seconds on a loaded desktop; 20 seconds is not a useful
+            // deadlock watchdog for the full suite. Keep the exact payload/exit assertions.
+            while (exit == null && start.elapsedNow().inWholeSeconds < 60) {
                 NSRunLoop.mainRunLoop.runUntilDate(NSDate.dateWithTimeIntervalSinceNow(0.01))
             }
-            assertEquals(0, exit)
+            assertEquals(0, exit, "XTGETTCAP exchange after ${start.elapsedNow()}: " +
+                "received=${pty.receivedBytes}, pendingInput=${pty.pendingInputBytes}, " +
+                "bufferedOutput=${pty.bufferedOutputBytes}, paused=${session.outputPaused}")
             assertEquals(0L, pty.rejectedInputCount)
             assertFalse(session.outputPaused)
             assertContains((0 until session.lineCount).joinToString("\n") { session.line(it).text() }, "TERMINFO_OK")
