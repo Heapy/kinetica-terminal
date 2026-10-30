@@ -35,7 +35,27 @@ internal fun decodeTerminalGraphicsImage(
     animationFrame: Boolean = false,
     allocateInflated: (Int) -> ByteArray = { ByteArray(it) },
     takeDataOwnership: Boolean = false,
-): TerminalGraphicsPixels {
+    allocatePixels: (Int) -> ByteArray = { ByteArray(it) },
+): TerminalGraphicsPixels = checkNotNull(processTerminalGraphicsImage(format, width, height, compressed, data,
+    limits, animationFrame, allocateInflated, takeDataOwnership, allocatePixels, retainPixels = true))
+
+/** Queries consume and validate the entire image, keeping only decode scratch space. */
+internal fun validateTerminalGraphicsImage(
+    format: Int, width: Long, height: Long, compressed: Boolean, data: ByteArray,
+    limits: TerminalGraphicsDecodeLimits = TerminalGraphicsDecodeLimits(),
+    allocateInflated: (Int) -> ByteArray = { ByteArray(it) },
+    allocatePixels: (Int) -> ByteArray = { ByteArray(it) },
+) {
+    processTerminalGraphicsImage(format, width, height, compressed, data, limits,
+        animationFrame = false, allocateInflated, takeDataOwnership = false, allocatePixels, retainPixels = false)
+}
+
+private fun processTerminalGraphicsImage(
+    format: Int, width: Long, height: Long, compressed: Boolean, data: ByteArray,
+    limits: TerminalGraphicsDecodeLimits, animationFrame: Boolean,
+    allocateInflated: (Int) -> ByteArray, takeDataOwnership: Boolean,
+    allocatePixels: (Int) -> ByteArray, retainPixels: Boolean,
+): TerminalGraphicsPixels? {
     if (format != 24 && format != 32 && format != 100) graphicsDecodeFailure(TerminalGraphicsDecodeError.UNSUPPORTED_FORMAT)
     if (data.size > limits.maxEncodedBytes) graphicsDecodeFailure(TerminalGraphicsDecodeError.RESOURCE_LIMIT)
     // Ghostty validates decompression before dimensions, and truncates excess raw frame data.
@@ -48,15 +68,28 @@ internal fun decodeTerminalGraphicsImage(
         if (animationFrame && actual < length) graphicsDecodeFailure(TerminalGraphicsDecodeError.INSUFFICIENT_DATA)
         if (!animationFrame && actual != length) graphicsDecodeFailure(TerminalGraphicsDecodeError.INVALID_DATA)
     }
+    fun png(bytes: ByteArray, size: Int = bytes.size): TerminalGraphicsPixels? {
+        if (retainPixels) return decodeTerminalGraphicsPng(bytes, limits, size, allocatePixels)
+        validateTerminalGraphicsPng(bytes, limits, size, allocatePixels)
+        return null
+    }
     if (!compressed) {
-        if (format == 100) return decodeTerminalGraphicsPng(data, limits)
+        if (format == 100) return png(data)
         validateLength(data.size)
-        val pixels = if (takeDataOwnership && data.size == length) data else data.copyOfRange(0, length)
+        if (!retainPixels) return null
+        val pixels = if (takeDataOwnership && data.size == length) data else allocatePixels(length).also {
+            require(it.size == length)
+            data.copyInto(it, endIndex = length)
+        }
         return TerminalGraphicsPixels(width.toInt(), height.toInt(), format, pixels)
     }
     // PNG needs its encoded chunks for the second decode stage. Raw pixels need only their
     // declared prefix; the inflater still maintains history/checksum and validates every byte.
-    val retainedLimit = if (format == 100) limits.maxEncodedBytes else minOf(length, limits.maxEncodedBytes)
+    val retainedLimit = when {
+        format == 100 -> limits.maxEncodedBytes
+        retainPixels -> minOf(length, limits.maxEncodedBytes)
+        else -> 0
+    }
     val bytes = GraphicsBytes(retainedLimit, allocateInflated)
     var offset = 0
     var inflatedSize = 0
@@ -66,8 +99,9 @@ internal fun decodeTerminalGraphicsImage(
             inflatedSize++
         }
     } catch (_: TerminalGraphicsZlibException) { graphicsDecodeFailure(TerminalGraphicsDecodeError.DECOMPRESSION_FAILED) }
-    if (format == 100) return decodeTerminalGraphicsPng(bytes.data, limits, bytes.size)
+    if (format == 100) return png(bytes.data, bytes.size)
     validateLength(inflatedSize)
+    if (!retainPixels) return null
     // The bounded collector already owns exactly the raw pixel prefix: no second full copy.
     return TerminalGraphicsPixels(width.toInt(), height.toInt(), format, bytes.take())
 }

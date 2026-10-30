@@ -7,8 +7,67 @@ class TerminalGraphicsImageTest {
     private val smallLimits = TerminalGraphicsDecodeLimits(1024 * 1024, 1024 * 1024)
 
     private fun decode(format: Int, data: ByteArray, width: Long = 1, height: Long = 1,
-        compressed: Boolean = false, frame: Boolean = false, limits: TerminalGraphicsDecodeLimits = smallLimits) =
-        decodeTerminalGraphicsImage(format, width, height, compressed, data, limits, frame)
+        compressed: Boolean = false, frame: Boolean = false, limits: TerminalGraphicsDecodeLimits = smallLimits): TerminalGraphicsPixels {
+        fun validate() = validateTerminalGraphicsImage(format, width, height, compressed, data, limits,
+            allocatePixels = { fail("Queries must validate without allocating $it output bytes") })
+        val pixels = try { decodeTerminalGraphicsImage(format, width, height, compressed, data, limits, frame) }
+        catch (error: TerminalGraphicsDecodeException) {
+            if (!frame) assertEquals(error.error, assertFailsWith<TerminalGraphicsDecodeException> { validate() }.error,
+                "Query and transmission must reject the same data with the same error")
+            throw error
+        }
+        if (!frame) validate()
+        return pixels
+    }
+
+    @Test fun rawQueriesValidateWithoutRetainingInflatedPixels() {
+        for (format in listOf(24, 32)) {
+            val raw = ByteArray(64 * 64 * format / 8) { (it * 59).toByte() }
+            for (compressed in listOf(false, true)) {
+                val encoded = if (compressed) storedZlib(raw) else raw
+                validateTerminalGraphicsImage(format, 64, 64, compressed, encoded, smallLimits,
+                    allocateInflated = { fail("A query must not retain inflated RGB/RGBA pixels: $it bytes") },
+                    allocatePixels = { fail("A query must not allocate RGB/RGBA output: $it bytes") })
+            }
+        }
+    }
+
+    @Test fun pngQueriesKeepOnlyEncodedOuterInflationAndNoRgbaOutput() {
+        for (fixture in terminalGraphicsPngFixtures()) for (compressed in listOf(false, true)) {
+            val png = Base64.decode(fixture.png)
+            val encoded = if (compressed) storedZlib(png) else png
+            var inflated = 0
+            validateTerminalGraphicsImage(100, 0, 0, compressed, encoded, smallLimits,
+                allocateInflated = { size -> inflated++; ByteArray(size) },
+                allocatePixels = { fail("${fixture.name}: query allocated $it RGBA bytes") })
+            assertEquals(compressed, inflated > 0, "Only outer zlib needs an encoded PNG collector")
+            var decodedBytes = 0
+            val pixels = decodeTerminalGraphicsImage(100, 0, 0, compressed, encoded, smallLimits,
+                allocatePixels = { size -> decodedBytes += size; ByteArray(size) })
+            assertEquals(fixture.width * fixture.height * 4, decodedBytes)
+            assertContentEquals(Base64.decode(fixture.rgba), pixels.data)
+        }
+    }
+
+    @Test fun queriesPreserveDecompressionBeforeDimensionErrorsAndInflationWorkLimit() {
+        val raw = ByteArray(16) { it.toByte() }
+        val good = storedZlib(raw)
+        val corrupt = good.copyOf().also { it[it.lastIndex] = (it.last().toInt() xor 1).toByte() }
+        for (width in listOf(0L, 10001L, 1L)) {
+            for (bad in listOf(corrupt, good.copyOf(good.size - 1), good + byteArrayOf(0))) {
+                failure(TerminalGraphicsDecodeError.DECOMPRESSION_FAILED) {
+                    decode(32, bad, width, compressed = true)
+                }
+            }
+        }
+        failure(TerminalGraphicsDecodeError.DIMENSIONS_REQUIRED) { decode(32, good, 0, compressed = true) }
+        failure(TerminalGraphicsDecodeError.DIMENSIONS_TOO_LARGE) { decode(32, good, 10001, compressed = true) }
+        failure(TerminalGraphicsDecodeError.INVALID_DATA) { decode(32, good, compressed = true) }
+        val bomb = Base64.decode(terminalGraphicsZlibFixtures().first { it.name == "zlib_4_6_0" }.zlib)
+        failure(TerminalGraphicsDecodeError.DECOMPRESSION_FAILED) {
+            decode(32, bomb, compressed = true, limits = TerminalGraphicsDecodeLimits(200, 4))
+        }
+    }
 
     @Test fun rgbAndRgbaLengthsDimensionsAndOwnedPixels() {
         for (format in listOf(24, 32)) {

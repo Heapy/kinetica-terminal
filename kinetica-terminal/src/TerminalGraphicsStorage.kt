@@ -138,7 +138,8 @@ internal class TerminalGraphicsStorage(
         conflictingIdentifiers(command)?.let { return TerminalGraphicsTransferResult(it, command.quiet) }
         if (command.imageId == 0L) return TerminalGraphicsTransferResult()
         val error = validateMedium(command) ?: try {
-            decode(command, transmissionData(command))
+            validateTerminalGraphicsImage(command.format, command.unsigned('s'), command.unsigned('v'),
+                command.compressed, transmissionData(command), decodeLimits)
             null
         } catch (error: TerminalGraphicsDecodeException) { error.messageForProtocol() }
         catch (error: TerminalGraphicsMediaException) { error.messageForProtocol() }

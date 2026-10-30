@@ -7,9 +7,15 @@ import kotlin.math.abs
 // separate from Kitty's frame protocol; ancillary animation/color-profile chunks are ignored.
 /** Reads only the valid prefix of a borrowed buffer; spare collector capacity is not PNG data. */
 internal fun decodeTerminalGraphicsPng(data: ByteArray, limits: TerminalGraphicsDecodeLimits,
-    length: Int = data.size): TerminalGraphicsPixels {
+    length: Int = data.size, allocatePixels: (Int) -> ByteArray = { ByteArray(it) }): TerminalGraphicsPixels {
     require(length in 0..data.size)
-    return GraphicsPng(data, length, limits).decode()
+    return checkNotNull(GraphicsPng(data, length, limits).decode(retainPixels = true, allocatePixels))
+}
+
+internal fun validateTerminalGraphicsPng(data: ByteArray, limits: TerminalGraphicsDecodeLimits,
+    length: Int = data.size, allocatePixels: (Int) -> ByteArray = { ByteArray(it) }) {
+    require(length in 0..data.size)
+    GraphicsPng(data, length, limits).decode(retainPixels = false, allocatePixels)
 }
 
 private class GraphicsPng(private val data: ByteArray, private val validLength: Int, private val limits: TerminalGraphicsDecodeLimits) {
@@ -30,7 +36,7 @@ private class GraphicsPng(private val data: ByteArray, private val validLength: 
         (byte(offset + 2).toLong() shl 8) or byte(offset + 3).toLong())
     private fun type(offset: Int): Int = uint(offset).toInt()
 
-    fun decode(): TerminalGraphicsPixels {
+    fun decode(retainPixels: Boolean, allocatePixels: (Int) -> ByteArray): TerminalGraphicsPixels? {
         if (validLength > limits.maxEncodedBytes) graphicsDecodeFailure(TerminalGraphicsDecodeError.RESOURCE_LIMIT)
         if (validLength < 8 || PNG_SIGNATURE.indices.any { byte(it) != PNG_SIGNATURE[it] }) graphicsDecodeFailure()
         var offset = 8
@@ -92,7 +98,8 @@ private class GraphicsPng(private val data: ByteArray, private val validLength: 
             offset = end + 4
         }
         if (!ended) graphicsDecodeFailure()
-        val rows = GraphicsPngRows(width, height, depth, color, channels, interlaced, palette, transparency, pixelLength)
+        val pixels = if (retainPixels) allocatePixels(pixelLength).also { require(it.size == pixelLength) } else null
+        val rows = GraphicsPngRows(width, height, depth, color, channels, interlaced, palette, transparency, pixels)
         // Read contiguous IDAT chunks without concatenating them or allocating a list per chunk.
         var chunk = idatStart
         var position = chunk + 8
@@ -110,7 +117,7 @@ private class GraphicsPng(private val data: ByteArray, private val validLength: 
             inflateTerminalGraphicsZlib(::nextByte, rows.expectedBytes, rows::accept)
         } catch (_: TerminalGraphicsZlibException) { graphicsDecodeFailure() }
         if (!rows.complete) graphicsDecodeFailure()
-        return TerminalGraphicsPixels(width, height, 32, rows.pixels)
+        return pixels?.let { TerminalGraphicsPixels(width, height, 32, it) }
     }
 
     private companion object {
@@ -137,9 +144,8 @@ private class GraphicsPngRows(
     private val interlaced: Boolean,
     private val palette: ByteArray?,
     private val transparency: ByteArray?,
-    pixelLength: Int,
+    private val pixels: ByteArray?,
 ) {
-    val pixels = ByteArray(pixelLength)
     private val bpp = maxOf(1, (channels * depth + 7) / 8)
     private var previous = ByteArray((width * channels * depth + 7) / 8)
     private var current = ByteArray(previous.size)
@@ -205,6 +211,16 @@ private class GraphicsPngRows(
     } ?: -1
 
     private fun writePixels() {
+        val pixels = pixels
+        if (pixels == null) {
+            // Palette indices are the only sample values that can be invalid. Unfilter
+            // every row first, including all Adam7 passes, before checking them.
+            if (color == 3) {
+                val entries = (palette ?: graphicsDecodeFailure()).size / 3
+                for (x in 0 until passWidth) if (sample(x) >= entries) graphicsDecodeFailure()
+            }
+            return
+        }
         val y = startY(pass) + row * stepY(pass)
         for (x in 0 until passWidth) {
             val offset = (y * width + startX(pass) + x * stepX(pass)) * 4

@@ -590,6 +590,19 @@ and lifetime regressions cover single/chunked loads, caller mutation and retaine
 This does not combine encoded-input, resident-image, composition and held-frame budgets;
 the original's RGB-root conversion can still exceed the nominal resident limit.
 
+Graphics queries now validate without retaining decoded output. Uncompressed raw queries borrow
+the command bytes; compressed raw queries consume the entire zlib stream with its fixed history
+and checksum but no pixel-prefix collector. PNG queries retain two scanlines, validate every
+filter and palette index (including Adam7), and skip the full RGBA destination. Outer-zlib PNG
+still needs an encoded PNG collector for the second stage. Encoded/decoded/work limits and the
+original decompression-before-dimensions error order remain unchanged; queries do not use the
+resident storage budget or mutate pending transfers. The raw allocation regression failed before
+the change. Existing malformed-image tests now require query/transmission error parity, and all
+libpng fixtures validate with both direct and outer-zlib payloads while rejecting any output
+pixel allocation. Validation passes 1451 JVM tests, fresh Release JS tests, 39 focused Native
+image/zlib/storage/execution/media tests and actual Canvas/WebGL graphics pixels and lifecycle.
+This removes a transient decoded image from queries; it does not close the combined resource audit.
+
 The first RGB-root edit or disjoint self-composition now reuses its fresh RGBA conversion
 as the destination, removing one further full `width * height * 4` temporary allocation.
 Later edits still copy published RGBA pixels, and new-frame admission retains the original
