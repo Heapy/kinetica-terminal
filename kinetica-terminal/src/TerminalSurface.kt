@@ -143,6 +143,10 @@ public class TerminalViewport internal constructor(
     private var dragRectangle = false
     private var dragPointer: TerminalSelectionPointer? = null
     private var pointerPressTime: Double? = null
+    private val pointerClicks = TerminalClickSequence()
+    private var pointerClickRow: TerminalLine? = null
+    private var pointerClickRecycle = 0L
+    private var pointerClickColumn = 0
     private var dragRow = 0
     private var dragTimer: TerminalDisposable? = null
     private var disposed = false
@@ -153,6 +157,7 @@ public class TerminalViewport internal constructor(
     private val observation = session.observe { change ->
         if (!advancingGraphics) cancelGraphicsTimer()
         if (screenEpoch != session.screenEpoch) {
+            resetPointerClicks()
             scrollOffset = 0; scrollAnchor = null
         } else if (scrollOffset > 0) {
             val anchor = scrollAnchor
@@ -292,6 +297,7 @@ public class TerminalViewport internal constructor(
         selection()?.takeIf { it.start != it.end && (!it.rectangle || it.start.column != it.end.column) }?.let { firstLine to it }
 
     public fun dispose() {
+        resetPointerClicks()
         if (!disposed) {
             disposed = true; linkHover = null; hoverColumn = -1; hoverRow = -1; observation.dispose(); holdObservation.dispose(); linkPolicyObservation.dispose(); historyCompression.dispose()
             cancelGraphicsTimer()
@@ -326,13 +332,35 @@ public class TerminalViewport internal constructor(
     }
     public fun extendSelection(column: Int, row: Int) { extendSelection(column, row, rectangle = false) }
     internal fun beginPointerSelection(pointer: TerminalSelectionPointer, mode: TerminalSelectionMode = TerminalSelectionMode.CHARACTER,
-        timeMillis: Double? = null) {
+        timeMillis: Double? = null, origin: TerminalCellPosition = pointerPosition(pointer), originX: Double = pointer.x) {
         beginSelection(pointer.column, pointer.row, mode)
         if (disposed) return
-        activeSelection.beginPointer(pointerPosition(pointer), mode, pointer.x)
+        activeSelection.beginPointer(pointerPosition(pointer), mode, originX, origin)
         pointerPressTime = timeMillis
         dragPointer = pointer
         markAll()
+    }
+    internal fun resetPointerClicks() { pointerClicks.reset(); pointerClickRow = null; pointerPressTime = null }
+
+    /** Count actual local presses, independent of the host's clickCount/detail hint. */
+    internal fun pressPointerSelection(pointer: TerminalSelectionPointer, timeMillis: Double,
+        repeatIntervalMillis: Double, output: Boolean) {
+        if (disposed) return
+        val row = pointerClickRow
+        val frame = frozen
+        val index = if (row == null || row.recycleEpoch != pointerClickRecycle) -1 else if (frame == null)
+            session.indexOfLine(row) else frame.lines.indexOfFirst { it === row }.let { if (it < 0) -1 else frame.firstLine + it }
+        val previous = if (index >= 0) TerminalCellPosition(index, pointerClickColumn.coerceAtMost(row!!.columns - 1)) else null
+        val count = pointerClicks.press(timeMillis, pointer.x, pointer.y, repeatIntervalMillis, pointer.cellWidth.toDouble(), previous != null)
+        val origin = if (count == 1) pointerPosition(pointer).also {
+            pointerClickRow = frame?.lines?.get(it.line - frame.firstLine) ?: session.line(it.line)
+            pointerClickRecycle = pointerClickRow!!.recycleEpoch; pointerClickColumn = it.column
+        } else checkNotNull(previous)
+        beginPointerSelection(pointer, when (count) {
+            1 -> TerminalSelectionMode.CHARACTER
+            2 -> TerminalSelectionMode.WORD
+            else -> if (output) TerminalSelectionMode.OUTPUT else TerminalSelectionMode.LINE
+        }, timeMillis, origin, pointerClicks.x)
     }
     /** Shift-click continues the original gesture after the repeat-click interval.
      * Keep its anchor, granularity and timestamp; a quick click may still become a multi-click. */
@@ -381,6 +409,7 @@ public class TerminalViewport internal constructor(
     public fun deepPressSelection(): Boolean {
         if (disposed || !draggingSelection) return false
         val consumed = activeSelection.deepPress()
+        if (consumed) resetPointerClicks()
         cancelSelectionDrag()
         if (consumed) markAll()
         return consumed

@@ -9,7 +9,11 @@ await mkdir(directory, { recursive: true });
 try {
   for (const platform of ["MacIntel", "Linux x86_64"]) for (const renderer of ["gpu", "software"]) {
     const page = await browser.newPage({ viewport: { width: 900, height: 600 }, deviceScaleFactor: 2 });
-    await page.addInitScript(platform => Object.defineProperty(navigator, "platform", { get: () => platform }), platform);
+    await page.addInitScript(platform => {
+      Object.defineProperty(navigator, "platform", { get: () => platform });
+      globalThis.selectionClock = 1000;
+      window.addEventListener("pointerdown", event => Object.defineProperty(event, "timeStamp", { value: selectionClock }), true);
+    }, platform);
     page.on("pageerror", error => report.errors.push(String(error)));
     await page.goto(`${process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173"}/samples/browser-terminal/web/index.html?renderer=${renderer}`);
     await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 20);
@@ -30,7 +34,10 @@ try {
       await write(`\x1b[?25l${text}`); await paint();
     };
     const point = (x, y) => [geometry.x + (x + 0.3) * geometry.width, geometry.y + (y + 0.5) * geometry.height];
-    const click = (x, y, count = 1) => page.mouse.click(...point(x, y), { clickCount: count });
+    const click = async (x, y, count = 1) => {
+      await page.evaluate(() => { selectionClock += 1000; });
+      await page.mouse.click(...point(x, y), { clickCount: count });
+    };
     const move = (x, y) => page.mouse.move(...point(x, y));
     const copy = () => page.evaluate(() => {
       const data = new DataTransfer();
@@ -126,11 +133,13 @@ try {
     await page.keyboard.up("Alt");
     if (platform.startsWith("Linux")) await page.keyboard.up("Control");
     await write("\x1b[<u");
+    await page.evaluate(() => { selectionClock += 1000; });
     await page.keyboard.down("Alt");
     await moveFraction(1.2, 0); await page.mouse.down(); await moveFraction(3.8, 2); await page.mouse.up();
     assert.equal(await copy(), platform.startsWith("Mac") ? "123\nbcd\nBCD" : "123456\nabcdefg\nABCD",
       "Alt alone only selects rectangles on macOS");
     await page.keyboard.up("Alt");
+    await page.evaluate(() => { selectionClock += 1000; });
     await moveFraction(2.2, 0); await page.mouse.down(); await moveFraction(2.8, 0);
     assert.equal(await copy(), "2", "Crossing the threshold selects within one cell");
     await moveFraction(2.3, 0); await page.mouse.up();
@@ -140,6 +149,7 @@ try {
     await reset(`[${url}].`);
     await click(3, 0, 2);
     assert.equal(await copy(), url, "Double click and release retain the complete visible URL across soft wraps");
+    await click(3, 0); // First press of a fresh word-drag sequence.
     await move(3, 0); await page.mouse.down({ clickCount: 2 });
     await move(4, 0); await page.mouse.up({ clickCount: 2 });
     assert.equal(await copy(), "https", "Dragging resumes Ghostty word granularity");

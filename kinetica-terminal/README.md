@@ -353,10 +353,21 @@ the selection or prevent attempting the other destination under `BOTH`.
 Shift-click continues a completed pointer selection from its original anchor, keeping word/line
 granularity and using the current rectangle modifier. It can extend, shrink or reverse that
 selection, then keep dragging/autoscrolling. It applies after the repeat-click interval (the
-AppKit system interval, 500 ms in the browser); quicker clicks retain double/triple-click
+AppKit system interval, 500 ms in the browser by default); quicker nearby clicks retain double/triple-click
 behavior. Application capture of Shift prevents local continuation. Cleared, invalidated or
-force-click-consumed origins cannot be resumed. Configurable repeat-click timing and transfer
-of gesture origins into inherited synchronized-output snapshots are still pending.
+force-click-consumed origins cannot be resumed. Transfer of gesture origins into inherited
+synchronized-output snapshots is still pending.
+
+`view.clickRepeatIntervalMillis` configures the maximum time between consecutive presses;
+`0` uses the platform default above, positive values accept up to `4294967295` milliseconds.
+Both views count real local left-button presses independently of AppKit `clickCount` or DOM
+`detail`: first press starts a character gesture, second selects a word/link, third and later
+select a semantic line (command output with Cmd on macOS or Ctrl elsewhere). The interval's
+exact boundary repeats. The pointer must also stay within one cell-width radius of the first
+press, measured in surface pixels; each repeat updates the timestamp, but retains the original
+spatial point and tracked terminal cell for dragging. Initial selection uses the current click
+cell. Moving farther away, elapsed/backwards time, a missing/recycled origin or a screen switch
+starts a new sequence. Force click and application-owned mouse presses reset it.
 
 `view.rightClickAction` defaults to `TerminalRightClickAction.CONTEXT_MENU`; other options
 are `COPY`, `PASTE`, `COPY_OR_PASTE` and `IGNORE`. Copy uses MIXED, then clears the selection

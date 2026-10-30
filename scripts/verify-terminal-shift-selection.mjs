@@ -44,8 +44,8 @@ try {
       await page.keyboard.down("Shift"); await time(601); await click(7.2); assert.equal(await copy(), "alpha beta");
       await time(602); await click(12.2, 2); assert.equal(await copy(), "alpha beta gamma", "Keep origin, mode and original timestamp");
       await page.keyboard.up("Shift"); await time(1000); await click(7.2, 2); assert.equal(await copy(), "beta");
-      await page.keyboard.down("Shift"); await time(1500); await click(12.2, 2);
-      assert.equal(await copy(), "gamma", "At the interval boundary, retain multi-click behavior");
+      await page.keyboard.down("Shift"); await time(1500); await click(7.3);
+      assert.equal(await copy(), "alpha beta gamma", "At the interval boundary, a nearby third press selects the line");
       await write("\x1b[?1000h\x1b[?1006h"); await time(2001); await click(1.2);
       assert.equal(await copy(), "alpha beta gamma"); assert.equal(await drain(), "");
       await write("\x1b[>1s"); await time(2002); await click(1.2);

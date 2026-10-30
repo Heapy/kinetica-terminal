@@ -93,6 +93,7 @@ node scripts/verify-terminal-copy-on-select.mjs
 node scripts/verify-terminal-mouse-clipboard.mjs
 node scripts/verify-terminal-selection-policy.mjs
 node scripts/verify-terminal-shift-selection.mjs
+node scripts/verify-terminal-click-sequence.mjs
 node scripts/verify-terminal-mime-clipboard.mjs
 node scripts/verify-terminal-terminfo.mjs
 node scripts/verify-terminal-title.mjs

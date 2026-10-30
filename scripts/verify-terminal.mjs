@@ -555,8 +555,15 @@ try {
     assert.deepEqual(await readMouse(), [], "Returning to the press cell does not turn a drag into a click");
     await page.mouse.down({ clickCount: 2 }); await page.mouse.up({ clickCount: 2 });
     assert.deepEqual(await readMouse(), [], "Word selection does not report a prompt click");
+    await page.waitForTimeout(550); // This modified click is a new gesture, not the third press.
     await page.keyboard.down("Shift"); await page.keyboard.down("Alt");
     await moveCell(5, 1); await page.mouse.down(); await page.mouse.up();
+    await page.keyboard.up("Alt"); await page.keyboard.up("Shift");
+    assert.deepEqual(await readMouse(), [], "Shift continues the previous word selection without a prompt report");
+    await page.keyboard.press("Escape");
+    assert.deepEqual(await readMouse(), [27], "Escape clears selection before testing an independent prompt click");
+    await page.keyboard.down("Shift"); await page.keyboard.down("Alt");
+    await page.mouse.down(); await page.mouse.up();
     await page.keyboard.up("Alt"); await page.keyboard.up("Shift");
     assert.deepEqual(await readMouse(), Array.from(Buffer.from(`\x1b[<0;6;${mode === 1 ? 2 : 1}M`)));
     await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?1000h\x1b[?1006h"));

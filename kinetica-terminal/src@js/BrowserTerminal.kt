@@ -63,6 +63,9 @@ public class BrowserTerminalView(
     public var copyFormat: TerminalCopyFormat = TerminalCopyFormat.MIXED
     public var selectionClearOnCopy: Boolean = false
     public var selectionClearOnTyping: Boolean = true
+    /** Zero uses Ghostty's non-native fallback of 500 ms. */
+    public var clickRepeatIntervalMillis: Long = 0
+        set(value) { require(value in 0..0xffff_ffffL); field = value }
     public var rightClickAction: TerminalRightClickAction = TerminalRightClickAction.CONTEXT_MENU
     public var middleClickAction: TerminalMiddleClickAction = TerminalMiddleClickAction.PRIMARY_PASTE
     /** Enable only when the custom MIME backend serves the distinct SELECTION clipboard. */
@@ -283,8 +286,7 @@ public class BrowserTerminalView(
             if (activePointer != null && activePointer != id) return@listen
             activePointer = id
             input.focus(js("({preventScroll:true})")); event.stopPropagation()
-            // Mouse compatibility events carry the OS click count; PointerEvent.detail is 0.
-            // Cancel the following mousedown instead, retaining double/triple-click dragging.
+            // Cancel the following compatibility mousedown; actual presses own multi-click state.
             if (event.pointerType != "mouse") event.preventDefault()
             updateMouseButtons(event)
             root.setPointerCapture(event.pointerId)
@@ -293,14 +295,6 @@ public class BrowserTerminalView(
         // Cancel compatibility mouse events that would start native selection/autoscroll.
         listen(root, "mousedown") { event ->
             event.preventDefault(); event.stopPropagation()
-            if (selecting && !continuingSelection && activePointer != null && event.button == 0 && (event.detail as Number).toInt() >= 2) {
-                val output = if (window.navigator.platform.startsWith("Mac")) event.metaKey == true else event.ctrlKey == true
-                viewport.beginPointerSelection(selectionPointer(event), when {
-                    (event.detail as Number).toInt() == 2 -> TerminalSelectionMode.WORD
-                    output -> TerminalSelectionMode.OUTPUT
-                    else -> TerminalSelectionMode.LINE
-                }, (event.timeStamp as Number).toDouble())
-            }
         }
         listen(root, "pointermove") { event ->
             val id = (event.pointerId as Number).toInt()
@@ -615,15 +609,17 @@ public class BrowserTerminalView(
             if ((mouseButtons and mask) == (next and mask)) continue
             if (next and mask != 0) {
                 localMouseButtons.remove(button)
+                val interval = if (clickRepeatIntervalMillis == 0L) 500.0 else clickRepeatIntervalMillis.toDouble()
                 if (button == 0) continuingSelection = event.shiftKey == true && !session.mouseShiftCapture &&
-                    viewport.continuePointerSelection(selectionPointer(event), (event.timeStamp as Number).toDouble(), 500.0,
+                    viewport.continuePointerSelection(selectionPointer(event), (event.timeStamp as Number).toDouble(), interval,
                         rectangleSelection(event))
                 val reported = if (button == 0 && continuingSelection) false else mouse(event, button)
-                if (reported) viewport.clearSelection()
+                if (reported) { viewport.resetPointerClicks(); viewport.clearSelection() }
                 if (button == 0) {
                     selecting = !reported
-                    if (selecting && !continuingSelection) viewport.beginPointerSelection(selectionPointer(event),
-                        timeMillis = (event.timeStamp as Number).toDouble()) else if (!selecting) viewport.clearSelection()
+                    if (selecting && !continuingSelection) viewport.pressPointerSelection(selectionPointer(event),
+                        (event.timeStamp as Number).toDouble(), interval,
+                        if (window.navigator.platform.startsWith("Mac")) event.metaKey == true else event.ctrlKey == true)
                 } else if (!reported && button in 1..2) {
                     localMouseButtons.add(button)
                     terminalMouseClick(button, rightClickAction, middleClickAction, selectionClipboardSupported,

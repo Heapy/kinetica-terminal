@@ -60,6 +60,23 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Browser/AppKit now count actual local left presses with shared Ghostty repeat-click rules,
+independent of native click-count hints. `clickRepeatIntervalMillis = 0` uses the macOS system
+interval or 500 ms browser fallback; positive values cover Ghostty's u32 millisecond range.
+Each repeat must be within the interval from the previous press and one cell-width radius
+from the first press. Boundaries are inclusive and counts saturate at three. The current cell
+supplies the initial word/line/output selection, while dragging retains the first press's
+tracked cell and x coordinate, including when output scrolls that cell into history.
+Screen changes, missing/recycled origins, backwards/invalid time, force click and application
+mouse ownership reset or restart the sequence. The former AppKit force-click count offset and
+browser mousedown/detail reinterpretation are removed. Existing synthetic event tests now emit
+real press/release sequences with deliberate timing instead of fabricating count hints.
+Validation passes 1667 JVM tests, fresh Release JS tests and 24 focused Native tests. Dedicated
+browser checks pass on macOS/Linux with Canvas/WebGL and Retina; selection, Shift continuation,
+copy-on-select, link, navigation and full browser regressions pass. Evidence:
+`TerminalClickSequenceTest`, `MacOsSelectionTest`, `scripts/verify-terminal-click-sequence.mjs`,
+`/tmp/kinetica-click-sequence-*`.
+
 Shift-click can now continue a completed local pointer selection after the repeat-click
 interval, following `Surface.mouseButtonCallback`'s continuation branch. The original anchor,
 timestamp and character/word/line/output granularity remain; current modifiers control
@@ -70,9 +87,8 @@ Validation passes 1664 JVM tests, fresh Release JS tests and 20 focused Native t
 Dedicated browser Shift-click, existing selection and mouse-clipboard verifiers pass on
 macOS/Linux with Canvas/WebGL. Evidence: `TerminalShiftSelectionTest`, `MacOsSelectionTest`,
 `scripts/verify-terminal-shift-selection.mjs`, `/tmp/kinetica-shift-selection-*`.
-Remaining mouse work includes replacing host click counters with Ghostty's timestamp/distance
-sequence and configurable interval, and transferring gesture origins into inherited frozen
-selections during synchronized output. Those gaps keep the input/selection gate open.
+Remaining mouse work includes transferring gesture origins and repeat-click state into inherited
+frozen selections during synchronized output. That gap keeps the input/selection gate open.
 
 Browser/AppKit now implement Ghostty's right-click actions (context menu, mixed copy,
 paste, copy-or-paste, ignore) and middle-click actions (selection paste, standard paste,

@@ -62,7 +62,8 @@ try {
       assert.deepEqual(await drain(), [], "Pointer motion never writes the clipboard");
       await page.mouse.up();
       assert.equal((await drain())[0]["text/plain"], "alpha");
-      await move(7.5); await page.mouse.down({ clickCount: 2 });
+      await move(7.5); await page.mouse.down(); await page.mouse.up(); await drain();
+      await page.mouse.down({ clickCount: 2 });
       assert.deepEqual(await drain(), [], "Double click waits for release too");
       await page.mouse.up({ clickCount: 2 });
       assert.equal((await drain())[0]["text/plain"], "beta");

@@ -87,9 +87,16 @@ internal class TerminalSelection(
         return true
     }
 
-    fun beginPointer(position: TerminalCellPosition, mode: TerminalSelectionMode, x: Double) {
-        begin(clamp(position), mode)
+    fun beginPointer(position: TerminalCellPosition, mode: TerminalSelectionMode, x: Double,
+        origin: TerminalCellPosition = position) {
+        begin(clamp(origin), mode)
         pointerX = x
+        if (position != origin) {
+            val point = clamp(position)
+            val link = if (mode == TerminalSelectionMode.WORD && detectedLinksEnabled())
+                terminalDetectedLinkAt(point.line, point.column, firstLine(), lastLine(), line) else null
+            setRange(link?.range ?: unit(point)?.let(::normalize) ?: TerminalSelectionRange(point, point))
+        }
     }
 
     fun isPointerOrigin(position: TerminalCellPosition): Boolean {

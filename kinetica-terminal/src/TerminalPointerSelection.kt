@@ -5,13 +5,13 @@ package io.heapy.kinetica.terminal
 
 import kotlin.math.floor
 
-internal data class TerminalSelectionPointer(val column: Int, val row: Int, val x: Double, val cellWidth: Int)
+internal data class TerminalSelectionPointer(val column: Int, val row: Int, val x: Double, val cellWidth: Int, val y: Double)
 
 /** Align fractional host cells to an integer device-pixel grid before applying Ghostty's threshold. */
 internal fun terminalSelectionPointer(x: Double, y: Double, cellWidth: Double, cellHeight: Double,
     scale: Double): TerminalSelectionPointer {
     val width = floor(cellWidth * scale + 0.5).toInt().coerceAtLeast(1)
-    return TerminalSelectionPointer(floor(x / cellWidth).toInt(), floor(y / cellHeight).toInt(), x / cellWidth * width, width)
+    return TerminalSelectionPointer(floor(x / cellWidth).toInt(), floor(y / cellHeight).toInt(), x / cellWidth * width, width, y * scale)
 }
 
 internal fun terminalPointerSelectionRange(click: TerminalCellPosition, drag: TerminalCellPosition,

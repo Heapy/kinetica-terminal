@@ -63,6 +63,9 @@ public class AppKitTerminalView(
     public var copyFormat: TerminalCopyFormat = TerminalCopyFormat.MIXED
     public var selectionClearOnCopy: Boolean = false
     public var selectionClearOnTyping: Boolean = true
+    /** Zero uses the macOS double-click interval; positive values are milliseconds. */
+    public var clickRepeatIntervalMillis: Long = 0
+        set(value) { require(value in 0..0xffff_ffffL); field = value }
     public var rightClickAction: TerminalRightClickAction = TerminalRightClickAction.CONTEXT_MENU
     public var middleClickAction: TerminalMiddleClickAction = TerminalMiddleClickAction.PRIMARY_PASTE
     /** Enable only when the custom MIME backend serves the distinct SELECTION clipboard. */
@@ -130,8 +133,6 @@ public class AppKitTerminalView(
     private var marked = ""
     private var markedSelection = NSMakeRange(0u, 0u)
     private var selecting = false
-    private var leftClickCount = 0L
-    private var forceClickCountOffset = 0L
     private var forceClickLookupFired = false
     private val lookupLayout = NSLayoutManager()
     internal var forceClickLookupEnabled: () -> Boolean = {
@@ -745,19 +746,16 @@ public class AppKitTerminalView(
 
     override fun mouseDown(event: NSEvent) {
         if (disposed) return
-        leftClickCount = event.clickCount
-        if (leftClickCount <= 1) forceClickCountOffset = 0
         window?.makeFirstResponder(this)
         val pointer = selectionPointer(event)
+        val interval = if (clickRepeatIntervalMillis == 0L) NSEvent.doubleClickInterval * 1000.0 else clickRepeatIntervalMillis.toDouble()
         val continued = event.modifierFlags and NSEventModifierFlagShift != 0uL && !session.mouseShiftCapture &&
-            viewport.continuePointerSelection(pointer, event.timestamp * 1000.0, NSEvent.doubleClickInterval * 1000.0,
+            viewport.continuePointerSelection(pointer, event.timestamp * 1000.0, interval,
                 event.modifierFlags and NSEventModifierFlagOption != 0uL)
         selecting = continued || !mouse(event, 0)
-        if (selecting && !continued) viewport.beginPointerSelection(pointer, when ((leftClickCount - forceClickCountOffset).coerceAtLeast(1).toInt()) {
-            0, 1 -> TerminalSelectionMode.CHARACTER
-            2 -> TerminalSelectionMode.WORD
-            else -> if (event.modifierFlags and NSEventModifierFlagCommand != 0uL) TerminalSelectionMode.OUTPUT else TerminalSelectionMode.LINE
-        }, event.timestamp * 1000.0) else if (!selecting) viewport.clearSelection()
+        if (selecting && !continued) viewport.pressPointerSelection(pointer, event.timestamp * 1000.0, interval,
+            event.modifierFlags and NSEventModifierFlagCommand != 0uL)
+        else if (!selecting) { viewport.resetPointerClicks(); viewport.clearSelection() }
         updateLinkPointer(event)
     }
     override fun mouseDragged(event: NSEvent) {
@@ -768,9 +766,7 @@ public class AppKitTerminalView(
     }
     override fun pressureChangeWithEvent(event: NSEvent) {
         if (disposed) return
-        if (selecting && event.stage == 2L && viewport.deepPressSelection()) {
-            forceClickCountOffset = leftClickCount
-        }
+        if (selecting && event.stage == 2L) viewport.deepPressSelection()
         if (event.stage == 2L && !forceClickLookupFired) {
             forceClickLookupFired = true
             if (forceClickLookupEnabled()) quickLookWithEvent(event)
@@ -915,7 +911,7 @@ public class AppKitTerminalView(
     private fun secondaryMouseDown(event: NSEvent, button: Int): Boolean {
         if (disposed) return true
         localMouseButtons.remove(button)
-        if (mouse(event, button)) { viewport.clearSelection(); return true }
+        if (mouse(event, button)) { viewport.resetPointerClicks(); viewport.clearSelection(); return true }
         if (button in 1..2) localMouseButtons.add(button)
         return terminalMouseClick(button, rightClickAction, middleClickAction, selectionClipboardSupported,
             viewport.hasSelection, { copySelection(TerminalCopyFormat.MIXED, clearAfter = false) },

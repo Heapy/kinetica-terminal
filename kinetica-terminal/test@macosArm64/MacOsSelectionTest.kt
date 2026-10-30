@@ -10,6 +10,27 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    @Test fun repeatClicksUseActualPressesConfiguredTimeAndCellDistanceInsteadOfNativeHints() = withView { session, view, _ ->
+        session.write("alpha beta")
+        assertFailsWith<IllegalArgumentException> { view.clickRepeatIntervalMillis = -1 }
+        assertFailsWith<IllegalArgumentException> { view.clickRepeatIntervalMillis = 0x1_0000_0000L }
+        view.clickRepeatIntervalMillis = 100
+        fun click(x: Double, millis: Int) {
+            val point = view.bounds.useContents { NSMakePoint(size.width / session.columns * x, size.height / session.rows * 0.5) }
+            fun event(type: NSEventType) = assertNotNull(NSEvent.mouseEventWithType(type, view.convertPoint(point, toView = null),
+                0uL, millis / 1000.0, view.window!!.windowNumber, null, 0, 99, 1.0f))
+            view.mouseDown(event(NSEventTypeLeftMouseDown)); view.mouseUp(event(NSEventTypeLeftMouseUp))
+        }
+        click(1.2, 0); assertNull(view.accessibilitySelectedText(), "Native clickCount=99 does not fabricate a multi-click")
+        click(1.2, 100); assertEquals("alpha", view.accessibilitySelectedText())
+        click(1.2, 201); assertNull(view.accessibilitySelectedText(), "Configured interval, not system interval")
+        click(2.3, 202); assertNull(view.accessibilitySelectedText(), "More than a cell from the first press")
+        click(2.3, 203); assertEquals("alpha", view.accessibilitySelectedText())
+        click(2.3, 204); assertEquals("alpha beta", view.accessibilitySelectedText())
+        session.write("\u001b[?1049hother")
+        click(2.3, 205); assertNull(view.accessibilitySelectedText())
+    }
+
     @Test fun shiftClickContinuesSelectionAfterSystemRepeatIntervalAndRespectsCapture() = withView { session, view, _ ->
         session.write("alpha beta gamma")
         var time = 1.0
@@ -23,7 +44,7 @@ class MacOsSelectionTest {
                 else -> view.mouseUp(event)
             }
         }
-        mouse(NSEventTypeLeftMouseDown, 1.2, count = 2); mouse(NSEventTypeLeftMouseUp, 1.2, count = 2)
+        repeat(2) { mouse(NSEventTypeLeftMouseDown, 1.2); mouse(NSEventTypeLeftMouseUp, 1.2) }
         assertEquals("alpha", view.accessibilitySelectedText())
         time += NSEvent.doubleClickInterval + 0.1
         mouse(NSEventTypeLeftMouseDown, 7.2, shift = true); mouse(NSEventTypeLeftMouseUp, 7.2, shift = true)
@@ -32,10 +53,10 @@ class MacOsSelectionTest {
         mouse(NSEventTypeLeftMouseDown, 12.2, shift = true, count = 2); mouse(NSEventTypeLeftMouseUp, 12.2, shift = true, count = 2)
         assertEquals("alpha beta gamma", view.accessibilitySelectedText(), "Continuation does not replace the origin or restart the interval")
         time += 1.0
-        mouse(NSEventTypeLeftMouseDown, 7.2, count = 2); mouse(NSEventTypeLeftMouseUp, 7.2, count = 2)
+        repeat(2) { mouse(NSEventTypeLeftMouseDown, 7.2); mouse(NSEventTypeLeftMouseUp, 7.2) }
         time += NSEvent.doubleClickInterval / 2
-        mouse(NSEventTypeLeftMouseDown, 12.2, shift = true, count = 2); mouse(NSEventTypeLeftMouseUp, 12.2, shift = true, count = 2)
-        assertEquals("gamma", view.accessibilitySelectedText(), "A quick Shift click still follows multi-click behavior")
+        mouse(NSEventTypeLeftMouseDown, 7.3, shift = true); mouse(NSEventTypeLeftMouseUp, 7.3, shift = true)
+        assertEquals("alpha beta gamma", view.accessibilitySelectedText(), "A quick nearby Shift click becomes the third press")
         val output = mutableListOf<String>()
         val subscription = session.onInput { output += it.toByteArray().decodeToString() }
         try {
@@ -88,7 +109,10 @@ class MacOsSelectionTest {
             val native = assertNotNull(NSEvent.mouseEventWithType(type, view.convertPoint(point, toView = null),
                 flags, 0.0, view.window!!.windowNumber, null, 0, 3, 1.0f))
             when (type) {
-                NSEventTypeLeftMouseDown -> view.mouseDown(native)
+                NSEventTypeLeftMouseDown -> {
+                    repeat(2) { view.mouseDown(native); view.mouseUp(native) }
+                    view.mouseDown(native)
+                }
                 NSEventTypeLeftMouseDragged -> view.mouseDragged(native)
                 else -> view.mouseUp(native)
             }
@@ -326,14 +350,28 @@ class MacOsSelectionTest {
         window.setReleasedWhenClosed(false); window.contentView = view
         view.setFrameSize(NSMakeSize(ceil(width * 20), height * 5))
         assertEquals(20, session.columns); assertEquals(5, session.rows)
+        var clickTime = 0.0
+        var lastCount = 0
+        var lastScreen = session.screenEpoch
+        var lastPoint = -1 to -1
         val mouse: (NSEventType, Int, Int, Int) -> Unit = { type, x, y, count ->
-            val event = requireNotNull(NSEvent.mouseEventWithType(type,
+            fun event(type: NSEventType) = requireNotNull(NSEvent.mouseEventWithType(type,
                 view.convertPoint(NSMakePoint((x + 0.5) * width, (y + 0.5) * height), toView = null),
-                0u, 0.0, window.windowNumber, null, 0, count.toLong(), 1.0f))
+                0u, clickTime, window.windowNumber, null, 0, 1, 1.0f))
+            if (type == NSEventTypeLeftMouseDown) {
+                // Emit the missing presses; host click-count hints are intentionally always one.
+                if (count == 1 || count <= lastCount || lastScreen != session.screenEpoch || lastPoint != (x to y)) {
+                    clickTime += 1.0; lastCount = 0
+                }
+                repeat((count - lastCount - 1).coerceAtLeast(0)) {
+                    clickTime += 0.001; view.mouseDown(event(NSEventTypeLeftMouseDown)); view.mouseUp(event(NSEventTypeLeftMouseUp))
+                }
+                clickTime += 0.001; lastCount = count; lastScreen = session.screenEpoch; lastPoint = x to y
+            }
             when (type) {
-                NSEventTypeLeftMouseDown -> view.mouseDown(event)
-                NSEventTypeLeftMouseDragged -> view.mouseDragged(event)
-                NSEventTypeLeftMouseUp -> view.mouseUp(event)
+                NSEventTypeLeftMouseDown -> view.mouseDown(event(type))
+                NSEventTypeLeftMouseDragged -> view.mouseDragged(event(type))
+                NSEventTypeLeftMouseUp -> view.mouseUp(event(type))
                 else -> error("Unexpected selection event")
             }
         }

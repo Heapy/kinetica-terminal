@@ -39,6 +39,7 @@ class MacOsLookupTest {
         val h = View()
         try {
             h.session.write("alpha-beta gamma")
+            h.view.mouseDown(h.event(2)); h.view.mouseUp(h.event(2, NSEventTypeLeftMouseUp))
             h.view.mouseDown(h.event(2, count = 2)); h.view.mouseUp(h.event(2, NSEventTypeLeftMouseUp, 2))
             h.view.quickLookWithEvent(h.event(12))
             val lookup = h.lookups.single()
@@ -100,6 +101,7 @@ class MacOsLookupTest {
         }
         try {
             h.session.write("alpha beta")
+            h.view.mouseDown(h.event(7)); h.view.mouseUp(h.event(7, NSEventTypeLeftMouseUp))
             h.view.mouseDown(h.event(7, count = 2)); h.view.mouseUp(h.event(7, NSEventTypeLeftMouseUp, 2))
             val baseline = h.window.convertPointToScreen(h.view.convertPoint(NSMakePoint(6 * h.width - 2,
                 NSLayoutManager().defaultBaselineOffsetForFont(h.font) + 2), toView = null))

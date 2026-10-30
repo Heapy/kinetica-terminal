@@ -131,6 +131,7 @@ try {
     await reset("https://example.org/path");
     await page.evaluate(() => kineticaTerminalDemo.detectedLinksEnabled(false)); await click();
     assert.deepEqual((await log()).opened, [], "Detection can be disabled without altering the text");
+    await page.waitForTimeout(550); // Begin a fresh double-click sequence after the earlier link click.
     await page.mouse.click(...point(), { clickCount: 2 });
     const copiedWord = await page.evaluate(() => {
       const data = new DataTransfer();
