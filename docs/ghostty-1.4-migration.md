@@ -90,9 +90,15 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
       redraw policy and separately exercises OSC 133 redraw `0`, `1` and `last`.
       Generation is byte-for-byte reproducible. Validation passes 1388 JVM tests, fresh Release
       JS tests and 18 focused Native tests, including the actual AppKit Cmd-click callback.
-- [ ] Align ordinary line-selection gestures with original `Screen.selectLine` semantic
-      boundaries and whitespace trimming. The detected-link range oracle above uses
-      `whitespace = null`; it does not establish parity for triple-click or dragged selection.
+- [x] Align ordinary line-selection regions with original `Screen.selectLine` semantic
+      boundaries and whitespace trimming. The extended oracle checks 31 cases / 52 snapshots,
+      1492 untrimmed and trimmed selections and 2340 line-gesture steps against original
+      `SelectionGesture` and `selectionString(trim = false)`. Blank targets retain selection;
+      blank origins can anchor a drag. Copy preserves interior written spaces and omits the
+      previously synthesized final newline. Wide glyphs and combining sequences remain whole.
+      Generation reproduces byte-for-byte. Validation passes 1389 JVM tests, fresh Release JS
+      tests, 25 focused Native tests and actual browser gestures/copy/highlights on Canvas and
+      WebGL. AppKit coverage includes native triple-click and reverse drag events.
 - [x] Match Ghostty 1.4's macOS safe-opening policy for links supplied by terminal output.
       The default `AppKitTerminalView.openLink` validates web/mail targets, rejects unsafe
       characters, canonicalizes local paths and resolves symlinks, and rejects special,

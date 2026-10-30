@@ -1390,6 +1390,14 @@ temporary copied-text storage proportional to the selection; row watches are lik
 proportional to selected rows. The public session text-range helper also expands wide-cell
 endpoints consistently. Committed keyboard, IME and paste input clear selection.
 
+Line selection now follows Ghostty 1.4's semantic prompt/input/output boundaries and trims
+edge empty cells, ASCII spaces and tabs. It no longer appends an artificial final newline.
+Line drags retain written interior spaces, ignore blank destinations and can start on a blank
+region. The original-source oracle compares ranges and copied text at 1492 positions and
+2340 gesture steps, including reverse movement, wide cells, soft wraps, history and resize.
+The separate URL candidate-range checks remain untrimmed. This is line-selection coverage;
+it does not establish equivalence of every configurable word or rectangular selection mode.
+
 Fifteen common selection tests cover these invariants, independent views, partial scrolling,
 hard/soft line boundaries, directional changes and timer limits. Two AppKit tests use native
 NSEvent click counts, mouse dragging, text input and the real run loop. Metal tests verify

@@ -10,6 +10,17 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    @Test fun nativeTripleClicksStopAtSemanticBoundariesAndTrimEdges() = withView { session, view, mouse ->
+        session.write("\u001b]133;A\u0007 p \u001b]133;B\u0007 cmd \u001b]133;C\u0007 out ")
+        mouse(NSEventTypeLeftMouseDown, 4, 0, 3)
+        assertEquals("cmd", view.accessibilitySelectedText())
+        mouse(NSEventTypeLeftMouseDragged, 10, 0, 3)
+        assertEquals("cmd  out", view.accessibilitySelectedText())
+        mouse(NSEventTypeLeftMouseDragged, 1, 0, 3)
+        mouse(NSEventTypeLeftMouseUp, 1, 0, 3)
+        assertEquals("p  cmd", view.accessibilitySelectedText())
+    }
+
     @Test fun nativeLegacyPromptClicksUseNegotiatedCursorKeys() = withView { session, _, mouse ->
         val replies = StringBuilder()
         val subscription = session.onInput { replies.append(it.toByteArray().decodeToString()) }
@@ -74,7 +85,7 @@ class MacOsSelectionTest {
         mouse(NSEventTypeLeftMouseDown, 2, 0, 3)
         mouse(NSEventTypeLeftMouseDragged, 1, 1, 3)
         mouse(NSEventTypeLeftMouseUp, 1, 1, 3)
-        assertEquals("alpha-beta gamma\nnext\n", view.accessibilitySelectedText())
+        assertEquals("alpha-beta gamma\nnext", view.accessibilitySelectedText())
         session.reset(); session.write("abc界é xyz")
         mouse(NSEventTypeLeftMouseDown, 4, 0, 1)
         mouse(NSEventTypeLeftMouseDragged, 6, 0, 1)
@@ -91,7 +102,7 @@ class MacOsSelectionTest {
         session.reset(); session.write("x".repeat(30) + "\r\nend")
         mouse(NSEventTypeLeftMouseDown, 2, 1, 3)
         mouse(NSEventTypeLeftMouseUp, 2, 1, 3)
-        assertEquals("x".repeat(30) + "\n", view.accessibilitySelectedText())
+        assertEquals("x".repeat(30), view.accessibilitySelectedText())
     }
 
     @Test fun nativeDragAutoscrollStopsOnReleaseFocusLossAndDisposal() = withView { session, view, mouse ->

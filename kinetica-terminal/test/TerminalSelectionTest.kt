@@ -3,6 +3,28 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalSelectionTest {
+    @Test fun lineSelectionsRespectSemanticRegionsAndFrozenFrames() {
+        val session = TerminalSession(20, 4)
+        val viewport = TerminalViewport(session, {})
+        try {
+            session.write("\u001b]133;A\u0007 p \u001b]133;B\u0007 cmd \u001b]133;C\u0007 out ")
+            viewport.beginSelection(4, 0, TerminalSelectionMode.LINE)
+            assertEquals("cmd", viewport.selectedText())
+            viewport.extendSelection(10, 0)
+            assertEquals("cmd  out", viewport.selectedText())
+            viewport.extendSelection(1, 0)
+            assertEquals("p  cmd", viewport.selectedText())
+            viewport.extendSelection(0, 3)
+            assertEquals("p  cmd", viewport.selectedText(), "Dragging over a blank region retains the last selection")
+            session.write("\u001b[?2026h\u001b[Hchanged")
+            viewport.beginSelection(4, 0, TerminalSelectionMode.LINE)
+            assertEquals("cmd", viewport.selectedText(), "Frozen cells retain their semantic content")
+            session.write("\u001b[?2026l")
+            viewport.beginSelection(0, 3, TerminalSelectionMode.LINE)
+            assertEquals("", viewport.selectedText())
+        } finally { viewport.dispose() }
+    }
+
     @Test fun directTextExtractionPreservesWholeWideGlyphsAndEmptyRanges() {
         val session = TerminalSession(8, 3)
         session.write("a界éZ")
@@ -129,9 +151,9 @@ class TerminalSelectionTest {
             viewport.beginSelection(1, 2, TerminalSelectionMode.WORD); viewport.endSelection(1, 0)
             assertEquals("alpha-beta gamma", viewport.selectedText())
             viewport.beginSelection(1, 1, TerminalSelectionMode.LINE)
-            assertEquals("alpha-beta gamma\n", viewport.selectedText())
+            assertEquals("alpha-beta gamma", viewport.selectedText())
             viewport.endSelection(1, 3)
-            assertEquals("alpha-beta gamma\nnext\n", viewport.selectedText())
+            assertEquals("alpha-beta gamma\nnext", viewport.selectedText())
         } finally { viewport.dispose() }
     }
 
@@ -149,7 +171,7 @@ class TerminalSelectionTest {
             viewport.extendSelection(13, 0)
             assertEquals("two);three", viewport.selectedText())
             viewport.beginSelection(3, 1, TerminalSelectionMode.LINE)
-            assertEquals("\n", viewport.selectedText())
+            assertEquals("", viewport.selectedText())
             session.resize(4, 4); session.reset(); session.write("abc界z")
             viewport.beginSelection(1, 1, TerminalSelectionMode.WORD)
             assertEquals("abc界z", viewport.selectedText(), "The wide-glyph padding before a wrap is not whitespace")

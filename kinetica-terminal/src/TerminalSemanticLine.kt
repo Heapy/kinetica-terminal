@@ -27,3 +27,23 @@ internal fun terminalSemanticLineRange(row: Int, column: Int, first: Int, last: 
     }
     return TerminalSelectionRange(TerminalCellPosition(startRow, startColumn), TerminalCellPosition(endRow, endColumn + 1))
 }
+
+/** Ghostty's default line selection trims only empty cells, NUL, ASCII space and tab. */
+internal fun terminalSelectedLineRange(row: Int, column: Int, first: Int, last: Int,
+    line: (Int) -> TerminalLine): TerminalSelectionRange? {
+    val range = terminalSemanticLineRange(row, column, first, last, line)
+    var start: TerminalCellPosition? = null
+    var end: TerminalCellPosition? = null
+    for (y in range.start.line..range.end.line) {
+        val value = line(y)
+        val from = if (y == range.start.line) range.start.column else 0
+        val to = if (y == range.end.line) range.end.column else value.columns
+        for (x in from until to) {
+            if (!value.hasText(x) || value.isSpacerHead(x)) continue
+            when (value.codePoint(x)) { 0, 32, 9 -> continue }
+            if (start == null) start = TerminalCellPosition(y, x)
+            end = TerminalCellPosition(y, x + 1)
+        }
+    }
+    return start?.let { TerminalSelectionRange(it, checkNotNull(end)) }
+}

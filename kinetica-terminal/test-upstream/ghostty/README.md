@@ -1,6 +1,6 @@
 # Ghostty differential oracle
 
-## Semantic link-boundary oracle
+## Semantic line-selection and link-boundary oracle
 
 `semantic-line-manifest.json` pins original `Screen.selectLine` with the same options used by
 `Surface.linkAtPin`: no whitespace trimming and semantic boundaries enabled. Regenerate with:
@@ -10,7 +10,8 @@ python3 scripts/generate-terminal-semantic-line.py build/upstream/ghostty-1.4.0 
 bash scripts/engine.sh test -m kinetica-terminal -p jvm --include-classes='*TerminalSemanticLineTest'
 ```
 
-The 26 scenarios / 47 checkpoints compare 1392 cell ranges, replayed both whole and bytewise.
+The 31 scenarios / 52 checkpoints compare 1492 untrimmed cell ranges, the corresponding
+trimmed selections and 2340 gesture steps, replayed both whole and bytewise.
 They cover every ordering of prompt/input/output, mid-row and soft-wrap boundaries, history,
 resize/reflow, wide cells, combining characters, wrap spacers, blank seams, erasure, input-until-EOL,
 alternate screens, resets and explicit prompt redraw modes (`0`, `1`, `last`). Initial prompt
@@ -20,8 +21,14 @@ markers are compared before ranges, including after resize. Expected ranges come
 only converts inclusive end columns to exclusive ones. The manifest hashes the generator, helper,
 fixtures and relevant original sources. Generation reproduces byte-for-byte.
 
-This corpus verifies the candidate-text boundaries used for detected links, not equivalence of
-the host URL regex or complete mouse-selection gestures. Common URL tests cover actual matching,
+The helper also calls original `Screen.selectLine` with default whitespace trimming and
+`SelectionGesture.press`/`drag` with line behavior. It records nullable selections and actual
+`selectionString(trim = false)` output: blank drag targets retain the preceding selection,
+blank origins use untrimmed fallback bounds, interior written spaces survive and no final newline
+is synthesized. The test normalizes inclusive wide-glyph endpoint pins to complete display cells.
+Gesture sampling covers first/middle/last rows and columns, forward/reverse movement and returns
+to the origin. It does not claim all gesture timing, modifiers or host URL regex equivalence.
+Common URL tests cover actual matching,
 frozen frames, explicit OSC 8 precedence and the disabled-OSC-8 fallback; the AppKit Cmd-click
 test verifies the bounded target passed to the host callback without opening external applications.
 

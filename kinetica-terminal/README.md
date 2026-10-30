@@ -436,8 +436,11 @@ Shift+PageUp/PageDown, and accessibility text are available.
   pruning selected rows, resize, reset or switching screens clears the selection. When a
   scrolled top row is pruned, the view stays at the oldest retained row. Reflow preserves an
   approximate scroll offset, not a text anchor across changed wrapping.
-- Double click selects a word and triple click selects a logical line, including soft wraps
-  and its final newline. Word boundaries use whitespace and shell punctuation; paths and URLs
+- Double click selects a word and triple click selects a semantic region of a logical line,
+  including soft wraps. Line selection trims empty cells, spaces and tabs at its edges, stops
+  at OSC 133 prompt/input/output transitions and adds no final newline. Dragging over blank
+  regions retains the last selection; a blank initial region can still anchor a drag.
+  Word boundaries use whitespace and shell punctuation; paths and URLs
   remain together. Dragging extends in the starting granularity. Copy expands partial wide
   cells to whole glyphs, preserves combining sequences and omits wide-glyph wrap padding.
   Dragging beyond the top/bottom autoscrolls at 50 ms intervals, up to ten rows per tick.

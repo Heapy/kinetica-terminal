@@ -1,6 +1,9 @@
+// Line selection and plain-text formatting adapted from Ghostty (MIT).
+// Copyright (c) 2024 Mitchell Hashimoto, Ghostty contributors.
+// Pinned sources and license: ../third-party/ghostty.json and GHOSTTY-LICENSE.
 package io.heapy.kinetica.terminal
 
-/** Drag granularity. WORD uses whitespace and shell punctuation; LINE includes soft wraps. */
+/** Drag granularity. LINE joins soft wraps, respects semantic regions and trims edge whitespace. */
 public enum class TerminalSelectionMode { CHARACTER, WORD, LINE }
 
 internal data class TerminalCellPosition(val line: Int, val column: Int) : Comparable<TerminalCellPosition> {
@@ -49,22 +52,26 @@ internal class TerminalSelection(
 
     fun begin(position: TerminalCellPosition, mode: TerminalSelectionMode) {
         clear(); this.mode = mode
-        val unit = unit(position)
-        anchorStart = anchor(unit.start); anchorEnd = anchor(unit.end)
-        setRange(unit)
+        val unit = unit(position)?.let(::normalize)
+        // A blank line has no initial selection, but remains a valid drag origin.
+        val y = position.line.coerceIn(firstLine(), lastLine())
+        val origin = unit ?: terminalSemanticLineRange(y, position.column.coerceIn(0, line(y).columns - 1), firstLine(), lastLine(), line)
+        anchorStart = anchor(origin.start); anchorEnd = anchor(origin.end)
+        setRange(unit ?: TerminalSelectionRange(origin.start, origin.start))
     }
 
     fun extend(position: TerminalCellPosition) {
         reconcile()
         val start = anchorStart?.position() ?: return
         val end = anchorEnd?.position() ?: return
-        val focus = unit(position)
+        val focus = unit(position) ?: return
         setRange(normalize(TerminalSelectionRange(minOf(start, focus.start), maxOf(end, focus.end))))
     }
 
     fun text(): String {
         val range = range() ?: return ""
         if (range.start == range.end) return ""
+        if (mode == TerminalSelectionMode.LINE) return lineText(range)
         return buildString {
             for (y in range.start.line..range.end.line) {
                 val row = line(y)
@@ -76,7 +83,27 @@ internal class TerminalSelection(
                 append(if (to == row.columns && !row.wrapped) value.trimEnd(' ') else value)
                 if (y < range.end.line && !row.wrapped) append('\n')
             }
-            if (mode == TerminalSelectionMode.LINE && !line(range.end.line).wrapped) append('\n')
+        }
+    }
+
+    // ScreenFormatter's plain, unwrapped, untrimmed output: written spaces survive;
+    // trailing empty cells/rows do not. No newline is synthesized after the selection.
+    private fun lineText(range: TerminalSelectionRange): String = buildString {
+        var blankRows = 0
+        var blankCells = 0
+        for (y in range.start.line..range.end.line) {
+            val row = line(y)
+            val from = if (y == range.start.line) range.start.column else 0
+            val to = if (y == range.end.line) range.end.column else row.columns
+            if ((from until to).none { row.hasText(it) && !row.isSpacerHead(it) }) { blankRows++; continue }
+            repeat(blankRows) { append('\n') }; blankRows = if (row.wrapped) 0 else 1
+            if (y == range.start.line || !line(y - 1).wrapped) blankCells = 0
+            for (x in from until to) {
+                if (row.width(x) == 0 || row.isSpacerHead(x)) continue
+                if (!row.hasText(x)) { blankCells++; continue }
+                repeat(blankCells) { append(' ') }; blankCells = 0
+                row.appendTextTo(this, x)
+            }
         }
     }
 
@@ -119,11 +146,11 @@ internal class TerminalSelection(
         while (watchFirst + watches.size <= end) watches.addLast(Watch(line(watchFirst + watches.size)))
         watches.first().first = range.start.column
         // Include the hard/soft line boundary only when copying it matters.
-        watches.last().end = range.end.column + if (mode == TerminalSelectionMode.LINE) 1 else 0
+        watches.last().end = range.end.column
         bounds = range
     }
 
-    private fun unit(position: TerminalCellPosition): TerminalSelectionRange {
+    private fun unit(position: TerminalCellPosition): TerminalSelectionRange? {
         val y = position.line.coerceIn(firstLine(), lastLine())
         val row = line(y)
         val x = position.column.coerceIn(0, row.columns)
@@ -131,12 +158,7 @@ internal class TerminalSelection(
         return when (mode) {
             TerminalSelectionMode.CHARACTER -> TerminalSelectionRange(point, point)
             TerminalSelectionMode.WORD -> word(TerminalCellPosition(y, x.coerceAtMost(row.columns - 1)))
-            TerminalSelectionMode.LINE -> {
-                var first = y; var last = y
-                while (first > firstLine() && line(first - 1).wrapped) first--
-                while (last < lastLine() && line(last).wrapped) last++
-                TerminalSelectionRange(TerminalCellPosition(first, 0), TerminalCellPosition(last, line(last).columns))
-            }
+            TerminalSelectionMode.LINE -> terminalSelectedLineRange(y, x.coerceAtMost(row.columns - 1), firstLine(), lastLine(), line)
         }
     }
 

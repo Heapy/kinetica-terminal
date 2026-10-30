@@ -31,6 +31,11 @@ def cases():
         "history": (states["prompt"] + "p" + states["input"] + "1234" + states["output"] + "5678")*4,
         "erase": states["prompt"] + "abc" + states["input"] + "defghi" + "\x1b[1;2H\x1b[2X",
         "input_until_eol": states["prompt"] + ">" + osc("I") + "abcd\r\nefgh",
+        "trimmed_regions": states["prompt"] + " p " + states["input"] + "  cmd  " + states["output"] + " out ",
+        "wide_endpoints": " 界 \r\n😀\r\n é ",
+        "non_ascii_spaces": "\u00a0x\u3000\r\n \t\r\n z ",
+        "blank_edges": "\r\n abc \r\n\r\n def ",
+        "written_spaces": "a  \r\n b \r\nc",
     }
     for name,text in setups.items():
         result.append(dict(name=name,columns=5,rows=4,events=[dict(text=text)]))
@@ -81,8 +86,9 @@ pub fn build(b: *std.Build) void {
         initialPromptRedraw=False,
         cases=len(corpus), snapshots=sum(len(c["snapshots"]) for c in corpus),
         ranges=sum(len(s["ranges"]) for c in corpus for s in c["snapshots"]),
+        gestureSteps=sum(sum(len(g) for g in s["gestures"]) for c in corpus for s in c["snapshots"]),
         helperSha256=digest(helper), generatorSha256=digest(Path(__file__)), fixtureSha256=digest(fixture),
-        sources={p:digest(upstream/p) for p in ["src/terminal/Terminal.zig", "src/terminal/c/terminal.zig", "src/terminal/stream_terminal.zig", "src/terminal/Screen.zig", "src/terminal/PageList.zig", "src/Surface.zig"]})
+        sources={p:digest(upstream/p) for p in ["src/terminal/Terminal.zig", "src/terminal/c/terminal.zig", "src/terminal/stream_terminal.zig", "src/terminal/Screen.zig", "src/terminal/SelectionGesture.zig", "src/terminal/selection_codepoints.zig", "src/terminal/formatter.zig", "src/terminal/PageList.zig", "src/Surface.zig"]})
     (ROOT/"kinetica-terminal/test-upstream/ghostty/semantic-line-manifest.json").write_text(json.dumps(manifest, indent=2)+"\n")
     print(f'Generated {len(corpus)} cases / {manifest["snapshots"]} checkpoints / {manifest["ranges"]} cell ranges')
 
