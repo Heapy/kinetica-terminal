@@ -82,6 +82,23 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Confirmed terminal behavior to implement or reconcile
 
+- [ ] Match Ghostty 1.4's macOS safe-opening policy for links supplied by terminal output.
+      `AppKitTerminalView.openLink` currently allows `file:` URLs directly through
+      `NSWorkspace.openURL`; its scheme allowlist does not classify the effective file.
+      The pinned reference is `macos/Sources/Helpers/UntrustedURL.swift`, invoked from
+      `macos/Sources/Ghostty/Ghostty.App.swift` for both OSC 8 and detected/untrusted links.
+      It validates web/mail targets, rejects unsafe characters, canonicalizes local paths
+      and resolves symlinks, rejects special/executable/active-content files using extensions,
+      UTIs and executable status, and requires confirmation for custom schemes. Target display
+      is normalized and escaped; denied actions cannot fall back to an unrestricted opener.
+      `macos/Tests/Ghostty/UntrustedURLTests.swift` provides original policy cases. Current
+      Kinetica click tests replace `openLink` with a recorder and do not exercise this policy.
+      See [GHSA-cw69-wm67-5pv8](https://github.com/ghostty-org/ghostty/security/advisories/GHSA-cw69-wm67-5pv8).
+- [ ] Add a host setting equivalent to `link-osc8`. The upstream setting gates activation,
+      preview/highlight and link-specific copying without destroying stored OSC 8 metadata;
+      changing it must also affect existing rows. Kinetica currently exposes stored links
+      through `TerminalSession.hyperlinkAt` and `TerminalViewport.hyperlinkAt` unconditionally.
+
 - [x] Kitty drag-and-drop (`OSC 72`) end-to-end session and host integration. The internal
       command/state/response core and session now match 167 original-library scenarios /
       436 checkpoints, including 28 scenarios through the original `TerminalStream`.
