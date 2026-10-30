@@ -293,7 +293,25 @@ selected/accessibility text and applies to both keyboard and clipboard/menu copy
 leaves the clipboard untouched. Both policies retain the presented selection, including selected
 history outside the visible snapshot, while synchronized output holds a frame. These settings
 do not transform OSC 52 or MIME protocol clipboard writes.
-Ghostty's clipboard codepoint maps and VT/HTML/mixed copy formats are not yet implemented.
+`view.copyCodepointMap` accepts ordered `TerminalClipboardCodepointMap` entries for inclusive
+Unicode ranges, for example:
+
+```kotlin
+view.copyCodepointMap = listOf(
+    TerminalClipboardCodepointMap(0x2500, "-"),
+    TerminalClipboardCodepointMap(0x1f600..0x1f64f, "emoji"),
+    TerminalClipboardCodepointMap(0x03a3, "SUM"),
+)
+```
+
+Later entries override earlier overlapping ranges. Replacement strings may be empty or contain
+multiple Unicode characters; replacements are not processed again. Trimming happens first,
+and only recorded cell characters (including individual combining/emoji codepoints) are mapped.
+The formatter's generated blanks/newlines are preserved. Views snapshot the assigned rule list;
+changing rules during synchronized output still copies the retained source text. Custom hosts
+can use `viewport.copyText(trimTrailingSpaces, codepointMap)`. Selected/accessibility text,
+URL copying and OSC/MIME clipboard writes are unaffected. VT/HTML/mixed copy formats are not
+yet implemented.
 
 Cmd+J on macOS scrolls back to the current selection in both browser and AppKit surfaces.
 It preserves the selected text and puts its first retained row at the top (or returns to the

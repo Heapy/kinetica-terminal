@@ -60,6 +60,8 @@ public class BrowserTerminalView(
     private var disposed = false
     public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
     public var copyTrimTrailingSpaces: Boolean = true
+    public var copyCodepointMap: List<TerminalClipboardCodepointMap> = emptyList()
+        set(value) { field = value.toList() }
     public var pasteConfirmation: TerminalPasteConfirmation = TerminalPasteConfirmation { text, complete ->
         presentBrowserPaste(root, text, complete)
     }
@@ -248,7 +250,7 @@ public class BrowserTerminalView(
         }
         listen(root, "copy") { event ->
             if (viewport.hasSelection) {
-                event.clipboardData?.setData("text/plain", viewport.copyText(copyTrimTrailingSpaces))
+                event.clipboardData?.setData("text/plain", viewport.copyText(copyTrimTrailingSpaces, copyCodepointMap))
                 event.preventDefault(); event.stopPropagation()
             }
         }
@@ -618,7 +620,7 @@ public class BrowserTerminalView(
         focused = value; viewport.setFocused(value); session.sendFocus(value)
         if (value) notifications?.clear()
     }
-    private fun copySelection() { window.navigator.clipboard?.writeText(viewport.copyText(copyTrimTrailingSpaces))?.catch { _: dynamic -> Unit } }
+    private fun copySelection() { window.navigator.clipboard?.writeText(viewport.copyText(copyTrimTrailingSpaces, copyCodepointMap))?.catch { _: dynamic -> Unit } }
     private fun updateProgress() {
         val report = progressPresentation.report
         progressElement.hidden = report == null

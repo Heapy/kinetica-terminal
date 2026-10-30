@@ -215,9 +215,9 @@ public class TerminalViewport internal constructor(
         val selected = liveSelection.range()
         val selectedText = if (selected != null) liveSelection.text() else null
         val copiedText = if (selected != null) {
-            val untrimmed = liveSelection.copyText(false).let { if (it == selectedText) selectedText else it }
-            val trimmed = liveSelection.copyText(true).let { if (it == untrimmed) untrimmed else it }
-            checkNotNull(untrimmed) to checkNotNull(trimmed)
+            val untrimmed = liveSelection.copyContent(false).reuseText(selectedText)
+            val trimmed = liveSelection.copyContent(true).reuseText(untrimmed.text)
+            untrimmed to trimmed
         } else null
         // A newly mounted view has no completed frame to retain.
         val lines = Array(session.rows) {
@@ -399,10 +399,14 @@ public class TerminalViewport internal constructor(
 
     /** Clipboard formatting is independent of selection/accessible text. The default trims
      * trailing ASCII spaces, matching Ghostty; soft-wrapped interior spaces stay intact. */
-    public fun copyText(trimTrailingSpaces: Boolean = true): String {
+    public fun copyText(trimTrailingSpaces: Boolean = true): String = copyText(trimTrailingSpaces, emptyList())
+
+    /** Codepoint mappings apply after trimming, to source cell text only, in list order. */
+    public fun copyText(trimTrailingSpaces: Boolean, codepointMap: List<TerminalClipboardCodepointMap>): String {
         if (disposed) return ""
-        frozen?.inheritedCopyText?.let { return if (trimTrailingSpaces) it.second else it.first }
-        return activeSelection.copyText(trimTrailingSpaces)
+        frozen?.inheritedCopyText?.let { return (if (trimTrailingSpaces) it.second else it.first).format(codepointMap) }
+        return if (codepointMap.isEmpty()) activeSelection.copyText(trimTrailingSpaces)
+        else activeSelection.copyContent(trimTrailingSpaces).format(codepointMap)
     }
 
     /** A lookup reads visible cells without changing the user's selection or gesture. */
@@ -668,7 +672,7 @@ public class TerminalViewport internal constructor(
     private data class FrozenFrame(val lines: Array<TerminalLine>, val firstLine: Int, val theme: TerminalTheme,
         val cursorColumn: Int, val cursorRow: Int, val cursorVisible: Boolean, val cursorStyle: TerminalCursorStyle,
         val selection: TerminalSelection, var inheritedRange: TerminalSelectionRange?, var inheritedText: String?,
-        var inheritedCopyText: Pair<String, String>?, val graphics: List<TerminalGraphicsFrameEntry>) {
+        var inheritedCopyText: Pair<TerminalCopyContent, TerminalCopyContent>?, val graphics: List<TerminalGraphicsFrameEntry>) {
         fun clearInheritedSelection() { inheritedRange = null; inheritedText = null; inheritedCopyText = null }
     }
 }

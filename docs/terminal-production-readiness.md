@@ -60,6 +60,23 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Clipboard codepoint mappings now support inclusive Unicode ranges, last-match priority,
+multi-codepoint/empty replacements and non-recursive replacement in Browser/AppKit plain copy.
+Each view snapshots its configured rule list. The formatter retains which text spans came from
+cells, so rules affect grapheme/emoji components after trimming while generated blank-cell spaces
+and line separators remain untouched. Coalesced spans survive synchronized-output holds with
+selected history; changing rules during a hold does not read newer screen text or alter the
+selection/accessibility value. `copyText(Boolean)` retains its existing API and delegates to an
+overload accepting mappings. The new original `ScreenFormatter` corpus has 88 cases / 1656
+selections / 6624 outputs across mapped/unmapped and trimmed/untrimmed forms, replayed whole and
+bytewise. Fixture/manifest hashes reproduce exactly. All 1651 JVM tests, fresh Release JS tests,
+36 focused Native tests (private pasteboard), and browser editing/selection checks pass across
+macOS/Linux shortcuts and Canvas/WebGL. Evidence: `test-upstream/ghostty/copy-manifest.json`,
+`scripts/verify-terminal-editing.mjs`, and `/tmp/kinetica-copy-map-*`.
+VT/HTML/mixed clipboard formatting remains open. When adding it, use original formatter output:
+`formatter.zig`'s styled-format mapping test applies mappings to VT text, despite the contrary
+comments in `Surface.copySelectionToClipboards`.
+
 Plain clipboard copy now uses Ghostty's cell formatter separately from selection/accessibility
 text. Browser shortcuts/DOM copy and AppKit shortcuts/menu actions trim trailing ASCII spaces
 by default; hosts can disable trimming. Interior soft-wrap spaces, wide/combining cells and
@@ -72,7 +89,7 @@ rectangles, tabs, styled/combining spaces and resize/history. Fixtures regenerat
 Validation passes 1648 JVM tests, fresh Release JS tests, 33 focused Native tests (with a private
 pasteboard), and browser editing/selection checks on macOS/Linux shortcuts and Canvas/WebGL.
 Evidence: `test-upstream/ghostty/semantic-line-manifest.json`, `scripts/verify-terminal-editing.mjs`,
-and `/tmp/kinetica-copy-*`. Clipboard codepoint mappings and VT/HTML/mixed copy formats remain
+and `/tmp/kinetica-copy-*`. VT/HTML/mixed copy formats remain
 separate open work; plain-text formatting does not establish those capabilities.
 
 Ordinary text paste now matches original Ghostty `input/paste.zig`: the fixed xterm control-byte

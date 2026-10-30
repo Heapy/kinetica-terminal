@@ -168,6 +168,10 @@ internal class TerminalSelection(
         terminalSelectionText(it, line, trimTrailingSpaces)
     }.orEmpty()
 
+    fun copyContent(trimTrailingSpaces: Boolean): TerminalCopyContent = range()?.takeIf { it.start != it.end }?.let {
+        terminalSelectionCopyContent(it, line, trimTrailingSpaces)
+    } ?: TerminalCopyContent.EMPTY
+
     fun text(): String {
         val range = range() ?: return ""
         if (range.start == range.end) return ""
@@ -292,7 +296,7 @@ internal fun terminalSelectAllRange(first: Int, last: Int, line: (Int) -> Termin
 // ScreenFormatter's plain, unwrapped output. Written spaces survive unless trimming is
 // requested; trailing empty cells/rows do not. No newline is synthesized after selection.
 internal fun terminalSelectionText(range: TerminalSelectionRange, line: (Int) -> TerminalLine,
-    trimTrailingSpaces: Boolean = false): String = buildString {
+    trimTrailingSpaces: Boolean = false, cellText: ((Int, Int) -> Unit)? = null): String = buildString {
     if (range.rectangle && range.start.column == range.end.column) return@buildString
     var blankRows = 0
     var blankCells = 0
@@ -309,7 +313,9 @@ internal fun terminalSelectionText(range: TerminalSelectionRange, line: (Int) ->
             if (row.width(x) == 0 || row.isSpacerHead(x)) continue
             if (!row.hasText(x) || trimTrailingSpaces && row.codePoint(x) == ' '.code) { blankCells++; continue }
             repeat(blankCells) { append(' ') }; blankCells = 0
+            val start = length
             row.appendTextTo(this, x)
+            if (length > start) cellText?.invoke(start, length)
         }
     }
 }

@@ -1,5 +1,13 @@
 # Upstream terminal test corpus
 
+The clipboard mapping corpus executes the original `ScreenFormatter` for 88 cases / 1656
+selections / 6624 formatted outputs, with/without trimming and mappings. It covers overlapping
+Unicode ranges, expansions, empty replacements, non-recursive replacement, graphemes/emoji,
+written versus synthetic whitespace, tabs, styles, wrap boundaries and rectangles. Generated
+data is compared after whole-stream and bytewise input on each shared-engine target.
+Regenerate with `python3 scripts/generate-terminal-copy.py /path/to/ghostty /path/to/zig`;
+`ghostty/copy-manifest.json` records the source pin and hashes.
+
 The semantic-selection corpus also compares plain clipboard text with trimming enabled and
 disabled, through original `Screen.selectionString`/`ScreenFormatter`. Its 73 cases / 94
 snapshots cover select-all, word/line/output selection, pointer gestures and rectangles,

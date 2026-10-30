@@ -60,6 +60,8 @@ public class AppKitTerminalView(
     private var disposed = false
     public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
     public var copyTrimTrailingSpaces: Boolean = true
+    public var copyCodepointMap: List<TerminalClipboardCodepointMap> = emptyList()
+        set(value) { field = value.toList() }
     internal var writeCopyText: (String) -> Unit = {
         NSPasteboard.generalPasteboard.clearContents()
         NSPasteboard.generalPasteboard.setString(it, NSPasteboardTypeString)
@@ -876,7 +878,7 @@ public class AppKitTerminalView(
         }
     }
     private fun copySelection() {
-        if (viewport.hasSelection) writeCopyText(viewport.copyText(copyTrimTrailingSpaces))
+        if (viewport.hasSelection) writeCopyText(viewport.copyText(copyTrimTrailingSpaces, copyCodepointMap))
     }
     private fun pasteClipboard() {
         if (disposed) return

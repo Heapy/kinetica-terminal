@@ -150,6 +150,12 @@ fun main() {
     api.openLink = { handler: (String) -> Boolean -> surface?.openLink = handler }
     api.selectionWordChars = { value: String -> session.selectionWordChars = value }
     api.copyTrimTrailingSpaces = { enabled: Boolean -> surface?.copyTrimTrailingSpaces = enabled }
+    api.copyCodepointMap = { values: dynamic ->
+        surface?.copyCodepointMap = (0 until (values.length as Number).toInt()).map { index ->
+            val item = values[index]
+            TerminalClipboardCodepointMap((item.first as Number).toInt()..(item.last as Number).toInt(), item.replacement as String)
+        }
+    }
     api.write = { text: String -> session.write(text) }
     api.configureTheme = { background: Int -> session.configureTheme(TerminalTheme(background = background)) }
     api.screen = { (0 until session.rows).joinToString("\n") { session.screenLine(it).text() } }

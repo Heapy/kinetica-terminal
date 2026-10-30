@@ -106,8 +106,19 @@ try {
       await page.evaluate(() => kineticaTerminalDemo.copyTrimTrailingSpaces(false));
       assert.equal(await selection(), rawCopy);
       await key("c"); assert.deepEqual(await page.evaluate(() => editCopies.splice(0)), [rawCopy, rawCopy]);
+      await page.evaluate(() => kineticaTerminalDemo.copyCodepointMap([
+        { first: 102, last: 102, replacement: "Φ" }, { first: 32, last: 32, replacement: "_" },
+        { first: 10, last: 10, replacement: "NOT_A_CELL" },
+      ]));
+      const mappedRaw = "Φirst__\n_second\u00a0__\nthird";
+      assert.equal(await selection(), mappedRaw);
+      await key("c"); assert.deepEqual(await page.evaluate(() => editCopies.splice(0)), [mappedRaw, mappedRaw]);
       await write("\x1b[?2026h\x1b[HCHANGED");
       await page.evaluate(() => kineticaTerminalDemo.copyTrimTrailingSpaces(true));
+      assert.equal(await selection(), "Φirst\n second\u00a0\nthird");
+      await page.evaluate(() => kineticaTerminalDemo.copyCodepointMap([{ first: 105, last: 105, replacement: "I" }]));
+      assert.equal(await selection(), "fIrst\n second\u00a0\nthIrd", "Changing mappings uses the retained source text");
+      await page.evaluate(() => kineticaTerminalDemo.copyCodepointMap([]));
       assert.equal(await selection(), trimmedCopy);
       await page.evaluate(() => kineticaTerminalDemo.copyTrimTrailingSpaces(false));
       assert.equal(await selection(), rawCopy, "Both clipboard forms retain the presented selection");
