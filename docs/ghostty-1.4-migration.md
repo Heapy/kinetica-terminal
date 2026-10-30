@@ -157,10 +157,24 @@ and Native covers 96 overlap scenes with AppKit and Metal. All twelve browser fa
 configurations, six overline configurations and the bundled/system-font glyph verifier also
 pass. Logs are `/tmp/kinetica-decoration-order-*`.
 
-A separate follow-up remains for Canvas default-color repaint outside the cell grid: the
-unused backing area retained the initial RGB 30/30/30 after OSC 11 changed the background to
-black, unlike the GPU frame clear. Capturing that area as part of the composition reference
-keeps the overlap test valid but does not resolve the background repaint discrepancy.
+The Canvas default-color follow-up addresses the backing area outside the cell grid, which
+retained the initial RGB 30/30/30 after OSC 11 changed the background, unlike the GPU frame
+clear. A full viewport repaint now clears the entire Canvas background before repainting
+cells. It uses `viewport.theme`, so a held frame retains its captured theme until release.
+The existing explicit-clear path still marks all rows dirty when required; a viewport that
+is already fully dirty does not enqueue another invalidation. Partial row updates retain
+their existing behavior. A full clear also removes old cells beyond a shrunken DECCOLM grid.
+
+`verify-terminal-background.mjs` failed on the previous artifact at the first OSC 11 update
+(expected RGB 18/52/86, actual 30/30/30). It requires measurable right/bottom margins and
+checks OSC 11/111, Kitty OSC 21, host theme changes, DEC reverse defaults, an actual selection
+repaint during synchronized output, release, image-composition transitions and a 132-to-80
+column change without resizing the host surface. The last case verifies removal of a colored
+cell beyond the new grid. Both Canvas and WebGL serve the same pixel expectations at DPR
+1/1.25/2; this does not rely on an unchanged-margin assumption from the overlap verifier.
+Validation passes freshly built Release JS tests, all six background configurations, all
+six decoration-overlap configurations and all twelve faint font/DPR configurations.
+The implementation change is confined to the browser renderer. Logs are `/tmp/kinetica-background-*`.
 
 The release behavior review uses the pinned `stream.zig` / `stream_terminal.zig` dispatch,
 keyboard/mouse encoders and graphics implementation as the reference. It checks the terminal

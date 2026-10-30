@@ -1114,6 +1114,7 @@ node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-overline.mjs
 node scripts/verify-terminal-faint.mjs
 node scripts/verify-terminal-decoration-order.mjs
+node scripts/verify-terminal-background.mjs
 node scripts/verify-terminal-blocks.mjs
 node scripts/verify-terminal-glyphs.mjs
 node scripts/verify-terminal-shaping.mjs

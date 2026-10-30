@@ -105,9 +105,13 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
             return
         }
         if (imagesVisible) { imagesVisible = false; imageCache.clear(); uploadData = null; clear = true }
-        if (clear) {
+        // A full viewport change can alter the default color or shrink the grid without
+        // resizing this backing canvas. Repaint its margins too, using the held theme.
+        val fullRepaint = viewport.firstDirtyRow == 0 && viewport.lastDirtyRow == viewport.rows - 1
+        if (clear || fullRepaint) {
             context.fillStyle = terminalCssColor(viewport.theme.background); context.fillRect(0, 0, width, height)
-            viewport.markAll(); clear = false
+            if (clear) viewport.markAll()
+            clear = false
         }
         context.textBaseline = "top"
         viewport.paint(object : TerminalPainter {
