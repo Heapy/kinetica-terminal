@@ -100,6 +100,50 @@ class TerminalGraphicsAnimationTest {
         assertSame(before,animation.contentGeneration)
     }
 
+    @Test fun rgbLoadsAllocateOnlyTheDestinationAndKeepPublishedFramesImmutable() {
+        for (overwrite in 0..1) {
+            val original = ByteArray(24) { byteArrayOf(10, 20, 30, -128)[it % 4] }
+            val root = TerminalGraphicsPixels(3, 2, 32, original)
+            val allocations = mutableListOf<Int>()
+            val animation = TerminalGraphicsAnimation(root) { size ->
+                assertEquals(24, size, "Only a complete destination frame is allocated")
+                allocations += size; ByteArray(size)
+            }
+            val source = TerminalGraphicsPixels(2, 2, 24, byteArrayOf(100, 0, 0, 0, 100, 0, 0, 0, 100, -56, -56, -56))
+            animation.load(parse("a=f,c=1,x=2,y=1,X=$overwrite"), source) { assertEquals(24, it); true }
+            assertEquals(listOf(24), allocations)
+            val first = assertNotNull(animation.frame(2))
+            assertContentEquals(original.copyOf().also { byteArrayOf(100, 0, 0, -1).copyInto(it, 20) }, first.data)
+            animation.load(parse("a=f,r=2,X=$overwrite"), source) { fail("Edits do not admit another stored frame") }
+            assertEquals(listOf(24, 24), allocations)
+            assertContentEquals(byteArrayOf(100, 0, 0, -1, 0, 100, 0, -1, 10, 20, 30, -128,
+                0, 0, 100, -1, -56, -56, -56, -1, 100, 0, 0, -1), animation.frame(2)!!.data)
+            assertContentEquals(original.copyOf().also { byteArrayOf(100, 0, 0, -1).copyInto(it, 20) }, first.data)
+            assertContentEquals(ByteArray(24) { byteArrayOf(10, 20, 30, -128)[it % 4] }, root.data)
+            assertContentEquals(byteArrayOf(100, 0, 0, 0, 100, 0, 0, 0, 100, -56, -56, -56), source.data)
+            assertFailsWith<TerminalGraphicsAnimationException> {
+                animation.load(parse("a=f"), source) { false }
+            }
+            assertEquals(2, allocations.size, "Rejected admission does not allocate source conversion or destination")
+        }
+    }
+
+    @Test fun rejectedRgbAppendAllocatesOnlyTheRequiredRootConversion() {
+        val root = TerminalGraphicsPixels(2, 1, 24, byteArrayOf(1, 2, 3, 4, 5, 6))
+        val allocations = mutableListOf<Int>()
+        val animation = TerminalGraphicsAnimation(root) { size -> allocations += size; ByteArray(size) }
+        assertFailsWith<TerminalGraphicsAnimationException> {
+            animation.load(parse("a=f"), root) {
+                assertEquals(listOf(8), allocations, "Root conversion precedes admission; no expanded source is retained")
+                false
+            }
+        }
+        assertEquals(listOf(8), allocations)
+        assertContentEquals(byteArrayOf(1, 2, 3, -1, 4, 5, 6, -1), animation.rootPixels.data)
+        assertContentEquals(byteArrayOf(1, 2, 3, 4, 5, 6), root.data)
+        assertEquals(1, animation.frameCount)
+    }
+
     @Test fun clockSaturatesAndGaplessAnimationsDoNotScheduleBusyLoops() {
         val root = TerminalGraphicsPixels(1,1,32,byteArrayOf(1,2,3,-1))
         val animation = TerminalGraphicsAnimation(root)

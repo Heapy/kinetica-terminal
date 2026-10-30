@@ -2,10 +2,10 @@
 // Source-over arithmetic adapted from Wuffs v0.4 (MIT, see ../third-party/WUFFS-LICENSE).
 package io.heapy.kinetica.terminal
 
-internal fun TerminalGraphicsPixels.animationRgba(): TerminalGraphicsPixels {
+internal fun TerminalGraphicsPixels.animationRgba(allocate: (Int) -> ByteArray = { ByteArray(it) }): TerminalGraphicsPixels {
     if (format == 32) return this // Pixel buffers are immutable; the destination copies before editing.
     require(format == 24)
-    val bytes = ByteArray(width * height * 4)
+    val bytes = allocate(width * height * 4)
     for (pixel in 0 until width * height) {
         for (channel in 0..2) bytes[pixel * 4 + channel] = data[pixel * 3 + channel]
         bytes[pixel * 4 + 3] = 255.toByte()
@@ -13,9 +13,9 @@ internal fun TerminalGraphicsPixels.animationRgba(): TerminalGraphicsPixels {
     return TerminalGraphicsPixels(width,height,32,bytes)
 }
 
-internal fun animationBackground(length: Int, rgba: Long): ByteArray {
+internal fun animationBackground(length: Int, rgba: Long, allocate: (Int) -> ByteArray = { ByteArray(it) }): ByteArray {
     require(length >= 0 && length % 4 == 0 && rgba in 0..0xffffffffL)
-    val bytes = ByteArray(length)
+    val bytes = allocate(length)
     if (rgba != 0L) for (i in bytes.indices step 4) for (c in 0..3) bytes[i+c] = (rgba ushr (24-c*8)).toByte()
     return bytes
 }
@@ -24,16 +24,26 @@ internal fun animationBackground(length: Int, rgba: Long): ByteArray {
  * has already passed command-level bounds checks. Coordinates stay Long until clipped. */
 internal fun animationCompose(destination: ByteArray, destinationWidth: Int, destinationHeight: Int,
     source: ByteArray, sourceWidth: Int, sourceHeight: Int, x: Long, y: Long,
-    sourceX: Int = 0, sourceY: Int = 0, width: Int = sourceWidth, height: Int = sourceHeight, overwrite: Boolean) {
+    sourceX: Int = 0, sourceY: Int = 0, width: Int = sourceWidth, height: Int = sourceHeight,
+    sourceFormat: Int = 32, overwrite: Boolean) {
+    require(sourceFormat == 24 || sourceFormat == 32)
     require(x >= 0 && y >= 0 && sourceX >= 0 && sourceY >= 0 && width >= 0 && height >= 0 &&
         sourceX.toLong() + width <= sourceWidth && sourceY.toLong() + height <= sourceHeight)
     if (x >= destinationWidth || y >= destinationHeight) return
     val clippedWidth = minOf(width.toLong(),destinationWidth - x).toInt()
     val clippedHeight = minOf(height.toLong(),destinationHeight - y).toInt()
+    val channels = if (sourceFormat == 24) 3 else 4
     for (row in 0 until clippedHeight) {
         val target = ((y.toInt() + row) * destinationWidth + x.toInt()) * 4
-        val start = ((sourceY + row) * sourceWidth + sourceX) * 4
-        if (overwrite) source.copyInto(destination,target,start,start+clippedWidth*4)
+        val start = ((sourceY + row) * sourceWidth + sourceX) * channels
+        // RGB sources are opaque under both overwrite and source-over. Expand only the
+        // clipped rectangle into the destination instead of allocating an RGBA source copy.
+        if (channels == 3) for (column in 0 until clippedWidth) {
+            val d = target + column * 4; val s = start + column * 3
+            for (channel in 0..2) destination[d + channel] = source[s + channel]
+            destination[d + 3] = 255.toByte()
+        }
+        else if (overwrite) source.copyInto(destination,target,start,start+clippedWidth*4)
         else for (column in 0 until clippedWidth) animationBlendPixel(destination,target+column*4,source,start+column*4)
     }
 }

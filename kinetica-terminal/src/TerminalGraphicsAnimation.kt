@@ -7,7 +7,9 @@ internal class TerminalGraphicsAnimationException(message: String) : Exception(m
 
 /** Per-image animation core. Storage owns admission/eviction; hosts supply the monotonic clock.
  * Every published pixel buffer is immutable, including buffers held by completed view frames. */
-internal class TerminalGraphicsAnimation(root: TerminalGraphicsPixels) {
+internal class TerminalGraphicsAnimation(root: TerminalGraphicsPixels,
+    private val allocatePixels: (Int) -> ByteArray = { ByteArray(it) },
+) {
     private class Frame(var pixels: TerminalGraphicsPixels, var gap: Long = 0)
     private val frames = mutableListOf(Frame(root))
     enum class State { STOPPED, LOADING, RUNNING }
@@ -43,17 +45,18 @@ internal class TerminalGraphicsAnimation(root: TerminalGraphicsPixels) {
     }
     private fun rgbaRoot() {
         if (rootPixels.format == 32) return
-        frames[0].pixels = rootPixels.animationRgba()
+        frames[0].pixels = rootPixels.animationRgba(allocatePixels)
         changed(content = true)
     }
     private fun failure(message: String): Nothing = throw TerminalGraphicsAnimationException(message)
+    private fun copyPixels(bytes: ByteArray): ByteArray = allocatePixels(bytes.size).also { bytes.copyInto(it) }
 
     /** Decoding/chunk identity checks happen before this call. Reserve only a new full frame.
      * A storage owner observes root conversion before deciding whether it can admit the frame. */
     fun load(command: TerminalGraphicsCommand, source: TerminalGraphicsPixels, reserveFrame: (Int) -> Boolean): Int {
         require(command.action == 'f')
         if (source.width > rootPixels.width || source.height > rootPixels.height) failure("EINVAL: frame dimensions exceed image")
-        val rgba = source.animationRgba()
+        require(source.format == 24 || source.format == 32)
         rgbaRoot()
         initialized = true
         val requested = command.unsigned('r')
@@ -64,18 +67,18 @@ internal class TerminalGraphicsAnimation(root: TerminalGraphicsPixels) {
             val base = if (baseNumber == 0L) null else frame(baseNumber) ?: failure("EINVAL: base frame not found")
             val length = rootPixels.data.size
             if (!reserveFrame(length)) failure("ENOSPC: animation frame storage full")
-            val canvas = base?.data?.copyOf() ?: animationBackground(length, command.unsigned('Y'))
-            animationCompose(canvas, rootPixels.width, rootPixels.height, rgba.data, rgba.width, rgba.height,
-                command.unsigned('x'), command.unsigned('y'), overwrite = command.unsigned('X') == 1L)
+            val canvas = base?.data?.let(::copyPixels) ?: animationBackground(length, command.unsigned('Y'), allocatePixels)
+            animationCompose(canvas, rootPixels.width, rootPixels.height, source.data, source.width, source.height,
+                command.unsigned('x'), command.unsigned('y'), sourceFormat = source.format, overwrite = command.unsigned('X') == 1L)
             frames += Frame(TerminalGraphicsPixels(rootPixels.width,rootPixels.height,32,canvas),
                 when { signedGap > 0 -> signedGap.toLong(); signedGap < 0 -> 0; else -> 40 })
             changed()
         } else {
             val target = frames[number - 1]
             if (signedGap != 0) target.gap = signedGap.toLong().coerceAtLeast(0)
-            val canvas = target.pixels.data.copyOf()
-            animationCompose(canvas, rootPixels.width, rootPixels.height, rgba.data, rgba.width, rgba.height,
-                command.unsigned('x'), command.unsigned('y'), overwrite = command.unsigned('X') == 1L)
+            val canvas = copyPixels(target.pixels.data)
+            animationCompose(canvas, rootPixels.width, rootPixels.height, source.data, source.width, source.height,
+                command.unsigned('x'), command.unsigned('y'), sourceFormat = source.format, overwrite = command.unsigned('X') == 1L)
             target.pixels = TerminalGraphicsPixels(rootPixels.width,rootPixels.height,32,canvas)
             val current = number - 1 == currentIndex
             if (current) shownAt = null
@@ -122,7 +125,7 @@ internal class TerminalGraphicsAnimation(root: TerminalGraphicsPixels) {
         rgbaRoot()
         val source = frame(sourceNumber)!!
         val destination = frames[destinationNumber.toInt() - 1]
-        val canvas = destination.pixels.data.copyOf()
+        val canvas = copyPixels(destination.pixels.data)
         animationCompose(canvas,rootPixels.width,rootPixels.height,source.data,rootPixels.width,rootPixels.height,dx,dy,
             sourceX = sx.toInt(),sourceY = sy.toInt(),width = width.toInt(),height = height.toInt(),overwrite = command.unsigned('C') == 1L)
         destination.pixels = TerminalGraphicsPixels(rootPixels.width,rootPixels.height,32,canvas)

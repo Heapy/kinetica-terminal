@@ -34,6 +34,15 @@ def cases():
                 frame(fields=f'X={mode},x={x},y={y},c=2,r=999,z=50'),
                 frame(fields=f'X={mode},x={x},y={y},r=1,z=12'),
                 frame(fields='c=999'),frame(fields='r=2,z=-1')]))
+    for fmt,alpha in [(24,255),(32,0),(32,128),(32,255)]:
+        pixels=bytes([10,20,30,alpha][:fmt//8])*6
+        source=bytes([100,0,0,0,100,0,0,0,100,200,200,200])
+        for overwrite in [0,1]:
+            for x,y in [(0,0),(2,1),(0,2),(4294967295,4294967295)]:
+                fields=f'X={overwrite},x={x},y={y}'
+                result.append(dict(name=f'rgb_source_{fmt}_{alpha}_{overwrite}_{x}_{y}',events=[
+                    root(fmt=fmt,data=pixels),frame(source,fields+',c=1',2,2,24),
+                    frame(source,fields+',r=1',2,2,24),frame(source,fields+',r=2',2,2,24)]))
     for source,dest in [(1,1),(1,2),(2,1),(2,2),(0,1),(1,0),(9,1),(1,9)]:
         for rect in ['',',w=1,h=1,x=2,y=1',',w=1,h=1,X=2,Y=1',',w=1,h=1,X=1,x=2',',w=4294967295,h=4294967295',',w=1,h=1,x=4294967295']:
             result.append(dict(name=f'compose_{source}_{dest}_{rect}',events=[root(),frame(fields='Y=16909060'),

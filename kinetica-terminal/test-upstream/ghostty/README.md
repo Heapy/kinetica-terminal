@@ -34,6 +34,14 @@ Pinned C reference: Ghostty 1.4.0, `83fb95624b0439ee660c2679b43b38c8b63769cd`, f
 The separate Zig animation, Unicode-placeholder, visibility and program-status corpora use the same
 1.4.0 revision with Zig 0.17.0. Their manifests preserve source and generator hashes.
 
+The [animation corpus](graphics-animation-manifest.json) contains 446 scenarios / 2186
+checkpoints, replayed through the isolated animation core and whole/bytewise session input.
+Its RGB-source cases cover opaque source-over/overwrite, transparent/partial/opaque destination
+alpha, RGB-root conversion, appended and edited frames, clipping and uint32 offsets outside
+the image. The expected pixels and error-side state come from the original executor; allocation
+guards are separate Kotlin tests because our temporary-buffer strategy intentionally differs.
+Regenerate with `python3 scripts/generate-terminal-graphics-animation.py /path/to/ghostty /path/to/zig`.
+
 The [visibility corpus](visibility-manifest.json) contains 11 scenarios / 92 checkpoints
 for mode 2033, one-shot queries, repeat enables, mode save/restore, RIS/DECSTR, screen
 switches, synchronized output and malformed or incomplete sequences. The helper uses

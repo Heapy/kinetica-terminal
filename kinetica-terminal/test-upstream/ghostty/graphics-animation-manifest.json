@@ -1,11 +1,11 @@
 {
   "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
   "zig": "0.17.0",
-  "cases": 414,
-  "snapshots": 2058,
+  "cases": 446,
+  "snapshots": 2186,
   "helperSha256": "f4eb24f5f77bce01c5e9142bf7a0f261000bc542b3590f05f1b4ac4d806e55e0",
-  "generatorSha256": "1f3cde91fd7017cf38f131a80bbcac7bb47824c26cd11fbfdd3608bd557d717b",
-  "fixtureSha256": "259168217be30da90eafb51d388d9ca35af1491ebdf405047cd4743786e22bd3",
+  "generatorSha256": "03296b222336dc60f369b424f634efc19a4f47927fb47162f1fd8cf5c034ba83",
+  "fixtureSha256": "2d8a23cbaf37888d9a4beee90d7af1e0f65e59bf65ddae4477fd56f42d2e8464",
   "sources": {
     "src/terminal/kitty/graphics_animation.zig": "fbbf8491612beaa370a3a2612df00d7e8942f9fbd3cbe17cf35dda8927ef18d6",
     "src/terminal/kitty/graphics_pixel.zig": "7cf451615c3a90629f1d1e1d41d258c510190292bfacfdd9c4ce23cb96ca051d",

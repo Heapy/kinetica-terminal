@@ -958,6 +958,24 @@ its measured canvas-plus-upload peak is 66,434,104 bytes, below 64 MiB (67,108,8
 WebGL's independently measured peak remains below that limit, including unfinished commands.
 Eight shared tile/cache tests also pass on Native, and the general browser verifier passes.
 
+RGB animation uploads now expand directly into the destination canvas during composition,
+instead of retaining a full intermediate RGBA source. Opaque RGB replaces destination pixels
+under both overwrite and source-over; clipping avoids work outside the canvas. Existing
+frames still copy before editing, preserving previously published render snapshots. RGB-root
+conversion remains before admission, including on an eventual ENOSPC response, matching the
+original executor's observable state. Pixel-allocation guards verify one destination allocation
+per successful append/edit, no allocation on rejected admission with an RGBA root, and only
+the required root conversion when a rejected append starts from RGB. This removes one full
+source-sized transient buffer, without claiming a combined bound for decoded storage, held
+frames, root conversion, destination copies and in-progress transfers.
+
+Thirty-two new original-Ghostty scenarios compare RGB source composition over RGB roots and
+transparent/partial/opaque RGBA roots, both composition modes, partial/full clipping, extreme
+offsets and append/edit behavior. The animation corpus now has 446 scenarios / 2186 checkpoints;
+fixtures and provenance reproduce byte-for-byte. All 1218 JVM tests, the fresh JS suite and
+graphics checks on Canvas/WebGL pass, including animation, held frames and resource budgets.
+All ten native animation tests and six software/Metal pixel-rendering tests also pass.
+
 - [x] RGB/RGBA and PNG decoding, zlib payloads, dimensions and decoded-byte limits.
 - [ ] Image IDs/numbers, chunked transmission, queries/replies, quiet settings, deletion and eviction.
 - [ ] Placements, cropping/scaling, z order, relative parents, scroll/reflow and screen/reset lifecycle.
