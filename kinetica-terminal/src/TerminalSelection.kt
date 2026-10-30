@@ -57,7 +57,9 @@ internal class TerminalSelection(
         val y = position.line.coerceIn(firstLine(), lastLine())
         val origin = unit ?: terminalSemanticLineRange(y, position.column.coerceIn(0, line(y).columns - 1), firstLine(), lastLine(), line)
         anchorStart = anchor(origin.start); anchorEnd = anchor(origin.end)
-        setRange(unit ?: TerminalSelectionRange(origin.start, origin.start))
+        val x = position.column.coerceIn(0, line(y).columns - 1)
+        val link = if (mode == TerminalSelectionMode.WORD) terminalDetectedLinkAt(y, x, firstLine(), lastLine(), line) else null
+        setRange(link?.range ?: unit ?: TerminalSelectionRange(origin.start, origin.start))
     }
 
     fun extend(position: TerminalCellPosition) {

@@ -446,6 +446,10 @@ Shift+PageUp/PageDown, and accessibility text are available.
   Dragging beyond the top/bottom autoscrolls at 50 ms intervals, up to ten rows per tick.
   Release, pointer cancellation, focus loss, synchronized-output hold and disposal stop the timer.
   Committed keyboard/IME/paste input clears selection; copying leaves it intact.
+- Double clicking recognized HTTP(S) text selects its complete visible URL, including matched
+  parentheses and query punctuation, across soft wraps. Releasing without moving retains that
+  selection; dragging resumes word selection. OSC 8 labels still use their visible text and
+  never substitute a hidden target URI into the selection.
 - Sessions are application-owned. Unmounting a view removes its observers, listeners and
   scheduled redraws, but does not close a shared transport. Dispose transports explicitly.
 - Session IDs label platform surfaces for diagnostics. Dispose a view before removing it;

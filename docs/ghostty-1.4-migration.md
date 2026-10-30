@@ -82,6 +82,21 @@ Release JS tests, 74 Native graphics/animation tests and both Canvas/WebGL graph
 
 ## Confirmed terminal behavior to implement or reconcile
 
+- [x] Double-click a recognized visible HTTP(S) link as one complete selection, following
+      `Surface`'s override of ordinary word selection. Soft wraps, wide/combined cells and
+      OSC 133 boundaries retain their cell mapping. OSC 8 target URIs and activation policy
+      do not replace the visible selected text. A release with no new position no longer
+      synthesizes a drag; actual dragging resumes the existing word-selection behavior.
+      Validation passes 1391 JVM tests, fresh Release JS tests, 38 focused Native tests and
+      the Canvas/WebGL selection verifier, including actual double-click, copy and drag events.
+- [ ] Match ordinary word selection with original `Screen.selectWord`,
+      `selectWordBetween` and configurable `selection-word-chars`: the current local word
+      rules differ in delimiter membership, adjacent delimiter grouping and unwritten cells.
+      The URL press override above does not establish word-drag parity.
+- [ ] Match the complete default URL/path recognizer in `src/config/url.zig`, including
+      non-HTTP schemes, rooted/relative paths, environment-variable prefixes, spaced path
+      segments and the original punctuation/Unicode rules. Kinetica currently detects HTTP(S)
+      text; semantic range parity alone does not establish recognizer parity.
 - [x] Bound detected URLs by OSC 133 semantic-content transitions, including transitions
       within a row and across soft wraps. Explicit OSC 8 targets retain priority; literal
       search still spans semantic boundaries. The original `Screen.selectLine` oracle covers

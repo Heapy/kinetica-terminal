@@ -86,6 +86,14 @@ try {
     await move(1, 0); await page.mouse.up({ clickCount: 3 });
     assert.equal(await copy(), "p  cmd", "Reverse drag preserves spaces between semantic regions");
 
+    const url = "https://e.test/a(b);q=1";
+    await reset(`[${url}].`);
+    await click(3, 0, 2);
+    assert.equal(await copy(), url, "Double click and release retain the complete visible URL across soft wraps");
+    await move(3, 0); await page.mouse.down({ clickCount: 2 });
+    await move(4, 0); await page.mouse.up({ clickCount: 2 });
+    assert.equal(await copy(), "https://e.test/a", "Dragging resumes word granularity");
+
     await reset(Array.from({ length: 80 }, (_, i) => `line-${i}\r\n`).join(""));
     await move(4, 2); await page.mouse.down(); await move(4, -2);
     await page.waitForFunction(() => {
@@ -128,7 +136,7 @@ try {
     await page.evaluate(() => kineticaTerminalDemo.dispose());
     await page.waitForTimeout(180); await page.mouse.up();
     assert.equal(await page.locator("#app > *").count(), 0);
-    report.renderers.push({ renderer, selection: "passed", semanticLines: "passed", autoscroll: "passed", cancellation: "passed", pixels: "passed" });
+    report.renderers.push({ renderer, selection: "passed", semanticLines: "passed", doubleClickUrls: "passed", autoscroll: "passed", cancellation: "passed", pixels: "passed" });
     await page.close();
   }
   assert.deepEqual(report.errors, []);

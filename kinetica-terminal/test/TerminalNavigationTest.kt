@@ -3,6 +3,66 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class TerminalNavigationTest {
+    @Test fun urlSelectionMapsWideGraphemesAndResumesWordDragging() {
+        val session = TerminalSession(8, 10)
+        val viewport = TerminalViewport(session, {})
+        try {
+            val url = "https://a.example/界e\u0301(foo)?q=1"
+            session.write(url)
+            for (y in 0 until session.lineCount) for (x in 0 until session.columns) {
+                val line = session.line(y)
+                if (!line.hasText(x) && line.width(x) != 0 && !line.isSpacerHead(x)) continue
+                viewport.beginSelection(x, y, TerminalSelectionMode.WORD)
+                viewport.endSelection(x, y)
+                assertEquals(url, viewport.selectedText(), "cell=$x,$y")
+            }
+            session.resize(80, 4); session.reset()
+            val punctuated = "https://example.org/a(b)?q=1;x=2"
+            session.write("[$punctuated].")
+            viewport.beginSelection(3, 0, TerminalSelectionMode.WORD)
+            assertEquals(punctuated, viewport.selectedText())
+            viewport.extendSelection(3, 0)
+            viewport.endSelection(3, 0)
+            assertEquals("https://example.org/a", viewport.selectedText(), "An actual drag resumes word granularity")
+            session.reset()
+            session.write("\u001b]8;;https://hidden.example\u001b\\two words\u001b]8;;\u001b\\")
+            viewport.beginSelection(5, 0, TerminalSelectionMode.WORD); viewport.endSelection(5, 0)
+            assertEquals("words", viewport.selectedText(), "OSC 8 labels retain ordinary word selection")
+        } finally { viewport.dispose() }
+    }
+
+    @Test fun doubleClickSelectsTheDetectedUrlIncludingPunctuationAndSoftWraps() {
+        val url = "https://example.org/a(b)?q=1;x=2"
+        for (columns in listOf(80, 13)) {
+            val session = TerminalSession(columns, 8)
+            val viewport = TerminalViewport(session, {})
+            try {
+                session.write("[$url].")
+                for (offset in 1..url.length) {
+                    viewport.beginSelection(offset % columns, offset / columns, TerminalSelectionMode.WORD)
+                    viewport.endSelection(offset % columns, offset / columns)
+                    assertEquals(url, viewport.selectedText(), "URL cell=$offset columns=$columns")
+                }
+                session.write("\u001b[?2026h\u001b[Hchanged")
+                viewport.beginSelection(3, 0, TerminalSelectionMode.WORD)
+                viewport.endSelection(3, 0)
+                assertEquals(url, viewport.selectedText(), "Frozen text supplies the displayed URL")
+                session.write("\u001b[?2026l")
+                session.reset()
+                session.write("\u001b]133;A\u0007https://prompt.example\u001b]133;B\u0007/suffix")
+                viewport.beginSelection(3, 0, TerminalSelectionMode.WORD)
+                viewport.endSelection(3, 0)
+                assertEquals("https://prompt.example", viewport.selectedText())
+                session.reset()
+                session.write("\u001b]8;;ssh://hidden.example\u001b\\[$url].\u001b]8;;\u001b\\")
+                session.osc8LinksEnabled = false
+                viewport.beginSelection(3, 0, TerminalSelectionMode.WORD)
+                viewport.endSelection(3, 0)
+                assertEquals(url, viewport.selectedText(), "Visible-link selection is independent of OSC 8 targets and activation policy")
+            } finally { viewport.dispose() }
+        }
+    }
+
     @Test fun detectedLinksStopAtSemanticPromptBoundariesAcrossWrapsAndFrozenFrames() {
         fun osc(value: String) = "\u001b]133;$value\u0007"
         val prompt = "https://prompt.example"

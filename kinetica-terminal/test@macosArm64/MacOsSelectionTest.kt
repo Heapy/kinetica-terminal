@@ -10,6 +10,19 @@ import kotlin.test.*
 import kotlin.time.TimeSource
 
 class MacOsSelectionTest {
+    @Test fun nativeDoubleClickCopiesTheVisibleUrlAndDragResumesWords() = withView { session, view, mouse ->
+        val url = "https://e.test/a(b);q=1"
+        session.write("[$url].")
+        mouse(NSEventTypeLeftMouseDown, 3, 0, 2)
+        assertEquals(url, view.accessibilitySelectedText())
+        mouse(NSEventTypeLeftMouseUp, 3, 0, 2)
+        assertEquals(url, view.accessibilitySelectedText(), "Release must retain the complete URL")
+        mouse(NSEventTypeLeftMouseDown, 3, 0, 2)
+        mouse(NSEventTypeLeftMouseDragged, 3, 0, 2)
+        mouse(NSEventTypeLeftMouseUp, 3, 0, 2)
+        assertEquals("https://e.test/a", view.accessibilitySelectedText())
+    }
+
     @Test fun nativeTripleClicksStopAtSemanticBoundariesAndTrimEdges() = withView { session, view, mouse ->
         session.write("\u001b]133;A\u0007 p \u001b]133;B\u0007 cmd \u001b]133;C\u0007 out ")
         mouse(NSEventTypeLeftMouseDown, 4, 0, 3)

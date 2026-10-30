@@ -37,6 +37,16 @@ internal fun terminalHyperlinkAt(row: Int, column: Int, first: Int, last: Int, l
     val cell = line(row)
     val x = if (cell.width(column) == 0) (column - 1).coerceAtLeast(0) else column
     if (osc8Enabled) cell.hyperlink(x)?.let { return it.uri }
+    return terminalDetectedLinkAt(row, x, first, last, line)?.uri
+}
+
+internal data class TerminalDetectedLink(val uri: String, val range: TerminalSelectionRange)
+
+/** Visible-text links only: OSC 8 targets do not determine double-click selection. */
+internal fun terminalDetectedLinkAt(row: Int, column: Int, first: Int, last: Int,
+    line: (Int) -> TerminalLine): TerminalDetectedLink? {
+    val cell = line(row)
+    val x = if (cell.width(column) == 0) (column - 1).coerceAtLeast(0) else column
     val range = terminalSemanticLineRange(row, x, first, last, line)
     var offset = 0
     val text = buildString {
@@ -55,7 +65,24 @@ internal fun terminalHyperlinkAt(row: Int, column: Int, first: Int, last: Int, l
         for ((close, open) in listOf(')' to '(', ']' to '[', '}' to '{')) {
             while (url.endsWith(close) && url.count { it == close } > url.count { it == open }) url = url.dropLast(1)
         }
-        if (offset in match.range.first until match.range.first + url.length) return url
+        if (offset in match.range.first until match.range.first + url.length) {
+            fun position(offset: Int, end: Boolean): TerminalCellPosition {
+                var current = 0
+                for (y in range.start.line..range.end.line) {
+                    val value = line(y)
+                    val from = if (y == range.start.line) range.start.column else 0
+                    val to = if (y == range.end.line) range.end.column else value.columns
+                    for (column in from until to) {
+                        if (value.width(column) == 0 || value.isSpacerHead(column)) continue
+                        current += value.text(column).length
+                        if (current > offset) return TerminalCellPosition(y, column + if (end) value.width(column) else 0)
+                    }
+                }
+                error("Matched URL offset outside its terminal cells")
+            }
+            return TerminalDetectedLink(url, TerminalSelectionRange(position(match.range.first, false),
+                position(match.range.first + url.length - 1, true)))
+        }
     }
     return null
 }

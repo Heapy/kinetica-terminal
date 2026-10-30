@@ -300,7 +300,9 @@ public class TerminalViewport internal constructor(
      * Call only when the press was handled locally, never after an application mouse press. */
     public fun endPointerSelection(column: Int, row: Int): Boolean = finishSelection(column, row, true)
     private fun finishSelection(column: Int, row: Int, reportPromptClick: Boolean): Boolean {
-        extendSelection(column, row)
+        // Release alone must not synthesize a drag: a double-click link override
+        // persists until an actual movement resumes word-wise selection.
+        if (column != dragColumn || row != dragRow) extendSelection(column, row)
         val range = activeSelection.range()
         val report = reportPromptClick && !disposed && frozen == null && promptClickCandidate != null &&
             (range == null || range.start == range.end)
