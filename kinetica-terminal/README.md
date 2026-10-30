@@ -918,8 +918,8 @@ The common tests include pinned Alacritty recordings and Ghostty-derived parser/
 regressions, with deterministic chunked replay. See [test-upstream](test-upstream/README.md)
 for licenses, provenance, generation and documented behavior differences. The test-only
 [Ghostty oracle](test-upstream/ghostty/README.md) generates snapshots from the original
-library; it is not a runtime dependency. The C oracle is pinned to Ghostty 1.4.0; separate
-Zig animation and placeholder corpora retain their previous reference during the
+library; it is not a runtime dependency. The C oracle and separate Zig animation and
+placeholder corpora are pinned to Ghostty 1.4.0; see the
 [migration](../docs/ghostty-1.4-migration.md). Adapted runtime code carries Ghostty's MIT license;
 Unicode/uucode and X11 data retain their own notices,
 also included under `resources/META-INF/LICENSES` and in packaged native demo bundles.
