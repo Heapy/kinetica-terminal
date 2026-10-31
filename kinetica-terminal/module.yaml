@@ -7,7 +7,7 @@ apply:
   - //publish.module-template.yaml
 
 dependencies@js:
-  - org.jetbrains.kotlin:kotlin-dom-api-compat:2.4.10: exported
+  - org.jetbrains.kotlin:kotlin-dom-api-compat:2.4.20: exported
 
 test-dependencies:
   - org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0
