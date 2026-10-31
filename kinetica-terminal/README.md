@@ -1047,7 +1047,11 @@ releases or wheel events. The chosen legacy/SGR encoding remains independent of 
 
 Horizontal margins (DECSLRM, mode 69) constrain scrolling and character/line editing.
 Origin mode applies both horizontal and vertical offsets. Margin reports, saved modes,
-wide characters, grapheme wrapping and resize follow the pinned Ghostty oracle.
+wide characters and grapheme wrapping are checked against the pinned Ghostty oracle.
+Resizing without reflow clears a wide character cut by the new right edge, including
+its style. A known resize difference remains: widening after a prior shrink can clear
+soft-wrap metadata that Ghostty preserves when reusing page capacity. See the
+[resize evidence and open gate](../docs/terminal-production-readiness.md#current-evidence).
 
 BS and CUB support reverse-wrap mode 45 and extended reverse-wrap mode 1045. The first
 crosses soft-wrapped lines; the second also crosses hard line breaks and wraps from the

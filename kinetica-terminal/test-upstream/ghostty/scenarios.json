@@ -158862,5 +158862,2893 @@
         "write": "\u001b[6n"
       }
     ]
+  },
+  {
+    "name": "resize_no_reflow_wide_truncation",
+    "columns": 6,
+    "rows": 3,
+    "history": 1000,
+    "events": [
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "aa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[31m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[31maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[44m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[44maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "aa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[31m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[31maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[44m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[44maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "aa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[31m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[31maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[44m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[44maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "aa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[31m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[31maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[44m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[44maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "aa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[31m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[31maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[44m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[44maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "aa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[31m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[31maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[44m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[44maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?47h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "aa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[31m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[31maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[44m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[44maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "aa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[31m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[31maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[44m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[44maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "aa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[31m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[31maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[44m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[44maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1047h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "aa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[31m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[31maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[44m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[44maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\u754c"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\u754c"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "aa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[31m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[31maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[44m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[44maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\ud83d\ude00"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\ud83d\ude00"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "aa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[31m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[31maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[44m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[44maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56m\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          1,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc"
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[?1049h"
+      },
+      {
+        "write": "\u001b[1;2;3;4:3;58:2::12:34:56maa\ud83c\udde6\ud83c\udde7"
+      },
+      {
+        "resize": [
+          3,
+          2
+        ]
+      },
+      {
+        "resize": [
+          6,
+          3
+        ]
+      },
+      {
+        "write": "\u001b[6n"
+      }
+    ]
   }
 ]

@@ -21,7 +21,7 @@ fixture subset or a working shell demo does not close the goal.
       history and resize events; pinned upstream revision and reproducible runner.
 - [ ] Correct independent primary/alternate screens, cursor save/restore, margins,
       tab stops, erasure, character protection and wrap semantics.
-- [x] Resize/reflow of soft-wrapped text, cursor/saved positions, wide cells and
+- [ ] Resize/reflow of soft-wrapped text, cursor/saved positions, wide cells and
       scrollback, including resize while the alternate screen is active.
 - [x] Generated, pinned Unicode width and grapheme data; Unicode conformance tests,
       combining marks, emoji ZWJ, flags, variation selectors and split UTF-8.
@@ -59,6 +59,27 @@ fixture subset or a working shell demo does not close the goal.
       tests run from a clean checkout without the study clones or network downloads.
 
 ## Current evidence
+
+Non-reflow shrinking now clears the entire retained head of a wide character cut by
+the new right edge, including foreground/background and text attributes. Previously
+the truncated character became a blank with its old style. The original-library
+regression has 672 checkpoints covering primary DECAWM-off and alternate modes
+47/1047/1049, CJK/emoji/regional indicators, plain/colored/styled cells, cuts in columns
+one and three, and subsequent expansion. The colored-cell case failed before the fix.
+Validation: all 1,714 JVM tests, fresh Release JS tests, eight Native resize/wrap tests
+and the main browser verifier passed. All 1,150 original fixture/manifest artifacts
+reproduce byte-for-byte; the corpus contains 1,147 scenarios / 9,369 checkpoints.
+
+The resize gate is reopened: a separate, reproduced wrap-metadata discrepancy remains.
+From 8 columns / 3 rows, enter alternate mode 1047, resize to 1 column / 5 rows,
+write `xyz`, then resize to 2 columns / 2 rows. Original Ghostty retains a soft-wrap
+flag which Kinetica clears. In `PageList.resizeWithoutReflowGrowCols`, Ghostty preserves
+metadata when the existing page has enough column capacity and no trailing spacer head;
+the allocation/copy path can instead clear it through `Page.clonePartialRowFrom`.
+Always preserving flags caused regressions on primary-screen resizing and was rejected.
+This requires accounting for the reference's distinct resize paths; a primary-versus-
+alternate conditional is not an adequate fix. The minimal scenario is retained here
+while the current style fix remains independent.
 
 Legacy zero-width attachment now matches Ghostty 1.4's base-cell eligibility checks.
 Combining marks no longer attach to empty/erased cells, including the blank left behind

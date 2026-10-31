@@ -1149,4 +1149,5 @@ class GhosttyOracleTest {
     @Test fun parser_parameter_capacity_dcs() = checkGhostty(ghostty_parser_parameter_capacity_dcs())
     @Test fun zero_width_blank_cells() = checkGhostty(ghostty_zero_width_blank_cells())
     @Test fun legacy_variation_selector_eligibility() = checkGhostty(ghostty_legacy_variation_selector_eligibility())
+    @Test fun resize_no_reflow_wide_truncation() = checkGhostty(ghostty_resize_no_reflow_wide_truncation())
 }

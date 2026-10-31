@@ -275,6 +275,9 @@ public class TerminalLine internal constructor(public val columns: Int, internal
         next.wrapped = wrapped && columns <= this.columns
         next.wrapContinuation = wrapContinuation && columns <= this.columns
         next.promptMarker = promptMarker
+        // Ghostty clears a split wide head together with the truncated tail,
+        // including its styling, rather than leaving a styled narrow blank.
+        if (columns < this.columns && width(columns - 1) == 2) next.clear(columns - 1, columns, -1, -1, 0)
         next.repairWideCells()
     }
 
