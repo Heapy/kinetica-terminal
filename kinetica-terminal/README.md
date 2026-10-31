@@ -1242,8 +1242,12 @@ This is an initial VT implementation, not complete xterm conformance. Known limi
   and autoscroll. Rectangular ranges are exposed through the viewport API and platform
   modifier gestures.
 - AppKit accessibility provides the text/selection queries described above. The browser exposes
-  visible output and a focused input element; it does not yet provide xterm.js-level navigation
-  and announcement behavior. Full VoiceOver/browser screen-reader acceptance remains open.
+  visible output and a focused input element. Selection changes produce a polite announcement
+  after 100 ms of inactivity, with up to 512 UTF-16 units of visible selected text; large
+  selections are clipped without splitting surrogate pairs. These announcements preserve
+  browser reading ranges and stop when the terminal loses focus, is hidden or disposed.
+  Output announcements and richer browser navigation remain incomplete. Full VoiceOver/browser
+  screen-reader acceptance remains open.
 
 ## Native application shortcuts
 

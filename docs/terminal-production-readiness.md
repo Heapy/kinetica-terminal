@@ -60,6 +60,23 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Browser selection changes now have a separate polite, atomic live region, following
+Ghostty's 100 ms debounced `selectedTextChanged` notification. Drag updates coalesce,
+unchanged selections do not repeat during ordinary output/painting, and clearing a
+selection has its own announcement. Selecting identical text at a different range still
+replaces the live-region child; the equal-string regression failed before that fix. The message contains at most 512 UTF-16 units of
+visible selected text (without splitting a surrogate pair), with an ellipsis when clipped;
+blank/offscreen ranges receive a generic selection notice. The shared visible-range
+snapshot avoids copying a potentially large scrollback selection. It does not change
+browser DOM selection or rewrite the stable output text node/reading ranges.
+Blur/hiding suppress pending announcements and clear their region with live reporting off;
+focus restoration alone does not replay a previous selection. Disposal cancels the timer.
+The Chromium accessibility verifier failed on the previous artifact's missing announcement.
+It now checks the actual AX tree, rapid drag coalescing, unchanged output/ranges, Unicode
+bounds, selection clearing, blur/focus and disposal in both Canvas and WebGL. Existing
+Mac/Linux selection and focus verifiers and the freshly built Release JS suite pass.
+Physical VoiceOver/browser screen-reader acceptance and broader navigation remain open.
+
 Native key releases now use the current unmodified AppKit translation and empty text,
 matching Ghostty's `keyUp` → `keyAction` → `NSEvent.ghosttyKeyEvent` → embedded
 `KeyEvent.core` path. They no longer retain a press's shifted text, associated text,

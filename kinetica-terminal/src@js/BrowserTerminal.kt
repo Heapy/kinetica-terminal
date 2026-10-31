@@ -40,6 +40,7 @@ public class BrowserTerminalView(
     private val input: dynamic = document.createElement("textarea")
     private val accessible: dynamic = document.createElement("pre")
     private val accessibleText: dynamic = document.createTextNode("")
+    private val selectionAnnouncement: dynamic = document.createElement("div")
     private val linkPreview: dynamic = document.createElement("div")
     private val progressElement: dynamic = document.createElement("progress")
     private val measureContext: dynamic = document.createElement("canvas").getContext("2d")
@@ -56,6 +57,9 @@ public class BrowserTerminalView(
     private var measuredPixelWidth = 0; private var measuredPixelHeight = 0
     private var frame: Int? = null
     private var accessibilityTimer: Int? = null
+    private var accessibilitySelectionTimer: Int? = null
+    private var accessibilitySelectionKey: Pair<Int, TerminalSelectionRange>? = null
+    private var ready = false
     private var disposed = false
     public var pastePolicy: TerminalPastePolicy = TerminalPastePolicy()
     public var copyTrimTrailingSpaces: Boolean = true
@@ -147,6 +151,7 @@ public class BrowserTerminalView(
     private val mimeClipboardBinding = session.attachMimeClipboard(copyClipboard, mimeClipboardPolicy)
 
     init {
+        ready = true
         drawing.setVisible(false)
         viewport.setVisible(false)
         session.setGraphicsStorageLimit(graphicsStorageBytes)
@@ -169,6 +174,12 @@ public class BrowserTerminalView(
         accessible.setAttribute("aria-live", "off")
         accessible.appendChild(accessibleText)
         root.appendChild(canvas); root.appendChild(input); root.appendChild(accessible)
+        selectionAnnouncement.style.cssText = accessible.style.cssText
+        selectionAnnouncement.setAttribute("role", "status")
+        selectionAnnouncement.setAttribute("aria-label", "Terminal selection")
+        selectionAnnouncement.setAttribute("aria-live", "polite")
+        selectionAnnouncement.setAttribute("aria-atomic", "true")
+        root.appendChild(selectionAnnouncement)
         linkPreview.style.cssText = "position:absolute;bottom:0;left:0;max-width:95%;box-sizing:border-box;padding:2px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;unicode-bidi:plaintext;pointer-events:none;font:12px monospace;z-index:3;"
         linkPreview.setAttribute("data-terminal-link-preview", "")
         linkPreview.setAttribute("aria-label", "Link destination")
@@ -432,6 +443,8 @@ public class BrowserTerminalView(
             (root.clientWidth as Number).toInt() > 0 && (root.clientHeight as Number).toInt() > 0
         if (graphicsVisible == value) return
         graphicsVisible = value
+        if (!value) clearSelectionAnnouncement()
+        else if (focused) selectionAnnouncement.setAttribute("aria-live", "polite")
         drawing.setVisible(value)
         updateDrawingDiagnostics()
         visibilityBinding.setVisible(value)
@@ -440,7 +453,9 @@ public class BrowserTerminalView(
     }
 
     private fun schedule() {
-        if (disposed || frame != null) return
+        if (disposed || !ready) return
+        scheduleSelectionAnnouncement()
+        if (frame != null) return
         updateVisibility()
         if (!graphicsVisible || frame != null) return
         frame = window.requestAnimationFrame { _: Double ->
@@ -483,6 +498,44 @@ public class BrowserTerminalView(
             previous[previous.lastIndex - suffix] == next[next.lastIndex - suffix]) suffix++
         if (suffix > 0 && previous[previous.length - suffix].isLowSurrogate()) suffix--
         accessibleText.replaceData(start, previous.length - start - suffix, next.substring(start, next.length - suffix))
+    }
+
+    private fun scheduleSelectionAnnouncement() {
+        val key = viewport.accessibleSelectionKey()
+        if (key == accessibilitySelectionKey) return
+        accessibilitySelectionKey = key
+        accessibilitySelectionTimer?.let { window.clearTimeout(it) }
+        // Ghostty debounces selectedTextChanged by 100 ms. Keep its browser analogue
+        // separate from the stable reading node and never copy a scrollback selection.
+        accessibilitySelectionTimer = window.setTimeout({
+            accessibilitySelectionTimer = null
+            if (!disposed && focused && graphicsVisible && root.isConnected == true && document.visibilityState != "hidden") {
+                // A different range may contain identical text. Replace this live-region
+                // child for each debounced selection event, without touching reading text.
+                selectionAnnouncement.textContent = selectionAnnouncementText()
+            }
+        }, 100)
+    }
+
+    private fun selectionAnnouncementText(): String {
+        if (viewport.accessibleSelectionKey() == null) return "Selection cleared"
+        val snapshot = viewport.accessibleText()
+        if (snapshot.selections.isEmpty()) return "Text selected"
+        val length = snapshot.selections.sumOf { it.end - it.start } + snapshot.selections.size - 1
+        val preview = StringBuilder()
+        for ((index, range) in snapshot.selections.withIndex()) {
+            if (preview.length == 512) break
+            if (index > 0) preview.append('\n')
+            preview.append(snapshot.text, range.start, minOf(range.end, range.start + 512 - preview.length))
+        }
+        if (preview.isNotEmpty() && preview.last().isHighSurrogate()) preview.setLength(preview.length - 1)
+        return "Selected: $preview" + if (length > preview.length) "…" else ""
+    }
+
+    private fun clearSelectionAnnouncement() {
+        accessibilitySelectionTimer?.let { window.clearTimeout(it) }; accessibilitySelectionTimer = null
+        selectionAnnouncement.setAttribute("aria-live", "off")
+        selectionAnnouncement.textContent = ""
     }
 
     private fun updateDrawingDiagnostics() {
@@ -666,6 +719,7 @@ public class BrowserTerminalView(
         if (disposed || focused == value) return
         if (!value) { keyFocus.release { session.sendKey(it) }; pressedKeys.clear() }
         focused = value; viewport.setFocused(value); session.sendFocus(value)
+        if (value) selectionAnnouncement.setAttribute("aria-live", "polite") else clearSelectionAnnouncement()
         if (value) notifications?.clear()
     }
     private fun beforeTypedInput(key: TerminalKey? = null) {
@@ -751,6 +805,7 @@ public class BrowserTerminalView(
         mimeClipboardBinding.dispose()
         ownedMimeClipboard?.dispose()
         frame?.let { window.cancelAnimationFrame(it) }; accessibilityTimer?.let { window.clearTimeout(it) }
+        accessibilitySelectionTimer?.let { window.clearTimeout(it) }; accessibilitySelectionTimer = null
         listeners.forEach { it() }; listeners.clear()
         drawing.dispose()
         fontLoadGeneration++
