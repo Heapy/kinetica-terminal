@@ -60,6 +60,26 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Focus loss now releases the last forwarded key and then both sides of held modifiers,
+in Ghostty 1.4.0 `Surface.keyCallback`/`focusCallback` order: Shift, Control, Alt, Super,
+right before left, clearing each modifier before encoding its releases. The shared tracker
+retains no associated text, suppresses a key already released normally, and clears its state
+before sending synthetic events. It follows the upstream last-event model rather than
+releasing every entry in the host's pressed-key set. Layout/base/keypad identity is cleared
+when synthesizing a modifier; a Chromium check caught the initial implementation incorrectly
+adding the preceding letter's base codepoint to Shift releases.
+Browser blur/visibility and AppKit responder/window focus paths send these events before
+the focus-out report. AppKit now observes window activation as well as responder changes,
+and restores focus only if the terminal still owns the first responder. Synthetic releases
+do not clear selection or scroll the viewport; keyboard lock still suppresses input, and
+disposal unregisters the window observers without sending releases.
+`TerminalKeyFocusTest`, `MacOsKeyFocusTest` and `verify-terminal-focus.mjs` cover exact event
+bytes, ordinary and delayed keyup, modifier order, repeated focus events, selection retention,
+keyboard lock and disposal. These are source-derived tests of the pinned callback behavior,
+not an executable differential oracle for the entire Ghostty surface/input runtime.
+Validation: 1,702 JVM tests, fresh Release JS tests, 22 focused macOS tests, the
+Canvas/WebGL focus verifier and the macOS/Linux × Canvas/WebGL editing regression pass.
+
 Browser window focus now reconciles the terminal with its actual DOM focus owner when the
 window returns, including a textarea inside a shadow root. Previously `window.blur` produced
 CSI O and a hollow cursor, but the matching `window.focus` had no handler; because the textarea
@@ -70,7 +90,7 @@ externally focused controls cannot claim terminal focus. Render intersection alo
 remove keyboard ownership. Synchronized output keeps its retained frame while focus repaints
 the cursor, and disposal unregisters the additional listener.
 This follows original Ghostty `Surface.focusCallback`'s focus-state/render/report transitions;
-pressed-key release synthesis in that callback is a separate remaining audit item.
+the held-key release path is covered by the additional checks above.
 `scripts/verify-terminal-focus.mjs` first reproduced the missing CSI I before the fix, then
 passed for Canvas/WebGL with exact reports and cursor pixels, repeated events, outside-owner
 protection, visibility notifications, a retained frame, shadow DOM and disposal. The test also

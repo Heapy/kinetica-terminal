@@ -98,6 +98,9 @@ public class AppKitTerminalView(
     private val linkPolicyObservation = session.onLinkPolicyChanged { refreshLinkHover() }
     private val pressedKeys = mutableMapOf<UShort, TerminalKey>()
     private val pressedModifiers = mutableSetOf<UShort>()
+    private val keyFocus = TerminalKeyFocus()
+    private var terminalFocused = false
+    private var focusWindowObservation: NSObjectProtocol? = null
     private var interpretingKey: Pair<UShort, TerminalKey>? = null
     public var onViewportChanged: (() -> Unit)? = null
     private var accessibilitySelectionKey: Pair<Int, TerminalSelectionRange>? = null
@@ -246,8 +249,14 @@ public class AppKitTerminalView(
         hoverWindowObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         hoverWindowObservation = window?.let { owner ->
             NSNotificationCenter.defaultCenter.addObserverForName(NSWindowDidResignKeyNotification,
-                owner, NSOperationQueue.mainQueue) { clearLinkPointer() }
+                owner, NSOperationQueue.mainQueue) { clearLinkPointer(); focusChanged(false) }
         }
+        focusWindowObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
+        focusWindowObservation = window?.let { owner ->
+            NSNotificationCenter.defaultCenter.addObserverForName(NSWindowDidBecomeKeyNotification,
+                owner, NSOperationQueue.mainQueue) { if (owner.firstResponder == this) focusChanged(true) }
+        }
+        if (window == null) focusChanged(false)
         dragAndDrop.cancel()
         visibilityObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         visibilityObservation = window?.let { owner ->
@@ -302,13 +311,21 @@ public class AppKitTerminalView(
     }
     override fun becomeFirstResponder(): Boolean {
         if (disposed) return false
-        viewport.setFocused(true); session.sendFocus(true); notifications?.clear(); return true
+        focusChanged(true); return true
     }
     override fun resignFirstResponder(): Boolean {
-        pressedKeys.clear(); pressedModifiers.clear()
-        localMouseButtons.clear()
-        if (!disposed) { mouseReporter.cancel(); selecting = false; clearLinkPointer(); viewport.setFocused(false); session.sendFocus(false) }
+        focusChanged(false)
         return true
+    }
+    private fun focusChanged(value: Boolean) {
+        if (disposed) return
+        if (!value) {
+            mouseReporter.cancel(); selecting = false; clearLinkPointer(); localMouseButtons.clear()
+        }
+        if (terminalFocused == value) return
+        if (!value) { keyFocus.release { session.sendKey(it) }; pressedKeys.clear(); pressedModifiers.clear() }
+        terminalFocused = value; viewport.setFocused(value); session.sendFocus(value)
+        if (value) notifications?.clear()
     }
 
     override fun updateTrackingAreas() {
@@ -901,7 +918,11 @@ public class AppKitTerminalView(
         viewport.followOutput()
         if (selectionClearOnTyping || key?.key == "Escape") viewport.clearSelection()
     }
-    private fun sendTypedKey(key: TerminalKey): Boolean = if (disposed) true else session.sendKey(key) { beforeTypedInput(key) }
+    private fun sendTypedKey(key: TerminalKey): Boolean {
+        if (disposed) return true
+        if (!session.keyboardInputBlocked) keyFocus.record(key)
+        return session.sendKey(key) { beforeTypedInput(key) }
+    }
     private fun sendTypedText(text: String) {
         if (disposed || session.keyboardInputBlocked || text.isEmpty()) return
         beforeTypedInput(); session.sendText(text)
@@ -1043,6 +1064,7 @@ public class AppKitTerminalView(
         clipboardPaste.dispose()
         accessibilitySelectionTimer?.invalidate(); accessibilitySelectionTimer = null
         hoverWindowObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; hoverWindowObservation = null
+        focusWindowObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; focusWindowObservation = null
         visibilityBinding.dispose()
         visibilityObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; visibilityObservation = null
         mouseTrackingArea?.let { removeTrackingArea(it) }; mouseTrackingArea = null

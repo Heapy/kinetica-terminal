@@ -87,6 +87,7 @@ public class BrowserTerminalView(
     }
     private val notificationObservation = session.onNotification { if (!disposed && notificationPolicy(it)) notificationDelivery().show(it) }
     private val pressedKeys = mutableSetOf<String>()
+    private val keyFocus = TerminalKeyFocus()
     private val layoutKeys = mutableMapOf<String, Int>()
     private var composing = false
     private var suppressComposition: String? = null
@@ -280,7 +281,7 @@ public class BrowserTerminalView(
         }
         // AppKit-like focus ownership for the whole widget, including its focusable host root.
         listen(root, "focus") { event -> if (event.target === root) input.focus(js("({preventScroll:true})")) }
-        listen(window, "blur") { pressedKeys.clear(); cancelMouse(); focusChanged(false) }
+        listen(window, "blur") { cancelMouse(); focusChanged(false) }
         // Returning to a window often preserves activeElement and emits no input focus event.
         listen(window, "focus") { restoreWindowFocus() }
         listen(root, "pointerdown") { event ->
@@ -670,7 +671,7 @@ public class BrowserTerminalView(
     }
     private fun focusChanged(value: Boolean) {
         if (disposed || focused == value) return
-        if (!value) pressedKeys.clear()
+        if (!value) { keyFocus.release { session.sendKey(it) }; pressedKeys.clear() }
         focused = value; viewport.setFocused(value); session.sendFocus(value)
         if (value) notifications?.clear()
     }
@@ -679,7 +680,10 @@ public class BrowserTerminalView(
         viewport.followOutput()
         if (selectionClearOnTyping || key?.key == "Escape") viewport.clearSelection()
     }
-    private fun sendTypedKey(key: TerminalKey): Boolean = session.sendKey(key) { beforeTypedInput(key) }
+    private fun sendTypedKey(key: TerminalKey): Boolean {
+        if (!session.keyboardInputBlocked) keyFocus.record(key)
+        return session.sendKey(key) { beforeTypedInput(key) }
+    }
     private fun sendTypedText(text: String) {
         if (disposed || session.keyboardInputBlocked || text.isEmpty()) return
         beforeTypedInput(); session.sendText(text)

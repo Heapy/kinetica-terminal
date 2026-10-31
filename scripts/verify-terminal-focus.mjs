@@ -53,6 +53,27 @@ try {
       assert.deepEqual(await page.evaluate(() => captureCursor()), active);
       await emit('focus'); assert.equal(await drain(), '', 'Repeated focus must not duplicate reports');
 
+      // Lose window focus with a held Kitty key. Releases precede CSI O and carry no text.
+      await page.evaluate(() => kineticaTerminalDemo.write('\x1b[>31u'));
+      await input.dispatchEvent('keydown', { key: 'Enter', code: 'Enter', ctrlKey: true });
+      assert.equal(await drain(), '\x1b[13;5u');
+      await emit('blur');
+      assert.equal(await drain(), '\x1b[13;5:3u\x1b[57448;1:3u\x1b[57442;1:3u\x1b[O');
+      await emit('blur'); await input.dispatchEvent('keyup', { key: 'Enter', code: 'Enter', ctrlKey: true });
+      assert.equal(await drain(), '', 'Delayed OS release and repeated blur must not duplicate synthetic releases');
+      await emit('focus'); assert.equal(await drain(), '\x1b[I');
+      await input.dispatchEvent('keydown', { key: 'A', code: 'KeyA', shiftKey: true });
+      await drain();
+      await emit('blur');
+      assert.equal(await drain(), '\x1b[97;2:3u\x1b[57447;1:3u\x1b[57441;1:3u\x1b[O', 'Retained key has no borrowed shifted text');
+      await emit('focus'); await drain();
+      await input.dispatchEvent('keydown', { key: 'Enter', code: 'Enter', ctrlKey: true });
+      await input.dispatchEvent('keyup', { key: 'Enter', code: 'Enter', ctrlKey: true }); await drain();
+      await emit('blur');
+      assert.equal(await drain(), '\x1b[57448;1:3u\x1b[57442;1:3u\x1b[O', 'An ordinary keyup leaves only modifier releases');
+      await emit('focus'); await drain();
+      await page.evaluate(() => kineticaTerminalDemo.write('\x1b[<u'));
+
       await page.evaluate(() => { const other = document.createElement('button'); other.id = 'outside'; other.textContent = 'Other control'; document.body.append(other); other.focus(); });
       assert.equal(await drain(), '\x1b[O');
       await emit('blur'); await emit('focus');
@@ -105,7 +126,7 @@ try {
       await emit('blur'); await emit('focus');
       assert.equal(await page.evaluate(() => String.fromCharCode(...focusBytes.splice(0))), '', 'Disposed listeners must not emit reports');
       assert.deepEqual(errors, []);
-      console.log(`${renderer}: window focus reports, cursor pixels, outside owner, tab activation, visibility, retained frame, shadow owner and disposal passed`);
+      console.log(`${renderer}: held-key releases, window focus reports, cursor pixels, outside owner, tab activation, visibility, retained frame, shadow owner and disposal passed`);
     } finally { await context.close(); }
   }
 } finally { await browser.close(); }
