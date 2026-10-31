@@ -60,6 +60,22 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+AppKit `firstRectForCharacterRange` now follows Ghostty's `Surface.imePointScaled` and
+Swift `firstRect`: IME geometry starts at the live cursor's horizontal midpoint, counts
+positive-width preedit scalars and clips to the remaining terminal width. It no longer
+uses a stale retained cursor during synchronized output. Collapsed ranges report zero width;
+when preedit has positive width their location offsets the dictation insertion point.
+Unknown `NSNotFound` locations keep the cursor anchor. Look Up continues to use the selected
+word's baseline independently of IME geometry. The implementation preserves the upstream's
+explicit unit exception: preedit width remains in backing pixels while x/y/height are in
+AppKit points.
+`MacOsLookupTest` checks actual window/screen coordinate conversions, CJK and surrogate-pair
+emoji widths, ignored zero-width scalars, collapsed/unknown ranges, clipping, clearing preedit,
+live cursor motion during held output and the existing dictionary selection baseline.
+This validates the geometry returned to AppKit; it does not replace physical dictation/IME
+acceptance or close the separate preedit rendering audit.
+All 15 selected native Look Up, composition, keyboard-protocol and selection-policy tests pass.
+
 AppKit text interpretation now accumulates `insertText` and command callbacks for one
 `interpretKeyEvents` call before forwarding input. If the event started with preedit, committed
 fragments are sent as plain typed text before replaying Right/Down/Up or modified Left; plain

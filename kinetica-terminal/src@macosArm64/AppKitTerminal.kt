@@ -138,6 +138,7 @@ public class AppKitTerminalView(
     private var pendingGridSize: Pair<Int, Int>? = null
     private var marked = ""
     private var markedSelection = NSMakeRange(0u, 0u)
+    private var markedCellWidth = 0.0
     private var selecting = false
     private var forceClickLookupFired = false
     private val lookupLayout = NSLayoutManager()
@@ -764,11 +765,14 @@ public class AppKitTerminalView(
         val value = if (string is NSAttributedString) string.string else string.toString()
         if (marked.isNotEmpty() || value.isNotEmpty()) clearSelectionForPreedit()
         marked = value
+        // Ghostty preedit stores positive-width Unicode scalars, not UTF-16 units
+        // or combined grapheme clusters. Zero-width scalars do not add geometry.
+        markedCellWidth = value.terminalCodepoints().sumOf { terminalCharacterWidth(it).toDouble() }
         markedSelection = selectedRange; viewport.markAll()
     }
     override fun unmarkText() {
         if (marked.isNotEmpty()) clearSelectionForPreedit()
-        marked = ""; viewport.markAll()
+        marked = ""; markedCellWidth = 0.0; viewport.markAll()
     }
     override fun hasMarkedText(): Boolean = marked.isNotEmpty()
     override fun markedRange(): CValue<NSRange> = if (marked.isEmpty()) NSMakeRange(NSNotFound.toULong(), 0u) else NSMakeRange(0u, marked.length.toULong())
@@ -780,14 +784,28 @@ public class AppKitTerminalView(
         val selectionRange = selectedRange().useContents { location to length }
         val isLookup = range.useContents { length > 0uL && (location != selectionRange.first || length != selectionRange.second) }
         val selection = if (isLookup) viewport.selectionForLookup() else null
-        val origin = selection?.let { lookupPoint(it.start) }
-            ?: NSMakePoint(viewport.cursorColumn * cellWidth, viewport.cursorRow * cellHeight)
-        val rect = origin.useContents {
+        val localRect = if (selection != null) lookupPoint(selection.start).useContents {
             // Ghostty's definition rectangle extends upward from the baseline in screen
             // coordinates. This view is flipped, so its local rectangle starts one cell above.
-            convertRect(NSMakeRect(x - if (selection != null) 2.0 else 0.0,
-                y + if (selection != null) 2.0 - cellHeight else 0.0, cellWidth, cellHeight), toView = null)
+            NSMakeRect(x - 2.0, y + 2.0 - cellHeight, cellWidth, cellHeight)
+        } else {
+            // Surface.imePointScaled uses the live cursor even during synchronized output.
+            var x = (session.cursorColumn + 0.5) * cellWidth
+            val y = session.cursorRow * cellHeight
+            val scale = window?.backingScaleFactor ?: 1.0
+            val available = bounds.useContents { size.width } - (session.cursorColumn + 1) * cellWidth
+            // Preserve Ghostty's explicit width-unit exception: its preedit width stays
+            // in backing pixels, while x/y/height are returned in AppKit points.
+            var width = minOf(markedCellWidth * cellWidth, available).coerceAtLeast(0.0) * scale
+            range.useContents {
+                if (length == 0uL && width > 0.0) {
+                    width = 0.0
+                    if (location != NSNotFound.toULong()) x += location.toDouble() * cellWidth
+                }
+            }
+            NSMakeRect(x, y, width, cellHeight)
         }
+        val rect = convertRect(localRect, toView = null)
         return window?.convertRectToScreen(rect) ?: rect
     }
 

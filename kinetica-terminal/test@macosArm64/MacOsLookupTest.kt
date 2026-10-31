@@ -92,8 +92,8 @@ class MacOsLookupTest {
     @Test fun definitionRectUsesSelectionBaselineAndImeKeepsItsCursorAnchor() {
         NSApplication.sharedApplication()
         val h = View()
-        fun expected(x: Double, y: Double): CValue<NSRect> = h.window.convertRectToScreen(
-            h.view.convertRect(NSMakeRect(x, y, h.width, h.height), toView = null))
+        fun expected(x: Double, y: Double, width: Double): CValue<NSRect> = h.window.convertRectToScreen(
+            h.view.convertRect(NSMakeRect(x, y, width, h.height), toView = null))
         fun check(actual: CValue<NSRect>, wanted: CValue<NSRect>) {
             val a = actual.useContents { listOf(origin.x, origin.y, size.width, size.height) }
             val b = wanted.useContents { listOf(origin.x, origin.y, size.width, size.height) }
@@ -107,9 +107,42 @@ class MacOsLookupTest {
                 NSLayoutManager().defaultBaselineOffsetForFont(h.font) + 2), toView = null))
             val definitionRect = baseline.useContents { NSMakeRect(x, y, h.width, h.height) }
             check(h.view.firstRectForCharacterRange(NSMakeRange(0u, 4u), null), definitionRect)
-            check(h.view.firstRectForCharacterRange(NSMakeRange(0u, 0u), null), expected(10 * h.width, 0.0))
+            check(h.view.firstRectForCharacterRange(NSMakeRange(0u, 0u), null), expected(10.5 * h.width, 0.0, 0.0))
             h.view.setMarkedText("日本", NSMakeRange(0u, 2u), NSMakeRange(NSNotFound.toULong(), 0u))
-            check(h.view.firstRectForCharacterRange(NSMakeRange(0u, 2u), null), expected(10 * h.width, 0.0))
+            check(h.view.firstRectForCharacterRange(NSMakeRange(0u, 2u), null),
+                expected(10.5 * h.width, 0.0, 4 * h.width * h.window.backingScaleFactor))
+        } finally { h.close() }
+    }
+
+    @Test fun imeGeometryUsesScalarWidthClippingCollapsedRangeAndLiveCursor() {
+        NSApplication.sharedApplication()
+        val h = View()
+        fun local(range: CValue<NSRange>): List<Double> {
+            val screen = h.view.firstRectForCharacterRange(range, null)
+            val rect = h.view.convertRect(h.window.convertRectFromScreen(screen), fromView = null)
+            return rect.useContents { listOf(origin.x, origin.y, size.width, size.height) }
+        }
+        fun check(range: CValue<NSRange>, x: Double, y: Double, width: Double) {
+            local(range).zip(listOf(x, y, width, h.height)).forEach { (actual, expected) -> assertEquals(expected, actual, 0.001) }
+        }
+        try {
+            h.session.write("\u001b[2;4H")
+            check(NSMakeRange(0u, 0u), 3.5 * h.width, h.height, 0.0)
+            // A + combining acute + CJK + surrogate-pair emoji = 1 + 0 + 2 + 2 cells.
+            h.view.setMarkedText("A\u0301日😀", NSMakeRange(0u, 5u), NSMakeRange(NSNotFound.toULong(), 0u))
+            check(NSMakeRange(0u, 5u), 3.5 * h.width, h.height, 5 * h.width * h.window.backingScaleFactor)
+            check(NSMakeRange(2u, 0u), 5.5 * h.width, h.height, 0.0)
+            check(NSMakeRange(NSNotFound.toULong(), 0u), 3.5 * h.width, h.height, 0.0)
+
+            h.session.write("\u001b[?2026h\u001b[3;28H")
+            val remaining = h.view.bounds.useContents { size.width } - 28 * h.width
+            check(NSMakeRange(0u, 5u), 27.5 * h.width, 2 * h.height, remaining * h.window.backingScaleFactor)
+            check(NSMakeRange(1u, 0u), 28.5 * h.width, 2 * h.height, 0.0)
+            h.session.write("\u001b[?2026l")
+            h.view.unmarkText()
+            check(NSMakeRange(2u, 0u), 27.5 * h.width, 2 * h.height, 0.0)
+            h.view.setMarkedText("\u0301\u200d", NSMakeRange(0u, 2u), NSMakeRange(NSNotFound.toULong(), 0u))
+            check(NSMakeRange(0u, 2u), 27.5 * h.width, 2 * h.height, 0.0)
         } finally { h.close() }
     }
 }
