@@ -60,6 +60,28 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+The shared accessibility document model now formats all retained history and active
+rows in Ghostty's SCREEN coordinate space, joining soft wraps and retaining written
+spaces. Its UTF-16 selection offsets use cell positions emitted by the same formatter,
+including synthetic spaces/newlines; repeated text is never located by string search.
+Wide-cell edges expand to whole glyphs, rectangular selections expose per-row ranges,
+and compressed history is restored after reading. Only rows containing selection
+boundaries allocate offset arrays; callers without a selection do not collect positions.
+The existing original-Ghostty formatter corpus verifies 22 full-screen values and 218
+linear selections, each with whole and bytewise input. Focused tests cover repeated
+emoji in scrollback, wide wrap padding, blank rows, explicit/synthetic spaces and
+rectangular selections over compressed history.
+This is the shared model increment: AppKit and browser still expose the existing
+viewport document. Host integration, caching/hold behavior and full-history range
+tests remain required before claiming accessibility scrollback support. Upstream
+`SurfaceView_AppKit.cachedScreenContents` reads SCREEN with a 500 ms cache;
+`Surface.dumpTextLocked` uses unwrapped `selectionString` with trimming disabled.
+Ordinary output announcements are not an upstream requirement: its explicit terminal
+notification is debounced selection change, which is already implemented here.
+Validation: all 1,720 JVM tests, fresh Release JS tests and 17 Native accessibility /
+document / clipboard-mapping / compressed-storage tests passed. The strengthened
+compression precondition also passed in a focused JVM rerun.
+
 Non-reflow widening now converts an old right-edge wide-glyph spacer to an ordinary
 blank, retaining its colors, attributes, hyperlink and character protection. Previously
 the spacer marker survived inside the row, causing a later reflow to skip that column

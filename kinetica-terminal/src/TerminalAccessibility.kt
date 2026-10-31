@@ -54,3 +54,62 @@ internal fun terminalAccessibleText(
     }
     return TerminalAccessibleText(text.toString(), ranges)
 }
+
+/** Ghostty's SCREEN text: retained history and active rows, with soft wraps joined.
+ * Selection offsets refer to that same text, independently of viewport scrolling.
+ * Only rows containing selection boundaries need cell-offset arrays. */
+internal fun terminalAccessibleDocument(
+    rows: Int,
+    line: (Int) -> TerminalLine,
+    selection: TerminalSelectionRange?,
+): TerminalAccessibleText {
+    require(rows > 0)
+    val boundaries = mutableMapOf<Int, IntArray>()
+    fun track(row: Int) {
+        if (row in 0 until rows && row !in boundaries) boundaries[row] = IntArray(line(row).columns + 1) { -1 }
+    }
+    if (selection != null) {
+        if (selection.rectangle) {
+            for (row in maxOf(0, selection.start.line)..minOf(rows - 1, selection.end.line)) track(row)
+        } else { track(selection.start.line); track(selection.end.line) }
+    }
+    val text = terminalSelectionText(
+        TerminalSelectionRange(TerminalCellPosition(0, 0), TerminalCellPosition(rows - 1, line(rows - 1).columns)),
+        line,
+        cellRange = if (boundaries.isEmpty()) null else { row, column, width, start, end ->
+            boundaries[row]?.let { offsets ->
+                offsets[column] = start
+                if (width > 0) offsets[column + width] = end
+            }
+        },
+    )
+    for (offsets in boundaries.values) {
+        var previous = offsets.firstOrNull { it >= 0 } ?: text.length
+        for (column in offsets.indices) {
+            if (offsets[column] < 0) offsets[column] = previous else previous = offsets[column]
+        }
+    }
+    fun offset(position: TerminalCellPosition, end: Boolean): Int {
+        if (position.line < 0) return 0
+        if (position.line >= rows) return text.length
+        val cells = line(position.line)
+        return cells.readPreservingCompression {
+            var column = position.column.coerceIn(0, cells.columns)
+            if (column < cells.columns && cells.width(column) == 0) column += if (end) 1 else -1
+            checkNotNull(boundaries[position.line])[column.coerceAtLeast(0)]
+        }
+    }
+    val ranges = if (selection == null || selection.start == selection.end ||
+        selection.rectangle && selection.start.column == selection.end.column) emptyList() else if (selection.rectangle) {
+        (maxOf(0, selection.start.line)..minOf(rows - 1, selection.end.line)).mapNotNull { row ->
+            val start = offset(TerminalCellPosition(row, selection.start.column), false)
+            val end = offset(TerminalCellPosition(row, selection.end.column), true)
+            if (end > start) TerminalAccessibleRange(start, end) else null
+        }
+    } else {
+        val start = offset(selection.start, false)
+        val end = offset(selection.end, true)
+        if (end > start) listOf(TerminalAccessibleRange(start, end)) else emptyList()
+    }
+    return TerminalAccessibleText(text, ranges)
+}

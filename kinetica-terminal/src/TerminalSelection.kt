@@ -349,11 +349,17 @@ internal fun terminalSelectAllRange(first: Int, last: Int, line: (Int) -> Termin
 
 // ScreenFormatter's plain, unwrapped output. Written spaces survive unless trimming is
 // requested; trailing empty cells/rows do not. No newline is synthesized after selection.
+// cellRange reports (row, column, cell width, UTF-16 start, UTF-16 end) for emitted
+// content. A hard newline has width zero at its source row's right boundary.
 internal fun terminalSelectionText(range: TerminalSelectionRange, line: (Int) -> TerminalLine,
-    trimTrailingSpaces: Boolean = false, cellText: ((Int, Int) -> Unit)? = null): String = buildString {
+    trimTrailingSpaces: Boolean = false,
+    cellRange: ((Int, Int, Int, Int, Int) -> Unit)? = null,
+    cellText: ((Int, Int) -> Unit)? = null): String = buildString {
     if (range.rectangle && range.start.column == range.end.column) return@buildString
     var blankRows = 0
+    var firstBlankRow = range.start.line
     var blankCells = 0
+    val blankPositions = if (cellRange == null) null else ArrayList<Pair<Int, Int>>()
     for (y in range.start.line..range.end.line) {
         val row = line(y)
         row.readPreservingCompression {
@@ -361,15 +367,30 @@ internal fun terminalSelectionText(range: TerminalSelectionRange, line: (Int) ->
             val to = if (range.rectangle || y == range.end.line) range.end.column else row.columns
             if ((range.rectangle || y == range.start.line) && row.isSpacerHead(from)) return@readPreservingCompression
             if (from < row.columns && row.width(from) == 0) from--
-            if ((from until to).none { row.hasText(it) && !row.isSpacerHead(it) }) { blankRows++; return@readPreservingCompression }
-            repeat(blankRows) { append('\n') }; blankRows = if (row.wrapped) 0 else 1
-            if (y == range.start.line || !line(y - 1).wrapped) blankCells = 0
+            if ((from until to).none { row.hasText(it) && !row.isSpacerHead(it) }) {
+                if (blankRows == 0) firstBlankRow = y
+                blankRows++; return@readPreservingCompression
+            }
+            repeat(blankRows) {
+                val source = firstBlankRow + it
+                cellRange?.invoke(source, line(source).columns, 0, length, length + 1)
+                append('\n')
+            }
+            blankRows = if (row.wrapped) 0 else 1; firstBlankRow = y
+            if (y == range.start.line || !line(y - 1).wrapped) { blankCells = 0; blankPositions?.clear() }
             for (x in from until to) {
                 if (row.width(x) == 0 || row.isSpacerHead(x)) continue
-                if (!row.hasText(x) || trimTrailingSpaces && row.codePoint(x) == ' '.code) { blankCells++; continue }
-                repeat(blankCells) { append(' ') }; blankCells = 0
+                if (!row.hasText(x) || trimTrailingSpaces && row.codePoint(x) == ' '.code) {
+                    blankCells++; blankPositions?.add(y to x); continue
+                }
+                repeat(blankCells) {
+                    blankPositions?.get(it)?.let { (source, column) -> cellRange?.invoke(source, column, 1, length, length + 1) }
+                    append(' ')
+                }
+                blankCells = 0; blankPositions?.clear()
                 val start = length
                 row.appendTextTo(this, x)
+                cellRange?.invoke(y, x, row.width(x), start, length)
                 if (length > start) cellText?.invoke(start, length)
             }
         }
