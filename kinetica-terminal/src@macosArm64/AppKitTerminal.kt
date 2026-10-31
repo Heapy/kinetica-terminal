@@ -100,7 +100,11 @@ public class AppKitTerminalView(
     private val keyFocus = TerminalKeyFocus()
     private var terminalFocused = false
     private var focusWindowObservation: NSObjectProtocol? = null
-    private var interpretingKey: Pair<UShort, TerminalKey>? = null
+    private class KeyInterpretation {
+        val text = mutableListOf<String>()
+        var command = false
+    }
+    private var keyInterpretation: KeyInterpretation? = null
     public var onViewportChanged: (() -> Unit)? = null
     private var accessibilitySelectionKey: Pair<Int, TerminalSelectionRange>? = null
     private var accessibilitySelectionTimer: NSTimer? = null
@@ -577,7 +581,7 @@ public class AppKitTerminalView(
         val chars = if (command || control) terminalShortcutKey(raw, event.keyCode.toInt()) else raw
         if (command && !shift && !control && flags and NSEventModifierFlagOption == 0uL &&
             !hasMarkedText() && chars.lowercase() == "j" && scrollToSelection()) return
-        if (command) {
+        if (command && !hasMarkedText()) {
             val localCommand = chars.lowercase().takeIf {
                 !control && flags and NSEventModifierFlagOption == 0uL && (!shift || it == "k")
             }
@@ -596,7 +600,7 @@ public class AppKitTerminalView(
         if (session.keyboardInputBlocked) return
         val extendedKeyboard = session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2
         val terminalKey = when {
-            extendedKeyboard -> terminalKey(event)
+            extendedKeyboard || command -> terminalKey(event)
             flags and NSEventModifierFlagOption != 0uL -> terminalKey(event).copy(key = key)
             else -> TerminalKey(key, control, false, shift, keypad = keypad)
         }
@@ -608,9 +612,47 @@ public class AppKitTerminalView(
             pressedKeys[event.keyCode] = terminalKey
             return
         }
-        interpretingKey = if (!hasMarkedText()) event.keyCode to terminalKey else null
-        try { interpretKeyEvents(listOf(event)) } finally { interpretingKey = null }
+        interpretTerminalKey(event, terminalKey) { interpretKeyEvents(listOf(event)) }
     }
+
+    /** AppKit may commit text, change preedit and issue a command during one interpretation.
+     * Keep that boundary explicit so isolated tests can supply input-method callbacks. */
+    internal fun interpretTerminalKey(event: NSEvent, key: TerminalKey = terminalKey(event), interpret: () -> Unit) {
+        if (disposed || session.keyboardInputBlocked) return
+        val markedBefore = hasMarkedText()
+        val current = KeyInterpretation()
+        val previous = keyInterpretation
+        keyInterpretation = current
+        try { interpret() } finally { keyInterpretation = previous }
+        if (disposed || session.keyboardInputBlocked) return
+        val composing = markedBefore || hasMarkedText()
+        if (markedBefore && current.text.isNotEmpty()) {
+            for (text in current.text) if (!suppressComposingControl(text, composing)) sendTypedText(text)
+            // Plain Left already leaves the caret where Korean input methods put it.
+            // The other arrows (and modified Left) still need to reach the application.
+            val replay = when (event.keyCode.toInt()) {
+                124, 125, 126 -> true
+                123 -> event.modifierFlags and (NSEventModifierFlagShift or NSEventModifierFlagControl or
+                    NSEventModifierFlagOption or NSEventModifierFlagCommand) != 0uL
+                else -> false
+            }
+            if (replay && sendTypedKey(key)) pressedKeys[event.keyCode] = key
+        } else if (current.text.isNotEmpty()) {
+            for (text in current.text) {
+                if (suppressComposingControl(text, composing)) continue
+                if (session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2) {
+                    val committed = key.copy(text = text)
+                    if (!sendTypedKey(committed)) sendTypedText(text)
+                    pressedKeys[event.keyCode] = committed
+                } else sendTypedText(text)
+            }
+        } else if (!composing && current.command && sendTypedKey(key)) {
+            pressedKeys[event.keyCode] = key
+        }
+    }
+
+    private fun suppressComposingControl(text: String, composing: Boolean): Boolean =
+        composing && text.length == 1 && text[0].code < 0x20
 
     /** Ghostty's macOS viewport defaults use physical navigation keys and exact modifiers.
      * Consumed press/repeat events never enter pressedKeys, so their releases stay local. */
@@ -712,18 +754,13 @@ public class AppKitTerminalView(
     override fun insertText(string: Any, replacementRange: CValue<NSRange>) {
         if (disposed) return
         val value = if (string is NSAttributedString) string.string else string.toString()
-        val pending = interpretingKey
         unmarkText()
-        if (pending != null && (session.kittyKeyboardFlags != 0 || session.modifyOtherKeysMode == 2)) {
-            val key = pending.second.copy(text = value)
-            if (!sendTypedKey(key)) sendTypedText(value)
-            pressedKeys[pending.first] = key
-        } else sendTypedText(value)
+        val pending = keyInterpretation
+        if (pending != null) pending.text.add(value) else sendTypedText(value)
         viewport.markAll()
     }
     override fun setMarkedText(string: Any, selectedRange: CValue<NSRange>, replacementRange: CValue<NSRange>) {
         if (disposed) return
-        interpretingKey = null
         val value = if (string is NSAttributedString) string.string else string.toString()
         if (marked.isNotEmpty() || value.isNotEmpty()) clearSelectionForPreedit()
         marked = value
@@ -765,10 +802,13 @@ public class AppKitTerminalView(
         showLookup(NSAttributedString.create(string = word.text, attributes = mapOf(NSFontAttributeName to font)), lookupPoint(word.start))
     }
     override fun doCommandBySelector(selector: CPointer<out CPointed>?) {
+        if (disposed) return
         val key = when (NSStringFromSelector(selector)) {
             "insertNewline:" -> "Enter"; "insertTab:" -> "Tab"; "deleteBackward:" -> "Backspace"; "cancelOperation:" -> "Escape"
             else -> return
         }
+        keyInterpretation?.let { it.command = true; return }
+        if (hasMarkedText()) return
         sendTypedKey(TerminalKey(key))
     }
 

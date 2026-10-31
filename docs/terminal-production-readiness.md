@@ -60,6 +60,25 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+AppKit text interpretation now accumulates `insertText` and command callbacks for one
+`interpretKeyEvents` call before forwarding input. If the event started with preedit, committed
+fragments are sent as plain typed text before replaying Right/Down/Up or modified Left; plain
+Left, confirmation Enter and other keys are not replayed. This follows Ghostty 1.4.0's
+`SurfaceView_AppKit.keyDown`, `shouldReplayCommittedPreeditKey` and
+`shouldSuppressComposingControlInput`: a single C0 scalar from a composing event is suppressed,
+while multi-scalar text, DEL and C1 remain unchanged. Commands cancelling preedit cannot leak
+a Backspace/Enter/Tab/Escape into existing terminal input, even when the callback first clears
+the marked text. Ordinary commits retain their original key identity and Kitty text fields.
+`MacOsCompositionTest` drives the production interpretation boundary with real `NSEvent`
+objects and controlled NSTextInputClient callback sequences. It covers legacy/modifyOtherKeys/
+Kitty, repeat events, split and partial commits, all single C0 controls, modified Left,
+command cancellation, keyboard lock and cleanup after an interpreter failure. This is a
+deterministic callback test, not an executable upstream oracle or acceptance evidence for an
+installed Korean/Japanese IME. Physical IME workflows, layout-switch handling and the full
+native key-release routing remain under the open keyboard/IME gate.
+Validation: all 15 selected native composition, keyboard-protocol, modifier, focus and
+selection-policy tests pass, including the 10,240-event original Swift modifier comparison.
+
 AppKit modifier actions now follow the current event's flags instead of alternating a
 remembered pressed set. This prevents a repeated notification or a release arriving after
 focus loss from being misreported as the opposite action. Right-side modifiers consult the
