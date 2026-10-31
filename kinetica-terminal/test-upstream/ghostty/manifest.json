@@ -1438,7 +1438,8 @@
     "parser_parameter_capacity_dcs": "96b9648071e69499d34c65c62c1c0fa58f07d737f66d8eb219ad513221693518",
     "zero_width_blank_cells": "a701707e92b0e19d7c52041189db238e1d1ca4199b8361d4243f649a4f7db926",
     "legacy_variation_selector_eligibility": "e0902f14bc2650b1c2a3f5a6684414406b9e07a130c35878f560792769741e7a",
-    "resize_no_reflow_wide_truncation": "6854e74a44e24561d47043f2cb954f1d14a911ae964ac4f84e51d66afa57aa5f"
+    "resize_no_reflow_wide_truncation": "6854e74a44e24561d47043f2cb954f1d14a911ae964ac4f84e51d66afa57aa5f",
+    "resize_wide_wrap_padding_becomes_interior": "94ed4cd3bd1131d447ea1c82ccc84e4aec69bdf5be50c7c43c30f769e46fc1ca"
   },
   "keyboardMatrixSha256": "6c01e3dd0dee327b115ef73db2d811a5a3bef14194045bd7f81b3c9bc4e9c90e",
   "modifyOtherKeysMatrixSha256": "218a6d9d284746fe45e95d10f4b791db3116a9f902dd9d05c43e5949fb2fe764",

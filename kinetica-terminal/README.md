@@ -1049,7 +1049,9 @@ Horizontal margins (DECSLRM, mode 69) constrain scrolling and character/line edi
 Origin mode applies both horizontal and vertical offsets. Margin reports, saved modes,
 wide characters and grapheme wrapping are checked against the pinned Ghostty oracle.
 Resizing without reflow clears a wide character cut by the new right edge, including
-its style. A known resize difference remains: widening after a prior shrink can clear
+its style. Widening converts the former wide-glyph wrap padding to an ordinary blank
+with its existing attributes, so later reflow retains its column. A known resize
+difference remains: widening after a prior shrink can clear
 soft-wrap metadata that Ghostty preserves when reusing page capacity. See the
 [resize evidence and open gate](../docs/terminal-production-readiness.md#current-evidence).
 

@@ -278,6 +278,9 @@ public class TerminalLine internal constructor(public val columns: Int, internal
         // Ghostty clears a split wide head together with the truncated tail,
         // including its styling, rather than leaving a styled narrow blank.
         if (columns < this.columns && width(columns - 1) == 2) next.clear(columns - 1, columns, -1, -1, 0)
+        // A wide-glyph wrap spacer becomes an ordinary blank inside a widened row.
+        // Retain its attributes, but do not let a later reflow skip this column.
+        if (columns > this.columns && isSpacerHead(this.columns - 1)) next.replaceWithBlank(this.columns - 1)
         next.repairWideCells()
     }
 

@@ -60,6 +60,21 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Non-reflow widening now converts an old right-edge wide-glyph spacer to an ordinary
+blank, retaining its colors, attributes, hyperlink and character protection. Previously
+the spacer marker survived inside the row, causing a later reflow to skip that column
+and shift text/cursor positions. The minimal original-library case writes `abc界` at
+four columns, disables wrapping, expands to six columns, writes `Z` in column six,
+then enables wrapping and resizes to five columns. Before the fix its cursor was
+`[4,0]` instead of the original `[1,1]` (zero-based).
+The regression covers 184 checkpoints with CJK/emoji, plain/colored/underlined/protected
+linked padding, and resizing both the active and inactive primary screen. Whole and
+bytewise input are compared against original snapshots. This fix does not resolve the
+separate capacity-dependent row-wrap discrepancy described below.
+Validation: all 1,715 JVM tests, fresh Release JS tests, eight Native resize/wrap tests
+and the main browser verifier passed. All 1,151 original fixture/manifest artifacts
+reproduce byte-for-byte; the corpus contains 1,148 scenarios / 9,553 checkpoints.
+
 Non-reflow shrinking now clears the entire retained head of a wide character cut by
 the new right edge, including foreground/background and text attributes. Previously
 the truncated character became a blank with its old style. The original-library

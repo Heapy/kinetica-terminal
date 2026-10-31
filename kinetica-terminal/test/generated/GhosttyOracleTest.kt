@@ -1150,4 +1150,5 @@ class GhosttyOracleTest {
     @Test fun zero_width_blank_cells() = checkGhostty(ghostty_zero_width_blank_cells())
     @Test fun legacy_variation_selector_eligibility() = checkGhostty(ghostty_legacy_variation_selector_eligibility())
     @Test fun resize_no_reflow_wide_truncation() = checkGhostty(ghostty_resize_no_reflow_wide_truncation())
+    @Test fun resize_wide_wrap_padding_becomes_interior() = checkGhostty(ghostty_resize_wide_wrap_padding_becomes_interior())
 }
