@@ -5,7 +5,6 @@ package io.heapy.kinetica.terminal
 import platform.AppKit.*
 import platform.Foundation.*
 import platform.QuartzCore.CAMetalLayer
-import platform.QuartzCore.CATextLayer
 import kotlin.test.*
 import kotlin.time.TimeSource
 
@@ -236,13 +235,17 @@ class MacOsTerminalTest {
                 surface.displayIfNeeded()
                 yield("Initial GPU frame" to { surface.submittedGpuFrames > 0 })
                 assertContains(surface.accessibilityValue().toString(), "Native surface")
+                val beforePreedit = surface.submittedGpuFrames
                 surface.setMarkedText("に", NSMakeRange(1u, 0u), NSMakeRange(NSNotFound.toULong(), 0u))
                 surface.displayIfNeeded()
+                yield("Preedit GPU frame" to { surface.submittedGpuFrames > beforePreedit })
                 val metal = surface.layer as CAMetalLayer
-                val overlay = metal.sublayers!!.filterIsInstance<CATextLayer>().single()
                 assertTrue(metal.geometryFlipped)
-                assertEquals("に", (overlay.string as NSAttributedString).string)
-                assertFalse(overlay.hidden)
+                assertTrue(surface.hasMarkedText())
+                assertEquals(listOf("日本"), inputs, "Rendering preedit must not commit it")
+                surface.insertText("に", NSMakeRange(NSNotFound.toULong(), 0u))
+                assertEquals(listOf("日本", "に"), inputs)
+                assertFalse(surface.hasMarkedText())
             })
         } finally { subscription.dispose(); surface.dispose(); window.close() }
     }
