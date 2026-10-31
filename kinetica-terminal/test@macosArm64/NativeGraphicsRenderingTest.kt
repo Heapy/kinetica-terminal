@@ -12,6 +12,38 @@ import kotlin.math.ceil
 import kotlin.test.*
 
 class NativeGraphicsRenderingTest {
+    @Test fun selectionColorsPixelsMatchExplicitColorsAcrossInverseTextAndDecorations() {
+        NSApplication.sharedApplication()
+        for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    reset()
+                    session.configureTheme(TerminalTheme(foreground = 0x123456, background = 0x654321))
+                    session.write("\u001b]4;1;#112233;9;#8899aa;4;#445566\u0007")
+                    session.boldColor = TerminalBoldColor.BRIGHT
+                    for (inverse in listOf(false, true)) {
+                        val cellForeground = if (inverse) 0x445566 else 0x8899aa
+                        val cellBackground = if (inverse) 0x8899aa else 0x445566
+                        val foregrounds = listOf(null to 0x654321, TerminalSelectionColor.CELL_FOREGROUND to cellForeground,
+                            TerminalSelectionColor.CELL_BACKGROUND to cellBackground, TerminalSelectionColor.Rgb(0xabcdef) to 0xabcdef)
+                        val backgrounds = listOf(null to 0x123456, TerminalSelectionColor.CELL_FOREGROUND to cellForeground,
+                            TerminalSelectionColor.CELL_BACKGROUND to cellBackground, TerminalSelectionColor.Rgb(0x0f1e2d) to 0x0f1e2d)
+                        for ((foreground, fg) in foregrounds) for ((background, bg) in backgrounds) {
+                            session.selectionColors = TerminalSelectionColors(foreground, background)
+                            session.write("\u001b[H\u001b[0;1;31;44${if (inverse) ";7" else ""};4:3;53;9;58;2;20;210;40mA█g😀")
+                            selectAll()
+                            val selected = capture()
+                            clearSelection()
+                            session.write("\u001b[H\u001b[0;1;38;2;${fg shr 16};${fg shr 8 and 255};${fg and 255};48;2;${bg shr 16};${bg shr 8 and 255};${bg and 255};4:3;53;9;58;2;20;210;40mA█g😀")
+                            assertContentEquals(capture(), selected, "foreground=$foreground background=$background inverse=$inverse")
+                        }
+                    }
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
     @Test fun boldColorPixelsMatchExplicitColorsAcrossTextBlocksEmojiAndDecorations() {
         NSApplication.sharedApplication()
         for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
@@ -255,6 +287,8 @@ class NativeGraphicsRenderingTest {
         val uploads: Int
         fun capture(): ByteArray // RGBA, top-left origin.
         fun scrollTo(offset: Int)
+        fun selectAll()
+        fun clearSelection()
         fun setVisible(visible: Boolean)
         fun drawWhileHidden()
         fun dispose()
@@ -274,6 +308,8 @@ class NativeGraphicsRenderingTest {
             for (i in bytes.indices step 4) { val blue = bytes[i]; bytes[i] = bytes[i + 2]; bytes[i + 2] = blue }
         }
         override fun scrollTo(offset: Int) = viewport.scrollTo(offset)
+        override fun selectAll() = viewport.selectAll()
+        override fun clearSelection() = viewport.clearSelection()
         override fun setVisible(visible: Boolean) = renderer.setVisible(visible)
         override fun drawWhileHidden() = renderer.draw(viewport)
         override fun dispose() { renderer.dispose(); viewport.dispose() }
@@ -303,6 +339,8 @@ class NativeGraphicsRenderingTest {
             return bytes
         }
         override fun scrollTo(offset: Int) = view.scrollTo(offset)
+        override fun selectAll() = view.selectAll(null)
+        override fun clearSelection() = view.clearSelection()
         override fun setVisible(visible: Boolean) { view.hidden = !visible }
         override fun drawWhileHidden() { capture() }
         override fun dispose() = view.dispose()

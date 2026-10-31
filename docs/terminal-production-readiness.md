@@ -60,6 +60,23 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Selection foreground/background now accept literal RGB, `cell-foreground`, `cell-background`
+and Ghostty's default terminal-relative colors through `session.selectionColors`.
+`TerminalSelectionColors()` selects Ghostty defaults; a null host override uses the existing
+Kinetica theme selection style. Resolution follows pinned `renderer/generic.zig` after bold
+foregrounds and SGR inverse, before cursor overrides. Explicit underline colors, hidden/faint
+attributes, wide cells and opaque selection backgrounds retain their respective semantics.
+Policy changes repaint all views, survive terminal/theme resets and retain captured policy,
+theme and palette through synchronized output. Selection text and rich-copy styles are unchanged.
+Shared tests cover all 16 foreground/background combinations on ordinary and shaped paths,
+three views, inverse/default/indexed/RGB colors, reset, theme/DEC 5, cursor, wide/hidden/faint
+text and held frames. Validation passes 1689 JVM tests, fresh Release JS tests and 20 focused
+Native tests. Canvas/WebGL and AppKit/Metal selected pixels match equivalent explicit-SGR
+colors for all 16 combinations with and without inverse at scales 1/1.25/2, including text,
+blocks, emoji and decorations. Existing macOS/Linux browser selection regressions also pass.
+Evidence: `TerminalSelectionColorsTest`, `NativeGraphicsRenderingTest`,
+`scripts/verify-terminal-selection-colors.mjs`, `/tmp/kinetica-selection-colors-*`.
+
 `session.boldColor` now implements pinned Ghostty `Style.fg`: disabled by default,
 `BRIGHT` maps bold ANSI colors 0–7 to 8–15, and explicit RGB additionally overrides the default
 foreground and matching truecolor cells. Other truecolor and palette entries remain unchanged.

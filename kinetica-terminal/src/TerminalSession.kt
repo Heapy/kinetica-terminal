@@ -201,6 +201,13 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             if (field == value) return
             field = value; damageAll(); flushDamage()
         }
+    /** Host selection style; null uses the theme's selection background and cell foreground.
+     * [TerminalSelectionColors] enables Ghostty's defaults or explicit cell-relative/RGB colors. */
+    public var selectionColors: TerminalSelectionColors? = null
+        set(value) {
+            if (field == value) return
+            field = value; damageAll(); flushDamage()
+        }
     /** DEC mode 67: swap legacy Backspace and Ctrl+Backspace between DEL and BS. */
     public var backarrowKeyMode: Boolean = false
         private set

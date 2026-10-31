@@ -152,6 +152,15 @@ fun main() {
     api.copyTrimTrailingSpaces = { enabled: Boolean -> surface?.copyTrimTrailingSpaces = enabled }
     api.copyFormat = { format: String -> surface?.copyFormat = TerminalCopyFormat.valueOf(format) }
     api.faintOpacity = { opacity: Double -> session.faintOpacity = opacity }
+    api.selectionColors = { enabled: Boolean, foreground: Int?, background: Int? ->
+        fun color(value: Int?): TerminalSelectionColor? = when (value) {
+            null -> null
+            -1 -> TerminalSelectionColor.CELL_FOREGROUND
+            -2 -> TerminalSelectionColor.CELL_BACKGROUND
+            else -> TerminalSelectionColor.Rgb(value)
+        }
+        session.selectionColors = if (enabled) TerminalSelectionColors(color(foreground), color(background)) else null
+    }
     api.boldColor = { value: Int? -> session.boldColor = when (value) {
         null -> null
         -1 -> TerminalBoldColor.BRIGHT

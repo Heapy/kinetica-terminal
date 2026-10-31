@@ -750,6 +750,25 @@ Composite glyphs and hinting are rejected with protocol error replies. Glyph rec
 is independent of whether a host has enabled Kitty image storage. Unsupported APC prefixes
 and cancelled/oversized commands retain no glyph capture buffer.
 
+`session.selectionColors = TerminalSelectionColors()` enables Ghostty's default selection
+colors: terminal background for selected text, terminal foreground for its background.
+Each component also accepts `TerminalSelectionColor.Rgb(0x2468ac)`, `CELL_FOREGROUND`, or
+`CELL_BACKGROUND`. Cell-relative values use effective colors after `bold-color` and SGR inverse;
+explicit underline colors stay independent, and cursor colors take precedence. For example:
+
+```kotlin
+session.selectionColors = TerminalSelectionColors(
+    foreground = TerminalSelectionColor.CELL_BACKGROUND,
+    background = TerminalSelectionColor.CELL_FOREGROUND,
+)
+```
+
+Setting `session.selectionColors = null` restores the host theme's selection style (cell
+foreground and `TerminalTheme.selection` background); this is the initial library default.
+Configuration updates repaint every session view without changing selection contents or copied
+styles. The setting survives terminal resets and theme changes; synchronized output retains the
+captured selection configuration and colors until release. Selected backgrounds remain opaque.
+
 `session.boldColor` follows Ghostty's `bold-color`: `null` keeps original colors,
 `TerminalBoldColor.BRIGHT` maps bold ANSI palette entries 0–7 to 8–15, and
 `TerminalBoldColor.Rgb(0x2468ac)` also replaces the default foreground and explicit RGB equal
@@ -1350,6 +1369,7 @@ node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-overline.mjs
 node scripts/verify-terminal-faint.mjs
 node scripts/verify-terminal-bold-color.mjs
+node scripts/verify-terminal-selection-colors.mjs
 node scripts/verify-terminal-decoration-order.mjs
 node scripts/verify-terminal-background.mjs
 node scripts/verify-terminal-blocks.mjs
