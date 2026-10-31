@@ -1144,4 +1144,7 @@ class GhosttyOracleTest {
     @Test fun wide_edit_boundary_history_2_80() = checkGhostty(ghostty_wide_edit_boundary_history_2_80())
     @Test fun wide_edit_boundary_history_2_64() = checkGhostty(ghostty_wide_edit_boundary_history_2_64())
     @Test fun wide_edit_boundary_history_2_88() = checkGhostty(ghostty_wide_edit_boundary_history_2_88())
+    @Test fun parser_parameter_capacity_sgr() = checkGhostty(ghostty_parser_parameter_capacity_sgr())
+    @Test fun parser_parameter_capacity_modes() = checkGhostty(ghostty_parser_parameter_capacity_modes())
+    @Test fun parser_parameter_capacity_dcs() = checkGhostty(ghostty_parser_parameter_capacity_dcs())
 }

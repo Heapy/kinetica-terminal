@@ -643,8 +643,9 @@ NSWindow and check the revealed/selected text and absence of Kitty input events.
 - Both screen buffers remain bounded by at most 1,000,000 cells each (axes at most 4096), with
   64 suffix codepoints per cell and the per-row link budget. View snapshots copy only visible
   rows. Resize can temporarily retain old and new storage together; limits are not a peak-memory
-  guarantee. The parser retains at most 4096 UTF-16 units per ordinary control string, 64 parameters and
-  four intermediate bytes. These independent limits also bound the current and saved pens.
+  guarantee. The parser retains at most 4096 UTF-16 units per ordinary control string, 24 parameters and
+  four intermediate bytes. CSI/DCS headers exceeding the parameter capacity are discarded
+  as a whole, including a 24-value header with a trailing separator, matching Ghostty 1.4. These independent limits also bound the current and saved pens.
   OSC 52 has a separate UTF-8 byte limit: its capture after `52;`, including a trailing NUL,
   must fit within 8 MiB, matching the pinned Ghostty. Completion/cancellation releases that
   capture's large backing storage. Conversion to strings/bytes adds bounded temporary copies.

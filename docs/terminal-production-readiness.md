@@ -60,6 +60,23 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+The shared parser now uses Ghostty 1.4's 24-parameter capacity for CSI and DCS, replacing
+its former 64-slot limit. Over-capacity commands are discarded before dispatch rather than
+applying a prefix of their attributes/modes. A trailing separator after 24 values also
+exceeds the limit; 24 values without it remain valid. Recovery continues at the command's
+terminator and accepts the following command normally.
+Three original-libghostty scenarios add 138 checkpoints for SGR, private cursor modes and
+DECRQSS headers at 1/23/24/25/63/64/65 values, with and without a trailing separator.
+The SGR matrix also puts a valid colon RGB group at the capacity boundary. The SGR and
+mode cases failed before the fix (lost bold/inverse text and an incorrectly visible cursor);
+the DCS case separately reproduced an unwanted reply. A direct parser regression checks
+whole-header rejection and recovery in both command families. Original fixtures are checked
+with whole and bytewise input. This closes this capacity discrepancy, not the broader
+malformed-input or terminal-state audit.
+Validation: all 1,711 JVM tests, fresh Release JS tests, 19 selected Native parser/oracle
+tests and the main browser verifier passed. All 1,147 original fixture/manifest artifacts
+reproduce byte-for-byte; the corpus now contains 1,144 scenarios / 8,073 checkpoints.
+
 Browser selection changes now have a separate polite, atomic live region, following
 Ghostty's 100 ms debounced `selectedTextChanged` notification. Drag updates coalesce,
 unchanged selections do not repeat during ordinary output/painting, and clearing a

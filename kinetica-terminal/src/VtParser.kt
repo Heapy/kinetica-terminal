@@ -2,7 +2,8 @@
 // Adapted for Kotlin from Ghostty Parser.zig and parse_table.zig, commit
 // 4da7523faba68ccb4042ea20585817098a51c015. See third-party/GHOSTTY-LICENSE.
 // Changes: decoded Unicode input, callback dispatch, bounded string payloads,
-// and 64 parameters with explicit omitted values. No native memory dependencies.
+// and explicit omitted values. Parameter capacity follows the pinned Ghostty 1.4
+// Parser.MAX_PARAMS (24). No native memory dependencies.
 package io.heapy.kinetica.terminal
 
 /** Incremental DEC/ECMA-48 state machine. Command storage is reused after dispatch. */
@@ -22,8 +23,8 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
         fun apcEnd(terminator: Int) {}
     }
 
-    val parameters = IntArray(64)
-    val colon = BooleanArray(64)
+    val parameters = IntArray(PARAMETER_LIMIT)
+    val colon = BooleanArray(PARAMETER_LIMIT)
     var count = 0
         private set
     var prefix = 0
@@ -260,6 +261,7 @@ internal class VtParser(private val handler: Handler, private val clipboardLimit
         const val STRING_LIMIT = 4096
         const val CAPABILITY_LIMIT = 1024 * 1024
         const val DND_LIMIT = 8 * 1024 * 1024
+        private const val PARAMETER_LIMIT = 24
         private const val GROUND = 0
         private const val ESCAPE = 1
         private const val ESCAPE_INTERMEDIATE = 2

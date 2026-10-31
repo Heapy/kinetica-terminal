@@ -5,6 +5,23 @@ package io.heapy.kinetica.terminal
 import kotlin.test.*
 
 class VtParserTest {
+    @Test fun parameterCapacityRejectsTheWholeHeaderAndRecoversAtTheTerminator() {
+        for (dcs in listOf(false, true)) for (count in listOf(23, 24, 25, 64, 65)) {
+            for (trailing in listOf(false, true)) {
+                val header = List(count) { "1" }.joinToString(";") + if (trailing) ";" else ""
+                val capture = Capture().apply {
+                    parse(if (dcs) "\u001bP${header}+q544e\u001b\\" else "\u001b[${header}m")
+                    parse("\u001b[31m!")
+                }
+                val accepted = count < 24 || count == 24 && !trailing
+                assertEquals(if (!dcs && accepted) 2 else 1, capture.commands.size, "dcs=$dcs count=$count trailing=$trailing")
+                assertEquals(if (dcs && accepted) 1 else 0, capture.strings.size, "dcs=$dcs count=$count trailing=$trailing")
+                assertEquals(listOf(31), capture.commands.last().params)
+                assertEquals("!", capture.printed.toString())
+            }
+        }
+    }
+
     @Test fun delPrintsInGroundButIsIgnoredInsideDcsAndHeaders() {
         val capture = Capture().apply {
             parse("A\u007fB\u001b[1\u007fm\u001b(\u007fB\u001bP$\u007fq\u007fm\u007f\u001b\\C")
