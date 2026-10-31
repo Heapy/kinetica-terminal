@@ -188,6 +188,8 @@ public class AppKitTerminalView(
     }
     private val softwareImages = AppKitTerminalImages()
     private val softwareImageFrame = TerminalGpuFrame()
+    private var contrastGlyphs: AppKitTerminalGlyphs? = null
+    private fun clearContrastGlyphs() { contrastGlyphs?.dispose(); contrastGlyphs = null }
     private var softwareImagesVisible = false
     internal val imageCacheBytes: Long get() = gpu?.imageCacheBytes ?: softwareImages.bytes
     internal val imageTileCount: Int get() = gpu?.imageTileCount ?: softwareImages.tileCount
@@ -290,7 +292,7 @@ public class AppKitTerminalView(
     }
     private fun releaseHiddenResources() {
         gpu?.setVisible(false)
-        softwareImages.clear(); softwareImagesVisible = false
+        softwareImages.clear(); softwareImagesVisible = false; clearContrastGlyphs()
         attributes.clear(); colors.clear(); compositionLayer?.string = null
     }
     override fun makeBackingLayer(): CALayer = gpu?.layer ?: super.makeBackingLayer()
@@ -325,6 +327,7 @@ public class AppKitTerminalView(
         require(family == null || family.isNotBlank() && family.length <= 256 && family.none { it.code < 32 })
         require(size.isFinite() && size in 6.0..96.0)
         if (fontSize == size && fontFamily == family) return
+        clearContrastGlyphs()
         fontSize = size; fontFamily = family; font = terminalNativeFont(family, size)
         attributes.clear(); measure()
     }
@@ -491,25 +494,32 @@ public class AppKitTerminalView(
             }
         }
         val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, scale, viewport.columns, viewport.rows) }
-        if (images.isEmpty()) {
+        if (contrastGlyphs != null && (viewport.minimumContrast <= 1.0 || contrastGlyphs?.scale != scale)) {
+            clearContrastGlyphs(); viewport.markAll()
+        }
+        val glyphs = if (viewport.minimumContrast > 1.0) contrastGlyphs ?: AppKitTerminalGlyphs(fontFamily, fontSize, scale, cellWidth, cellHeight).also {
+            contrastGlyphs = it; viewport.markAll()
+        } else null
+        if (images.isEmpty() && glyphs == null) {
             if (softwareImagesVisible) { softwareImages.clear(); softwareImagesVisible = false }
             viewport.paint(painter, cellWidth, cellHeight, force = true, firstRow = first, lastRow = last)
         } else {
             if (!softwareImagesVisible) viewport.markAll()
             softwareImagesVisible = true
-            softwareImageFrame.update(viewport, cellWidth, cellHeight)
+            val frame = if (glyphs == null) softwareImageFrame.also { it.update(viewport, cellWidth, cellHeight) }
+                else glyphs.frame.also { glyphs.prepare(viewport) }
             softwareImages.beginFrame()
             softwareImages.draw(images, TerminalGraphicsLayer.BELOW_BACKGROUND)
-            for (row in softwareImageFrame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground)
+            for (row in frame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground)
                 painter.fill(rect.x, rect.y, rect.width, rect.height, rect.color)
             softwareImages.draw(images, TerminalGraphicsLayer.BELOW_TEXT)
-            for (row in softwareImageFrame.rows) for (rect in row.decorations) if (rect.behindText) painter.withOpacity(rect.opacity) {
+            for (row in frame.rows) for (rect in row.decorations) if (rect.behindText) painter.withOpacity(rect.opacity) {
                 painter.fill(rect.x, rect.y, rect.width, rect.height, rect.color)
             }
-            for (row in softwareImageFrame.rows) for (glyph in row.glyphs) painter.withOpacity(glyph.opacity) {
+            if (glyphs != null) glyphs.draw() else for (row in frame.rows) for (glyph in row.glyphs) painter.withOpacity(glyph.opacity) {
                 painter.text(glyph.key.text, glyph.x, glyph.y, glyph.color, glyph.key.style)
             }
-            for (row in softwareImageFrame.rows) for (rect in row.decorations) if (!rect.behindText) painter.withOpacity(rect.opacity) {
+            for (row in frame.rows) for (rect in row.decorations) if (!rect.behindText) painter.withOpacity(rect.opacity) {
                 painter.fill(rect.x, rect.y, rect.width, rect.height, rect.color)
             }
             softwareImages.draw(images, TerminalGraphicsLayer.ABOVE_TEXT)
@@ -1057,7 +1067,7 @@ public class AppKitTerminalView(
         mimeClipboardBinding.dispose()
         links.dispose()
         onViewportChanged = null; onScrollActivity = null
-        viewport.dispose(); softwareImages.clear(); releaseGpu(); inputContext()?.discardMarkedText()
+        viewport.dispose(); softwareImages.clear(); clearContrastGlyphs(); releaseGpu(); inputContext()?.discardMarkedText()
     } }
 }
 

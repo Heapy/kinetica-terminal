@@ -1,0 +1,15 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "browser": "149.0.7827.55",
+  "cases": 8132,
+  "generatorSha256": "4834b6d4ad42fdfc1e5548e4f7ade5536e1379e0248447e9a2582e157c8351bd",
+  "fixtureSha256": "882c575125379dd6a3e5b81b5e3cdc40bac30e5cdfe6a127d5627e5c9752a46c",
+  "extractedFunctionsSha256": "1f0069e4c0966266524343965bd64b347316ffcffc0eb78b2ac6d8247b8fb399",
+  "sources": {
+    "src/renderer/shaders/glsl/common.glsl": "1950572690a2ddc73fbbdc7082c487082bce2a07f75a45a4bfc248922e3fa92f",
+    "src/renderer/shaders/glsl/cell_text.v.glsl": "95a12a0f6059e28210e3f7690c574e2c91243204c870aa156024f88f6f8d4404",
+    "src/renderer/shaders/glsl/cell_text.f.glsl": "14b22d7160df7203e33573a7174a4ff9f886f2ef3e2f4c8cb7e329e9bf2b1eea",
+    "src/renderer/cell.zig": "86835a9aebebf969547c4efac3fdb4cbde7c9a6e527c2384b20944685344b3ff",
+    "src/config/Config.zig": "9074944c1de5e06031cc6f099ee5f9a5ef7d9343727f768220e2dedb78cd12d4"
+  }
+}

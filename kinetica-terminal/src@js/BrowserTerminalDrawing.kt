@@ -62,6 +62,12 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
     private var suspended = false
     private var imagesVisible = false
     private val imageFrame = TerminalGpuFrame()
+    private var contrastGlyphs: BrowserSoftwareGlyphs? = null
+    private fun clearContrast() { contrastGlyphs?.dispose(); contrastGlyphs = null }
+    override fun configureFonts(value: BrowserTerminalFontSet?) {
+        if (fonts === value) return
+        clearContrast(); super.configureFonts(value); clear = true
+    }
     private val uploadBytes = TERMINAL_IMAGE_TILE_SIDE.toLong() * TERMINAL_IMAGE_TILE_SIDE * 4
     private var uploadData: dynamic = null
     // One reusable ImageData plus all cached canvas pixel payloads share the 64 MiB budget.
@@ -74,12 +80,15 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         if (suspended == !visible) return
         suspended = !visible
         if (suspended) {
-            imageCache.clear(); uploadData = null
+            imageCache.clear(); uploadData = null; clearContrast()
             canvas.width = 0; canvas.height = 0
         }
         clear = true
     }
     override fun resize(width: Double, height: Double, ratio: Double, fontSize: Double, cellWidth: Double, cellHeight: Double, fontFamily: String?) {
+        if (this.ratio != ratio || size != fontSize || family != fontFamily || this.cellWidth != cellWidth || this.cellHeight != cellHeight) {
+            clearContrast(); clear = true
+        }
         if (this.width != width || this.height != height || this.ratio != ratio || size != fontSize || family != fontFamily ||
             !suspended && (canvas.width != (width * ratio).toInt() || canvas.height != (height * ratio).toInt())) {
             family = fontFamily
@@ -97,8 +106,9 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         if (suspended) return
         val measurement = probe.begin(viewport, name)
         val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, ratio, viewport.columns, viewport.rows) }
-        if (images.isNotEmpty()) {
-            if (!imagesVisible) viewport.markAll()
+        if (viewport.minimumContrast <= 1.0 && contrastGlyphs != null) { clearContrast(); viewport.markAll() }
+        if (images.isNotEmpty() || viewport.minimumContrast > 1.0) {
+            if (!imagesVisible || clear) viewport.markAll()
             imagesVisible = true
             drawImagesAndText(viewport, images)
             measurement?.submitted(0)
@@ -130,7 +140,11 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         measurement?.submitted(0)
     }
     private fun drawImagesAndText(viewport: TerminalViewport, images: List<TerminalImageQuad>) {
-        imageFrame.update(viewport, cellWidth, cellHeight)
+        val glyphs = if (viewport.minimumContrast > 1.0) contrastGlyphs ?: BrowserSoftwareGlyphs(fonts, family, size, ratio, cellWidth, cellHeight).also {
+            contrastGlyphs = it; viewport.markAll()
+        } else null
+        val frame = if (glyphs == null) imageFrame.also { it.update(viewport, cellWidth, cellHeight) }
+            else glyphs.frame.also { glyphs.prepare(viewport) }
         context.fillStyle = terminalCssColor(viewport.theme.background); context.fillRect(0, 0, width, height)
         context.textBaseline = "top"
         imageCache.beginFrame()
@@ -163,22 +177,22 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
             context.fillRect(left, top, terminalPixelSpan(rect.x, rect.width, ratio), terminalPixelSpan(rect.y, rect.height, ratio))
         }
         layer(TerminalGraphicsLayer.BELOW_BACKGROUND)
-        for (row in imageFrame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground) fill(rect)
+        for (row in frame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground) fill(rect)
         layer(TerminalGraphicsLayer.BELOW_TEXT)
-        for (row in imageFrame.rows) for (rect in row.decorations) if (rect.behindText) fill(rect)
-        for (row in imageFrame.rows) for (glyph in row.glyphs) {
+        for (row in frame.rows) for (rect in row.decorations) if (rect.behindText) fill(rect)
+        if (glyphs != null) glyphs.draw(context) else for (row in frame.rows) for (glyph in row.glyphs) {
             withOpacity(glyph.opacity) {
                 context.font = fonts?.cssFont(size, glyph.key.style, family) ?: browserFont(size, glyph.key.style, family)
                 context.fillStyle = terminalCssColor(glyph.color)
                 context.fillText(glyph.key.text, glyph.x, glyph.y + 1)
             }
         }
-        for (row in imageFrame.rows) for (rect in row.decorations) if (!rect.behindText) fill(rect)
+        for (row in frame.rows) for (rect in row.decorations) if (!rect.behindText) fill(rect)
         layer(TerminalGraphicsLayer.ABOVE_TEXT)
         imageCache.endFrame()
         clear = false
     }
-    override fun dispose() { imageCache.clear(); uploadData = null; fonts = null; canvas.width = 0; canvas.height = 0 }
+    override fun dispose() { clearContrast(); imageCache.clear(); uploadData = null; fonts = null; canvas.width = 0; canvas.height = 0 }
 }
 
 /** WebGL2 owns presentation; a detached 2D canvas only rasterizes cache misses. */
@@ -433,16 +447,8 @@ private class WebGlTerminalDrawing(private val invalidate: () -> Unit, private v
             rasterizations++
             return bitmap
         }
-        val width = ceil(cellWidth * key.columns * ratio).toInt().coerceAtLeast(1)
-        val height = ceil(cellHeight * ratio).toInt().coerceAtLeast(1)
-        raster.width = width; raster.height = height
-        rasterContext.setTransform(ratio, 0, 0, ratio, 0, 0)
-        rasterContext.font = browserFont(size, key.style, family); rasterContext.textBaseline = "top"; rasterContext.fillStyle = "white"
-        rasterContext.fillText(key.text, 0, 1)
-        val pixels: dynamic = rasterContext.getImageData(0, 0, width, height).data
-        val bytes = ByteArray(width * height * 4) { (pixels[it] as Number).toByte() }
         rasterizations++
-        return glyphBitmap(width, height, bytes)
+        return browserRasterizeGlyph(key, raster, rasterContext, cellWidth, cellHeight, ratio, size, family)
     }
 
     private fun releaseResources() {

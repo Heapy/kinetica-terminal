@@ -84,7 +84,9 @@
     "src/terminal/osc/parsers/hyperlink.zig",
     "src/renderer/generic.zig",
     "src/font/shaper/coretext.zig",
-    "src/font/shaper/harfbuzz.zig"
+    "src/font/shaper/harfbuzz.zig",
+    "src/renderer/shaders/glsl/common.glsl",
+    "src/renderer/cell.zig"
   ],
   "adaptedTests": [
     "src/terminal/Parser.zig",

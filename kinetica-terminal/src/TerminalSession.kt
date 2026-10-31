@@ -208,6 +208,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             if (field == value) return
             field = value; damageAll(); flushDamage()
         }
+    /** Ghostty minimum-contrast, clamped to 1..21. One disables correction; NaN is rejected. */
+    public var minimumContrast: Double = 1.0
+        set(value) {
+            require(!value.isNaN()) { "Minimum contrast must not be NaN" }
+            val normalized = value.coerceIn(1.0, 21.0)
+            if (field == normalized) return
+            field = normalized; damageAll(); flushDamage()
+        }
     /** DEC mode 67: swap legacy Backspace and Ctrl+Backspace between DEL and BS. */
     public var backarrowKeyMode: Boolean = false
         private set

@@ -60,6 +60,33 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+`session.minimumContrast` implements Ghostty's optional 1…21 contrast policy (default 1,
+which disables it). The shared glyph path evaluates linear RGB luminance after faint alpha,
+using the resolved cell background; insufficient contrast selects opaque black or white.
+Selection and inverse colors are resolved first. Active block-cursor text, intrinsic color
+glyphs, box/block/Powerline/legacy graphics and decorations keep their original colors.
+Kitty image pixels do not participate in the contrast calculation. Policy changes repaint
+views and retain their captured value through synchronized output without changing copied text.
+Canvas and AppKit use bounded shaped-glyph bitmap caches when contrast is enabled, sharing
+GPU clipping and color resolution. Font/scale changes, hiding and disposal release those
+resources. The system-font browser fallback probes white/black paint response so gray color
+artwork is not mistaken for a tintable text mask. The disabled software path is unchanged.
+`scripts/generate-terminal-contrast.mjs` executes the pinned original GLSL functions in WebGL2;
+8132 deterministic cases cover chromatic/gray pairs, alpha 0…255 and thresholds 1…21.
+The original source hashes, generator and fixture hashes and Chromium version are recorded in
+`test-upstream/ghostty/contrast-manifest.json`. CPU calculation uses double precision to avoid
+an intermediate Float rounding error that incorrectly increased alpha at the exact 21:1 boundary.
+Validation passes 1694 JVM tests, fresh Release JS tests and 25 focused Native tests.
+Canvas/WebGL pixel checks pass all 12 combinations of DPR 1/1.25/2, bundled/system fonts
+and renderer, covering both background extremes, faint 0/0.5/1, Kitty images, hide/restore,
+disable/re-enable and intrinsic gray COLR artwork (including the system-font raster fallback).
+AppKit/Metal pixels match for gray sbix artwork and corrected monochrome fallback text at
+all three scales with and without faint; the sbix face remains exempt, as in original CoreText.
+The GLSL corpus regenerates byte-for-byte. These checks do not close the broader acceptance gates above.
+Evidence: `TerminalContrastTest`, `NativeGraphicsRenderingTest`, `AppKitTerminalGlyphsTest`,
+`scripts/verify-terminal-contrast.mjs`, `/tmp/kinetica-contrast-*` (final native results in
+`native-final.log` for 24 existing tests and `native-bitmap.log` for the corrected sbix/fallback test).
+
 Selection foreground/background now accept literal RGB, `cell-foreground`, `cell-background`
 and Ghostty's default terminal-relative colors through `session.selectionColors`.
 `TerminalSelectionColors()` selects Ghostty defaults; a null host override uses the existing

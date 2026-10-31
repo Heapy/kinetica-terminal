@@ -12,6 +12,39 @@ import kotlin.math.ceil
 import kotlin.test.*
 
 class NativeGraphicsRenderingTest {
+    @Test fun minimumContrastCorrectsTextButPreservesGraphicsColorGlyphsAndDecorations() {
+        NSApplication.sharedApplication()
+        for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    for (background in listOf(0, 0xffffff)) for (imageBehind in listOf(false, true)) for (faint in listOf(0.0, 0.5, 1.0)) {
+                        reset()
+                        session.configureTheme(TerminalTheme(background = background))
+                        session.write("\u001b]11;#${background.toString(16).padStart(6, '0')}\u0007")
+                        session.minimumContrast = 7.0; session.faintOpacity = faint
+                        if (imageBehind) session.write(image(44, green, ",z=-1"))
+                        val fg = if (background == 0) "16;16;16" else "240;240;240"
+                        val corrected = if (background == 0) "255;255;255" else "0;0;0"
+                        val suffix = "\u001b[0;38;2;$fg;2m█─😀\u001b[4:3;53;9m  "
+                        session.write("\u001b[H\u001b[0;38;2;$fg" + "mA\r\n\u001b[2mB\r\n" + suffix)
+                        val actual = capture()
+                        // On white, completely transparent/faint black has enough premultiplied
+                        // contrast already; the shader must leave its original alpha intact.
+                        val faintNeedsCorrection = background == 0 || faint != 0.0
+                        val b = if (faintNeedsCorrection) "\u001b[22;38;2;${corrected}mB" else "\u001b[2;38;2;${fg}mB"
+                        session.write("\u001b[H\u001b[0;38;2;${corrected}mA\r\n" + b + "\r\n" + suffix)
+                        val expected = capture()
+                        val difference = expected.indices.firstOrNull { expected[it] != actual[it] }
+                        assertNull(difference, "bg=$background image=$imageBehind faint=$faint differing byte=$difference")
+                        setVisible(false); drawWhileHidden(); setVisible(true)
+                        assertContentEquals(actual, capture(), "Visibility must restore contrast glyph resources")
+                    }
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
     @Test fun selectionColorsPixelsMatchExplicitColorsAcrossInverseTextAndDecorations() {
         NSApplication.sharedApplication()
         for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {

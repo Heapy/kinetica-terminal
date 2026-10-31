@@ -161,6 +161,7 @@ fun main() {
         }
         session.selectionColors = if (enabled) TerminalSelectionColors(color(foreground), color(background)) else null
     }
+    api.minimumContrast = { value: Double -> session.minimumContrast = value }
     api.boldColor = { value: Int? -> session.boldColor = when (value) {
         null -> null
         -1 -> TerminalBoldColor.BRIGHT

@@ -83,7 +83,7 @@ internal fun glyphBitmap(width: Int, height: Int, rgba: ByteArray, premultiplied
 
 internal data class TerminalGlyph(val key: GlyphKey, val x: Double, val y: Double, val color: Int,
     val xOffset: Int = 0, val yOffset: Int = 0, val clipLeft: Double = x, val clipRight: Double = Double.NaN,
-    val opacity: Double = 1.0)
+    val opacity: Double = 1.0, val contrastExcluded: Boolean = false)
 internal data class TerminalRect(val x: Double, val y: Double, val width: Double, val height: Double, val color: Int,
     val defaultBackground: Boolean = false, val opacity: Double = 1.0, val behindText: Boolean = false)
 
@@ -115,6 +115,12 @@ internal class TerminalGpuFrame(
     private var columns = 0
     private var opacity = 1.0
     private var faintOpacity = 0.5
+    var minimumContrast = 1.0
+        private set
+    var defaultBackground = 0
+        private set
+    var contrastCursor: TerminalCellPosition? = null
+        private set
 
     override fun withOpacity(opacity: Double, draw: () -> Unit) {
         val previous = this.opacity
@@ -124,6 +130,9 @@ internal class TerminalGpuFrame(
 
     fun update(viewport: TerminalViewport, width: Double, height: Double) {
         faintOpacity = viewport.faintOpacity
+        minimumContrast = viewport.minimumContrast
+        defaultBackground = viewport.theme.background
+        contrastCursor = if (minimumContrast > 1.0) viewport.contrastCursor() else null
         if (rows.size != viewport.rows || columns != viewport.columns || cellWidth != width || cellHeight != height) {
             rows.clear(); repeat(viewport.rows) { rows += TerminalDrawRow() }
             cellWidth = width; cellHeight = height; columns = viewport.columns
@@ -151,7 +160,8 @@ internal class TerminalGpuFrame(
                     glyph.font, glyph.glyph, constraint, if (glyph.usesForeground) foreground(column) else null),
                     column * cellWidth, row * cellHeight, foreground(column),
                     glyph.xOffset, glyph.yOffset, run.offset * cellWidth, right * cellWidth,
-                    terminalForegroundOpacity(line.style(column), faintOpacity))
+                    terminalForegroundOpacity(line.style(column), faintOpacity),
+                    contrastExcluded = minimumContrast > 1.0 && terminalContrastExcluded(line.codePoint(column)))
             }
         }
         return true
@@ -178,7 +188,8 @@ internal class TerminalGpuFrame(
     }
     override fun glyph(value: String, x: Double, y: Double, columns: Int, color: Int, style: Int) {
         if (value.isNotBlank()) current.glyphs += TerminalGlyph(GlyphKey(value, columns,
-            style and (TerminalStyle.BOLD or TerminalStyle.ITALIC)), x, y, color, opacity = opacity)
+            style and (TerminalStyle.BOLD or TerminalStyle.ITALIC)), x, y, color, opacity = opacity,
+            contrastExcluded = minimumContrast > 1.0 && terminalContrastExcluded(terminalFirstCodepoint(value)))
     }
     override fun text(value: String, x: Double, y: Double, color: Int, style: Int) =
         glyph(value, x, y, 1, color, style)
@@ -220,36 +231,12 @@ internal class TerminalGpuBatches {
         for (row in frame.rows) {
             for (rect in row.backgrounds) if (!transparentDefaultBackground || !rect.defaultBackground) addRect(backgrounds, rect, pixelRatio)
             for (rect in row.decorations) addRect(if (rect.behindText) underlays else decorations, rect, pixelRatio)
-            for (glyph in row.glyphs) {
-                val entry = atlas[glyph.key]
-                if (glyph.key.glyph >= 0) {
-                    val left = round(glyph.x * pixelRatio) + glyph.xOffset + entry.left
-                    val top = round(glyph.y * pixelRatio) - glyph.yOffset + entry.top
-                    val x = maxOf(left, round(glyph.clipLeft * pixelRatio))
-                    val y = maxOf(top, round(glyph.y * pixelRatio))
-                    val right = minOf(left + entry.width, round(glyph.clipRight * pixelRatio))
-                    val bottom = minOf(top + entry.height, round((glyph.y + frame.cellHeight) * pixelRatio))
-                    if (right <= x || bottom <= y) continue
-                    pages[entry.page].add(x / pixelRatio, y / pixelRatio, (right - x) / pixelRatio, (bottom - y) / pixelRatio,
-                        if (entry.colored) 0xffffff else glyph.color,
-                        (entry.x + x - left).toFloat() / atlas.size, (entry.y + y - top).toFloat() / atlas.size,
-                        (entry.x + right - left).toFloat() / atlas.size, (entry.y + bottom - top).toFloat() / atlas.size, glyph.opacity)
-                    continue
-                }
-                // The atlas already contains antialiased device pixels. Squeezing its
-                // ceil-sized bitmap into a fractional cell drops different texel columns
-                // at different grid positions with nearest sampling. Preserve it 1:1.
-                val x = round(glyph.x * pixelRatio)
-                val y = round(glyph.y * pixelRatio)
-                // A rounded cell can be one pixel narrower than the ceil-sized bitmap.
-                // Crop its padding/overhang instead of blending it into the next cell.
-                val width = minOf(entry.width.toDouble(), round((glyph.x + frame.cellWidth * glyph.key.columns) * pixelRatio) - x)
-                val height = minOf(entry.height.toDouble(), round((glyph.y + frame.cellHeight) * pixelRatio) - y)
-                pages[entry.page].add(x / pixelRatio, y / pixelRatio, width / pixelRatio, height / pixelRatio,
-                    if (entry.colored) 0xffffff else glyph.color,
-                    entry.x.toFloat() / atlas.size, entry.y.toFloat() / atlas.size,
-                    (entry.x + width).toFloat() / atlas.size, (entry.y + height).toFloat() / atlas.size, glyph.opacity)
-            }
+        }
+        drawTerminalGlyphs(frame, atlas, pixelRatio) { entry, x, y, width, height, sourceX, sourceY, sourceWidth, sourceHeight, tint, opacity ->
+            pages[entry.page].add(x, y, width, height, tint,
+                (entry.x + sourceX).toFloat() / atlas.size, (entry.y + sourceY).toFloat() / atlas.size,
+                (entry.x + sourceX + sourceWidth).toFloat() / atlas.size,
+                (entry.y + sourceY + sourceHeight).toFloat() / atlas.size, opacity)
         }
     }
 
@@ -258,5 +245,37 @@ internal class TerminalGpuBatches {
         val y = round(rect.y * pixelRatio) / pixelRatio
         target.add(x, y, terminalPixelSpan(rect.x, rect.width, pixelRatio),
             terminalPixelSpan(rect.y, rect.height, pixelRatio), rect.color, opacity = rect.opacity)
+    }
+}
+
+/** Shared device-pixel clipping and tint resolution for GPU and software bitmap renderers.
+ * Source rectangles are relative to the glyph bitmap, without atlas page offsets. */
+internal inline fun drawTerminalGlyphs(frame: TerminalGpuFrame, atlas: TerminalGlyphAtlas, pixelRatio: Double,
+    draw: (AtlasGlyph, Double, Double, Double, Double, Double, Double, Double, Double, Int, Double) -> Unit) {
+    require(pixelRatio.isFinite() && pixelRatio > 0)
+    for (row in frame.rows) for (glyph in row.glyphs) {
+        val entry = atlas[glyph.key]
+        val correction = terminalGlyphContrast(frame, row, glyph, entry.colored)
+        val tint = if (entry.colored) 0xffffff else correction ?: glyph.color
+        val opacity = if (correction == null) glyph.opacity else 1.0
+        if (glyph.key.glyph >= 0) {
+            val left = round(glyph.x * pixelRatio) + glyph.xOffset + entry.left
+            val top = round(glyph.y * pixelRatio) - glyph.yOffset + entry.top
+            val x = maxOf(left, round(glyph.clipLeft * pixelRatio))
+            val y = maxOf(top, round(glyph.y * pixelRatio))
+            val right = minOf(left + entry.width, round(glyph.clipRight * pixelRatio))
+            val bottom = minOf(top + entry.height, round((glyph.y + frame.cellHeight) * pixelRatio))
+            if (right <= x || bottom <= y) continue
+            draw(entry, x / pixelRatio, y / pixelRatio, (right - x) / pixelRatio, (bottom - y) / pixelRatio,
+                x - left, y - top, right - x, bottom - y, tint, opacity)
+        } else {
+            // Keep raster texels 1:1, cropping ceil-sized padding at rounded cell edges.
+            val x = round(glyph.x * pixelRatio)
+            val y = round(glyph.y * pixelRatio)
+            val width = minOf(entry.width.toDouble(), round((glyph.x + frame.cellWidth * glyph.key.columns) * pixelRatio) - x)
+            val height = minOf(entry.height.toDouble(), round((glyph.y + frame.cellHeight) * pixelRatio) - y)
+            draw(entry, x / pixelRatio, y / pixelRatio, width / pixelRatio, height / pixelRatio,
+                0.0, 0.0, width, height, tint, opacity)
+        }
     }
 }

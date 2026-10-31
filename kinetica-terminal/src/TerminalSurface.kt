@@ -110,6 +110,13 @@ public class TerminalViewport internal constructor(
     /** Effective rendering defaults, including DEC 5 and any retained synchronized frame. */
     public val theme: TerminalTheme get() = frozen?.theme ?: session.renderTheme
     internal val faintOpacity: Double get() = frozen?.faintOpacity ?: session.faintOpacity
+    internal val minimumContrast: Double get() = frozen?.minimumContrast ?: session.minimumContrast
+    internal fun contrastCursor(): TerminalCellPosition? {
+        if (!cursorVisible || !cursorOn || !focused || cursorStyle != TerminalCursorStyle.BLOCK) return null
+        val line = visibleLine(cursorRow)
+        val column = if (line.width(cursorColumn) == 0) (cursorColumn - 1).coerceAtLeast(0) else cursorColumn
+        return TerminalCellPosition(cursorRow, column)
+    }
     private val boldColor: TerminalBoldColor? get() {
         val frame = frozen
         return if (frame == null) session.boldColor else frame.boldColor
@@ -257,7 +264,7 @@ public class TerminalViewport internal constructor(
         }, wordBoundaries = { session.selectionWordBoundaries }, detectedLinksEnabled = { session.detectedLinksEnabled })
         frozen = FrozenFrame(lines, first, session.renderTheme, session.cursorColumn, session.cursorRow,
             capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText, copiedText, colors.theme,
-            selectionLines, capturedFirst, gesture, session.screenEpoch, clickRow, pointerClickRecycle, session.faintOpacity, session.boldColor, session.selectionColors,
+            selectionLines, capturedFirst, gesture, session.screenEpoch, clickRow, pointerClickRecycle, session.faintOpacity, session.boldColor, session.selectionColors, session.minimumContrast,
             if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList())
         if (clickLine >= 0) {
             pointerClickRow = selectionLines[clickLine - capturedFirst]
@@ -814,7 +821,7 @@ public class TerminalViewport internal constructor(
         var inheritedCopyText: TerminalCopySnapshot?, val copyTheme: TerminalTheme,
         val selectionLines: Array<TerminalLine>, val selectionFirst: Int, var inheritedGesture: TerminalSelection.Snapshot?,
         val screenEpoch: Long, val liveClickRow: TerminalLine?, val liveClickRecycle: Long, val faintOpacity: Double, val boldColor: TerminalBoldColor?,
-        val selectionColors: TerminalSelectionColors?,
+        val selectionColors: TerminalSelectionColors?, val minimumContrast: Double,
         val graphics: List<TerminalGraphicsFrameEntry>) {
         var interacted: Boolean = false
         fun selectionLine(index: Int): TerminalLine = selectionLines[index - selectionFirst]
