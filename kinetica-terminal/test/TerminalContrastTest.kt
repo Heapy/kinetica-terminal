@@ -68,10 +68,10 @@ class TerminalContrastTest {
                 val pixels = batches.pages.single().data
                 assertContentEquals(floatArrayOf(1f, 1f, 1f, 1f), pixels.copyOfRange(8, 12))
                 val faint = 128f / 255f
-                assertContentEquals(floatArrayOf(faint, faint, faint, faint), pixels.copyOfRange(20, 24))
+                assertContentEquals(floatArrayOf(1f, 1f, 1f, 1f), pixels.copyOfRange(20, 24))
                 assertEquals(faint.toDouble(), pixels[35].toDouble(), 1e-7)
-                assertEquals(0x101010, frame.rows[0].decorations.first().color)
-                assertEquals(128.0 / 255, frame.rows[0].decorations.first().opacity)
+                assertEquals(0xffffff, frame.rows[0].decorations.first().color)
+                assertEquals(1.0, frame.rows[0].decorations.first().opacity)
                 session.write("\u001b[H\u001b[2 q\u001b[?25h")
                 frame.update(view, 8.0, 16.0)
                 assertNull(terminalGlyphContrast(frame, frame.rows[0], frame.rows[0].glyphs[0], false))

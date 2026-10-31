@@ -60,17 +60,47 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+A fragment-shader audit corrected the opacity and decoration exceptions in the initial faint
+and minimum-contrast implementations. Original `cell_text.f.glsl` returns intrinsic color
+atlas pixels without applying vertex tint/alpha; original `cell_text.v.glsl` overrides the
+foreground color/alpha at the active block cursor after contrast correction. Accordingly,
+color glyphs preserve their own alpha, while monochrome masks apply configured faint alpha.
+Block-cursor text, geometric glyphs and underline/overline/strike use the opaque cursor
+foreground, including explicit underline colors. Underline/overline/strike are grayscale
+sprites upstream and receive minimum-contrast correction; graphical character glyphs retain
+their separate no-min-contrast exemption. Concealment still suppresses all foreground layers.
+All standard software/GPU renderers now use per-glyph raster metadata; Canvas and AppKit use
+the bounded bitmap caches for ordinary frames too. Canvas retains clean rows and only redraws
+the dirty row range unless images require full compositing; AppKit respects the dirty rectangle.
+Font/scale changes, hiding and disposal release the caches without changing terminal state.
+`scripts/generate-terminal-glyph-opacity.mjs` executes the original fragment main unchanged
+for 48 color/mask, foreground-alpha and texture-coverage combinations. Its WebGL2 interface
+uses normalized 1×1 samplers and signed flag uniforms (identical bit operations), while the
+original branch and blending code remains literal. Source, generator and fixture provenance
+is recorded in `test-upstream/ghostty/glyph-opacity-manifest.json`.
+Validation passes 1698 JVM tests, fresh Release JS tests and 35 focused Native tests.
+The fragment corpus regenerates byte-for-byte. Browser faint pixels pass 12 renderer/font-size/DPR
+combinations (12.5/14 px, DPR 1/1.25/2); contrast/opacity pixels pass 12 renderer/font-source/DPR
+combinations, including explicit focus, dirty-row retention, gray COLR and mixed monochrome text.
+Native checks compare AppKit/Metal, gray sbix artwork, block-cursor text/wide/graphic/color cells,
+decorations, images, shaping and hide/dispose lifecycles. These do not close the broader gates above.
+Evidence: `TerminalGlyphOpacityTest`, `TerminalFaintTest`, `NativeGraphicsRenderingTest`,
+`AppKitTerminalGlyphsTest`, `scripts/verify-terminal-faint.mjs`,
+`scripts/verify-terminal-contrast.mjs`, `/tmp/kinetica-glyph-opacity-*`.
+
 `session.minimumContrast` implements Ghostty's optional 1…21 contrast policy (default 1,
 which disables it). The shared glyph path evaluates linear RGB luminance after faint alpha,
 using the resolved cell background; insufficient contrast selects opaque black or white.
 Selection and inverse colors are resolved first. Active block-cursor text, intrinsic color
-glyphs, box/block/Powerline/legacy graphics and decorations keep their original colors.
+glyphs and box/block/Powerline/legacy graphics keep their original colors. Sprite decorations
+use contrast correction too, as confirmed by the subsequent fragment-shader audit above.
 Kitty image pixels do not participate in the contrast calculation. Policy changes repaint
 views and retain their captured value through synchronized output without changing copied text.
-Canvas and AppKit use bounded shaped-glyph bitmap caches when contrast is enabled, sharing
+Canvas and AppKit use bounded shaped-glyph bitmap caches, sharing
 GPU clipping and color resolution. Font/scale changes, hiding and disposal release those
 resources. The system-font browser fallback probes white/black paint response so gray color
-artwork is not mistaken for a tintable text mask. The disabled software path is unchanged.
+artwork is not mistaken for a tintable text mask. The subsequent glyph-opacity audit made
+this path unconditional so intrinsic color alpha is also preserved with contrast disabled.
 `scripts/generate-terminal-contrast.mjs` executes the pinned original GLSL functions in WebGL2;
 8132 deterministic cases cover chromatic/gray pairs, alpha 0…255 and thresholds 1…21.
 The original source hashes, generator and fixture hashes and Chromium version are recorded in
@@ -126,8 +156,9 @@ and policy updates without rewriting cells. Evidence: `TerminalBoldColorTest`,
 Configurable faint rendering now follows pinned Ghostty `Config.zig` and
 `renderer/generic.zig`: `session.faintOpacity` defaults to 0.5, clamps to 0…1 and uses
 `ceil(value * 255) / 255` for SGR 2 foregrounds. NaN is rejected before state changes.
-Text, color glyphs, geometric glyphs and decorations share the setting; backgrounds remain
-opaque. Configuration invalidates all session views, preserves glyph atlas keys and survives
+Monochrome text, geometric glyphs and decorations share the setting; backgrounds remain
+opaque. The subsequent fragment-shader audit above supersedes the initial color-glyph
+expectation: intrinsic color alpha and block-cursor foreground overrides ignore faint. Configuration invalidates all session views, preserves glyph atlas keys and survives
 RIS/DECSTR and palette/theme changes. Synchronized frames retain their captured opacity until
 release. Text blinking remains unrendered, consistent with the pinned upstream renderer's
 cursor-only blink timer; it is not a verified missing Ghostty rendering feature.

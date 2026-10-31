@@ -12,6 +12,26 @@ import kotlin.math.ceil
 import kotlin.test.*
 
 class NativeGraphicsRenderingTest {
+    @Test fun blockCursorMakesTextGraphicsAndDecorationsOpaqueWithoutTintingColorGlyphs() {
+        NSApplication.sharedApplication()
+        for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    setFocused(true)
+                    for (text in listOf("A", "界", "█", "😀")) {
+                        reset(); session.faintOpacity = 0.0
+                        session.write("\u001b[2 q\u001b[?25h\u001b[4;53;9;58;2;255;0;0m$text\u001b[H")
+                        val normal = capture()
+                        session.write("\u001b[2m$text\u001b[H")
+                        val faint = capture()
+                        assertNull(normal.indices.firstOrNull { normal[it] != faint[it] }, "Cursor opacity changed for $text")
+                    }
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
     @Test fun minimumContrastCorrectsTextButPreservesGraphicsColorGlyphsAndDecorations() {
         NSApplication.sharedApplication()
         for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
@@ -153,7 +173,7 @@ class NativeGraphicsRenderingTest {
 
     @Test fun faintCompositesTextColorGlyphsAndDecorationsOverBackgroundsAndImages() {
         NSApplication.sharedApplication()
-        val samples = listOf("" to "Aa😀", "" to "█▀") + (1..5).map { "4:$it;53;9;58;2;20;210;40;" to "  " }
+        val samples = listOf("" to "Aa", "" to "😀", "" to "█▀") + (1..5).map { "4:$it;53;9;58;2;20;210;40;" to "  " }
         for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
             val surface = factory()
             try {
@@ -168,7 +188,7 @@ class NativeGraphicsRenderingTest {
                         for (configured in listOf(0.0, 0.1, 0.5, 0.9, 1.0)) {
                             session.faintOpacity = configured
                             val faint = capture()
-                            val alpha = ceil(configured * 255).toInt()
+                            val alpha = if (text == "😀") 255 else ceil(configured * 255).toInt()
                             var affected = 0
                             for (i in normal.indices) {
                                 val base = background[i].toInt() and 255
@@ -323,6 +343,7 @@ class NativeGraphicsRenderingTest {
         fun selectAll()
         fun clearSelection()
         fun setVisible(visible: Boolean)
+        fun setFocused(focused: Boolean)
         fun drawWhileHidden()
         fun dispose()
     }
@@ -344,6 +365,7 @@ class NativeGraphicsRenderingTest {
         override fun selectAll() = viewport.selectAll()
         override fun clearSelection() = viewport.clearSelection()
         override fun setVisible(visible: Boolean) = renderer.setVisible(visible)
+        override fun setFocused(focused: Boolean) = viewport.setFocused(focused)
         override fun drawWhileHidden() = renderer.draw(viewport)
         override fun dispose() { renderer.dispose(); viewport.dispose() }
     }
@@ -375,6 +397,7 @@ class NativeGraphicsRenderingTest {
         override fun selectAll() = view.selectAll(null)
         override fun clearSelection() = view.clearSelection()
         override fun setVisible(visible: Boolean) { view.hidden = !visible }
+        override fun setFocused(focused: Boolean) { if (focused) view.becomeFirstResponder() else view.resignFirstResponder() }
         override fun drawWhileHidden() { capture() }
         override fun dispose() = view.dispose()
     }

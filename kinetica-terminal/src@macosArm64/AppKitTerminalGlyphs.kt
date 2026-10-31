@@ -53,9 +53,9 @@ internal class AppKitTerminalGlyphs(private val family: String?, private val siz
             } finally { CFRelease(data) }
         }
     }
-    fun draw() {
+    fun draw(firstRow: Int = 0, lastRow: Int = frame.rows.lastIndex) {
         val context = checkNotNull(NSGraphicsContext.currentContext?.CGContext)
-        drawTerminalGlyphs(frame, atlas, scale) { entry, x, y, width, height, sx, sy, _, _, tint, opacity ->
+        drawTerminalGlyphs(frame, atlas, scale, firstRow, lastRow) { entry, x, y, width, height, sx, sy, _, _, tint, opacity ->
             CGContextSaveGState(context)
             try {
                 CGContextSetShouldAntialias(context, false)

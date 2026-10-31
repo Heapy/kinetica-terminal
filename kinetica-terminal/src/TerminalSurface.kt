@@ -32,7 +32,7 @@ public data class TerminalTheme(
 public interface TerminalPainter {
     public fun fill(x: Double, y: Double, width: Double, height: Double, color: Int)
     public fun text(value: String, x: Double, y: Double, color: Int, style: Int)
-    /** Scope foreground opacity (0..1), including color glyphs. Legacy painters draw opaquely. */
+    /** Scope monochrome foreground opacity (0..1). Intrinsic color glyphs keep their own alpha. */
     public fun withOpacity(opacity: Double, draw: () -> Unit) { draw() }
     /** Draw over text; GPU backends keep this in the final overlay batch. */
     public fun decoration(x: Double, y: Double, width: Double, height: Double, color: Int) {
@@ -737,25 +737,31 @@ public class TerminalViewport internal constructor(
                 if (painter is TerminalGlyphPainter) painter.background(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background,
                     line.rawBackground(start) == TerminalStyle.DEFAULT && flags and TerminalStyle.INVERSE == 0 && !selected && !(block && start == cursorX))
                 else painter.fill(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background)
-                painter.withOpacity(terminalForegroundOpacity(flags, faintOpacity)) {
-                    if (flags and TerminalStyle.HIDDEN == 0) {
-                        val underlineColor = line.underlineColor(start).let { if (it < 0) foreground else it }
-                        val left = start * cellWidth
-                        val width = (x - start) * cellWidth
-                        val baseline = (y + 1) * cellHeight - 2
+                if (flags and TerminalStyle.HIDDEN == 0) {
+                    val onCursor = block && start == cursorX
+                    val opacity = if (onCursor) 1.0 else terminalForegroundOpacity(flags, faintOpacity)
+                    val underlineColor = if (onCursor) foreground else line.underlineColor(start).let { if (it < 0) foreground else it }
+                    val left = start * cellWidth
+                    val width = (x - start) * cellWidth
+                    val baseline = (y + 1) * cellHeight - 2
+                    // Original sprite decorations use the same grayscale shader as text:
+                    // minimum contrast applies, and the block cursor overrides color/alpha last.
+                    fun paintDecoration(color: Int, draw: (Int) -> Unit) {
+                        val corrected = if (onCursor) null else terminalContrastCorrection(minimumContrast, color, background, opacity)
+                        painter.withOpacity(if (corrected == null) opacity else 1.0) { draw(corrected ?: color) }
+                    }
+                    if (flags and TerminalStyle.UNDERLINES != 0) paintDecoration(underlineColor) { color ->
                         when {
                             flags and TerminalStyle.DOUBLE_UNDERLINE != 0 -> {
-                                painter.underlay(left, baseline - 2, width, 1.0, underlineColor)
-                                painter.underlay(left, baseline, width, 1.0, underlineColor)
+                                painter.underlay(left, baseline - 2, width, 1.0, color)
+                                painter.underlay(left, baseline, width, 1.0, color)
                             }
                             flags and TerminalStyle.UNDERCURL != 0 -> {
-                                // Ghostty uses a cell-wide sprite. Pattern phase must not depend
-                                // on software text-run batching or a glyph spanning two cells.
                                 for (column in start until x) {
                                     var offset = 0.0
                                     while (offset < cellWidth) {
                                         painter.underlay(column * cellWidth + offset, baseline - if (offset.toInt() % 4 < 2) 1 else 0,
-                                            minOf(2.0, cellWidth - offset), 1.0, underlineColor)
+                                            minOf(2.0, cellWidth - offset), 1.0, color)
                                         offset += 2.0
                                     }
                                 }
@@ -765,20 +771,26 @@ public class TerminalViewport internal constructor(
                                 for (column in start until x) {
                                     var offset = 0.0
                                     while (offset < cellWidth) {
-                                        painter.underlay(column * cellWidth + offset, baseline, minOf(dash, cellWidth - offset), 1.0, underlineColor)
+                                        painter.underlay(column * cellWidth + offset, baseline, minOf(dash, cellWidth - offset), 1.0, color)
                                         offset += dash + 2.0
                                     }
                                 }
                             }
-                            flags and TerminalStyle.UNDERLINE != 0 -> painter.underlay(left, baseline, width, 1.0, underlineColor)
+                            flags and TerminalStyle.UNDERLINE != 0 -> painter.underlay(left, baseline, width, 1.0, color)
                         }
-                        if (flags and TerminalStyle.OVERLINE != 0) painter.underlay(left, y * cellHeight, width, 1.0, foreground)
+                    }
+                    if (flags and TerminalStyle.OVERLINE != 0) paintDecoration(foreground) { color ->
+                        painter.underlay(left, y * cellHeight, width, 1.0, color)
+                    }
+                    painter.withOpacity(opacity) {
                         if (line.codePoint(start) != TERMINAL_GRAPHICS_PLACEHOLDER) {
                             if (blockElement) painter.blockElement(line.codePoint(start), left, y * cellHeight, width, cellHeight, foreground)
                             else if (painter is TerminalGlyphPainter) { if (!shaped) painter.glyph(text.toString(), left, y * cellHeight, x - start, foreground, flags) }
                             else painter.text(text.toString(), left, y * cellHeight, foreground, flags)
                         }
-                        if (flags and TerminalStyle.STRIKE != 0) painter.decoration(left, (y + 0.5) * cellHeight, width, 1.0, foreground)
+                    }
+                    if (flags and TerminalStyle.STRIKE != 0) paintDecoration(foreground) { color ->
+                        painter.decoration(left, (y + 0.5) * cellHeight, width, 1.0, color)
                     }
                 }
             }

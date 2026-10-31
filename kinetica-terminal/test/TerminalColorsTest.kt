@@ -98,7 +98,7 @@ class TerminalColorsTest {
         } finally { gpu.dispose(); software.dispose() }
     }
 
-    @Test fun reverseVideoPreservesCursorSelectionAndExplicitUnderlineColors() {
+    @Test fun reverseVideoPreservesSelectionAndAppliesCursorOverrideToExplicitUnderlines() {
         val session = TerminalSession(4, 2)
         val viewport = TerminalViewport(session, {})
         val frame = TerminalGpuFrame()
@@ -109,7 +109,8 @@ class TerminalColorsTest {
             assertEquals(session.theme.cursor, frame.rows[0].backgrounds.first().color)
             assertEquals(session.theme.foreground, frame.rows[0].glyphs.first().color, "Block text uses the effective background")
             assertTrue(frame.rows[0].backgrounds.any { it.color == session.theme.selection })
-            assertTrue(frame.rows[0].decorations.all { it.color == 0x010203 })
+            assertEquals(session.theme.foreground, frame.rows[0].decorations.first { it.x == 0.0 }.color)
+            assertEquals(0x010203, frame.rows[0].decorations.first { it.x == 8.0 }.color)
         } finally { viewport.dispose() }
     }
 

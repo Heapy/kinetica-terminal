@@ -57,6 +57,11 @@ class AppKitTerminalGlyphsTest {
                 for (faint in listOf(false, true)) {
                     session.write("\u001b[H\u001b[${if (faint) 2 else 22}mABDZ")
                     val actual = softwarePixels()
+                    if (faint) for (i in actual.indices step 4) {
+                        val x = (i / 4) % width
+                        if (x < (36 * scale).toInt()) for (channel in 0..3)
+                            assertEquals(corrected[i + channel], actual[i + channel], "Faint changed intrinsic sbix pixels")
+                    }
                     view.markAll(); val expected = metal.snapshot(view)
                     var worst = 0
                     for (i in actual.indices step 4) for (c in 0..3) {

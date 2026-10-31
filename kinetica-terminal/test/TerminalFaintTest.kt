@@ -92,7 +92,7 @@ class TerminalFaintTest {
         }
     }
 
-    @Test fun colorGlyphsAndMasksReceivePremultipliedOpacityWithoutTintingColorArtwork() {
+    @Test fun colorArtworkIgnoresFaintWhileMonochromeMasksReceivePremultipliedOpacity() {
         for (colored in listOf(false, true)) {
             val session = TerminalSession(4, 1)
             val viewport = TerminalViewport(session, {})
@@ -105,7 +105,7 @@ class TerminalFaintTest {
                 val batches = TerminalGpuBatches()
                 batches.build(frame, atlas)
                 val data = batches.pages.single().data
-                val alpha = 128f / 255f
+                val alpha = if (colored) 1f else 128f / 255f
                 val color = if (colored) 0xffffff else 0xcd3131
                 assertEquals(alpha.toDouble(), data[11].toDouble(), 1e-7)
                 assertEquals(1f, data[23])

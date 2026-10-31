@@ -37,6 +37,7 @@ internal class BrowserSoftwareGlyphs(fonts: BrowserTerminalFontSet?, private val
     private val size: Double, private val ratio: Double, private val cellWidth: Double, private val cellHeight: Double) {
     private val shaper = fonts?.createShaper(family, size * ratio)
     val frame: TerminalGpuFrame = shaper?.let { TerminalGpuFrame(it::resolve, it::shape) } ?: TerminalGpuFrame()
+    val shaping: Boolean get() = shaper != null
     private val atlas = TerminalGlyphAtlas()
     private val bitmaps = mutableMapOf<AtlasGlyph, dynamic>()
     private val raster: dynamic = js("globalThis.document.createElement('canvas')")
@@ -63,11 +64,11 @@ internal class BrowserSoftwareGlyphs(fonts: BrowserTerminalFontSet?, private val
             context.putImageData(data, 0, 0); bitmaps[entry] = canvas
         }
     }
-    fun draw(context: dynamic) {
+    fun draw(context: dynamic, firstRow: Int = 0, lastRow: Int = frame.rows.lastIndex) {
         val previous = context.globalAlpha
         try {
             context.imageSmoothingEnabled = false
-            drawTerminalGlyphs(frame, atlas, ratio) { entry, x, y, width, height, sx, sy, sw, sh, tint, opacity ->
+            drawTerminalGlyphs(frame, atlas, ratio, firstRow, lastRow) { entry, x, y, width, height, sx, sy, sw, sh, tint, opacity ->
                 val bitmap = bitmaps.getValue(entry)
                 val source = if (entry.colored) bitmap else {
                     scratch.width = entry.width; scratch.height = entry.height

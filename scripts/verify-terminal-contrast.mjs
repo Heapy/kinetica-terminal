@@ -10,6 +10,7 @@ try {
       await page.goto(`${base}/samples/browser-terminal/web/index.html?renderer=${renderer}${fonts === 'system' ? '&fonts=system' : ''}`);
       await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 20);
       await page.evaluate(() => document.fonts.ready);
+      await page.locator('[data-terminal]').click({ position: { x: 2, y: 2 } });
       const result = await page.evaluate(async ({ renderer, fonts }) => {
         const api = kineticaTerminalDemo, canvas = document.querySelector('canvas');
         const wait = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -27,7 +28,7 @@ try {
         const compare = (actual, expected, label) => {
           let worst = 0, index = -1;
           for (let i = 0; i < actual.length; i++) if (Math.abs(actual[i] - expected[i]) > worst) { worst = Math.abs(actual[i] - expected[i]); index = i; }
-          if (worst > 2) throw new Error(`${label}: pixel error ${worst} at ${index}`);
+          if (worst > 2) throw new Error(`${label}: pixel error ${worst} at ${index}, actual=${actual[index]}, expected=${expected[index]}`);
         };
         let checked = 0;
         for (const bg of [0, 0xffffff]) for (const image of [false, true]) for (const faint of [0, 0.5, 1]) {
@@ -42,6 +43,25 @@ try {
           document.querySelector('[data-terminal]').style.display = 'none'; await wait();
           document.querySelector('[data-terminal]').style.display = ''; await wait(); await wait();
           compare(capture(), actual, 'hide/restore'); checked++;
+        }
+        const input = document.querySelector('[data-terminal] textarea');
+        input.blur(); input.focus(); await wait();
+        for (const text of ['A', '界', '█', '😀']) {
+          api.reset(); api.minimumContrast(1); api.faintOpacity(0);
+          const normal = await paint(`\x1b[2 q\x1b[?25h\x1b[4;53;9;58;2;255;0;0m${text}\x1b[H`);
+          compare(await paint(`\x1b[2m${text}\x1b[H`), normal, `Opaque block cursor ${text}`);
+        }
+        // The decoration sprites use the grayscale shader even over excluded graphic text.
+        api.reset(); api.minimumContrast(7); api.faintOpacity(0.5);
+        const decorated = await paint('\x1b[?25l\x1b]11;#000000\x07\x1b[2;4:3;53;9;38;2;16;16;16;58;2;16;16;16m  ');
+        compare(await paint('\x1b[H\x1b[22;38;2;255;255;255;58;2;255;255;255m  '), decorated, 'Decoration contrast');
+        // An update on a different row must not erase or repaint the retained first row.
+        const beforeRetained = capture(); await paint('\x1b[3;1Hrow three');
+        const afterRetained = capture(), rowHeight = Math.ceil(api.cellMetrics().height * devicePixelRatio);
+        for (let y = 0; y < rowHeight; y++) {
+          const row = renderer === 'gpu' ? canvas.height - 1 - y : y;
+          const start = row * canvas.width * 4;
+          for (let i = start; i < start + canvas.width * 4; i++) if (beforeRetained[i] !== afterRetained[i]) throw new Error('Clean row was changed');
         }
         // Actual monochrome and intrinsic gray COLRv0 artwork in the same font/run.
         api.reset(); api.faintOpacity(1); api.minimumContrast(1.000001);
@@ -75,6 +95,14 @@ try {
           if (x >= Math.ceil(5*cw) && before[i] !== after[i]) changed++;
         }
         if (changed < 10) throw new Error('Monochrome fixture must visibly change');
+        api.minimumContrast(1); api.faintOpacity(0);
+        const faintColor = await paint('\x1b[H\x1b[2mABCDEF');
+        for (let i = 0; i < before.length; i++) {
+          const x = Math.floor(i / 4) % canvas.width;
+          if (x < Math.floor(5*cw) && before[i] !== faintColor[i]) throw new Error('Faint changed intrinsic COLR alpha');
+          if (x >= Math.ceil(5*cw) && x < Math.floor(6*cw) && i%4 !== 3 && faintColor[i] !== 0) throw new Error('Zero-opacity text must disappear');
+        }
+        api.faintOpacity(1); await paint('\x1b[H\x1b[22mABCDEF');
         api.minimumContrast(1); await wait(); api.minimumContrast(7); await wait();
         compare(capture(), after, 'disable/re-enable');
         return { checked, changed };

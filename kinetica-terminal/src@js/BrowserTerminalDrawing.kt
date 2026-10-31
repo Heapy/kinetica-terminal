@@ -61,12 +61,12 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
     private var clear = true
     private var suspended = false
     private var imagesVisible = false
-    private val imageFrame = TerminalGpuFrame()
-    private var contrastGlyphs: BrowserSoftwareGlyphs? = null
-    private fun clearContrast() { contrastGlyphs?.dispose(); contrastGlyphs = null }
+    private var softwareGlyphs: BrowserSoftwareGlyphs? = null
+    override val shaping: Boolean get() = softwareGlyphs?.shaping == true
+    private fun clearGlyphs() { softwareGlyphs?.dispose(); softwareGlyphs = null }
     override fun configureFonts(value: BrowserTerminalFontSet?) {
         if (fonts === value) return
-        clearContrast(); super.configureFonts(value); clear = true
+        clearGlyphs(); super.configureFonts(value); clear = true
     }
     private val uploadBytes = TERMINAL_IMAGE_TILE_SIDE.toLong() * TERMINAL_IMAGE_TILE_SIDE * 4
     private var uploadData: dynamic = null
@@ -80,14 +80,14 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         if (suspended == !visible) return
         suspended = !visible
         if (suspended) {
-            imageCache.clear(); uploadData = null; clearContrast()
+            imageCache.clear(); uploadData = null; clearGlyphs()
             canvas.width = 0; canvas.height = 0
         }
         clear = true
     }
     override fun resize(width: Double, height: Double, ratio: Double, fontSize: Double, cellWidth: Double, cellHeight: Double, fontFamily: String?) {
         if (this.ratio != ratio || size != fontSize || family != fontFamily || this.cellWidth != cellWidth || this.cellHeight != cellHeight) {
-            clearContrast(); clear = true
+            clearGlyphs(); clear = true
         }
         if (this.width != width || this.height != height || this.ratio != ratio || size != fontSize || family != fontFamily ||
             !suspended && (canvas.width != (width * ratio).toInt() || canvas.height != (height * ratio).toInt())) {
@@ -106,47 +106,31 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
         if (suspended) return
         val measurement = probe.begin(viewport, name)
         val images = viewport.graphicsFrame().mapNotNull { it.quad(cellWidth, cellHeight, ratio, viewport.columns, viewport.rows) }
-        if (viewport.minimumContrast <= 1.0 && contrastGlyphs != null) { clearContrast(); viewport.markAll() }
-        if (images.isNotEmpty() || viewport.minimumContrast > 1.0) {
-            if (!imagesVisible || clear) viewport.markAll()
-            imagesVisible = true
-            drawImagesAndText(viewport, images)
-            measurement?.submitted(0)
-            return
-        }
-        if (imagesVisible) { imagesVisible = false; imageCache.clear(); uploadData = null; clear = true }
-        // A full viewport change can alter the default color or shrink the grid without
-        // resizing this backing canvas. Repaint its margins too, using the held theme.
-        val fullRepaint = viewport.firstDirtyRow == 0 && viewport.lastDirtyRow == viewport.rows - 1
-        if (clear || fullRepaint) {
-            context.fillStyle = terminalCssColor(viewport.theme.background); context.fillRect(0, 0, width, height)
-            if (clear) viewport.markAll()
-            clear = false
-        }
-        context.textBaseline = "top"
-        viewport.paint(object : TerminalPainter {
-            override fun withOpacity(opacity: Double, draw: () -> Unit) = this@CanvasTerminalDrawing.withOpacity(opacity, draw)
-            override fun fill(x: Double, y: Double, width: Double, height: Double, color: Int) {
-                val left = round(x * ratio) / ratio
-                val top = round(y * ratio) / ratio
-                context.fillStyle = terminalCssColor(color)
-                context.fillRect(left, top, terminalPixelSpan(x, width, ratio), terminalPixelSpan(y, height, ratio))
-            }
-            override fun text(value: String, x: Double, y: Double, color: Int, style: Int) {
-                context.font = fonts?.cssFont(size, style, family) ?: browserFont(size, style, family)
-                context.fillStyle = terminalCssColor(color); context.fillText(value, x, y + 1)
-            }
-        }, cellWidth, cellHeight)
+        if (clear) viewport.markAll()
+        drawImagesAndText(viewport, images)
         measurement?.submitted(0)
     }
     private fun drawImagesAndText(viewport: TerminalViewport, images: List<TerminalImageQuad>) {
-        val glyphs = if (viewport.minimumContrast > 1.0) contrastGlyphs ?: BrowserSoftwareGlyphs(fonts, family, size, ratio, cellWidth, cellHeight).also {
-            contrastGlyphs = it; viewport.markAll()
-        } else null
-        val frame = if (glyphs == null) imageFrame.also { it.update(viewport, cellWidth, cellHeight) }
-            else glyphs.frame.also { glyphs.prepare(viewport) }
-        context.fillStyle = terminalCssColor(viewport.theme.background); context.fillRect(0, 0, width, height)
-        context.textBaseline = "top"
+        val glyphs = softwareGlyphs ?: BrowserSoftwareGlyphs(fonts, family, size, ratio, cellWidth, cellHeight).also {
+            softwareGlyphs = it; viewport.markAll()
+        }
+        // Only image compositing needs every row. Ordinary software repaints retain clean
+        // rows and avoid turning a single cursor/input update into a full bitmap redraw.
+        val full = clear || images.isNotEmpty() || imagesVisible ||
+            viewport.firstDirtyRow == 0 && viewport.lastDirtyRow == viewport.rows - 1
+        val first = if (full) 0 else viewport.firstDirtyRow.coerceAtLeast(0)
+        val last = if (full) viewport.rows - 1 else viewport.lastDirtyRow.coerceAtMost(viewport.rows - 1)
+        glyphs.prepare(viewport)
+        val frame = glyphs.frame
+        val rows = if (last < first) emptyList() else frame.rows.subList(first, last + 1)
+        context.fillStyle = terminalCssColor(viewport.theme.background)
+        if (full) context.fillRect(0, 0, width, height)
+        else if (first <= last) {
+            val top = round(first * cellHeight * ratio) / ratio
+            val bottom = round((last + 1) * cellHeight * ratio) / ratio
+            context.fillRect(0, top, width, bottom - top)
+        }
+        imagesVisible = images.isNotEmpty()
         imageCache.beginFrame()
         fun layer(layer: TerminalGraphicsLayer) {
             for (image in images) if (image.layer == layer) for (draw in image.tiles()) {
@@ -177,22 +161,16 @@ internal class CanvasTerminalDrawing(private val probe: TerminalRenderProbe = Te
             context.fillRect(left, top, terminalPixelSpan(rect.x, rect.width, ratio), terminalPixelSpan(rect.y, rect.height, ratio))
         }
         layer(TerminalGraphicsLayer.BELOW_BACKGROUND)
-        for (row in frame.rows) for (rect in row.backgrounds) if (!rect.defaultBackground) fill(rect)
+        for (row in rows) for (rect in row.backgrounds) if (!rect.defaultBackground) fill(rect)
         layer(TerminalGraphicsLayer.BELOW_TEXT)
-        for (row in frame.rows) for (rect in row.decorations) if (rect.behindText) fill(rect)
-        if (glyphs != null) glyphs.draw(context) else for (row in frame.rows) for (glyph in row.glyphs) {
-            withOpacity(glyph.opacity) {
-                context.font = fonts?.cssFont(size, glyph.key.style, family) ?: browserFont(size, glyph.key.style, family)
-                context.fillStyle = terminalCssColor(glyph.color)
-                context.fillText(glyph.key.text, glyph.x, glyph.y + 1)
-            }
-        }
-        for (row in frame.rows) for (rect in row.decorations) if (!rect.behindText) fill(rect)
+        for (row in rows) for (rect in row.decorations) if (rect.behindText) fill(rect)
+        glyphs.draw(context, first, last)
+        for (row in rows) for (rect in row.decorations) if (!rect.behindText) fill(rect)
         layer(TerminalGraphicsLayer.ABOVE_TEXT)
         imageCache.endFrame()
         clear = false
     }
-    override fun dispose() { clearContrast(); imageCache.clear(); uploadData = null; fonts = null; canvas.width = 0; canvas.height = 0 }
+    override fun dispose() { clearGlyphs(); imageCache.clear(); uploadData = null; fonts = null; canvas.width = 0; canvas.height = 0 }
 }
 
 /** WebGL2 owns presentation; a detached 2D canvas only rasterizes cache misses. */

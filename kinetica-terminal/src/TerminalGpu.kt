@@ -132,7 +132,7 @@ internal class TerminalGpuFrame(
         faintOpacity = viewport.faintOpacity
         minimumContrast = viewport.minimumContrast
         defaultBackground = viewport.theme.background
-        contrastCursor = if (minimumContrast > 1.0) viewport.contrastCursor() else null
+        contrastCursor = viewport.contrastCursor()
         if (rows.size != viewport.rows || columns != viewport.columns || cellWidth != width || cellHeight != height) {
             rows.clear(); repeat(viewport.rows) { rows += TerminalDrawRow() }
             cellWidth = width; cellHeight = height; columns = viewport.columns
@@ -251,13 +251,17 @@ internal class TerminalGpuBatches {
 /** Shared device-pixel clipping and tint resolution for GPU and software bitmap renderers.
  * Source rectangles are relative to the glyph bitmap, without atlas page offsets. */
 internal inline fun drawTerminalGlyphs(frame: TerminalGpuFrame, atlas: TerminalGlyphAtlas, pixelRatio: Double,
+    firstRow: Int = 0, lastRow: Int = frame.rows.lastIndex,
     draw: (AtlasGlyph, Double, Double, Double, Double, Double, Double, Double, Double, Int, Double) -> Unit) {
     require(pixelRatio.isFinite() && pixelRatio > 0)
-    for (row in frame.rows) for (glyph in row.glyphs) {
+    for (index in firstRow.coerceAtLeast(0)..lastRow.coerceAtMost(frame.rows.lastIndex)) for (glyph in frame.rows[index].glyphs) {
+        val row = frame.rows[index]
         val entry = atlas[glyph.key]
         val correction = terminalGlyphContrast(frame, row, glyph, entry.colored)
         val tint = if (entry.colored) 0xffffff else correction ?: glyph.color
-        val opacity = if (correction == null) glyph.opacity else 1.0
+        // Ghostty's color-atlas branch ignores vertex tint/alpha. The vertex shader
+        // also replaces block-cursor text with the opaque cursor foreground.
+        val opacity = if (entry.colored || correction != null || terminalGlyphUnderCursor(frame, glyph)) 1.0 else glyph.opacity
         if (glyph.key.glyph >= 0) {
             val left = round(glyph.x * pixelRatio) + glyph.xOffset + entry.left
             val top = round(glyph.y * pixelRatio) - glyph.yOffset + entry.top

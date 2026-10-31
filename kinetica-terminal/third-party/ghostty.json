@@ -86,7 +86,9 @@
     "src/font/shaper/coretext.zig",
     "src/font/shaper/harfbuzz.zig",
     "src/renderer/shaders/glsl/common.glsl",
-    "src/renderer/cell.zig"
+    "src/renderer/cell.zig",
+    "src/renderer/shaders/glsl/cell_text.f.glsl",
+    "src/renderer/shaders/glsl/cell_text.v.glsl"
   ],
   "adaptedTests": [
     "src/terminal/Parser.zig",

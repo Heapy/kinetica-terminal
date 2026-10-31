@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 const { chromium } = await import(process.env.PLAYWRIGHT_IMPORT ?? "playwright");
 const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE });
 const base = process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173";
-const samples = [["", "Aa😀"], ["", "█▀"], ...[1, 2, 3, 4, 5].map(style => [`4:${style};53;9;58;2;20;210;40;`, "  "])];
+const samples = [["", "Aa"], ["", "😀"], ["", "█▀"], ...[1, 2, 3, 4, 5].map(style => [`4:${style};53;9;58;2;20;210;40;`, "  "])];
 try {
   for (const fontSize of [12.5, 14]) for (const renderer of ["gpu", "software"]) for (const scale of [1, 1.25, 2]) {
     const page = await browser.newPage({ viewport: { width: 500, height: 250 }, deviceScaleFactor: scale });
@@ -45,9 +45,9 @@ try {
         for (const configured of [0, 0.1, 0.5, 0.9, 1]) {
           await page.evaluate(value => kineticaTerminalDemo.faintOpacity(value), configured);
           await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-          const result = await page.evaluate(configured => {
+          const result = await page.evaluate(({ configured, colored }) => {
             const faint = captureFaint();
-            const alpha = Math.ceil(configured * 255);
+            const alpha = colored ? 255 : Math.ceil(configured * 255);
             let affected = 0, maxError = 0, worstByte = -1;
             for (let i = 0; i < faint.length; i++) {
               if (faintNormal[i] !== faintBackground[i]) affected++;
@@ -56,7 +56,7 @@ try {
               if (error > maxError) { maxError = error; worstByte = i; }
             }
             return { affected, maxError, worstByte };
-          }, configured);
+          }, { configured, colored: text === "😀" });
           assert.ok(result.affected > 16, "Must exercise visible glyphs/decorations");
           assert.ok(result.maxError <= 2, `${renderer} font ${fontSize} DPR ${scale}, image=${image}, opacity=${configured}, ${attributes}${text}: ${JSON.stringify(result)}`);
         }

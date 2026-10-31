@@ -38,8 +38,7 @@ internal fun terminalFirstCodepoint(text: String): Int {
 
 internal fun terminalGlyphContrast(frame: TerminalGpuFrame, row: TerminalDrawRow, glyph: TerminalGlyph, colored: Boolean): Int? {
     if (colored || glyph.contrastExcluded || frame.minimumContrast <= 1.0) return null
-    val cursor = frame.contrastCursor
-    if (cursor != null && glyph.x == cursor.column * frame.cellWidth && glyph.y == cursor.line * frame.cellHeight) return null
+    if (terminalGlyphUnderCursor(frame, glyph)) return null
     // Background runs are ordered and cover the row. Use cell colors, never image pixels.
     var low = 0; var high = row.backgrounds.lastIndex
     while (low < high) {
@@ -48,4 +47,9 @@ internal fun terminalGlyphContrast(frame: TerminalGpuFrame, row: TerminalDrawRow
     }
     val background = row.backgrounds.getOrNull(low)?.color ?: frame.defaultBackground
     return terminalContrastCorrection(frame.minimumContrast, glyph.color, background, glyph.opacity)
+}
+
+internal fun terminalGlyphUnderCursor(frame: TerminalGpuFrame, glyph: TerminalGlyph): Boolean {
+    val cursor = frame.contrastCursor ?: return false
+    return glyph.x == cursor.column * frame.cellWidth && glyph.y == cursor.line * frame.cellHeight
 }
