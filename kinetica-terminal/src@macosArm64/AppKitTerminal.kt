@@ -97,7 +97,6 @@ public class AppKitTerminalView(
     }
     private val linkPolicyObservation = session.onLinkPolicyChanged { refreshLinkHover() }
     private val pressedKeys = mutableMapOf<UShort, TerminalKey>()
-    private val pressedModifiers = mutableSetOf<UShort>()
     private val keyFocus = TerminalKeyFocus()
     private var terminalFocused = false
     private var focusWindowObservation: NSObjectProtocol? = null
@@ -323,7 +322,7 @@ public class AppKitTerminalView(
             mouseReporter.cancel(); selecting = false; clearLinkPointer(); localMouseButtons.clear()
         }
         if (terminalFocused == value) return
-        if (!value) { keyFocus.release { session.sendKey(it) }; pressedKeys.clear(); pressedModifiers.clear() }
+        if (!value) { keyFocus.release { session.sendKey(it) }; pressedKeys.clear() }
         terminalFocused = value; viewport.setFocused(value); session.sendFocus(value)
         if (value) notifications?.clear()
     }
@@ -680,7 +679,7 @@ public class AppKitTerminalView(
     }
 
     override fun flagsChanged(event: NSEvent) {
-        if (disposed) return
+        if (disposed || hasMarkedText()) return
         viewport.selectionModifiersChanged(event.modifierFlags and NSEventModifierFlagOption != 0uL)
         hoverModifiers = linkEventModifiers(event); refreshLinkHover()
         val identity = when (event.keyCode.toInt()) {
@@ -688,9 +687,21 @@ public class AppKitTerminalView(
             58 -> "AltLeft"; 61 -> "AltRight"; 55 -> "MetaLeft"; 54 -> "MetaRight"; 57 -> "CapsLock"
             else -> return
         }
-        val pressed = pressedModifiers.add(event.keyCode)
-        if (!pressed) pressedModifiers.remove(event.keyCode)
         val flags = event.modifierFlags
+        // Ghostty SurfaceView_AppKit.flagsChanged uses current event flags, not a toggle.
+        // Right-side releases can leave the aggregate modifier set by the left key.
+        val modifier = when (event.keyCode.toInt()) {
+            56, 60 -> NSEventModifierFlagShift
+            59, 62 -> NSEventModifierFlagControl
+            58, 61 -> NSEventModifierFlagOption
+            55, 54 -> NSEventModifierFlagCommand
+            else -> NSEventModifierFlagCapsLock
+        }
+        // NX_DEVICERSHIFTKEYMASK / RCTL / RALT / RCMD from IOLLEvent.h.
+        val right = when (event.keyCode.toInt()) {
+            60 -> 0x4uL; 62 -> 0x2000uL; 61 -> 0x40uL; 54 -> 0x10uL; else -> 0uL
+        }
+        val pressed = flags and modifier != 0uL && (right == 0uL || flags and right != 0uL)
         sendTypedKey(TerminalKey(identity, physicalCode = identity,
             action = if (pressed) TerminalKeyAction.PRESS else TerminalKeyAction.RELEASE,
             shift = flags and NSEventModifierFlagShift != 0uL, control = flags and NSEventModifierFlagControl != 0uL,

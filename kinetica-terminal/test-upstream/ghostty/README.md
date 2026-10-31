@@ -692,3 +692,29 @@ They also replay the synchronous dispatch cases through the session and bounded 
 Async delivery, platform clipboard access and platform CSPRNG calls are tested separately;
 these deterministic fixtures do not establish operating-system entropy quality. User-initiated
 mode-5522 paste integration remains unfinished.
+
+## AppKit modifier event oracle
+
+`native-modifier-manifest.json` pins 10,240 actions from Ghostty 1.4.0's original
+`SurfaceView_AppKit.flagsChanged` and `Ghostty.ghosttyMods` Swift functions. The generator
+extracts both functions unchanged, compiles them with the original C enums and the macOS
+SDK's device modifier masks, and dispatches real `NSEvent` objects. A minimal `NSResponder`
+host supplies preedit state and captures the resulting `keyAction`; no terminal window or
+shell process is started. This checks host event classification rather than libghostty's
+keyboard byte encoder, which has separate protocol fixtures.
+
+```sh
+# macOS with Xcode/Swift and the clean pinned upstream checkout:
+node scripts/generate-native-modifier-events.mjs build/upstream/ghostty-1.4.0
+bash scripts/engine.sh test -m kinetica-terminal -p macosArm64 --include-classes '*MacOsModifierEventsTest'
+```
+
+The matrix crosses all 512 combinations of five aggregate modifiers and four right-side
+device bits, with/without preedit, over nine modifier keys plus an unsupported key. Native
+tests replay those flags through our AppKit view and compare resulting Kitty press/release
+bytes (or no output). Separate sequences cover repeated notifications and delayed release
+after focus loss. The pinned upstream callback uses aggregate flags for left-side keys and
+the additional device bit for right-side keys; the fixtures deliberately retain that
+asymmetry. This is not a claim about physical keyboard drivers or every IME's event routing.
+Regeneration checks the clean upstream revision and records source, generator and fixture
+hashes; consecutive runs produce identical fixture and manifest bytes on the same toolchain.

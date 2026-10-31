@@ -1,0 +1,13 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "events": 10240,
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+  "generatorSha256": "6141388115be3bedb1ed34b6a5acc9f5f81f3828b395d1adef68a84c04858d88",
+  "fixtureSha256": "d0342a2c278031eeebe332d01f77782e12f390d54ae4c089202ac3b313267e31",
+  "sources": {
+    "macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift": "ea7d82ee16678d4426bda37b4cb1a158ad05f86f41c394cf9bc36b1056ffd4e2",
+    "macos/Sources/Ghostty/Ghostty.Input.swift": "fa89b40830e5e8190247ba46cb882ac33809786943e28f2d73ed1106e874afbc",
+    "include/ghostty.h": "0d87da6fbde0f40f83793e012d13c82705cf960b34c34bd73b8598fd1c8f229a"
+  },
+  "harness": "Unmodified flagsChanged and ghosttyMods; NSResponder host captures keyAction; original C enums and SDK device masks; real NSEvents."
+}

@@ -60,6 +60,20 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+AppKit modifier actions now follow the current event's flags instead of alternating a
+remembered pressed set. This prevents a repeated notification or a release arriving after
+focus loss from being misreported as the opposite action. Right-side modifiers consult the
+SDK device-side mask when the aggregate modifier remains set; active IME preedit suppresses
+modifier delivery, matching the pinned Swift surface callback. The left-side aggregate rule
+is retained as in Ghostty 1.4.0 rather than inferred from our event history.
+`scripts/generate-native-modifier-events.mjs` executes the original Swift `flagsChanged` and
+`ghosttyMods` functions with real `NSEvent` objects and archives 10,240 expected actions.
+`MacOsModifierEventsTest` compares our final Kitty bytes against those actions and adds
+repeated-event, focus-return and composition sequences. All three tests failed before the
+implementation change. Fixture and manifest regeneration is byte-identical.
+The corrected implementation passes all 10,240 event comparisons and 34 native tests across
+modifier classification, keyboard protocols, focus, keypad, selection, link hover and accessibility.
+
 Focus loss now releases the last forwarded key and then both sides of held modifiers,
 in Ghostty 1.4.0 `Surface.keyCallback`/`focusCallback` order: Shift, Control, Alt, Super,
 right before left, clearing each modifier before encoding its releases. The shared tracker
