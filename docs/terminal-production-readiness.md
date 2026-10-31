@@ -60,6 +60,25 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Browser window focus now reconciles the terminal with its actual DOM focus owner when the
+window returns, including a textarea inside a shadow root. Previously `window.blur` produced
+CSI O and a hollow cursor, but the matching `window.focus` had no handler; because the textarea
+remained active, its input-focus listener did not run again and CSI I/the active cursor were lost.
+The browser adapter now handles window focus and document hidden/visible transitions, retaining
+`focusChanged` deduplication and without calling DOM focus on return. Disconnected, hidden or
+externally focused controls cannot claim terminal focus. Render intersection alone does not
+remove keyboard ownership. Synchronized output keeps its retained frame while focus repaints
+the cursor, and disposal unregisters the additional listener.
+This follows original Ghostty `Surface.focusCallback`'s focus-state/render/report transitions;
+pressed-key release synthesis in that callback is a separate remaining audit item.
+`scripts/verify-terminal-focus.mjs` first reproduced the missing CSI I before the fix, then
+passed for Canvas/WebGL with exact reports and cursor pixels, repeated events, outside-owner
+protection, visibility notifications, a retained frame, shadow DOM and disposal. The test also
+activates another Chromium tab (headless Chromium may omit those native focus transitions).
+Fresh Release JS tests and editing regressions pass for macOS/Linux in both renderers.
+Evidence: `scripts/verify-terminal-focus.mjs`, `scripts/verify-terminal-editing.mjs`,
+`/tmp/kinetica-window-focus-*`. This does not establish physical screen-reader acceptance.
+
 A fragment-shader audit corrected the opacity and decoration exceptions in the initial faint
 and minimum-contrast implementations. Original `cell_text.f.glsl` returns intrinsic color
 atlas pixels without applying vertex tint/alpha; original `cell_text.v.glsl` overrides the

@@ -274,13 +274,15 @@ public class BrowserTerminalView(
                 event.preventDefault(); event.stopPropagation()
             }
         }
-        listen(input, "focus") { focusChanged(true) }
+        listen(input, "focus") { restoreWindowFocus() }
         listen(input, "blur") { event ->
             if (root.contains(event.relatedTarget) != true) { cancelMouse(); focusChanged(false) }
         }
         // AppKit-like focus ownership for the whole widget, including its focusable host root.
         listen(root, "focus") { event -> if (event.target === root) input.focus(js("({preventScroll:true})")) }
         listen(window, "blur") { pressedKeys.clear(); cancelMouse(); focusChanged(false) }
+        // Returning to a window often preserves activeElement and emits no input focus event.
+        listen(window, "focus") { restoreWindowFocus() }
         listen(root, "pointerdown") { event ->
             val id = (event.pointerId as Number).toInt()
             if (activePointer != null && activePointer != id) return@listen
@@ -341,7 +343,11 @@ public class BrowserTerminalView(
         // control submission/click. Raw listeners above own this entire subtree.
         for (type in listOf("click", "dblclick", "change", "keyup")) listen(root, type) { it.stopPropagation() }
         listen(window, "resize") { resize() }
-        listen(document, "visibilitychange") { updateVisibility() }
+        listen(document, "visibilitychange") {
+            updateVisibility()
+            if (document.visibilityState == "hidden") { cancelMouse(); focusChanged(false) }
+            else restoreWindowFocus()
+        }
         listen(document, "transitionend") { updateVisibility() }
         resizeObserver.observe(root)
         intersectionObserver.observe(root)
@@ -650,6 +656,17 @@ public class BrowserTerminalView(
         clearLinkPointer()
         mouseReporter.cancel()
         if (pointer != null && root.hasPointerCapture(pointer) == true) root.releasePointerCapture(pointer)
+    }
+    private fun restoreWindowFocus() {
+        if (disposed) return
+        // Render intersection is deliberately not a focus condition: a focused terminal
+        // scrolled outside the viewport can still own keyboard input. A shadow-root embed
+        // must inspect its own activeElement, rather than the document's shadow host.
+        val visible = root.isConnected == true && document.visibilityState != "hidden" &&
+            (root.clientWidth as Number).toInt() > 0 && (root.clientHeight as Number).toInt() > 0
+        val style = if (visible) window.getComputedStyle(root).visibility as String else "hidden"
+        focusChanged(visible && style != "hidden" && style != "collapse" && document.hasFocus() == true &&
+            root.contains(root.getRootNode().activeElement) == true)
     }
     private fun focusChanged(value: Boolean) {
         if (disposed || focused == value) return
