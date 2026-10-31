@@ -60,6 +60,25 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Legacy zero-width attachment now matches Ghostty 1.4's base-cell eligibility checks.
+Combining marks no longer attach to empty/erased cells, including the blank left behind
+when writing over a wide glyph's tail at the right edge with wrapping disabled. Explicitly
+printed spaces still accept ordinary combining marks. With mode 2027 disabled, VS15/VS16
+require the exact extended-pictographic class: ordinary text, spaces and emoji modifier
+bases such as thumbs-up reject them; accepted selectors do not change cell width.
+Mode 2027 retains its separate grapheme rules.
+Two original-library scenarios add 624 checkpoints across empty/erased/wide cells,
+explicit spaces, ASCII, CJK, emoji, regional indicators and existing combining text,
+with wrapping and mode 2027 independently enabled/disabled. Every snapshot is replayed
+with whole and bytewise input. Both empty-cell attachment and invalid legacy selector
+attachment failed before their respective guards were added. The original mixed-command
+failure was also rechecked across 32 exploratory sequences / 2,080 checkpoints.
+Validation: all 1,713 JVM tests, fresh Release JS tests, eight Native Unicode/oracle tests
+and the main browser verifier passed. All 1,149 fixture/manifest artifacts reproduce
+byte-for-byte. The oracle corpus contains 1,146 scenarios / 8,697 checkpoints.
+This closes these attachment discrepancies; the broader state and
+malformed-input gates remain open.
+
 The shared parser now uses Ghostty 1.4's 24-parameter capacity for CSI and DCS, replacing
 its former 64-slot limit. Over-capacity commands are discarded before dispatch rather than
 applying a prefix of their attributes/modes. A trailing separator after 24 values also

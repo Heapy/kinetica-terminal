@@ -1393,11 +1393,17 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         val width = if (code <= 0xff) 1 else terminalCharacterWidth(code)
         if (width == 0) {
             if (graphemeClustering) return
+            val line = screen[cursorRow]
             var x = if (wrap && pendingWrap) cursorColumn else cursorColumn - 1
-            if (x >= 0) {
-                if (screen[cursorRow].width(x) == 0) x--
-                if (x >= 0) screen[cursorRow].combine(x, code)
+            if (x >= 0 && line.width(x) == 0) x--
+            // Erased cells have no base character; an explicitly printed space does.
+            if (x < 0 || !line.hasText(x)) return
+            if (code == 0xfe0e || code == 0xfe0f) {
+                val base = graphemeClass(line.codePoint(x))
+                // Ghostty requires this exact class here, excluding emoji modifier bases.
+                if (base != GraphemeClass.PICTOGRAPHIC) return
             }
+            line.combine(x, code)
             damage(cursorRow); return
         }
         previousCharacter = input

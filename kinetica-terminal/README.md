@@ -936,7 +936,11 @@ modifiers and VS15/VS16 width changes, including wrapping and reflow. Use
 `TerminalSession(graphemeClustering = true)` to enable it initially; its default is
 false, matching the reference library. Applications can set/reset/query the mode;
 reset restores the configured default. Ambiguous characters are narrow, and each
-cell retains at most 64 suffix codepoints. See [Unicode data and policy](test-upstream/unicode/README.md).
+cell retains at most 64 suffix codepoints. With mode 2027 disabled, zero-width
+characters attach only to cells containing written text (including explicit spaces),
+never to empty or erased cells. Legacy VS15/VS16 attachment follows Ghostty's exact
+extended-pictographic class check, excluding ordinary text and emoji modifier bases;
+it does not change the cell width. See [Unicode data and policy](test-upstream/unicode/README.md).
 
 Kitty keyboard negotiation supports query, set/add/remove flags and bounded push/pop stacks,
 independent for the normal and alternate screens. All five progressive enhancements are encoded:

@@ -156974,5 +156974,1893 @@
         "write": "\u001b[0mR\u001b[6n"
       }
     ]
+  },
+  {
+    "name": "zero_width_blank_cells",
+    "columns": 4,
+    "rows": 2,
+    "history": 1000,
+    "events": [
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\u001b[6n"
+      }
+    ]
+  },
+  {
+    "name": "legacy_variation_selector_eligibility",
+    "columns": 4,
+    "rows": 2,
+    "history": 1000,
+    "events": [
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7l"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027l\u001b[?7h"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7l"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "a\r\u001b[X\u001b[1;2H"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "ab\u754c\u001b[1;4He"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": " "
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "g"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "#"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u754c"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u2764"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\ude00"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\ud83d\udc4d"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\ud83c\udde6"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "\u0301"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\ufe0e"
+      },
+      {
+        "write": "\u001b[6n"
+      },
+      {
+        "write": "\u001bc\u001b[?2027h\u001b[?7h"
+      },
+      {
+        "write": "g\u0301"
+      },
+      {
+        "write": "\ufe0f"
+      },
+      {
+        "write": "\u001b[6n"
+      }
+    ]
   }
 ]

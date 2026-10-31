@@ -1435,7 +1435,9 @@
     "wide_edit_boundary_history_2_88": "7f52ff4a2b9d9693b5e7595a749d8282f42b6dc72598eb05c5a9689c0cf57683",
     "parser_parameter_capacity_sgr": "93018e88e854397efe1fb6240c498924b8554924f78d66388c11d4ffed0642b7",
     "parser_parameter_capacity_modes": "4d02c130488aa9b82f39a228fdc5cb06f41aa978f5ffef40a38c9832b62ed754",
-    "parser_parameter_capacity_dcs": "96b9648071e69499d34c65c62c1c0fa58f07d737f66d8eb219ad513221693518"
+    "parser_parameter_capacity_dcs": "96b9648071e69499d34c65c62c1c0fa58f07d737f66d8eb219ad513221693518",
+    "zero_width_blank_cells": "a701707e92b0e19d7c52041189db238e1d1ca4199b8361d4243f649a4f7db926",
+    "legacy_variation_selector_eligibility": "e0902f14bc2650b1c2a3f5a6684414406b9e07a130c35878f560792769741e7a"
   },
   "keyboardMatrixSha256": "6c01e3dd0dee327b115ef73db2d811a5a3bef14194045bd7f81b3c9bc4e9c90e",
   "modifyOtherKeysMatrixSha256": "218a6d9d284746fe45e95d10f4b791db3116a9f902dd9d05c43e5949fb2fe764",
