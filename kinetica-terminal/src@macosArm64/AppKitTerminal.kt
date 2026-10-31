@@ -595,14 +595,19 @@ public class AppKitTerminalView(
 
     /** AppKit may commit text, change preedit and issue a command during one interpretation.
      * Keep that boundary explicit so isolated tests can supply input-method callbacks. */
-    internal fun interpretTerminalKey(event: NSEvent, key: TerminalKey = terminalKey(event), interpret: () -> Unit) {
+    internal fun interpretTerminalKey(event: NSEvent, key: TerminalKey = terminalKey(event),
+        keyboardLayoutId: () -> String? = ::terminalNativeKeyboardLayoutId, interpret: () -> Unit) {
         if (disposed || session.keyboardInputBlocked) return
         val markedBefore = hasMarkedText()
+        val layoutBefore = if (!markedBefore) keyboardLayoutId() else null
         val current = KeyInterpretation()
         val previous = keyInterpretation
         keyInterpretation = current
         try { interpret() } finally { keyInterpretation = previous }
         if (disposed || session.keyboardInputBlocked) return
+        // Like Ghostty's keyDown, leave an input-source switching event to macOS.
+        // Existing preedit keeps ownership of its commit even if its source changes.
+        if (!markedBefore && layoutBefore != keyboardLayoutId()) return
         val composing = markedBefore || hasMarkedText()
         if (markedBefore && current.text.isNotEmpty()) {
             for (text in current.text) if (!suppressComposingControl(text, composing)) sendTypedText(text)

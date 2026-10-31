@@ -60,6 +60,25 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+AppKit now compares the current Carbon input-source ID before and after
+`interpretKeyEvents`, following Ghostty 1.4.0 `KeyboardLayout.id` and
+`SurfaceView_AppKit.keyDown`. If an event switches the input source, its accumulated
+text/command is discarded before terminal encoding or pressed-key tracking. A change
+between an unavailable ID and an available ID also suppresses the event; two unavailable
+IDs compare equal. Existing preedit skips both queries so its commit remains owned by
+the input method. The native helper copies the borrowed CFString while its retained
+source is alive and releases both the source and the temporary UTF-8 allocation.
+`MacOsCompositionTest` reproduces the original text leak and checks text/command/release
+suppression across legacy, modifyOtherKeys and Kitty, null transitions, unchanged IDs,
+transaction cleanup and existing preedit. Providers simulate the input-source transition
+at the production interpretation boundary; tests do not change the user's system layout.
+Validation: the two new tests failed before the guard (including a leaked `a`), then all
+19 selected native composition, keyboard, modifier, focus, selection and navigation tests
+passed. A compiled C helper returned the same live ID as the unchanged pinned Swift
+`KeyboardLayout.id`; this comparison only reads the current input source.
+Physical input-source switching/IME acceptance and the broader key-release routing audit
+remain open.
+
 IME preedit now goes through the shared cell renderer on Canvas, WebGL, AppKit software and
 Metal. Platform text overlays have been removed. The display-only row supplies regular
 foreground glyphs and cell-wide underlines, ignores zero-width scalars, and uses Ghostty's
@@ -116,8 +135,8 @@ objects and controlled NSTextInputClient callback sequences. It covers legacy/mo
 Kitty, repeat events, split and partial commits, all single C0 controls, modified Left,
 command cancellation, keyboard lock and cleanup after an interpreter failure. This is a
 deterministic callback test, not an executable upstream oracle or acceptance evidence for an
-installed Korean/Japanese IME. Physical IME workflows, layout-switch handling and the full
-native key-release routing remain under the open keyboard/IME gate.
+installed Korean/Japanese IME. The input-source switching guard is covered above; physical
+IME workflows and the full native key-release routing remain under the open keyboard/IME gate.
 Validation: all 15 selected native composition, keyboard-protocol, modifier, focus and
 selection-policy tests pass, including the 10,240-event original Swift modifier comparison.
 

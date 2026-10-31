@@ -6,6 +6,49 @@ import platform.Foundation.*
 import kotlin.test.*
 
 class MacOsCompositionTest {
+    @Test fun inputSourceSwitchDuringInterpretationDoesNotSendTextCommandsOrKeyRelease() = withView { session, view, window, out ->
+        for (mode in listOf("legacy", "modify2", "kitty31")) {
+            session.reset()
+            session.write(when (mode) { "modify2" -> "\u001b[>4;2m"; "kitty31" -> "\u001b[>31u"; else -> "" })
+            for ((before, after) in listOf("us" to "ru", "us" to null, null to "us")) {
+                for (command in listOf(false, true)) {
+                    var layout: String? = before
+                    val code = if (command) 36 else 0
+                    val text = if (command) "\r" else "a"
+                    out.clear()
+                    view.interpretTerminalKey(event(window, code, text), keyboardLayoutId = { layout }) {
+                        layout = after
+                        if (command) view.doCommandBySelector(NSSelectorFromString("insertNewline:"))
+                        else view.insertText("a", absentRange())
+                    }
+                    view.keyUp(event(window, code, text, release = true))
+                    assertBytes("", out.toString(), "$mode $before -> $after command=$command")
+                    view.insertText("next", absentRange())
+                    assertBytes("next", out.toString(), "Suppressed events must release the interpretation transaction")
+                }
+            }
+        }
+    }
+
+    @Test fun unchangedOrUnavailableInputSourcePreservesTextAndExistingPreeditSkipsTheQuery() = withView { session, view, window, out ->
+        session.write("\u001b[>31u")
+        for (layout in listOf("us", null)) {
+            var queries = 0
+            out.clear()
+            view.interpretTerminalKey(event(window, 0, "a"), keyboardLayoutId = { queries++; layout }) {
+                view.insertText("a", absentRange())
+            }
+            view.keyUp(event(window, 0, "a", release = true))
+            assertBytes("\u001b[97;;97u\u001b[97;1:3u", out.toString())
+            assertEquals(2, queries, "Compare input source before and after interpretation")
+        }
+        out.clear(); mark(view)
+        view.interpretTerminalKey(event(window, 36, "\r"), keyboardLayoutId = { fail("Existing preedit must not query the layout") }) {
+            view.insertText("한", absentRange())
+        }
+        assertBytes("한", out.toString())
+    }
+
     @Test fun committedPreeditPrecedesOnlyTheNavigationKeysGhosttyReplays() = withView { session, view, window, out ->
         for (mode in listOf("legacy", "modify2", "kitty31")) for (repeat in listOf(false, true)) {
             session.reset()
@@ -89,8 +132,8 @@ class MacOsCompositionTest {
     private fun mark(view: AppKitTerminalView, text: String = "한") =
         view.setMarkedText(text, NSMakeRange(text.length.toULong(), 0u), absentRange())
     private fun absentRange() = NSMakeRange(NSNotFound.toULong(), 0u)
-    private fun event(window: NSWindow, code: Int, text: String, flags: ULong = 0uL, repeat: Boolean = false) =
-        assertNotNull(NSEvent.keyEventWithType(NSEventTypeKeyDown, NSMakePoint(0.0, 0.0), flags,
+    private fun event(window: NSWindow, code: Int, text: String, flags: ULong = 0uL, repeat: Boolean = false, release: Boolean = false) =
+        assertNotNull(NSEvent.keyEventWithType(if (release) NSEventTypeKeyUp else NSEventTypeKeyDown, NSMakePoint(0.0, 0.0), flags,
             0.0, window.windowNumber, null, text, text, repeat, code.toUShort()))
     private fun assertBytes(expected: String, actual: String, message: String? = null) =
         assertEquals(expected.encodeToByteArray().toList(), actual.encodeToByteArray().toList(), message)

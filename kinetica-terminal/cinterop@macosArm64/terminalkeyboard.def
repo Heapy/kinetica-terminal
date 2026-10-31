@@ -1,0 +1,4 @@
+package = io.heapy.kinetica.terminal.keyboard
+headers = terminalkeyboard.h
+headerFilter = terminalkeyboard.h
+linkerOpts = -framework Carbon
