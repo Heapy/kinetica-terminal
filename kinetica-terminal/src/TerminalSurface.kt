@@ -109,6 +109,7 @@ public class TerminalViewport internal constructor(
     }
     /** Effective rendering defaults, including DEC 5 and any retained synchronized frame. */
     public val theme: TerminalTheme get() = frozen?.theme ?: session.renderTheme
+    internal val faintOpacity: Double get() = frozen?.faintOpacity ?: session.faintOpacity
     public val columns: Int get() = frozen?.lines?.first()?.columns ?: session.columns
     public val rows: Int get() = frozen?.lines?.size ?: session.rows
     public val cursorColumn: Int get() = frozen?.cursorColumn ?: session.cursorColumn
@@ -248,7 +249,7 @@ public class TerminalViewport internal constructor(
         }, wordBoundaries = { session.selectionWordBoundaries }, detectedLinksEnabled = { session.detectedLinksEnabled })
         frozen = FrozenFrame(lines, first, session.renderTheme, session.cursorColumn, session.cursorRow,
             capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText, copiedText, colors.theme,
-            selectionLines, capturedFirst, gesture, session.screenEpoch, clickRow, pointerClickRecycle,
+            selectionLines, capturedFirst, gesture, session.screenEpoch, clickRow, pointerClickRecycle, session.faintOpacity,
             if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList())
         if (clickLine >= 0) {
             pointerClickRow = selectionLines[clickLine - capturedFirst]
@@ -713,7 +714,7 @@ public class TerminalViewport internal constructor(
                 if (painter is TerminalGlyphPainter) painter.background(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background,
                     line.rawBackground(start) == TerminalStyle.DEFAULT && flags and TerminalStyle.INVERSE == 0 && !selected && !(block && start == cursorX))
                 else painter.fill(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background)
-                painter.withOpacity(terminalForegroundOpacity(flags)) {
+                painter.withOpacity(terminalForegroundOpacity(flags, faintOpacity)) {
                     if (flags and TerminalStyle.HIDDEN == 0) {
                         val underlineColor = line.underlineColor(start).let { if (it < 0) foreground else it }
                         val left = start * cellWidth
@@ -796,7 +797,7 @@ public class TerminalViewport internal constructor(
         val selection: TerminalSelection, var inheritedRange: TerminalSelectionRange?, var inheritedText: String?,
         var inheritedCopyText: TerminalCopySnapshot?, val copyTheme: TerminalTheme,
         val selectionLines: Array<TerminalLine>, val selectionFirst: Int, var inheritedGesture: TerminalSelection.Snapshot?,
-        val screenEpoch: Long, val liveClickRow: TerminalLine?, val liveClickRecycle: Long,
+        val screenEpoch: Long, val liveClickRow: TerminalLine?, val liveClickRecycle: Long, val faintOpacity: Double,
         val graphics: List<TerminalGraphicsFrameEntry>) {
         var interacted: Boolean = false
         fun selectionLine(index: Int): TerminalLine = selectionLines[index - selectionFirst]
@@ -806,7 +807,8 @@ public class TerminalViewport internal constructor(
     }
 }
 
-// Ghostty quantizes its default faint-opacity (0.5) to ceil(0.5 * 255).
-internal fun terminalForegroundOpacity(style: Int): Double = if (style and TerminalStyle.FAINT != 0) 128.0 / 255.0 else 1.0
+// Ghostty quantizes the normalized faint-opacity to ceil(opacity * 255).
+internal fun terminalForegroundOpacity(style: Int, faintOpacity: Double): Double =
+    if (style and TerminalStyle.FAINT != 0) kotlin.math.ceil(faintOpacity * 255.0) / 255.0 else 1.0
 
 internal data class TerminalWordLookup(val text: String, val start: TerminalCellPosition?)

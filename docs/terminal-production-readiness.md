@@ -60,6 +60,21 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Configurable faint rendering now follows pinned Ghostty `Config.zig` and
+`renderer/generic.zig`: `session.faintOpacity` defaults to 0.5, clamps to 0…1 and uses
+`ceil(value * 255) / 255` for SGR 2 foregrounds. NaN is rejected before state changes.
+Text, color glyphs, geometric glyphs and decorations share the setting; backgrounds remain
+opaque. Configuration invalidates all session views, preserves glyph atlas keys and survives
+RIS/DECSTR and palette/theme changes. Synchronized frames retain their captured opacity until
+release. Text blinking remains unrendered, consistent with the pinned upstream renderer's
+cursor-only blink timer; it is not a verified missing Ghostty rendering feature.
+Validation passes 1680 JVM tests, fresh Release JS tests and 18 focused Native tests.
+Browser pixels pass with Canvas/WebGL, font sizes 12.5/14 and DPR 1/1.25/2; native pixels pass
+with AppKit and Metal at scales 1/1.25/2. Both sweep alpha settings 0/0.1/0.5/0.9/1 over text,
+emoji, block geometry, five underline styles, strike and overline, with plain/image backgrounds.
+Evidence: `TerminalFaintTest`, `NativeGraphicsRenderingTest`,
+`scripts/verify-terminal-faint.mjs`, `/tmp/kinetica-faint-opacity-*`.
+
 Selection and clipboard scans now restore each compressed source row after reading it,
 including exception paths. Plain/VT/HTML/mixed copy and legacy selection text process one
 compressed row at a time; frame snapshots also preserve source history compression. Rows

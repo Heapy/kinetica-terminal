@@ -57,7 +57,7 @@ class NativeGraphicsRenderingTest {
 
     @Test fun faintCompositesTextColorGlyphsAndDecorationsOverBackgroundsAndImages() {
         NSApplication.sharedApplication()
-        val samples = listOf("" to "Aa😀") + (1..5).map { "4:$it;53;9;58;2;20;210;40;" to "  " }
+        val samples = listOf("" to "Aa😀", "" to "█▀") + (1..5).map { "4:$it;53;9;58;2;20;210;40;" to "  " }
         for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
             val surface = factory()
             try {
@@ -69,18 +69,23 @@ class NativeGraphicsRenderingTest {
                         session.write("\u001b[H\u001b[${attributes}38;2;240;20;30m$text")
                         val normal = capture()
                         session.write("\u001b[H\u001b[2m$text")
-                        val faint = capture()
-                        var affected = 0
-                        for (i in normal.indices) {
-                            val base = background[i].toInt() and 255
-                            val full = normal[i].toInt() and 255
-                            if (full != base) affected++
-                            val expected = (base * 127 + full * 128 + 127) / 255
-                            val actual = faint[i].toInt() and 255
-                            assertTrue(kotlin.math.abs(actual - expected) <= 2,
-                                "Faint byte $i: expected $expected, got $actual; image=$backgroundImage, attributes=$attributes, text=$text")
+                        for (configured in listOf(0.0, 0.1, 0.5, 0.9, 1.0)) {
+                            session.faintOpacity = configured
+                            val faint = capture()
+                            val alpha = ceil(configured * 255).toInt()
+                            var affected = 0
+                            for (i in normal.indices) {
+                                val base = background[i].toInt() and 255
+                                val full = normal[i].toInt() and 255
+                                if (full != base) affected++
+                                val expected = (base * (255 - alpha) + full * alpha + 127) / 255
+                                val actual = faint[i].toInt() and 255
+                                assertTrue(kotlin.math.abs(actual - expected) <= 2,
+                                    "Faint opacity $configured byte $i: expected $expected, got $actual; image=$backgroundImage, attributes=$attributes, text=$text")
+                            }
+                            assertTrue(affected > 16, "Must exercise visible text or decorations")
                         }
-                        assertTrue(affected > 16, "Must exercise visible text or decorations")
+                        session.faintOpacity = 0.1
                         session.write("\u001b[H\u001b[22m$text")
                         assertContentEquals(normal, capture(), "SGR 22 restores full opacity")
                     }

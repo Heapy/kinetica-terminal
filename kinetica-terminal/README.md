@@ -750,6 +750,13 @@ Composite glyphs and hinting are rejected with protocol error replies. Glyph rec
 is independent of whether a host has enabled Kitty image storage. Unsupported APC prefixes
 and cancelled/oversized commands retain no glyph capture buffer.
 
+`session.faintOpacity` follows Ghostty's `faint-opacity`: values are clamped to 0…1 and
+rounded upward to 8-bit alpha for rendering; NaN is rejected. The default 0.5 renders as
+128/255. Changing it redraws all attached surfaces without modifying backgrounds, glyph atlas
+identity or cell attributes. Synchronized output retains the presented opacity until release.
+The host setting survives terminal resets and theme/palette changes. Styled clipboard output
+continues to use the formatter's SGR representation independently of rendering configuration.
+
 Implemented: streaming UTF-8, CR/LF/BS/tab, delayed autowrap, cursor positioning/save/restore,
 erase and insert/delete characters/lines, scroll margins, origin and insert modes, independent
 normal/alternate screen save slots and distinct 47/1047/1049 behavior, SGR attributes with
@@ -757,6 +764,7 @@ semicolon/colon 16/256/RGB colors and colored single/double/curly/dotted/dashed 
 independent overline (SGR 53/55) using the effective foreground color,
 underline/overline beneath glyphs with strike and cursor decorations above them,
 faint foreground opacity (SGR 2, reset with 22) on text, color glyphs and decorations,
+configurable through `session.faintOpacity` (default 0.5),
 OSC 4/104 palette set/query/reset and OSC 10/11/12/110/111/112 dynamic colors,
 DEC line drawing/alignment, title and hyperlink OSC, status/cursor reports, application cursor/keypad keys, function/navigation keys, bracketed
 paste, focus reporting, synchronized output, cursor shapes/blinking, DECRQSS cursor-style,

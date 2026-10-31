@@ -114,6 +114,7 @@ internal class TerminalGpuFrame(
     private var current = TerminalDrawRow()
     private var columns = 0
     private var opacity = 1.0
+    private var faintOpacity = 0.5
 
     override fun withOpacity(opacity: Double, draw: () -> Unit) {
         val previous = this.opacity
@@ -122,6 +123,7 @@ internal class TerminalGpuFrame(
     }
 
     fun update(viewport: TerminalViewport, width: Double, height: Double) {
+        faintOpacity = viewport.faintOpacity
         if (rows.size != viewport.rows || columns != viewport.columns || cellWidth != width || cellHeight != height) {
             rows.clear(); repeat(viewport.rows) { rows += TerminalDrawRow() }
             cellWidth = width; cellHeight = height; columns = viewport.columns
@@ -149,7 +151,7 @@ internal class TerminalGpuFrame(
                     glyph.font, glyph.glyph, constraint, if (glyph.usesForeground) foreground(column) else null),
                     column * cellWidth, row * cellHeight, foreground(column),
                     glyph.xOffset, glyph.yOffset, run.offset * cellWidth, right * cellWidth,
-                    terminalForegroundOpacity(line.style(column)))
+                    terminalForegroundOpacity(line.style(column), faintOpacity))
             }
         }
         return true

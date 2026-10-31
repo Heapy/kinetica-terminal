@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 const { chromium } = await import(process.env.PLAYWRIGHT_IMPORT ?? "playwright");
 const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE });
 const base = process.env.KINETICA_BROWSER_BASE_URL ?? "http://127.0.0.1:4173";
-const samples = [["", "Aa😀"], ...[1, 2, 3, 4, 5].map(style => [`4:${style};53;9;58;2;20;210;40;`, "  "])];
+const samples = [["", "Aa😀"], ["", "█▀"], ...[1, 2, 3, 4, 5].map(style => [`4:${style};53;9;58;2;20;210;40;`, "  "])];
 try {
   for (const fontSize of [12.5, 14]) for (const renderer of ["gpu", "software"]) for (const scale of [1, 1.25, 2]) {
     const page = await browser.newPage({ viewport: { width: 500, height: 250 }, deviceScaleFactor: scale });
@@ -42,19 +42,25 @@ try {
         await write(`\x1b[H\x1b[${attributes}38;2;240;20;30m${text}`);
         await page.evaluate(() => { globalThis.faintNormal = captureFaint(); });
         await write(`\x1b[H\x1b[2m${text}`);
-        const result = await page.evaluate(() => {
-          const faint = captureFaint();
-          let affected = 0, maxError = 0, worstByte = -1;
-          for (let i = 0; i < faint.length; i++) {
-            if (faintNormal[i] !== faintBackground[i]) affected++;
-            const expected = Math.round((faintBackground[i] * 127 + faintNormal[i] * 128) / 255);
-            const error = Math.abs(expected - faint[i]);
-            if (error > maxError) { maxError = error; worstByte = i; }
-          }
-          return { affected, maxError, worstByte };
-        });
-        assert.ok(result.affected > 16, "Must exercise visible glyphs/decorations");
-        assert.ok(result.maxError <= 2, `${renderer} font ${fontSize} DPR ${scale}, image=${image}, ${attributes}${text}: ${JSON.stringify(result)}`);
+        for (const configured of [0, 0.1, 0.5, 0.9, 1]) {
+          await page.evaluate(value => kineticaTerminalDemo.faintOpacity(value), configured);
+          await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+          const result = await page.evaluate(configured => {
+            const faint = captureFaint();
+            const alpha = Math.ceil(configured * 255);
+            let affected = 0, maxError = 0, worstByte = -1;
+            for (let i = 0; i < faint.length; i++) {
+              if (faintNormal[i] !== faintBackground[i]) affected++;
+              const expected = Math.round((faintBackground[i] * (255 - alpha) + faintNormal[i] * alpha) / 255);
+              const error = Math.abs(expected - faint[i]);
+              if (error > maxError) { maxError = error; worstByte = i; }
+            }
+            return { affected, maxError, worstByte };
+          }, configured);
+          assert.ok(result.affected > 16, "Must exercise visible glyphs/decorations");
+          assert.ok(result.maxError <= 2, `${renderer} font ${fontSize} DPR ${scale}, image=${image}, opacity=${configured}, ${attributes}${text}: ${JSON.stringify(result)}`);
+        }
+        await page.evaluate(() => kineticaTerminalDemo.faintOpacity(0.1));
         await write(`\x1b[H\x1b[22m${text}`);
         const restored = await page.evaluate(() => {
           const pixels = captureFaint();
@@ -70,7 +76,7 @@ try {
         assert.ok(restored.maxError <= 2, `${renderer} font ${fontSize} DPR ${scale}, image=${image}, ${attributes}${text}: SGR 22 ${JSON.stringify(restored)}`);
       }
       assert.deepEqual(errors, []);
-      console.log(`${renderer} font ${fontSize} DPR ${scale}: faint text, emoji, five underline styles, strike and overline over colors/images passed`);
+      console.log(`${renderer} font ${fontSize} DPR ${scale}: configurable faint text, emoji, five underline styles, strike and overline over colors/images passed`);
     } finally { await page.close(); }
   }
 } finally { await browser.close(); }

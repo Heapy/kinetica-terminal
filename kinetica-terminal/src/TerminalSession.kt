@@ -186,6 +186,15 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     /** DEC 5 swaps rendering defaults only; stored colors and OSC replies retain their identity. */
     public var reverseColors: Boolean = false
         private set
+    /** Ghostty faint-opacity: host-controlled SGR 2 opacity, clamped to 0..1.
+     * NaN is rejected. Configuration survives terminal resets and affects every attached view. */
+    public var faintOpacity: Double = 0.5
+        set(value) {
+            require(!value.isNaN()) { "Faint opacity must not be NaN" }
+            val normalized = value.coerceIn(0.0, 1.0)
+            if (field == normalized) return
+            field = normalized; damageAll(); flushDamage()
+        }
     /** DEC mode 67: swap legacy Backspace and Ctrl+Backspace between DEL and BS. */
     public var backarrowKeyMode: Boolean = false
         private set
