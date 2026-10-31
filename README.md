@@ -111,7 +111,7 @@ node scripts/verify-terminal-background.mjs
 node scripts/verify-terminal-surface-limits.mjs
 ```
 
-Version 0.1.0 of the terminal and the new 0.4.0 framework API are local development
+Version 0.2.0 of the terminal and the new 0.4.0 framework API are local development
 coordinates. This migration does not publish them to Maven Central.
 
 ## Origin and licenses
