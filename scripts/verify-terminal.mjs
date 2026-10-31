@@ -255,9 +255,22 @@ try {
   await page.waitForFunction(() => globalThis.kineticaTerminalDemo?.columns() > 80);
   assert.equal(await page.evaluate(() => kineticaTerminalDemo.fontMode), "bundled");
   assert.equal(await page.locator("[data-terminal]").getAttribute("data-terminal-renderer"), "canvas2d");
+  await page.evaluate(() => kineticaTerminalDemo.write("\x1b[?25l\x1b[2J\x1b[HMmWi 0123456789 @#"));
+  await painted();
+  const softwareFontPixels = () => page.evaluate(() => {
+    const canvas = document.querySelector("canvas");
+    return canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height).data.reduce((hash, byte) => (hash * 31 + byte) >>> 0, 0);
+  });
+  const beforeSoftwareFont = await softwareFontPixels();
   await page.evaluate(() => kineticaTerminalDemo.fontFamily("Courier New"));
   await painted();
-  assert.match(await page.evaluate(() => document.querySelector("canvas").getContext("2d").font), /Courier New/);
+  // Software rendering uses a glyph atlas; the destination canvas's font is not involved.
+  assert.equal(await page.evaluate(() => {
+    const measure = document.createElement("canvas").getContext("2d");
+    measure.font = '14px "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    return Math.abs(kineticaTerminalDemo.cellMetrics().width - measure.measureText("M").width) < 0.001;
+  }), true);
+  assert.notEqual(await softwareFontPixels(), beforeSoftwareFont, "Font selection must change rendered pixels");
   await page.evaluate(() => kineticaTerminalDemo.fontFamily(null));
   await painted();
   await page.evaluate(() => kineticaTerminalDemo.write("\u001b[2J\u001b[H\u001b[44m \r\n \u001b[H"));
