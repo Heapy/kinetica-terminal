@@ -138,7 +138,6 @@ public class AppKitTerminalView(
     private var pendingGridSize: Pair<Int, Int>? = null
     private var marked = ""
     private var markedSelection = NSMakeRange(0u, 0u)
-    private var markedCellWidth = 0.0
     private var selecting = false
     private var forceClickLookupFired = false
     private val lookupLayout = NSLayoutManager()
@@ -200,7 +199,6 @@ public class AppKitTerminalView(
     internal val imageTileCount: Int get() = gpu?.imageTileCount ?: softwareImages.tileCount
     internal val imageUploads: Int get() = gpu?.imageUploads ?: softwareImages.uploads
     private val renderProbe = TerminalRenderProbe(renderObserver)
-    private var compositionLayer: CATextLayer? = null
     internal val progressIndicator = TerminalNativeProgress(session)
     public val renderingBackend: String get() = if (gpu != null) "metal" else "appkit"
     internal val submittedGpuFrames: Int get() = gpu?.submittedFrames ?: 0
@@ -228,7 +226,6 @@ public class AppKitTerminalView(
                 wantsLayer = true
                 layerContentsRedrawPolicy = NSViewLayerContentsRedrawDuringViewResize
                 layer!!.delegate = metalDisplayDelegate
-                compositionLayer = CATextLayer().also { renderer.layer.addSublayer(it) }
             } catch (error: Exception) {
                 renderingFailure = error.message
                 releaseGpu()
@@ -304,7 +301,7 @@ public class AppKitTerminalView(
     private fun releaseHiddenResources() {
         gpu?.setVisible(false)
         softwareImages.clear(); clearSoftwareGlyphs()
-        attributes.clear(); colors.clear(); compositionLayer?.string = null
+        attributes.clear(); colors.clear()
     }
     override fun makeBackingLayer(): CALayer = gpu?.layer ?: super.makeBackingLayer()
     override fun isOpaque(): Boolean = true
@@ -458,7 +455,6 @@ public class AppKitTerminalView(
                 val scale = window?.backingScaleFactor ?: 1.0
                 bounds.useContents { renderer.resize(size.width, size.height, scale, fontSize, cellWidth, cellHeight,
                     managesLayerFrame = false, fontFamily = fontFamily) }
-                updateCompositionLayer(scale)
                 renderer.draw(viewport, synchronizePresentation = liveResizing)
                 return
             } catch (error: Exception) {
@@ -472,7 +468,7 @@ public class AppKitTerminalView(
 
     private fun releaseGpu() {
         val renderer = gpu
-        gpu = null; compositionLayer = null
+        gpu = null
         renderer?.let {
             renderer.layer.delegate = null
             wantsLayer = false; layer = null
@@ -536,26 +532,7 @@ public class AppKitTerminalView(
         }
         softwareImages.draw(images, TerminalGraphicsLayer.ABOVE_TEXT)
         softwareImages.endFrame()
-        if (marked.isNotEmpty()) {
-            val x = viewport.cursorColumn * cellWidth; val y = viewport.cursorRow * cellHeight
-            color(viewport.theme.background).setFill()
-            NSRectFill(NSMakeRect(x, y, marked.length * cellWidth, cellHeight))
-            NSAttributedString.create(string = marked, attributes = textAttributes(viewport.theme.foreground, TerminalStyle.UNDERLINE)).drawAtPoint(NSMakePoint(x, y))
-        }
         measurement?.submitted(0)
-    }
-
-    private fun updateCompositionLayer(scale: Double) {
-        val overlay = compositionLayer ?: return
-        CATransaction.begin(); CATransaction.setDisableActions(true)
-        overlay.hidden = marked.isEmpty()
-        overlay.contentsScale = scale
-        val text = NSAttributedString.create(string = marked, attributes = textAttributes(viewport.theme.foreground, TerminalStyle.UNDERLINE))
-        overlay.frame = NSMakeRect(viewport.cursorColumn * cellWidth, viewport.cursorRow * cellHeight,
-            ceil(text.size().useContents { width }), cellHeight)
-        overlay.backgroundColor = color(viewport.theme.background).CGColor
-        overlay.string = text
-        CATransaction.commit()
     }
 
     private fun color(rgb: Int): NSColor {
@@ -765,14 +742,11 @@ public class AppKitTerminalView(
         val value = if (string is NSAttributedString) string.string else string.toString()
         if (marked.isNotEmpty() || value.isNotEmpty()) clearSelectionForPreedit()
         marked = value
-        // Ghostty preedit stores positive-width Unicode scalars, not UTF-16 units
-        // or combined grapheme clusters. Zero-width scalars do not add geometry.
-        markedCellWidth = value.terminalCodepoints().sumOf { terminalCharacterWidth(it).toDouble() }
-        markedSelection = selectedRange; viewport.markAll()
+        markedSelection = selectedRange; viewport.setPreedit(value)
     }
     override fun unmarkText() {
         if (marked.isNotEmpty()) clearSelectionForPreedit()
-        marked = ""; markedCellWidth = 0.0; viewport.markAll()
+        marked = ""; viewport.setPreedit("")
     }
     override fun hasMarkedText(): Boolean = marked.isNotEmpty()
     override fun markedRange(): CValue<NSRange> = if (marked.isEmpty()) NSMakeRange(NSNotFound.toULong(), 0u) else NSMakeRange(0u, marked.length.toULong())
@@ -796,7 +770,7 @@ public class AppKitTerminalView(
             val available = bounds.useContents { size.width } - (session.cursorColumn + 1) * cellWidth
             // Preserve Ghostty's explicit width-unit exception: its preedit width stays
             // in backing pixels, while x/y/height are returned in AppKit points.
-            var width = minOf(markedCellWidth * cellWidth, available).coerceAtLeast(0.0) * scale
+            var width = minOf(viewport.preeditWidth * cellWidth, available).coerceAtLeast(0.0) * scale
             range.useContents {
                 if (length == 0uL && width > 0.0) {
                     width = 0.0

@@ -144,10 +144,10 @@ internal class TerminalGpuFrame(
     }
 
     override fun beginRow(row: Int) { current = rows[row]; current.clear() }
-    override fun shapeRow(line: TerminalLine, row: Int, cursor: Int?, selected: BooleanArray, foreground: (Int) -> Int): Boolean {
+    override fun shapeRow(line: TerminalLine, row: Int, cursor: Int?, selected: BooleanArray, isolated: IntRange?, foreground: (Int) -> Int): Boolean {
         val resolve = resolveFont ?: return false
         val shape = checkNotNull(shape)
-        for (run in terminalFontRuns(line, cursor, selected, resolve)) {
+        for (run in terminalFontRuns(line, cursor, selected, isolated, resolve)) {
             if (run.font < 0) continue
             for (glyph in shape(run)) {
                 val column = run.offset + glyph.column
@@ -188,7 +188,8 @@ internal class TerminalGpuFrame(
     }
     override fun glyph(value: String, x: Double, y: Double, columns: Int, color: Int, style: Int) {
         if (value.isNotBlank()) current.glyphs += TerminalGlyph(GlyphKey(value, columns,
-            style and (TerminalStyle.BOLD or TerminalStyle.ITALIC)), x, y, color, opacity = opacity,
+            style and (TerminalStyle.BOLD or TerminalStyle.ITALIC)), x, y, color,
+            clipRight = minOf(x + columns * cellWidth, this.columns * cellWidth), opacity = opacity,
             contrastExcluded = minimumContrast > 1.0 && terminalContrastExcluded(terminalFirstCodepoint(value)))
     }
     override fun text(value: String, x: Double, y: Double, color: Int, style: Int) =
@@ -276,7 +277,8 @@ internal inline fun drawTerminalGlyphs(frame: TerminalGpuFrame, atlas: TerminalG
             // Keep raster texels 1:1, cropping ceil-sized padding at rounded cell edges.
             val x = round(glyph.x * pixelRatio)
             val y = round(glyph.y * pixelRatio)
-            val width = minOf(entry.width.toDouble(), round((glyph.x + frame.cellWidth * glyph.key.columns) * pixelRatio) - x)
+            val right = glyph.clipRight.takeIf { it.isFinite() } ?: (glyph.x + frame.cellWidth * glyph.key.columns)
+            val width = minOf(entry.width.toDouble(), round(right * pixelRatio) - x)
             val height = minOf(entry.height.toDouble(), round((glyph.y + frame.cellHeight) * pixelRatio) - y)
             draw(entry, x / pixelRatio, y / pixelRatio, width / pixelRatio, height / pixelRatio,
                 0.0, 0.0, width, height, tint, opacity)

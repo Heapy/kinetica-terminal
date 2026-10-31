@@ -718,3 +718,20 @@ the additional device bit for right-side keys; the fixtures deliberately retain 
 asymmetry. This is not a claim about physical keyboard drivers or every IME's event routing.
 Regeneration checks the clean upstream revision and records source, generator and fixture
 hashes; consecutive runs produce identical fixture and manifest bytes on the same toolchain.
+
+## Preedit range oracle
+
+`preedit-manifest.json` pins 1,302 results from the unchanged `Preedit.range` function in
+`src/renderer/State.zig`. Its standalone Zig host supplies codepoint width records and the
+original `CellCountInt=u16` type. Cases cover every narrow/wide sequence up to five scalars,
+each cursor position in grids of one to six columns, suffix clipping and left shifts.
+
+```sh
+node scripts/generate-terminal-preedit.mjs build/upstream/ghostty-1.4.0 build/upstream/zig-aarch64-macos-0.17.0/zig
+```
+
+`TerminalPreeditTest` compares the shared renderer's placement against these results on
+JVM, JS and Native. Source/generator/fixture hashes and the Zig version are archived. The
+oracle establishes the cell range and scalar offset; it does not compare platform font pixels.
+`verify-terminal-preedit.mjs` and the native graphics tests separately exercise our actual
+software/GPU frames, clearing, wide scalars and synchronized-output retention.

@@ -1,0 +1,11 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "cases": 1302,
+  "zig": "0.17.0",
+  "generatorSha256": "36270d8b736ed001b640ed684a1dc4e50bddc80ea2c6f5ffd116475e01944523",
+  "fixtureSha256": "ee465a1d384688452cdcdf807ec8ced3166f6528e1730fa4763d27f5a5c3b2d0",
+  "sources": {
+    "src/renderer/State.zig": "1f1d590bdade7cee7342a7d825725d3968b78daea195c7224baa02d8c9706e55"
+  },
+  "harness": "Original Preedit.range function unchanged; standalone struct supplies codepoint widths and CellCountInt=u16."
+}

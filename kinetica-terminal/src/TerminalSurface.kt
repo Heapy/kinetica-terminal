@@ -48,7 +48,7 @@ public interface TerminalPainter {
 internal interface TerminalGlyphPainter : TerminalPainter {
     fun beginRow(row: Int)
     val shapesRows: Boolean get() = false
-    fun shapeRow(line: TerminalLine, row: Int, cursor: Int?, selected: BooleanArray, foreground: (Int) -> Int): Boolean = false
+    fun shapeRow(line: TerminalLine, row: Int, cursor: Int?, selected: BooleanArray, isolated: IntRange?, foreground: (Int) -> Int): Boolean = false
     fun glyph(value: String, x: Double, y: Double, columns: Int, color: Int, style: Int)
     fun background(x: Double, y: Double, width: Double, height: Double, color: Int, default: Boolean) = fill(x, y, width, height, color)
 }
@@ -64,6 +64,14 @@ public class TerminalViewport internal constructor(
         this(session, invalidate, scheduler, ::graphicsNowMillis)
 
     private var frozen: FrozenFrame? = null
+    private var preedit: TerminalPreedit? = null
+    private val renderedPreedit: TerminalPreedit? get() = frozen.let { if (it == null) preedit else it.preedit }
+    internal val preeditWidth: Double get() = preedit?.width ?: 0.0
+    internal fun setPreedit(text: String) {
+        if (disposed) return
+        preedit = TerminalPreedit.from(text)
+        markAll()
+    }
     internal fun graphicsFrame(): List<TerminalGraphicsFrameEntry> {
         if (disposed) return emptyList()
         frozen?.let { return it.graphics }
@@ -112,7 +120,7 @@ public class TerminalViewport internal constructor(
     internal val faintOpacity: Double get() = frozen?.faintOpacity ?: session.faintOpacity
     internal val minimumContrast: Double get() = frozen?.minimumContrast ?: session.minimumContrast
     internal fun contrastCursor(): TerminalCellPosition? {
-        if (!cursorVisible || !cursorOn || !focused || cursorStyle != TerminalCursorStyle.BLOCK) return null
+        if (renderedPreedit != null || !cursorVisible || !cursorOn || !focused || cursorStyle != TerminalCursorStyle.BLOCK) return null
         val line = visibleLine(cursorRow)
         val column = if (line.width(cursorColumn) == 0) (cursorColumn - 1).coerceAtLeast(0) else cursorColumn
         return TerminalCellPosition(cursorRow, column)
@@ -265,7 +273,8 @@ public class TerminalViewport internal constructor(
         frozen = FrozenFrame(lines, first, session.renderTheme, session.cursorColumn, session.cursorRow,
             capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText, copiedText, colors.theme,
             selectionLines, capturedFirst, gesture, session.screenEpoch, clickRow, pointerClickRecycle, session.faintOpacity, session.boldColor, session.selectionColors, session.minimumContrast,
-            if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList())
+            if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList(),
+            if (capture) preedit else null)
         if (clickLine >= 0) {
             pointerClickRow = selectionLines[clickLine - capturedFirst]
             pointerClickRecycle = pointerClickRow!!.recycleEpoch
@@ -340,7 +349,7 @@ public class TerminalViewport internal constructor(
             cancelGraphicsTimer()
             cancelResizeTimers(); resizeHeld = false
             cancelSelectionDrag(); liveSelection.clear(); frozen?.selection?.clear(); scrollAnchor = null
-            blinkTimer?.dispose(); holdTimer?.dispose(); blinkTimer = null; holdTimer = null; frozen = null
+            blinkTimer?.dispose(); holdTimer?.dispose(); blinkTimer = null; holdTimer = null; frozen = null; preedit = null
         }
     }
     public fun markAll() {
@@ -690,30 +699,37 @@ public class TerminalViewport internal constructor(
         val theme = theme
         val boldColor = boldColor
         val selectionColors = selectionColors
+        val preedit = renderedPreedit
         for (y in first..last.coerceAtMost(rows - 1)) {
             (painter as? TerminalGlyphPainter)?.beginRow(y)
             val index = firstLine + y
-            val line = visibleLine(y)
-            val cursor = cursorVisible && (cursorOn || !focused) && y == cursorRow
+            val originalLine = visibleLine(y)
+            val preeditRange = preedit?.takeIf { y == cursorRow && scrollOffset == 0 }?.range(cursorColumn, columns - 1)
+            val isolated = preeditRange?.let { it.start..it.end }
+            val line = if (preeditRange != null) preedit.line(originalLine, preeditRange) else originalLine
+            fun isPreedit(column: Int): Boolean = isolated?.contains(column) == true
+            fun isSelected(column: Int): Boolean = !isPreedit(column) && selected(selection, index, column)
+            fun style(column: Int): Int = terminalLinkHoverStyle(line.style(column), !isPreedit(column) && linkHover?.contains(column, y) == true)
+            val cursor = preedit == null && cursorVisible && (cursorOn || !focused) && y == cursorRow
             val cursorX = if (line.width(cursorColumn) == 0) (cursorColumn - 1).coerceAtLeast(0) else cursorColumn
             val block = cursor && focused && cursorStyle == TerminalCursorStyle.BLOCK
             val shaped = (painter as? TerminalGlyphPainter)?.takeIf { it.shapesRows }?.shapeRow(line, y, if (cursor) cursorX else null,
-                BooleanArray(columns) { selected(selection, index, it) }) { column ->
+                BooleanArray(columns) { isSelected(it) }, isolated) { column ->
                 val flags = line.style(column)
                 var foreground = terminalForegroundColor(line, column, theme.foreground, boldColor)
                 var background = line.background(column).let { if (it < 0) theme.background else it }
                 if (flags and TerminalStyle.INVERSE != 0) { val swap = foreground; foreground = background; background = swap }
-                if (selected(selection, index, column)) foreground = terminalSelectionForeground(selectionColors, theme, foreground, background)
+                if (isSelected(column)) foreground = terminalSelectionForeground(selectionColors, theme, foreground, background)
                 if (block && column == cursorX) theme.background else foreground
             } == true
             var x = 0
             while (x < columns) {
                 val start = x
-                val flags = terminalLinkHoverStyle(line.style(x), linkHover?.contains(x, y) == true)
+                val flags = style(x)
                 var foreground = terminalForegroundColor(line, x, theme.foreground, boldColor)
                 var background = line.background(x).let { if (it < 0) theme.background else it }
                 if (flags and TerminalStyle.INVERSE != 0) { val swap = foreground; foreground = background; background = swap }
-                val selected = selected(selection, index, x)
+                val selected = isSelected(x)
                 if (selected) {
                     val selectedForeground = terminalSelectionForeground(selectionColors, theme, foreground, background)
                     background = terminalSelectionBackground(selectionColors, theme, foreground, background)
@@ -723,26 +739,27 @@ public class TerminalViewport internal constructor(
                 // Group only ordinary one-column cells. Wide/combined characters get exact cell
                 // placement even when the system fallback font has different glyph advances.
                 val blockElement = !line.isCombined(x) && isTerminalBlockElement(line.codePoint(x))
-                val ordinary = painter !is TerminalGlyphPainter && !blockElement && line.width(x) == 1 && !line.isCombined(x) && line.codePoint(x) <= 0xffff
+                val ordinary = !isPreedit(x) && painter !is TerminalGlyphPainter && !blockElement && line.width(x) == 1 && !line.isCombined(x) && line.codePoint(x) <= 0xffff
                 val text = StringBuilder()
                 do {
                     if (line.width(x) > 0) line.appendTextTo(text, x)
                     x += if (line.width(x) == 2) 2 else 1
-                } while (ordinary && x < columns && !(block && (start == cursorX || x == cursorX)) &&
+                } while (ordinary && x < columns && !isPreedit(x) && !(block && (start == cursorX || x == cursorX)) &&
                     line.width(x) == 1 && !line.isCombined(x) && line.codePoint(x) <= 0xffff &&
                     !isTerminalBlockElement(line.codePoint(x)) &&
-                    terminalLinkHoverStyle(line.style(x), linkHover?.contains(x, y) == true) == flags && line.rawForeground(x) == line.rawForeground(start) &&
+                    style(x) == flags && line.rawForeground(x) == line.rawForeground(start) &&
                     line.background(x) == line.background(start) && line.underlineColor(x) == line.underlineColor(start) &&
-                    selected(selection, index, x) == selected)
-                if (painter is TerminalGlyphPainter) painter.background(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background,
+                    isSelected(x) == selected)
+                val visibleEnd = minOf(x, columns)
+                if (painter is TerminalGlyphPainter) painter.background(start * cellWidth, y * cellHeight, (visibleEnd - start) * cellWidth, cellHeight, background,
                     line.rawBackground(start) == TerminalStyle.DEFAULT && flags and TerminalStyle.INVERSE == 0 && !selected && !(block && start == cursorX))
-                else painter.fill(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background)
+                else painter.fill(start * cellWidth, y * cellHeight, (visibleEnd - start) * cellWidth, cellHeight, background)
                 if (flags and TerminalStyle.HIDDEN == 0) {
                     val onCursor = block && start == cursorX
                     val opacity = if (onCursor) 1.0 else terminalForegroundOpacity(flags, faintOpacity)
                     val underlineColor = if (onCursor) foreground else line.underlineColor(start).let { if (it < 0) foreground else it }
                     val left = start * cellWidth
-                    val width = (x - start) * cellWidth
+                    val width = (visibleEnd - start) * cellWidth
                     val baseline = (y + 1) * cellHeight - 2
                     // Original sprite decorations use the same grayscale shader as text:
                     // minimum contrast applies, and the block cursor overrides color/alpha last.
@@ -757,7 +774,7 @@ public class TerminalViewport internal constructor(
                                 painter.underlay(left, baseline, width, 1.0, color)
                             }
                             flags and TerminalStyle.UNDERCURL != 0 -> {
-                                for (column in start until x) {
+                                for (column in start until visibleEnd) {
                                     var offset = 0.0
                                     while (offset < cellWidth) {
                                         painter.underlay(column * cellWidth + offset, baseline - if (offset.toInt() % 4 < 2) 1 else 0,
@@ -768,7 +785,7 @@ public class TerminalViewport internal constructor(
                             }
                             flags and (TerminalStyle.DOTTED_UNDERLINE or TerminalStyle.DASHED_UNDERLINE) != 0 -> {
                                 val dash = if (flags and TerminalStyle.DOTTED_UNDERLINE != 0) 1.0 else 4.0
-                                for (column in start until x) {
+                                for (column in start until visibleEnd) {
                                     var offset = 0.0
                                     while (offset < cellWidth) {
                                         painter.underlay(column * cellWidth + offset, baseline, minOf(dash, cellWidth - offset), 1.0, color)
@@ -785,8 +802,10 @@ public class TerminalViewport internal constructor(
                     painter.withOpacity(opacity) {
                         if (line.codePoint(start) != TERMINAL_GRAPHICS_PLACEHOLDER) {
                             if (blockElement) painter.blockElement(line.codePoint(start), left, y * cellHeight, width, cellHeight, foreground)
-                            else if (painter is TerminalGlyphPainter) { if (!shaped) painter.glyph(text.toString(), left, y * cellHeight, x - start, foreground, flags) }
-                            else painter.text(text.toString(), left, y * cellHeight, foreground, flags)
+                            else if (painter is TerminalGlyphPainter) {
+                                if (!shaped) painter.glyph(text.toString() + if (isPreedit(start)) "\ufe0e" else "",
+                                    left, y * cellHeight, x - start, foreground, flags)
+                            } else painter.text(text.toString() + if (isPreedit(start)) "\ufe0e" else "", left, y * cellHeight, foreground, flags)
                         }
                     }
                     if (flags and TerminalStyle.STRIKE != 0) paintDecoration(foreground) { color ->
@@ -834,7 +853,7 @@ public class TerminalViewport internal constructor(
         val selectionLines: Array<TerminalLine>, val selectionFirst: Int, var inheritedGesture: TerminalSelection.Snapshot?,
         val screenEpoch: Long, val liveClickRow: TerminalLine?, val liveClickRecycle: Long, val faintOpacity: Double, val boldColor: TerminalBoldColor?,
         val selectionColors: TerminalSelectionColors?, val minimumContrast: Double,
-        val graphics: List<TerminalGraphicsFrameEntry>) {
+        val graphics: List<TerminalGraphicsFrameEntry>, val preedit: TerminalPreedit?) {
         var interacted: Boolean = false
         fun selectionLine(index: Int): TerminalLine = selectionLines[index - selectionFirst]
         fun clearInheritedSelection() {

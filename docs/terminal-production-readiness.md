@@ -60,6 +60,32 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+IME preedit now goes through the shared cell renderer on Canvas, WebGL, AppKit software and
+Metal. Platform text overlays have been removed. The display-only row supplies regular
+foreground glyphs and cell-wide underlines, ignores zero-width scalars, and uses Ghostty's
+suffix/left-shift rule at the right edge without modifying the session or clipboard text.
+Preedit suppresses the normal cursor and selection/hover styling in its cells; font runs
+isolate its scalars and request text presentation, including the system-font fallback.
+The normal renderer supplies glyph placement, contrast, color glyphs
+and cell clipping. Replaced halves of underlying wide glyphs are cleared in the transient
+row so they cannot leave orphaned cells. No transient row is retained in session history.
+Synchronized output snapshots preedit with the displayed cursor/theme; changes remain hidden
+until release, while AppKit's geometry query continues to read live preedit width. Scrollback
+does not display a preedit at the live screen cursor. Clearing preedit restores the original
+row through ordinary damage processing.
+`generate-terminal-preedit.mjs` executes unchanged Ghostty `Preedit.range` for 1,302 width,
+cursor and terminal-size combinations; fixture/manifest regeneration is byte-identical.
+Common tests cover placement, scalar shaping, independent views, copy isolation, scrollback
+and retained frames. A one-column viewport clips wide preedit backgrounds, underlines and
+raster texels at the grid edge without rescaling the glyph. Native and browser pixel tests
+check suffix equivalence, wide cells,
+glyphs, zero-width filtering, clearing and synchronized output in software/GPU modes.
+Validation: 1,707 JVM tests, the fresh Release JS suite, 39 selected macOS tests,
+12 browser preedit combinations (Canvas/WebGL × system/bundled fonts × DPR 1/1.25/2),
+and the main browser regression verifier passed.
+This is an original range oracle plus our renderer's pixel regressions, not a complete
+pixel-by-pixel comparison against Ghostty's fonts or physical IME acceptance.
+
 AppKit `firstRectForCharacterRange` now follows Ghostty's `Surface.imePointScaled` and
 Swift `firstRect`: IME geometry starts at the live cursor's horizontal midpoint, counts
 positive-width preedit scalars and clips to the remaining terminal width. It no longer
@@ -73,7 +99,7 @@ AppKit points.
 emoji widths, ignored zero-width scalars, collapsed/unknown ranges, clipping, clearing preedit,
 live cursor motion during held output and the existing dictionary selection baseline.
 This validates the geometry returned to AppKit; it does not replace physical dictation/IME
-acceptance or close the separate preedit rendering audit.
+acceptance. The shared preedit rendering evidence is described above.
 All 15 selected native Look Up, composition, keyboard-protocol and selection-policy tests pass.
 
 AppKit text interpretation now accumulates `insertText` and command callbacks for one

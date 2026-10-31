@@ -40,7 +40,6 @@ public class BrowserTerminalView(
     private val input: dynamic = document.createElement("textarea")
     private val accessible: dynamic = document.createElement("pre")
     private val accessibleText: dynamic = document.createTextNode("")
-    private val composition: dynamic = document.createElement("div")
     private val linkPreview: dynamic = document.createElement("div")
     private val progressElement: dynamic = document.createElement("progress")
     private val measureContext: dynamic = document.createElement("canvas").getContext("2d")
@@ -169,9 +168,7 @@ public class BrowserTerminalView(
         accessible.setAttribute("role", "log"); accessible.setAttribute("aria-label", "Terminal output")
         accessible.setAttribute("aria-live", "off")
         accessible.appendChild(accessibleText)
-        composition.style.cssText = "position:absolute;display:none;background:#1e1e1e;color:#d4d4d4;text-decoration:underline;white-space:pre;pointer-events:none;"
-        composition.setAttribute("aria-hidden", "true")
-        root.appendChild(canvas); root.appendChild(input); root.appendChild(accessible); root.appendChild(composition)
+        root.appendChild(canvas); root.appendChild(input); root.appendChild(accessible)
         linkPreview.style.cssText = "position:absolute;bottom:0;left:0;max-width:95%;box-sizing:border-box;padding:2px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:ltr;unicode-bidi:plaintext;pointer-events:none;font:12px monospace;z-index:3;"
         linkPreview.setAttribute("data-terminal-link-preview", "")
         linkPreview.setAttribute("aria-label", "Link destination")
@@ -242,14 +239,12 @@ public class BrowserTerminalView(
         listen(input, "compositionstart") { composing = true; pressedKeys.clear(); clearSelectionForPreedit() }
         listen(input, "compositionupdate") { event ->
             if (composing || !(event.data as? String).isNullOrEmpty()) clearSelectionForPreedit()
-            composition.textContent = (event.data as? String).orEmpty()
-            composition.style.display = "block"; composition.style.font = font()
-            composition.style.left = input.style.left; composition.style.top = input.style.top
+            viewport.setPreedit((event.data as? String).orEmpty())
         }
         listen(input, "compositionend") { event ->
             if (composing) clearSelectionForPreedit()
             composing = false
-            composition.style.display = "none"; composition.textContent = ""
+            viewport.setPreedit("")
             val text = (event.data as? String).orEmpty()
             sendTypedText(text)
             input.value = ""; suppressComposition = text
@@ -455,8 +450,6 @@ public class BrowserTerminalView(
             if (!disposed && graphicsVisible) {
                 resize()
                 root.style.background = terminalCssColor(viewport.theme.background)
-                composition.style.background = terminalCssColor(viewport.theme.background)
-                composition.style.color = terminalCssColor(viewport.theme.foreground)
                 try { drawing.draw(viewport) } catch (error: Exception) {
                     if (rendering != TerminalRendering.AUTO || drawing.name == "canvas2d") throw error
                     root.setAttribute("data-terminal-rendering-error", error.message.orEmpty())

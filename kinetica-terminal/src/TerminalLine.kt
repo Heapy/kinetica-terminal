@@ -262,7 +262,7 @@ public class TerminalLine internal constructor(public val columns: Int, internal
         setAttributes(target, from.attributes?.get(source))
     }
 
-    internal fun snapshot(colors: TerminalColors): TerminalLine = readPreservingCompression {
+    internal fun snapshot(colors: TerminalColors? = this.colors): TerminalLine = readPreservingCompression {
         TerminalLine(columns, colors, hyperlinkLimit).also {
             for (x in 0 until columns) it.copyCell(this, x, x)
             it.wrapped = wrapped; it.wrapContinuation = wrapContinuation

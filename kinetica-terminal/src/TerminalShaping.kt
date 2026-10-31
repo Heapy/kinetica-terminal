@@ -35,7 +35,11 @@ internal data class TerminalFontRun(val offset: Int, val style: Int, val font: I
 
 /** Original run boundaries, before platform shaping. Background and hover decorations are independent. */
 internal fun terminalFontRuns(line: TerminalLine, cursor: Int?, selected: BooleanArray,
-    resolve: (String, Int) -> TerminalResolvedFontCell): List<TerminalFontRun> {
+    resolve: (String, Int) -> TerminalResolvedFontCell): List<TerminalFontRun> =
+    terminalFontRuns(line, cursor, selected, null, resolve)
+
+internal fun terminalFontRuns(line: TerminalLine, cursor: Int?, selected: BooleanArray,
+    isolated: IntRange?, resolve: (String, Int) -> TerminalResolvedFontCell): List<TerminalFontRun> {
     require(selected.size == line.columns)
     var end = line.columns
     while (end > 0 && line.isEmpty(end - 1)) end--
@@ -49,6 +53,8 @@ internal fun terminalFontRuns(line: TerminalLine, cursor: Int?, selected: Boolea
         var font: Int? = null
         var column = start
         while (column < end) {
+            // Ghostty renders preedit scalars individually, without cross-cell ligatures.
+            if (column > start && isolated != null && (column in isolated || start in isolated) && line.width(column) > 0) break
             // Ghostty only applies the end boundary when its inclusive column is
             // greater than zero: selecting column zero alone keeps the run intact.
             if (column > start && selected[column] != selected[column - 1] &&
@@ -66,9 +72,11 @@ internal fun terminalFontRuns(line: TerminalLine, cursor: Int?, selected: Boolea
             if (!line.isCombined(column) && cursor != null &&
                 (start == cursor && column == start + 1 || start < cursor && column == cursor)) break
             val value = if (line.codePoint(column) == TERMINAL_GRAPHICS_PLACEHOLDER || line.codePoint(column) == 0) " " else line.text(column)
+            // addPreeditCell requests .text presentation even for default-emoji scalars.
+            val fontText = if (isolated?.contains(column) == true) value + "\ufe0e" else value
             // Existing geometric block drawing stays outside the platform font atlas.
             val resolved = if (!line.isCombined(column) && isTerminalBlockElement(line.codePoint(column)))
-                TerminalResolvedFontCell(-1, value) else resolve(value, style)
+                TerminalResolvedFontCell(-1, value) else resolve(fontText, style)
             if (font != null && font != resolved.font) break
             font = resolved.font
             for (character in resolved.text) {

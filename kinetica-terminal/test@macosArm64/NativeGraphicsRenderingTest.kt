@@ -12,6 +12,42 @@ import kotlin.math.ceil
 import kotlin.test.*
 
 class NativeGraphicsRenderingTest {
+    @Test fun preeditUsesTheSameCellRangeAndRetainedFrameInSoftwareAndMetal() {
+        NSApplication.sharedApplication()
+        for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    session.configureTheme(TerminalTheme(foreground = 0xffffff, background = 0))
+                    session.write("\u001b[?25l\u001b[48;2;240;20;30m" + " ".repeat(session.columns) +
+                        "\u001b[0m\u001b[1;${session.columns}H")
+                    val original = capture()
+                    setPreedit("　")
+                    val wide = capture()
+                    assertFalse(original.contentEquals(wide), "Preedit must replace cells and draw an underline")
+                    setPreedit("prefix　")
+                    assertContentEquals(wide, capture(), "At the right edge only the suffix fits, shifted left for a wide scalar")
+                    setPreedit("\u0301　\u200d")
+                    assertContentEquals(wide, capture(), "Zero-width scalars do not shift or draw preedit")
+                    setPreedit("日")
+                    assertFalse(wide.contentEquals(capture()), "A preedit glyph must reach the font atlas")
+                    setPreedit("😀")
+                    assertFalse(wide.contentEquals(capture()), "A supplementary-plane preedit glyph must reach the font atlas")
+                    setPreedit("")
+                    assertContentEquals(original, capture(), "Clearing preedit restores the original background and glyphs")
+                    setPreedit("　"); capture()
+                    session.write("\u001b[?2026h\u001b[H")
+                    setPreedit("A")
+                    assertContentEquals(wide, capture(), "Held output must retain the old preedit and cursor together")
+                    session.write("\u001b[?2026l")
+                    assertFalse(wide.contentEquals(capture()))
+                    setPreedit("")
+                    assertContentEquals(original, capture())
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
     @Test fun blockCursorMakesTextGraphicsAndDecorationsOpaqueWithoutTintingColorGlyphs() {
         NSApplication.sharedApplication()
         for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
@@ -344,6 +380,7 @@ class NativeGraphicsRenderingTest {
         fun clearSelection()
         fun setVisible(visible: Boolean)
         fun setFocused(focused: Boolean)
+        fun setPreedit(text: String)
         fun drawWhileHidden()
         fun dispose()
     }
@@ -366,6 +403,7 @@ class NativeGraphicsRenderingTest {
         override fun clearSelection() = viewport.clearSelection()
         override fun setVisible(visible: Boolean) = renderer.setVisible(visible)
         override fun setFocused(focused: Boolean) = viewport.setFocused(focused)
+        override fun setPreedit(text: String) = viewport.setPreedit(text)
         override fun drawWhileHidden() = renderer.draw(viewport)
         override fun dispose() { renderer.dispose(); viewport.dispose() }
     }
@@ -398,6 +436,9 @@ class NativeGraphicsRenderingTest {
         override fun clearSelection() = view.clearSelection()
         override fun setVisible(visible: Boolean) { view.hidden = !visible }
         override fun setFocused(focused: Boolean) { if (focused) view.becomeFirstResponder() else view.resignFirstResponder() }
+        override fun setPreedit(text: String) {
+            if (text.isEmpty()) view.unmarkText() else view.setMarkedText(text, NSMakeRange(0u, 0u), NSMakeRange(NSNotFound.toULong(), 0u))
+        }
         override fun drawWhileHidden() { capture() }
         override fun dispose() = view.dispose()
     }
