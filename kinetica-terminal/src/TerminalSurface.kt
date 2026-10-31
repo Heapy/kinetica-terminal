@@ -110,6 +110,10 @@ public class TerminalViewport internal constructor(
     /** Effective rendering defaults, including DEC 5 and any retained synchronized frame. */
     public val theme: TerminalTheme get() = frozen?.theme ?: session.renderTheme
     internal val faintOpacity: Double get() = frozen?.faintOpacity ?: session.faintOpacity
+    private val boldColor: TerminalBoldColor? get() {
+        val frame = frozen
+        return if (frame == null) session.boldColor else frame.boldColor
+    }
     public val columns: Int get() = frozen?.lines?.first()?.columns ?: session.columns
     public val rows: Int get() = frozen?.lines?.size ?: session.rows
     public val cursorColumn: Int get() = frozen?.cursorColumn ?: session.cursorColumn
@@ -249,7 +253,7 @@ public class TerminalViewport internal constructor(
         }, wordBoundaries = { session.selectionWordBoundaries }, detectedLinksEnabled = { session.detectedLinksEnabled })
         frozen = FrozenFrame(lines, first, session.renderTheme, session.cursorColumn, session.cursorRow,
             capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText, copiedText, colors.theme,
-            selectionLines, capturedFirst, gesture, session.screenEpoch, clickRow, pointerClickRecycle, session.faintOpacity,
+            selectionLines, capturedFirst, gesture, session.screenEpoch, clickRow, pointerClickRecycle, session.faintOpacity, session.boldColor,
             if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList())
         if (clickLine >= 0) {
             pointerClickRow = selectionLines[clickLine - capturedFirst]
@@ -673,6 +677,7 @@ public class TerminalViewport internal constructor(
         firstDirty = rows; lastDirty = -1
         val selection = selection()
         val theme = theme
+        val boldColor = boldColor
         for (y in first..last.coerceAtMost(rows - 1)) {
             (painter as? TerminalGlyphPainter)?.beginRow(y)
             val index = firstLine + y
@@ -684,14 +689,14 @@ public class TerminalViewport internal constructor(
                 BooleanArray(columns) { selected(selection, index, it) }) { column ->
                 val flags = line.style(column)
                 val raw = if (flags and TerminalStyle.INVERSE != 0) line.background(column).let { if (it < 0) theme.background else it }
-                    else line.foreground(column).let { if (it < 0) theme.foreground else it }
+                    else terminalForegroundColor(line, column, theme.foreground, boldColor)
                 if (block && column == cursorX) theme.background else raw
             } == true
             var x = 0
             while (x < columns) {
                 val start = x
                 val flags = terminalLinkHoverStyle(line.style(x), linkHover?.contains(x, y) == true)
-                var foreground = line.foreground(x).let { if (it < 0) theme.foreground else it }
+                var foreground = terminalForegroundColor(line, x, theme.foreground, boldColor)
                 var background = line.background(x).let { if (it < 0) theme.background else it }
                 if (flags and TerminalStyle.INVERSE != 0) { val swap = foreground; foreground = background; background = swap }
                 val selected = selected(selection, index, x)
@@ -708,7 +713,7 @@ public class TerminalViewport internal constructor(
                 } while (ordinary && x < columns && !(block && (start == cursorX || x == cursorX)) &&
                     line.width(x) == 1 && !line.isCombined(x) && line.codePoint(x) <= 0xffff &&
                     !isTerminalBlockElement(line.codePoint(x)) &&
-                    terminalLinkHoverStyle(line.style(x), linkHover?.contains(x, y) == true) == flags && line.foreground(x) == line.foreground(start) &&
+                    terminalLinkHoverStyle(line.style(x), linkHover?.contains(x, y) == true) == flags && line.rawForeground(x) == line.rawForeground(start) &&
                     line.background(x) == line.background(start) && line.underlineColor(x) == line.underlineColor(start) &&
                     selected(selection, index, x) == selected)
                 if (painter is TerminalGlyphPainter) painter.background(start * cellWidth, y * cellHeight, (x - start) * cellWidth, cellHeight, background,
@@ -797,7 +802,7 @@ public class TerminalViewport internal constructor(
         val selection: TerminalSelection, var inheritedRange: TerminalSelectionRange?, var inheritedText: String?,
         var inheritedCopyText: TerminalCopySnapshot?, val copyTheme: TerminalTheme,
         val selectionLines: Array<TerminalLine>, val selectionFirst: Int, var inheritedGesture: TerminalSelection.Snapshot?,
-        val screenEpoch: Long, val liveClickRow: TerminalLine?, val liveClickRecycle: Long, val faintOpacity: Double,
+        val screenEpoch: Long, val liveClickRow: TerminalLine?, val liveClickRecycle: Long, val faintOpacity: Double, val boldColor: TerminalBoldColor?,
         val graphics: List<TerminalGraphicsFrameEntry>) {
         var interacted: Boolean = false
         fun selectionLine(index: Int): TerminalLine = selectionLines[index - selectionFirst]

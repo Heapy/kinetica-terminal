@@ -12,6 +12,37 @@ import kotlin.math.ceil
 import kotlin.test.*
 
 class NativeGraphicsRenderingTest {
+    @Test fun boldColorPixelsMatchExplicitColorsAcrossTextBlocksEmojiAndDecorations() {
+        NSApplication.sharedApplication()
+        for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {
+            val surface = factory()
+            try {
+                with(surface) {
+                    reset()
+                    session.write("\u001b]10;#123456\u0007\u001b]4;1;#123456;9;#204060;200;#abcdef\u0007")
+                    val background = capture()
+                    for (policy in listOf(TerminalBoldColor.BRIGHT, TerminalBoldColor.Rgb(0x2468ac))) {
+                        val default = if (policy is TerminalBoldColor.Rgb) policy.value else 0x123456
+                        for ((sgr, expected) in listOf("39" to default, "31" to 0x204060, "91" to 0x204060,
+                            "38;5;200" to 0xabcdef, "38;2;18;52;86" to default, "38;2;9;8;7" to 0x090807,
+                            "31;7" to 0x204060)) {
+                            session.boldColor = null
+                            session.write("\u001b[H\u001b[0;1;$sgr;4:3;53;9;58;2;20;210;40mA█g😀")
+                            capture()
+                            session.boldColor = policy // Updating host policy must repaint existing cells.
+                            val actual = capture()
+                            assertTrue(actual.indices.count { actual[it] != background[it] } > 16, "Must draw text and decorations")
+                            session.boldColor = null
+                            val inverse = if (sgr == "31;7") ";7" else ""
+                            session.write("\u001b[H\u001b[0;1;38;2;${expected shr 16};${expected shr 8 and 255};${expected and 255}$inverse;4:3;53;9;58;2;20;210;40mA█g😀")
+                            assertContentEquals(capture(), actual, "policy=$policy sgr=$sgr")
+                        }
+                    }
+                }
+            } finally { surface.dispose() }
+        }
+    }
+
     @Test fun coloredUnderlinesStayBehindDescendersAndBlocksWhileStrikeCoversEmoji() {
         NSApplication.sharedApplication()
         for (factory in listOf<() -> Surface>(::software, { metal(1.0) }, { metal(1.25) }, { metal(2.0) })) {

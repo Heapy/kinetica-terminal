@@ -750,6 +750,16 @@ Composite glyphs and hinting are rejected with protocol error replies. Glyph rec
 is independent of whether a host has enabled Kitty image storage. Unsupported APC prefixes
 and cancelled/oversized commands retain no glyph capture buffer.
 
+`session.boldColor` follows Ghostty's `bold-color`: `null` keeps original colors,
+`TerminalBoldColor.BRIGHT` maps bold ANSI palette entries 0–7 to 8–15, and
+`TerminalBoldColor.Rgb(0x2468ac)` also replaces the default foreground and explicit RGB equal
+to it. Other RGB and indexed colors 8–255 remain unchanged. Resolution occurs before inverse,
+selection/cursor overrides and decoration fallback colors. This host setting survives terminal
+resets and changes all session views; synchronized frames retain their original setting and
+palette until release. Cell color identities and clipboard formatting remain unchanged.
+The original Ghostty `Style.fg` oracle covers 6288 resolutions; regenerate its pinned fixtures
+with `python3 scripts/generate-terminal-bold-color.py /path/to/ghostty-1.4.0 /path/to/zig-0.17.0`.
+
 `session.faintOpacity` follows Ghostty's `faint-opacity`: values are clamped to 0…1 and
 rounded upward to 8-bit alpha for rendering; NaN is rejected. The default 0.5 renders as
 128/255. Changing it redraws all attached surfaces without modifying backgrounds, glyph atlas
@@ -1339,6 +1349,7 @@ node scripts/verify-terminal-mime-clipboard.mjs
 node scripts/verify-terminal-graphics.mjs
 node scripts/verify-terminal-overline.mjs
 node scripts/verify-terminal-faint.mjs
+node scripts/verify-terminal-bold-color.mjs
 node scripts/verify-terminal-decoration-order.mjs
 node scripts/verify-terminal-background.mjs
 node scripts/verify-terminal-blocks.mjs

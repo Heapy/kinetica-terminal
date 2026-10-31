@@ -152,6 +152,11 @@ fun main() {
     api.copyTrimTrailingSpaces = { enabled: Boolean -> surface?.copyTrimTrailingSpaces = enabled }
     api.copyFormat = { format: String -> surface?.copyFormat = TerminalCopyFormat.valueOf(format) }
     api.faintOpacity = { opacity: Double -> session.faintOpacity = opacity }
+    api.boldColor = { value: Int? -> session.boldColor = when (value) {
+        null -> null
+        -1 -> TerminalBoldColor.BRIGHT
+        else -> TerminalBoldColor.Rgb(value)
+    } }
     api.copyOnSelect = { policy: String -> surface?.copyOnSelect = TerminalCopyOnSelect.valueOf(policy) }
     api.clickRepeatInterval = { millis: Double -> surface?.clickRepeatIntervalMillis = millis.toLong() }
     api.rightClickAction = { action: String -> surface?.rightClickAction = TerminalRightClickAction.valueOf(action) }

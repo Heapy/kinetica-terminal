@@ -60,6 +60,25 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+`session.boldColor` now implements pinned Ghostty `Style.fg`: disabled by default,
+`BRIGHT` maps bold ANSI colors 0–7 to 8–15, and explicit RGB additionally overrides the default
+foreground and matching truecolor cells. Other truecolor and palette entries remain unchanged.
+Foreground resolution precedes inverse, selection/cursor overrides and decoration fallbacks,
+and is shared by ordinary text, shaped glyphs and geometric blocks. Software batching now
+preserves raw foreground identities even when their current RGB values coincide. Host policy
+changes repaint existing cells, survive terminal/theme resets and retain captured policy and
+palette during synchronized output; terminal color state and rich-copy formats stay intact.
+A new oracle calls unmodified original `Style.fg` for 6288 resolutions across two palettes,
+two default foregrounds, all 256 indices, explicit/default RGB, bold/non-bold and three policies.
+Fixture and manifest regeneration is byte-identical. Sources, revision and generator hashes
+are pinned in `test-upstream/ghostty/bold-color-manifest.json`.
+Validation passes 1685 JVM tests, fresh Release JS tests and 20 focused Native tests.
+Canvas/WebGL pixels pass at DPR 1/1.25/2, and AppKit/Metal pixels pass at scales 1/1.25/2.
+Configured text/block/emoji/decorations match equivalent explicit-SGR colors, including inverse
+and policy updates without rewriting cells. Evidence: `TerminalBoldColorTest`,
+`NativeGraphicsRenderingTest`, `scripts/verify-terminal-bold-color.mjs`,
+`/tmp/kinetica-bold-color-*` (final native run: `native-verified.log`).
+
 Configurable faint rendering now follows pinned Ghostty `Config.zig` and
 `renderer/generic.zig`: `session.faintOpacity` defaults to 0.5, clamps to 0…1 and uses
 `ceil(value * 255) / 255` for SGR 2 foregrounds. NaN is rejected before state changes.

@@ -195,6 +195,12 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             if (field == normalized) return
             field = normalized; damageAll(); flushDamage()
         }
+    /** Ghostty bold-color; null preserves existing colors. Host policy survives terminal resets. */
+    public var boldColor: TerminalBoldColor? = null
+        set(value) {
+            if (field == value) return
+            field = value; damageAll(); flushDamage()
+        }
     /** DEC mode 67: swap legacy Backspace and Ctrl+Backspace between DEL and BS. */
     public var backarrowKeyMode: Boolean = false
         private set
