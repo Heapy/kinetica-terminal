@@ -694,10 +694,21 @@ public class AppKitTerminalView(
     }
 
     override fun keyUp(event: NSEvent) {
+        releaseTerminalKey(event)
+    }
+
+    internal fun releaseTerminalKey(event: NSEvent,
+        unshiftedCodepoint: Int? = event.charactersByApplyingModifiers(0uL)?.terminalCodepoints()?.firstOrNull()) {
         if (disposed) return
         val pressed = pressedKeys.remove(event.keyCode) ?: return
         val flags = event.modifierFlags
+        val keypadBase = pressed.keypad?.takeUnless { it == TerminalKeypadKey.ENTER || it == TerminalKeypadKey.SEPARATOR }
+            ?.numeric?.singleOrNull()?.code
+        // Ghostty's keyUp carries no text and translates the current layout again.
+        // Keep ownership/physical identity, never press-time text or its layout.
         sendTypedKey(pressed.copy(action = TerminalKeyAction.RELEASE,
+            text = "", consumedModifiers = 0, unshiftedCodepoint = unshiftedCodepoint ?: 0,
+            baseCodepoint = pressed.baseCodepoint ?: keypadBase,
             shift = flags and NSEventModifierFlagShift != 0uL, control = flags and NSEventModifierFlagControl != 0uL,
             alt = flags and NSEventModifierFlagOption != 0uL, meta = flags and NSEventModifierFlagCommand != 0uL,
             capsLock = flags and NSEventModifierFlagCapsLock != 0uL, optionAsAlt = optionAsAlt.applies(flags)))

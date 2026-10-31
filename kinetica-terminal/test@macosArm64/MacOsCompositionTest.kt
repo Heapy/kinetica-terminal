@@ -38,7 +38,7 @@ class MacOsCompositionTest {
             view.interpretTerminalKey(event(window, 0, "a"), keyboardLayoutId = { queries++; layout }) {
                 view.insertText("a", absentRange())
             }
-            view.keyUp(event(window, 0, "a", release = true))
+            view.releaseTerminalKey(event(window, 0, "a", release = true), unshiftedCodepoint = 97)
             assertBytes("\u001b[97;;97u\u001b[97;1:3u", out.toString())
             assertEquals(2, queries, "Compare input source before and after interpretation")
         }

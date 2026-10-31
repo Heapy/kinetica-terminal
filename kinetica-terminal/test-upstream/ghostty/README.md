@@ -735,3 +735,18 @@ JVM, JS and Native. Source/generator/fixture hashes and the Zig version are arch
 oracle establishes the cell range and scalar offset; it does not compare platform font pixels.
 `verify-terminal-preedit.mjs` and the native graphics tests separately exercise our actual
 software/GPU frames, clearing, wide scalars and synchronized-output retention.
+
+## Native key-release identity
+
+`python3 scripts/generate-native-key-releases.py [ghostty-checkout]` compiles the existing
+C oracle against the pinned libghostty-vt and generates 720 release byte sequences in
+`test@macosArm64/generated/NativeKeyReleaseFixtures.kt`. It checks the upstream revision
+and clean tracked sources. `native-key-release-manifest.json` records generator, helper,
+fixture, original native routing/encoder source and library hashes.
+
+Inputs model the inspected original AppKit release path: current unshifted codepoint,
+current modifiers, no text. The matrix covers legacy/Kitty flags, modifiers, changed or
+missing layout identity, supplementary characters, punctuation, functional keys and the
+numeric keypad. `MacOsKeyReleaseTest` supplies translation results at the production
+release boundary without switching the user's input source, and checks that duplicate
+releases remain local. The original Swift callback itself is not executed by this generator.

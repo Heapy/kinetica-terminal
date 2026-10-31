@@ -1,0 +1,21 @@
+{
+  "commit": "83fb95624b0439ee660c2679b43b38c8b63769cd",
+  "cases": 720,
+  "generatorSha256": "037a0e3d22be6e21d0ca69cdbddd9a02907b3785a428bc4eca1189c8789d203d",
+  "helperSha256": "915738cd3dba4afef2c162ef150e8818af187c7a839ef97ff1f3eefc01c6307f",
+  "fixtureSha256": "651212d8241ae387426f2ffac525cf0875fe30424de6a95fe7e5e215c0075059",
+  "sources": {
+    "macos/Sources/Ghostty/Surface View/SurfaceView_AppKit.swift": "ea7d82ee16678d4426bda37b4cb1a158ad05f86f41c394cf9bc36b1056ffd4e2",
+    "macos/Sources/Ghostty/NSEvent+Extension.swift": "cfc03dd39221bba5f3b878d227de791f3bde57f202f1ab114d1ef9de6b8d5616",
+    "src/apprt/embedded.zig": "f0b0331c1f5faf4fb751415922ea12733347b07c30a2a482c6c002974a51272d",
+    "src/input/key_encode.zig": "5c4de50648beff3e8292304160785c4b1824ec1013a0a6465200a5fc65ddf66f",
+    "src/input/key.zig": "0538a471a5e9ed5c990a8e80cdb3332263343ff93bde5ab998c2481a492a1015"
+  },
+  "librarySha256": {
+    "libghostty-vt.0.dylib": "07c717c64ce04854d638f2b30e89d024238222d2fb311577e57e6a58c16b6311",
+    "libghostty-vt.a": "73e789c384616b5c2ea320b84eb13d38321281bda8a40a455281bda1fbbacc5f",
+    "libghostty-vt.0.1.0.dylib": "07c717c64ce04854d638f2b30e89d024238222d2fb311577e57e6a58c16b6311",
+    "libghostty-vt.dylib": "07c717c64ce04854d638f2b30e89d024238222d2fb311577e57e6a58c16b6311"
+  },
+  "harness": "Original libghostty-vt encoder; explicit current unshifted codepoint and empty release text match the inspected original AppKit/embedded path. This does not run physical layout switching."
+}

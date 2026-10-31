@@ -60,6 +60,27 @@ fixture subset or a working shell demo does not close the goal.
 
 ## Current evidence
 
+Native key releases now use the current unmodified AppKit translation and empty text,
+matching Ghostty's `keyUp` → `keyAction` → `NSEvent.ghosttyKeyEvent` → embedded
+`KeyEvent.core` path. They no longer retain a press's shifted text, associated text,
+consumed modifiers or unshifted layout codepoint. The base codepoint of numeric keypad keys is also supplied
+when reporting alternate keys. Physical/keypad identity and the local ownership check
+remain intact; focus-loss synthetic releases retain their separate path.
+For example, Shift+A releases as `CSI 97;2:3u`, and changing the layout to Russian before
+release yields `CSI 1092::97;2:3u` with Kitty flags 31. An unavailable layout codepoint
+cannot fall back to the press's old printable identity.
+`scripts/generate-native-key-releases.py` executes the pinned original libghostty encoder
+for 720 release cases: four protocol flag sets, 18 modifier combinations, five printable
+layout identities (including absent/supplementary values), punctuation, Enter, Up and the
+numeric keypad. The regression initially failed on stale US `97` instead of current `1092`.
+Fixture and manifest regeneration is byte-identical. The native test injects the result of
+AppKit's unmodified translation to model a layout switch without changing global input
+sources; existing native protocol tests also exercise actual `keyUp` translation. This is
+an original encoder oracle plus the inspected native routing, not physical layout/IME
+acceptance or a claim that every native routing difference is resolved.
+Validation: all 24 selected native tests passed, including the 720-case release matrix,
+10,240 original modifier events, composition, focus, selection, navigation and accessibility.
+
 AppKit now compares the current Carbon input-source ID before and after
 `interpretKeyEvents`, following Ghostty 1.4.0 `KeyboardLayout.id` and
 `SurfaceView_AppKit.keyDown`. If an event switches the input source, its accumulated

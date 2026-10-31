@@ -54,9 +54,10 @@ class MacOsKeyboardProtocolTest {
                                     val shifted = if (shift && translated[0].code != unshifted) ":${translated[0].code}" else ""
                                     val base = if (unshifted != 97 && translated != "a") (if (shifted.isEmpty()) "::97" else ":97") else ""
                                     val identity = "$unshifted$shifted$base"
+                                    val releaseIdentity = "$unshifted" + if (unshifted != 97) "::97" else ""
                                     val mods = if (shift) 4 else 3
                                     "\u001b[$identity;$mods${if (repeat) ":2" else ""}${if (selected) "" else ";${translated[0].code}"}u" +
-                                        "\u001b[$identity;$mods:3u"
+                                        "\u001b[$releaseIdentity;$mods:3u"
                                 }
                             }
                             assertEquals(expected.encodeToByteArray().toList(),output.toString().encodeToByteArray().toList(),
@@ -199,13 +200,16 @@ class MacOsKeyboardProtocolTest {
             assertEquals("\r\u001b[13;2u\u001b[13;5u\u001b[1;1:2A\u001b[1;1:3A", out.toString())
             out.clear()
             session.write("\u001b[=31u")
+            val releaseA = event(0, "a", release = true)
+            val releaseCodepoint = requireNotNull(releaseA.charactersByApplyingModifiers(0uL)).terminalCodepoints().first()
+            val releaseIdentity = "$releaseCodepoint" + if (releaseCodepoint != 97) "::97" else ""
             view.keyDown(event(0, "a"))
-            view.keyUp(event(0, "a", release = true))
-            assertEquals("\u001b[97;;97u\u001b[97;1:3u".encodeToByteArray().toList(), out.toString().encodeToByteArray().toList())
+            view.keyUp(releaseA)
+            assertEquals("\u001b[97;;97u\u001b[$releaseIdentity;1:3u".encodeToByteArray().toList(), out.toString().encodeToByteArray().toList())
             out.clear()
             view.keyDown(event(0, "ф"))
             view.keyUp(event(0, "ф", release = true))
-            assertEquals("\u001b[1092::97;;1092u\u001b[1092::97;1:3u".encodeToByteArray().toList(),
+            assertEquals("\u001b[1092::97;;1092u\u001b[$releaseIdentity;1:3u".encodeToByteArray().toList(),
                 out.toString().encodeToByteArray().toList())
             out.clear()
             view.setMarkedText("日本", NSMakeRange(0u, 2u), NSMakeRange(NSNotFound.toULong(), 0u))
