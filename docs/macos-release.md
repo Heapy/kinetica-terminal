@@ -12,6 +12,13 @@ development and does not meet this requirement.
    enrollment or Xcode Personal Team cannot issue Developer ID certificates.
 2. In Xcode Settings → Apple Accounts, select the paid team → Manage Certificates
    → **Developer ID Application**. Keep the private key in the local Keychain.
+   If Xcode rejects creation but the Apple Developer website permits it, use
+   Certificates → **+** → **Developer ID Application** on the website. Generate
+   a CSR with Keychain Access → Certificate Assistant → Request a Certificate
+   From a Certificate Authority, choose **Saved to disk**, and use RSA 2048 bits.
+   Upload the CSR, download the issued `.cer`, and import it into the same Mac's
+   login Keychain. Verify that its public key matches the CSR. The private key
+   stays in Keychain; only the CSR is uploaded.
 3. Confirm the identity with `security find-identity -v -p codesigning`.
 4. Create an app-specific password in the Apple Account website, then store it
    using the secure interactive prompt in a local terminal:
@@ -80,10 +87,25 @@ No GitHub or tap changes happen in the script.
 
 ## Runtime verification and publication
 
-Before publication, launch the signed app in an isolated test window and verify
-shell startup, keyboard input, a command, rendering, and normal window closure.
+Before publication, run the signed app's built-in renderer diagnostic through
+LaunchServices. It creates and closes its own window and PTY, checking AppKit
+committed text, PTY echo, Metal frame presentation, and child-process cleanup:
+
+```sh
+open -n -W 'build/releases/0.2.1/staging/Kinetica Terminal.app' --args \
+  --benchmark-renderer "$PWD/scripts/terminal-render-load.py" \
+  "$PWD/build/releases/0.2.1/runtime-check.json"
+python3 -c 'import json; r=json.load(open("build/releases/0.2.1/runtime-check.json")); assert r["valid"], r["failures"]'
+```
+
+Keep the test window visible during its roughly 10-second run. A direct binary
+launch can leave this diagnostic window occluded; a test in a restricted shell
+sandbox can also fail during AppKit registration. The JSON result, not the exit
+status of `open`, determines whether the diagnostic passed. This is not a full
+application UI acceptance test.
+
 Never replace or terminate the installed app or the user's live shells. Record
-these checks in the release notes; historical source-build tests are recorded in
+the checks in release notes; historical source-build tests are recorded in
 `source-build-info.json` and must not be described as fresh test runs.
 
 Keep 0.2.1 a preview: signing does not resolve the previous release's documented
