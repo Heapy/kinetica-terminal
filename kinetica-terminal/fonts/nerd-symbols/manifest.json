@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/ryanoasis/nerd-fonts",
+  "version": "3.4.0",
+  "commit": "fa7b859994228a9c8759f99c55a8d31ee92a1b5e",
+  "source": "https://raw.githubusercontent.com/ryanoasis/nerd-fonts/fa7b859994228a9c8759f99c55a8d31ee92a1b5e/patched-fonts/NerdFontsSymbolsOnly",
+  "files": {
+    "SymbolsNerdFont-Regular.ttf": "71db104aa66567d0efe0b98758f9dfc1895573a453fe85fb53d1c38544a55106",
+    "LICENSE": "84a7a98c82140fb12c37fe42b93805baa16024cb3e5acc599b7ffe612c55d847"
+  },
+  "fontBytes": 2440316,
+  "generatorSha256": "2b57706612fd20f07715de978cc569252f6d58996465eb6bfe09545fd8ee7447",
+  "generatedSha256": "002619d81f1126d9152c39ef25a96e334e6f5aa1362b2157607df06ad6891ebd"
+}

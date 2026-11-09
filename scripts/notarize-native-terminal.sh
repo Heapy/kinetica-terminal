@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Repackage a provenance-checked Release app, sign it and submit it to Apple.
+# Sign a provenance-checked Release app and submit it to Apple.
 set -euo pipefail
 
 usage() {
@@ -55,10 +55,10 @@ if plist['CFBundleIdentifier'] != 'io.heapy.kinetica.terminal-demo':
     raise SystemExit('Unexpected bundle identifier')
 if plist['CFBundleShortVersionString'] != info['version'] or plist['CFBundleVersion'] != info['bundle_version']:
     raise SystemExit('Source bundle version does not match provenance')
-if tuple(map(int, version.split('.'))) <= tuple(map(int, info['version'].split('.'))):
-    raise SystemExit('Release version must increase')
-if int(build) <= int(plist['CFBundleVersion']):
-    raise SystemExit('Bundle build number must increase')
+if tuple(map(int, version.split('.'))) < tuple(map(int, info['version'].split('.'))):
+    raise SystemExit('Release version must not decrease')
+if int(build) < int(plist['CFBundleVersion']):
+    raise SystemExit('Bundle build number must not decrease')
 PY
   # Validate credentials before producing or uploading an artifact.
   xcrun notarytool history --keychain-profile "$KINETICA_NOTARY_PROFILE" --output-format json >/dev/null
@@ -137,7 +137,9 @@ info = {
     'architecture': source['architecture'],
     'deployment_target': plist['LSMinimumSystemVersion'],
     'prerelease': True,
-    'packaging': 'Existing Release executable; bundle version updated; Developer ID signed and notarized',
+    'packaging': ('Fresh Release build; Developer ID signed and notarized'
+                  if source['version'] == plist['CFBundleShortVersionString'] and source['bundle_version'] == plist['CFBundleVersion']
+                  else 'Existing Release executable; bundle version updated; Developer ID signed and notarized'),
     'source_build_provenance': 'source-build-info.json',
     'source_build_provenance_sha256': sha256(output / 'source-build-info.json'),
     'code_signing': 'Developer ID Application; hardened runtime; secure timestamp',

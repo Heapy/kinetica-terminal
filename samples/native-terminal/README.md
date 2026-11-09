@@ -15,6 +15,12 @@ bash scripts/package-native-terminal.sh
 open 'build/apps/Kinetica Terminal.app'
 ```
 
+The application reports `Kinetica <version>` through XTVERSION and `--version`, and
+sets `TERM_PROGRAM=Kinetica` and `TERM_PROGRAM_VERSION` for new shells. Packaged apps
+read `CFBundleShortVersionString`; unbundled development runs use `TERMINAL_VERSION`
+in `src/TerminalVersion.kt`. Packaging queries the compiled executable's `--version`
+to write that same version into `Info.plist`, including when using `--skip-build`.
+
 The surface supports native input composition, Command+C/V, drag selection, and wheel history.
 Closing the window disposes the UI and closes/reaps the shell. When the shell exits (`exit`,
 Ctrl+D or an error), its own tab/window closes automatically; other sessions remain open.
