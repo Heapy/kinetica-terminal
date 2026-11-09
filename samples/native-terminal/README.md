@@ -4,6 +4,10 @@ Runs `/bin/zsh -l` in a local PTY and displays it using the shared Kotlin termin
 one AppKit view backed by a Metal glyph-atlas renderer, with AppKit drawing as a fallback.
 Requires macOS on Apple Silicon.
 
+Shell sessions enable grapheme clustering by default: skin-tone modifiers, flags,
+and ZWJ emoji sequences occupy a single two-cell cluster. Terminal applications can
+toggle this behavior with DEC mode 2027; a terminal reset restores the enabled default.
+
 ```sh
 ./kotlin run -m native-terminal
 ```
