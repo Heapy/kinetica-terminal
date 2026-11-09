@@ -227,6 +227,14 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     /** Host's actual TERM value for XTGETTCAP TN; null/empty or over 128 UTF-8 bytes means unknown.
      * Configuration survives RIS/DECSTR. MacOsPty sets it from its child's final environment. */
     public var terminfoName: String? = null
+    /** Host application version for XTVERSION and new local PTYs; null keeps the unversioned identity. */
+    public var terminalVersion: String? = null
+        set(value) {
+            require(value == null || value.length in 1..128 && value.all { it in '!'..'~' }) {
+                "Terminal version must be 1–128 printable ASCII characters without spaces"
+            }
+            field = value
+        }
     public var kittyPasteEvents: Boolean = false
         private set
     public val clipboardPasteEventsEnabled: Boolean get() = kittyPasteEvents && kittyClipboardBinding?.hasHost == true
@@ -1333,7 +1341,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
             return
         }
         if (final == 'q' && prefix == '>'.code && intermediates == 0) {
-            sendInput("\u001bP>|Kinetica\u001b\\")
+            sendInput("\u001bP>|Kinetica${terminalVersion?.let { " $it" }.orEmpty()}\u001b\\")
             return
         }
         if (final == 'c' && intermediates == 0) {

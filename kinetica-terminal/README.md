@@ -6,6 +6,12 @@ through a real PTY. The browser binds
 to an application-provided transport, usually a WebSocket connected to a server-side PTY.
 The JVM target supports headless use and engine tests.
 
+Hosts can set `TerminalSession.terminalVersion` before starting a transport to include
+their application version in the XTVERSION reply (`Kinetica <version>`). It survives
+terminal resets; null preserves the unversioned reply. `MacOsPty` sets `TERM_PROGRAM`
+to `Kinetica` and `TERM_PROGRAM_VERSION` to this version (empty if unknown), replacing
+inherited terminal identity values. Explicit transport environment overrides still win.
+
 Terminal bytes never become UI text nodes or reactive cells. A platform view observes
 the session directly; embedders own its mount and disposal. Packed `IntArray` cell storage, recycled lines,
 byte- and line-bounded circular scrollback, damage tracking, and retained drawing commands for clean rows keep
@@ -28,6 +34,13 @@ and display scale. Repeated glyphs reuse atlas entries across text colors; color
 their rasterized colors. Bold and italic have separate entries. Font/scale changes reset the
 atlas. Exhausting it rebuilds the entire visible glyph set, so no submitted instance references
 an evicted slot. A visible set that still cannot fit triggers AUTO fallback or a GPU-mode error.
+
+macOS embeds a symbols-only Nerd Font fallback, so shell prompt and file icons work
+without installing or selecting a patched font. The selected text font keeps priority
+for glyphs it supplies; missing private-use icons use the embedded face before system
+fallback. Metal and AppKit both apply the same cell-fitting rules. This does not change
+the session's grapheme-clustering mode or install a font in macOS.
+See [native font assets and provenance](fonts/nerd-symbols/README.md).
 
 Solid Unicode Block Elements (U+2580–U+2590 and U+2594–U+259F) are drawn as cell-aligned
 rectangles in the shared viewport. They bypass font bearings and line spacing, so adjacent

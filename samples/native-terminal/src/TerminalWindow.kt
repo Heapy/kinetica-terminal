@@ -18,7 +18,9 @@ internal data class SearchState(val visible: Boolean = false, val query: String 
 internal class TerminalWindow(private val number: Int, private val settings: TerminalSettingsStore, private val directory: String) {
     lateinit var handle: AppKitWindow
     val window get() = handle.nativeWindow
-    val session = TerminalSession(theme = settings.settings.colorTheme.colors)
+    val session = TerminalSession(theme = settings.settings.colorTheme.colors).apply {
+        terminalVersion = terminalApplicationVersion()
+    }
     // This application owns a local PTY and explicitly permits Ghostty-compatible local media.
     private val graphicsMedia = session.attachGraphicsMedia(MacOsTerminalGraphicsMedia(
         allowFiles = true, allowTemporaryFiles = true, allowSharedMemory = true,

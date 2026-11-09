@@ -68,7 +68,8 @@ public class MacOsPty(
         require(arguments.none { '\u0000' in it })
         require(workingDirectory.startsWith('/') && '\u0000' !in workingDirectory)
         val env = NSProcessInfo.processInfo.environment.entries.associate { it.key.toString() to it.value.toString() } +
-            mapOf("TERM" to "xterm-256color", "COLORTERM" to "truecolor") + environment
+            mapOf("TERM" to "xterm-256color", "COLORTERM" to "truecolor",
+                "TERM_PROGRAM" to "Kinetica", "TERM_PROGRAM_VERSION" to session.terminalVersion.orEmpty()) + environment
         require(env.all { (k, v) -> k.isNotEmpty() && '=' !in k && '\u0000' !in k && '\u0000' !in v })
         memScoped {
             fun strings(values: List<String>): CPointer<CPointerVar<kotlinx.cinterop.ByteVar>> {

@@ -20,6 +20,12 @@ if [[ "$skip_build" != true ]]; then
 fi
 binary="$repo_root/build/tasks/_native-terminal_linkMacosArm64$variant/native-terminal.kexe"
 test -f "$binary"
+app_version="$("$binary" --version)"
+app_version="${app_version#Kinetica }"
+if [[ ! "$app_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  printf 'Invalid application version: %s\n' "$app_version" >&2
+  exit 1
+fi
 mkdir -p "$app/Contents/MacOS"
 cp "$binary" "$app/Contents/MacOS/kinetica-terminal"
 mkdir -p "$app/Contents/Resources/LICENSES"
@@ -35,7 +41,7 @@ xcrun actool "$repo_root/Kinetica-Kotlin.icon" \
   --output-partial-info-plist "$icon_build/partial-info.plist" \
   --platform macosx --target-device mac --minimum-deployment-target 12.0
 cp "$icon_build/Assets.car" "$icon_build/Kinetica-Kotlin.icns" "$app/Contents/Resources/"
-cat > "$app/Contents/Info.plist" <<'PLIST'
+cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
@@ -43,8 +49,8 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
   <key>CFBundleIdentifier</key><string>io.heapy.kinetica.terminal-demo</string>
   <key>CFBundleName</key><string>Kinetica Terminal</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleVersion</key><string>24</string>
-  <key>CFBundleShortVersionString</key><string>0.2.0</string>
+  <key>CFBundleVersion</key><string>26</string>
+  <key>CFBundleShortVersionString</key><string>$app_version</string>
   <key>NSPrincipalClass</key><string>NSApplication</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict></plist>

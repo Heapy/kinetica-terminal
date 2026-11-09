@@ -35,97 +35,80 @@ The paid Team ID is not necessarily the identifier shown for an old Personal Tea
 See Apple's [Developer ID guide](https://developer.apple.com/developer-id/) and
 [custom notarization workflow](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow).
 
-## Prepared 0.2.1 release
+## Build a new preview
 
-The authorized source is published `main`, commit
-`79be7d72e9fe7383c2a784dd4da762fff760abb0`, also tagged `v0.2.0`. Local accessibility
-and selection changes are excluded. Version **0.2.1, build 25** repackages the
-existing Release executable and resources; it does not rebuild with potentially
-different unpublished framework dependencies. Its source framework revision is
-`d8170fee855838c002746e63efe3ca17c35d0e75`.
+Use a clean tracked terminal checkout and a clean framework checkout. Preserve the
+user's working changes and installed application by using separate worktrees.
+The application version comes from `samples/native-terminal/src/TerminalVersion.kt`;
+`publish.module-template.yaml` carries the library version and the packaging script
+carries the increasing `CFBundleVersion`. Version 0.3.0 uses build 26.
 
-Download and verify the original release before extracting it:
+Bootstrap the selected framework revision, then build the actual Release artifact:
 
 ```sh
-mkdir -p build/previous-release
-gh release download v0.2.0 -R Heapy/kinetica-terminal --dir build/previous-release
-(cd build/previous-release && shasum -a 256 -c SHA256SUMS.txt)
-ditto -x -k build/previous-release/Kinetica-Terminal-0.2.0-macos-arm64.zip \
-  build/previous-release/extracted
+bash scripts/bootstrap-kinetica.sh /path/to/clean/kinetica
+./kotlin build -m native-terminal -p macosArm64 -v release
+bash scripts/package-native-terminal.sh --skip-build --output 'build/release-source/Kinetica Terminal.app'
 ```
 
-The published ZIP SHA-256 is
-`9f192a63760127fb377a4814897f4b31b61bd3398a9f2e63e1abd66fcfbbc519`.
-The original executable SHA-256 is
-`a762f10ff75b176bfd73fe1c1c3f40f0b6b5bc5007137acbadbdce39b74bc109`.
-Both were verified during preparation. Signing changes executable bytes, so the
-final release records its own hash alongside the original build provenance.
+Record `source-build-info.json` with `version`, `bundle_version`,
+`terminal_revision`, `framework_revision`, `variant: "release"`,
+`architecture: "arm64"`, `deployment_target`, `source_modifications: false`,
+`executable_sha256`, toolchain versions, test commands/results and known limitations.
+Read the deployment target from the executable. Verify the packaged `--version`
+and Info.plist before signing. A fresh build keeps its source version/build;
+repackaging an older release may increase them, but may never decrease either.
 
 ```sh
 export KINETICA_SIGNING_IDENTITY='Developer ID Application: YOUR_NAME (TEAM_ID)'
 export KINETICA_NOTARY_PROFILE=kinetica-terminal-notary
 bash scripts/notarize-native-terminal.sh submit \
-  'build/previous-release/extracted/Kinetica Terminal.app' \
-  build/previous-release/build-info.json 0.2.1 25 build/releases/0.2.1
+  'build/release-source/Kinetica Terminal.app' \
+  build/source-build-info.json 0.3.0 26 build/releases/0.3.0
 ```
 
-Submission returns immediately with an ID in `submission.json`. Check status
-with `xcrun notarytool info ID --keychain-profile kinetica-terminal-notary`.
-Use `notarytool log ID` with the same profile to diagnose rejection. Do not submit
-again merely because Apple's first submission is still processing.
-
-After the status is **Accepted**:
+The script validates the source executable hash, clean-source provenance and
+credentials before copying and signing the bundle. Submission returns immediately
+with an ID in `submission.json`. Check status using `xcrun notarytool info ID
+--keychain-profile kinetica-terminal-notary`. Do not resubmit an in-progress request.
+After Apple reports **Accepted**, run:
 
 ```sh
-bash scripts/notarize-native-terminal.sh finish build/releases/0.2.1
+bash scripts/notarize-native-terminal.sh finish build/releases/0.3.0
 ```
 
-The script staples the ticket, checks codesign and Gatekeeper, and repeats the
-checks after extracting the final ZIP. It produces the ZIP, `build-info.json`,
-`source-build-info.json`, `SHA256SUMS.txt`, and a cask with the final archive hash.
-No GitHub or tap changes happen in the script.
+This staples the ticket and verifies codesign, Gatekeeper and the final extracted
+ZIP. The distribution files are the ZIP, `build-info.json`, `source-build-info.json`
+and `SHA256SUMS.txt`. The generated cask uses the final ZIP hash.
 
 ## Runtime verification and publication
 
-Before publication, run the signed app's built-in renderer diagnostic through
-LaunchServices. It creates and closes its own window and PTY, checking AppKit
-committed text, PTY echo, Metal frame presentation, and child-process cleanup:
+Run the signed app's built-in renderer diagnostic through LaunchServices. It
+creates and closes only its own window and PTY:
 
 ```sh
-open -n -W 'build/releases/0.2.1/staging/Kinetica Terminal.app' --args \
+open -n -W 'build/releases/0.3.0/staging/Kinetica Terminal.app' --args \
   --benchmark-renderer "$PWD/scripts/terminal-render-load.py" \
-  "$PWD/build/releases/0.2.1/runtime-check.json"
-python3 -c 'import json; r=json.load(open("build/releases/0.2.1/runtime-check.json")); assert r["valid"], r["failures"]'
+  "$PWD/build/releases/0.3.0/runtime-check.json"
+python3 -c 'import json; r=json.load(open("build/releases/0.3.0/runtime-check.json")); assert r["valid"], r["failures"]'
 ```
 
-Keep the test window visible during its roughly 10-second run. A direct binary
-launch can leave this diagnostic window occluded; a test in a restricted shell
-sandbox can also fail during AppKit registration. The JSON result, not the exit
-status of `open`, determines whether the diagnostic passed. This is not a full
-application UI acceptance test.
+Keep the test window visible during its roughly 10-second run. Direct binary
+launches may leave it occluded; the diagnostic JSON determines success, not
+`open`'s exit status. Never replace or terminate the user's installed app or shells.
+Record new checks separately from historical test results and keep preview
+limitations explicit, including untested older macOS and Intel hardware.
 
-Never replace or terminate the installed app or the user's live shells. Record
-the checks in release notes; historical source-build tests are recorded in
-`source-build-info.json` and must not be described as fresh test runs.
-
-Keep 0.2.1 a preview: signing does not resolve the previous release's documented
-test failure, accessibility limitations, or older-macOS coverage gaps. State that
-this release changes distribution signing and bundle metadata only.
-
-Commit the release tooling, push its branch, and tag that commit `v0.2.1` so the
-source archive includes the tooling as well as the original app sources. Create
-a draft GitHub prerelease, upload only the four distribution files named above,
-verify downloaded hashes, and publish it. Do not upload the staging directory,
-submission ZIP, credentials, or private keys.
-
-After the GitHub download is public, update
-`Heapy/homebrew-tap/Casks/kinetica-terminal.rb` from the generated cask. Run
-Homebrew style/audit and fetch checks before pushing. Do not install over the
-user's application to test the cask. Retain its preview caveat; the old ad-hoc
-signing and unnotarized warnings can be removed only after successful notarization.
-
-The installation command remains:
+Push the clean release source branch and tag its exact commit. Create a draft
+GitHub prerelease, upload only the four distribution files, download and verify
+their hashes, then publish it. Do not upload staging/submission ZIPs or credentials.
+After the download is public, update `Heapy/homebrew-tap/Casks/kinetica-terminal.rb`
+from the generated cask. Run style, audit and fetch checks before pushing; do not
+install over the user's app to validate the cask.
 
 ```sh
 brew install --cask Heapy/tap/kinetica-terminal
+# Existing installations:
+brew update
+brew upgrade --cask Heapy/tap/kinetica-terminal
 ```

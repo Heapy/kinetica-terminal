@@ -16,6 +16,7 @@ internal class TerminalNativeShaper(font: NSFont) {
     private val faces = mutableListOf<CTFontRef>()
     private val colorFaces = mutableListOf<TerminalNativeColorGlyphs>()
     private val resolved = linkedMapOf<String, TerminalResolvedFontCell>()
+    private var symbolsFace: CTFontRef? = null
     private var disposed = false
     val fontCount: Int get() = faces.size
 
@@ -42,6 +43,13 @@ internal class TerminalNativeShaper(font: NSFont) {
     }
 
     private fun resolveFace(text: String): Int? = memScoped {
+        // Private-use codepoints have no universal meaning. Preserve an explicitly
+        // selected patched font, then prefer our Nerd symbols over unrelated system PUA fonts.
+        val first = terminalFirstCodepoint(text)
+        if ((first in 0xe000..0xf8ff || first in 0xf0000..0xffffd || first in 0x100000..0x10fffd) &&
+            !supports(primaryFace, text)) {
+            resolveSymbol(text)?.let { return@memScoped it }
+        }
         val characters = allocArray<UShortVar>(text.length)
         for (i in text.indices) characters[i] = text[i].code.toUShort()
         val string = checkNotNull(CFStringCreateWithCharacters(null, characters, text.length.toLong()))
@@ -66,8 +74,13 @@ internal class TerminalNativeShaper(font: NSFont) {
                 candidate(index, length)?.let { return@memScoped it }
                 index += length
             }
-            null
+            resolveSymbol(text)
         } finally { CFRelease(string) }
+    }
+
+    private fun resolveSymbol(text: String): Int? {
+        val font = symbolsFace ?: terminalCreateSymbolsFont(CTFontGetSize(primaryFace)).also { symbolsFace = it }
+        return if (supports(font, text)) retainFace(font) else null
     }
 
     private fun supports(font: CTFontRef, text: String): Boolean = memScoped {
@@ -163,6 +176,8 @@ internal class TerminalNativeShaper(font: NSFont) {
         faces.clear()
         colorFaces.clear()
         resolved.clear()
+        symbolsFace?.let { CFRelease(it) }
+        symbolsFace = null
         CFRelease(primaryFace)
         primaryFont = null
     }
