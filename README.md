@@ -23,6 +23,8 @@ open 'build/apps/Kinetica Terminal.app'
 
 Packaging includes the Icon Composer source and uses `xcrun actool`; install a
 version of Xcode that supports `.icon` files. The bundle is signed ad hoc for local use.
+For a stable signing identity across rebuilds and recovery of macOS file access, see
+[macOS signing and permissions](docs/macos-signing-and-permissions.md).
 
 ```sh
 ./kotlin build -m browser-terminal -p js -v release
