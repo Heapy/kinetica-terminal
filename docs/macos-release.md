@@ -41,7 +41,7 @@ Use a clean tracked terminal checkout and a clean framework checkout. Preserve t
 user's working changes and installed application by using separate worktrees.
 The application version comes from `samples/native-terminal/src/TerminalVersion.kt`;
 `publish.module-template.yaml` carries the library version and the packaging script
-carries the increasing `CFBundleVersion`. Version 0.5.0 uses build 29.
+carries the increasing `CFBundleVersion`. Version 0.5.0 uses build 30.
 
 Bootstrap the selected framework revision, then build the actual Release artifact:
 
@@ -64,7 +64,7 @@ export KINETICA_SIGNING_IDENTITY='Developer ID Application: YOUR_NAME (TEAM_ID)'
 export KINETICA_NOTARY_PROFILE=kinetica-terminal-notary
 bash scripts/notarize-native-terminal.sh submit \
   'build/release-source/Kinetica Terminal.app' \
-  build/source-build-info.json 0.5.0 29 build/releases/0.5.0
+  build/source-build-info.json 0.5.0 30 build/releases/0.5.0
 ```
 
 The script validates the source executable hash, clean-source provenance and
@@ -87,13 +87,14 @@ Run the signed app's built-in renderer diagnostic through LaunchServices. It
 creates and closes only its own window and PTY:
 
 ```sh
-open -n -W 'build/releases/0.5.0/staging/Kinetica Terminal.app' --args \
+open -n -g -W 'build/releases/0.5.0/staging/Kinetica Terminal.app' --args \
   --benchmark-renderer "$PWD/scripts/terminal-render-load.py" \
   "$PWD/build/releases/0.5.0/runtime-check.json"
 python3 -c 'import json; r=json.load(open("build/releases/0.5.0/runtime-check.json")); assert r["valid"], r["failures"]'
 ```
 
-Keep the test window visible during its roughly 10-second run. Direct binary
+The diagnostic floats above other windows; `-g` preserves keyboard focus in the
+user's current app. Keep it visible during its roughly 10-second run. Direct binary
 launches may leave it occluded; the diagnostic JSON determines success, not
 `open`'s exit status. Never replace or terminate the user's installed app or shells.
 Record new checks separately from historical test results and keep known

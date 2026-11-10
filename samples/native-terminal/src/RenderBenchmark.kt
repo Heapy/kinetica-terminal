@@ -63,14 +63,17 @@ internal fun benchmarkRenderer(args: Array<String>) {
         NSWindowStyleMaskTitled, NSBackingStoreBuffered, false)
     window.releasedWhenClosed = false
     window.title = "Kinetica renderer benchmark (isolated)"
+    // Keep this short-lived diagnostic visible without stealing the user's
+    // keyboard focus (their keystrokes would corrupt the synthetic PTY protocol).
+    window.level = NSFloatingWindowLevel
+    window.collectionBehavior = NSWindowCollectionBehaviorCanJoinAllSpaces or NSWindowCollectionBehaviorFullScreenAuxiliary
     window.contentView = view
     val targetScreen = NSScreen.screens.filterIsInstance<NSScreen>().maxBy { it.maximumFramesPerSecond }
     // NSWindow's initial screen can follow application activation. Pin every comparison to
     // the same fastest connected display and record it; never compare 60 Hz and 120 Hz runs.
     window.setFrameOrigin(targetScreen.visibleFrame.useContents { NSMakePoint(origin.x + 40, origin.y + 40) })
     window.makeFirstResponder(view)
-    application.activateIgnoringOtherApps(true)
-    window.makeKeyAndOrderFront(null)
+    window.orderFrontRegardless()
     var exitCode: Int? = null
     val pty = MacOsPty(session, "/usr/bin/python3", listOf(args[1], "--seconds", "10", "--mib-per-second", "4"),
         onExit = { exitCode = it })
