@@ -22,6 +22,7 @@ internal class TerminalApplication(
     internal val menu get() = shell.menu
     private var sequence = 0
     private var settingsWindow: AppKitWindow? = null
+    private var aboutWindow: AppKitWindow? = null
     private val active: TerminalWindow? get() = terminals.firstOrNull { it.handle == shell.activeWindow }
 
     init {
@@ -38,6 +39,7 @@ internal class TerminalApplication(
             if (shift) setOf(KeyModifier.PRIMARY, KeyModifier.SHIFT) else setOf(KeyModifier.PRIMARY))
         global("app.quit", "Quit Kinetica Terminal", "q", shell::requestQuit)
         global("app.settings", "Settings…", ",", ::showSettings)
+        shell.commands.register(ApplicationCommand("app.about", "About Kinetica Terminal") { showAbout() })
         terminal("notifications.enable", "Enable Terminal Notifications…", emptyList()) { terminal ->
             terminal.view.requestNotificationPermission { }
         }
@@ -68,7 +70,8 @@ internal class TerminalApplication(
         terminal("font.reset", "Reset Text Size", listOf(key("0"))) { it.resetZoom() }
         fun items(vararg ids: String) = ids.map { MenuItem.Command(it) }
         shell.setMenus(listOf(
-            ApplicationMenu("Kinetica Terminal", items("app.settings", "notifications.enable", "app.quit")),
+            ApplicationMenu("Kinetica Terminal", items("app.about") + MenuItem.Separator +
+                items("app.settings", "notifications.enable", "app.quit")),
             ApplicationMenu("Shell", items("window.new", "window.tab", "window.close") + MenuItem.Separator + items("prompt.previous", "prompt.next")),
             ApplicationMenu("Window", items("tab.next", "tab.previous") + MenuItem.Separator + (1..9).map { MenuItem.Command("tab.$it") }),
             ApplicationMenu("Edit", items("edit.undo", "edit.cut", "edit.copy", "edit.paste", "edit.selectAll") + MenuItem.Separator +
@@ -107,6 +110,19 @@ internal class TerminalApplication(
             terminal.closeWindowIfMounted()
             throw failure
         }
+    }
+
+    private fun showAbout() {
+        aboutWindow?.let { it.show(); return }
+        val returnTo = shell.activeWindow?.id
+        aboutWindow = shell.openWindow(ApplicationWindow("about", "About Kinetica Terminal",
+            size = WindowSize(420.0, 240.0), minimumSize = WindowSize(420.0, 240.0),
+            resizable = false, minimizable = false, initialFocus = "about-close"),
+            callbacks = WindowCallbacks(closed = {
+                aboutWindow = null
+                returnTo?.let { shell.window(it)?.show() }
+            }),
+        ) { TerminalAboutContent { aboutWindow?.close() } }
     }
 
     private fun showSettings() {

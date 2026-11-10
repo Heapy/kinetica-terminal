@@ -118,12 +118,36 @@ class TerminalUsabilityTest {
             assertTrue(owner.shell.execute("notifications.enable"))
             shortcut("a")
             assertContains(second.view.accessibilitySelectedText().orEmpty(), "SEARCH_ONE")
+            fun flatten(view: NSView): List<NSView> = listOf(view) + view.subviews.filterIsInstance<NSView>().flatMap(::flatten)
+            val appMenu = checkNotNull(owner.menu.itemAtIndex(0)?.submenu)
+            assertEquals("About Kinetica Terminal", appMenu.itemAtIndex(0)?.title)
+            assertTrue(appMenu.itemAtIndex(1)?.separatorItem == true)
+            appMenu.performActionForItemAtIndex(0)
+            val about = checkNotNull(owner.shell.window("about"))
+            await { application.keyWindow == about.nativeWindow }
+            assertEquals("About Kinetica Terminal", about.nativeWindow.title)
+            val aboutControls = flatten(checkNotNull(about.nativeWindow.contentView))
+            assertContains(aboutControls.filterIsInstance<NSTextField>().map { it.stringValue }, "Version ${terminalApplicationVersion()}")
+            assertFalse(owner.shell.execute("screen.clear"), "About must not route commands into a background terminal")
+            assertTrue(owner.shell.execute("app.about"))
+            assertSame(about, owner.shell.window("about"), "Repeated About commands must reuse the window")
+            capture(about.nativeWindow, "about")
+            aboutControls.filterIsInstance<NSButton>().single { it.identifier == "about-close" }.performClick(null)
+            assertNull(owner.shell.window("about"))
+            await { application.keyWindow == second.window }
+            assertTrue(owner.shell.execute("app.about"))
+            val reopenedAbout = checkNotNull(owner.shell.window("about"))
+            assertNotSame(about, reopenedAbout)
+            await { application.keyWindow == reopenedAbout.nativeWindow }
+            shortcut("w")
+            assertNull(owner.shell.window("about"))
+            assertEquals(listOf(first, second), owner.terminals)
+            await { application.keyWindow == second.window }
             shortcut(",")
             val panel = checkNotNull(owner.shell.window("settings")).nativeWindow
             await { application.keyWindow == panel }
             assertFalse(owner.shell.execute("screen.clear"), "Settings must not route commands into a background terminal")
             assertFalse(owner.shell.execute("notifications.enable"), "Permission requests require an active terminal")
-            fun flatten(view: NSView): List<NSView> = listOf(view) + view.subviews.filterIsInstance<NSView>().flatMap(::flatten)
             val controls = flatten(panel.contentView!!)
             val fontTitle = checkNotNull(NSFont.fontWithName("Menlo-Regular", 18.0)?.displayName)
             val fontMenu = controls.filterIsInstance<NSPopUpButton>().single { fontTitle in it.itemTitles }

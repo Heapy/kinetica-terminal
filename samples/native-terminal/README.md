@@ -24,6 +24,7 @@ sets `TERM_PROGRAM=Kinetica` and `TERM_PROGRAM_VERSION` for new shells. Packaged
 read `CFBundleShortVersionString`; unbundled development runs use `TERMINAL_VERSION`
 in `src/TerminalVersion.kt`. Packaging queries the compiled executable's `--version`
 to write that same version into `Info.plist`, including when using `--skip-build`.
+Kinetica Terminal → About Kinetica Terminal shows the same version and the app's license.
 
 The surface supports native input composition, Command+C/V, drag selection, and wheel history.
 Closing the window disposes the UI and closes/reaps the shell. When the shell exits (`exit`,
