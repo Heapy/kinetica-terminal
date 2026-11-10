@@ -41,7 +41,7 @@ Use a clean tracked terminal checkout and a clean framework checkout. Preserve t
 user's working changes and installed application by using separate worktrees.
 The application version comes from `samples/native-terminal/src/TerminalVersion.kt`;
 `publish.module-template.yaml` carries the library version and the packaging script
-carries the increasing `CFBundleVersion`. Version 0.5.0 uses build 28.
+carries the increasing `CFBundleVersion`. Version 0.5.0 uses build 29.
 
 Bootstrap the selected framework revision, then build the actual Release artifact:
 
@@ -64,7 +64,7 @@ export KINETICA_SIGNING_IDENTITY='Developer ID Application: YOUR_NAME (TEAM_ID)'
 export KINETICA_NOTARY_PROFILE=kinetica-terminal-notary
 bash scripts/notarize-native-terminal.sh submit \
   'build/release-source/Kinetica Terminal.app' \
-  build/source-build-info.json 0.5.0 28 build/releases/0.5.0
+  build/source-build-info.json 0.5.0 29 build/releases/0.5.0
 ```
 
 The script validates the source executable hash, clean-source provenance and

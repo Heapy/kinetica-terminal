@@ -69,7 +69,8 @@ internal fun benchmarkRenderer(args: Array<String>) {
     // the same fastest connected display and record it; never compare 60 Hz and 120 Hz runs.
     window.setFrameOrigin(targetScreen.visibleFrame.useContents { NSMakePoint(origin.x + 40, origin.y + 40) })
     window.makeFirstResponder(view)
-    window.orderFrontRegardless()
+    application.activateIgnoringOtherApps(true)
+    window.makeKeyAndOrderFront(null)
     var exitCode: Int? = null
     val pty = MacOsPty(session, "/usr/bin/python3", listOf(args[1], "--seconds", "10", "--mib-per-second", "4"),
         onExit = { exitCode = it })
@@ -128,6 +129,7 @@ internal fun benchmarkRenderer(args: Array<String>) {
             "inputSubmissions" to inputSubmitted.mapKeys { it.key.toString() },
             "inputPresentations" to inputPresented.mapKeys { it.key.toString() },
             "engine" to "Kotlin/Native Metal", "os" to NSProcessInfo.processInfo.operatingSystemVersionString,
+            "fontName" to font.fontName,
             "scheduling" to "appkit",
             "device" to (MTLCreateSystemDefaultDevice()?.name ?: "unknown"),
             "screenName" to (window.screen?.localizedName ?: "unknown"),
