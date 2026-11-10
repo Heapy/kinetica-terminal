@@ -19,6 +19,20 @@ bash scripts/package-native-terminal.sh
 open 'build/apps/Kinetica Terminal.app'
 ```
 
+The packaged app includes **Open Kinetica Here** in Finder's **Services** menu
+(also available from the context menu of a selected folder). Install the app in
+`/Applications` or `~/Applications` and launch it once. If the action is hidden,
+enable it in System Settings → Keyboard → Keyboard Shortcuts → Services.
+macOS may need a logout/login to refresh newly installed services.
+
+Select one or more folders to open a separate terminal window in each directory.
+This also launches Kinetica when it is closed, without an extra home-directory
+window. Existing sessions stay open. Folder paths, including spaces, Unicode and
+shell metacharacters, are passed directly as the PTY's working directory.
+The service accepts existing local folders only; regular files and remote URLs
+are ignored. An empty or invalid selection reports an error through Services.
+Unbundled `./kotlin run` builds do not advertise the Finder service.
+
 The application reports `Kinetica <version>` through XTVERSION and `--version`, and
 sets `TERM_PROGRAM=Kinetica` and `TERM_PROGRAM_VERSION` for new shells. Packaged apps
 read `CFBundleShortVersionString`; unbundled development runs use `TERMINAL_VERSION`

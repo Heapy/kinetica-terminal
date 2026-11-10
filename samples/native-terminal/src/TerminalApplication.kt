@@ -5,12 +5,12 @@ package app.native.terminal
 import io.heapy.kinetica.appkit.*
 import io.heapy.kinetica.application.*
 import io.heapy.kinetica.terminal.*
-import platform.AppKit.NSApplication
-import platform.Foundation.NSHomeDirectory
+import platform.AppKit.*
+import platform.Foundation.*
 
 /** Domain policy. Kinetica owns windows, tabs, focus, menus and asynchronous shutdown. */
 internal class TerminalApplication(
-    application: NSApplication,
+    private val application: NSApplication,
     quit: () -> Unit = { application.terminate(null) },
     completeTermination: () -> Unit = { application.replyToApplicationShouldTerminate(true) },
     internal val settings: TerminalSettingsStore = TerminalSettingsStore(),
@@ -22,6 +22,18 @@ internal class TerminalApplication(
     internal val menu get() = shell.menu
     private var sequence = 0
     private var settingsWindow: AppKitWindow? = null
+    private val previousServicesProvider = application.servicesProvider
+    private val finderService = FinderService { directory ->
+        open(directory = directory)
+        application.activateIgnoringOtherApps(true)
+    }
+    private val launchObserver = NSNotificationCenter.defaultCenter.addObserverForName(
+        NSApplicationDidFinishLaunchingNotification, application, null,
+    ) { notification ->
+        // A Services launch must not also start an unrelated shell in the home directory.
+        val defaultLaunch = (notification?.userInfo?.get(NSApplicationLaunchIsDefaultLaunchKey) as? NSNumber)?.boolValue ?: true
+        if (defaultLaunch && terminals.isEmpty()) open()
+    }
     private var aboutWindow: AppKitWindow? = null
     private val active: TerminalWindow? get() = terminals.firstOrNull { it.handle == shell.activeWindow }
 
@@ -79,12 +91,13 @@ internal class TerminalApplication(
             ApplicationMenu("View", items("font.increase", "font.decrease", "font.reset")),
         ))
         shell.install()
+        application.servicesProvider = finderService
     }
 
-    fun open(tabbed: Boolean = false): TerminalWindow {
+    fun open(tabbed: Boolean = false, directory: String? = null): TerminalWindow {
         val parent = if (tabbed) active else null
         val number = ++sequence
-        val terminal = TerminalWindow(number, settings, parent?.currentWorkingDirectory() ?: NSHomeDirectory())
+        val terminal = TerminalWindow(number, settings, directory ?: parent?.currentWorkingDirectory() ?: NSHomeDirectory())
         try {
             terminal.handle = shell.openWindow(ApplicationWindow("shell-$number", "Shell $number",
                 size = WindowSize(960.0, 600.0), minimumSize = WindowSize(520.0, 280.0),
@@ -142,8 +155,12 @@ internal class TerminalApplication(
         ) { TerminalSettingsContent(editor) }
     }
 
-    fun run() { open(); shell.run() }
-    fun dispose() { shell.dispose() }
+    fun run() { try { NSUpdateDynamicServices(); shell.run() } finally { dispose() } }
+    fun dispose() {
+        NSNotificationCenter.defaultCenter.removeObserver(launchObserver)
+        if (application.servicesProvider === finderService) application.servicesProvider = previousServicesProvider
+        shell.dispose()
+    }
 }
 
 private data class Edit(val id: String, val title: String, val shortcut: String, val command: EditingCommand)

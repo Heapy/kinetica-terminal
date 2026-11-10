@@ -1,0 +1,4 @@
+language = Objective-C
+package = app.native.terminal.finder
+headers = terminalfinder.h
+headerFilter = terminalfinder.h

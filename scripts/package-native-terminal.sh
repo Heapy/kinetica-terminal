@@ -53,6 +53,14 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleShortVersionString</key><string>$app_version</string>
   <key>NSPrincipalClass</key><string>NSApplication</string>
   <key>NSHighResolutionCapable</key><true/>
+  <key>NSServices</key>
+  <array><dict>
+    <key>NSMenuItem</key><dict><key>default</key><string>Open Kinetica Here</string></dict>
+    <key>NSMessage</key><string>openKineticaHere</string>
+    <key>NSPortName</key><string>Kinetica Terminal</string>
+    <key>NSSendFileTypes</key><array><string>public.folder</string></array>
+    <key>NSRequiredContext</key><dict><key>NSApplicationIdentifier</key><string>com.apple.finder</string></dict>
+  </dict></array>
 </dict></plist>
 PLIST
 /usr/libexec/PlistBuddy -c "Merge '$icon_build/partial-info.plist'" "$app/Contents/Info.plist"
