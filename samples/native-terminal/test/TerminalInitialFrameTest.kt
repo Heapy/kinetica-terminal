@@ -32,6 +32,7 @@ class TerminalInitialFrameTest {
             app.updateWindows()
         }
         try {
+            assertEquals(DEFAULT_TERMINAL_FONT, terminal.view.currentFontFamily)
             terminal.session.sendInput("printf 'KINETICA_RENDER_%s\\n' READY\r")
             val began = TimeSource.Monotonic.markNow()
             while (!presented && began.elapsedNow().inWholeSeconds < 10) pump()

@@ -53,8 +53,10 @@ internal fun benchmarkRenderer(args: Array<String>) {
             } }
         }
     }
+    registerTerminalFonts()
     val view = AppKitTerminalView(session, rendering = TerminalRendering.GPU, renderObserver = observer)
-    val font = NSFont.monospacedSystemFontOfSize(14.0, NSFontWeightRegular)
+    view.configureFont(DEFAULT_TERMINAL_FONT, 14.0)
+    val font = checkNotNull(NSFont.fontWithName(DEFAULT_TERMINAL_FONT, 14.0))
     val cellWidth = NSAttributedString.create(string = "M", attributes = mapOf(NSFontAttributeName to font)).size().useContents { width }
     val cellHeight = ceil(font.ascender - font.descender + font.leading + 2.0)
     val window = NSWindow(NSMakeRect(60.0, 60.0, ceil(cellWidth * 120), cellHeight * 32),

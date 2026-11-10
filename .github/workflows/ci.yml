@@ -23,7 +23,9 @@ jobs:
         with:
           node-version: '22'
       - name: Verify embedded native font and license
-        run: python3 scripts/generate-native-symbols-font.py --check
+        run: |
+          python3 scripts/generate-native-symbols-font.py --check
+          python3 scripts/generate-native-text-fonts.py --check
       - name: JVM engine tests
         run: bash scripts/engine.sh test -m kinetica-terminal -p jvm
       # App integration uses the unpublished Kinetica application-shell API; see README bootstrap.

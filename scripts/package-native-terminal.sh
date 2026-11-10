@@ -31,6 +31,7 @@ cp "$binary" "$app/Contents/MacOS/kinetica-terminal"
 mkdir -p "$app/Contents/Resources/LICENSES"
 cp LICENSE "$app/Contents/Resources/LICENSES/Kinetica-Terminal-LICENSE.txt"
 cp kinetica-terminal/resources/META-INF/LICENSES/* "$app/Contents/Resources/LICENSES/"
+cp samples/native-terminal/fonts/jetbrains-mono/OFL.txt "$app/Contents/Resources/LICENSES/JETBRAINS-MONO-OFL.txt"
 # Compile the layered Icon Composer source and its legacy macOS fallback together.
 icon_build="$repo_root/build/terminal-icon"
 mkdir -p "$icon_build"
@@ -49,7 +50,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleIdentifier</key><string>io.heapy.kinetica.terminal-demo</string>
   <key>CFBundleName</key><string>Kinetica Terminal</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleVersion</key><string>27</string>
+  <key>CFBundleVersion</key><string>28</string>
   <key>CFBundleShortVersionString</key><string>$app_version</string>
   <key>NSPrincipalClass</key><string>NSApplication</string>
   <key>NSHighResolutionCapable</key><true/>

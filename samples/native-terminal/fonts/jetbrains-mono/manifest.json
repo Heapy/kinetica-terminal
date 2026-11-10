@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/JetBrains/JetBrainsMono",
+  "version": "2.304",
+  "commit": "cd5227bd1f61dff3bbd6c814ceaf7ffd95e947d9",
+  "source": "https://raw.githubusercontent.com/JetBrains/JetBrainsMono/cd5227bd1f61dff3bbd6c814ceaf7ffd95e947d9",
+  "files": {
+    "JetBrainsMono-Regular.ttf": "a0bf60ef0f83c5ed4d7a75d45838548b1f6873372dfac88f71804491898d138f",
+    "JetBrainsMono-Bold.ttf": "5590990c82e097397517f275f430af4546e1c45cff408bde4255dad142479dcb",
+    "JetBrainsMono-Italic.ttf": "9d0a1f7a708e6af183f1193b7e81d40da294f5c67682c085d8401c60aac8ded4",
+    "JetBrainsMono-BoldItalic.ttf": "4039d5ce0ed225bf9c8b2c8c6436290ae2f356b7e90d70fa666227238324aa3b",
+    "OFL.txt": "30f0c136e3c88e422d0791acd97238870f9054a9729bc34cf2ff0d4ed8cac4ad"
+  },
+  "generatorSha256": "014439d69098173c02e947e2e511a7af3bc56722b6d098b880217b47a58a046f",
+  "generatedSha256": "4df1b67a77a405812f3a09ebf02478427793a9f380ab6cfdc322a620787e302d"
+}

@@ -4,6 +4,14 @@ Runs `/bin/zsh -l` in a local PTY and displays it using the shared Kotlin termin
 one AppKit view backed by a Metal glyph-atlas renderer, with AppKit drawing as a fallback.
 Requires macOS on Apple Silicon.
 
+JetBrains Mono 2.304 is bundled and selected by default, with real Regular, Bold,
+Italic and Bold Italic faces and programming ligatures. No font installation or
+download is needed. The existing Symbols Nerd Font fallback still supplies icons.
+Settings → Font lists the bundled faces alongside installed monospaced fonts;
+System Monospaced remains an explicit option. Existing named-font preferences are
+preserved; an unset or legacy empty default migrates to JetBrains Mono.
+See [font provenance and licensing](fonts/jetbrains-mono/README.md).
+
 Shell sessions enable grapheme clustering by default: skin-tone modifiers, flags,
 and ZWJ emoji sequences occupy a single two-cell cluster. Terminal applications can
 toggle this behavior with DEC mode 2027; a terminal reset restores the enabled default.

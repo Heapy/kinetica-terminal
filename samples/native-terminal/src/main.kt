@@ -9,6 +9,7 @@ fun main(args: Array<String>) {
         return
     }
     installFailureLogging()
+    registerTerminalFonts()
     if (args.firstOrNull()?.startsWith("--benchmark-") == true) { benchmarkTerminal(args); return }
     TerminalApplication(NSApplication.sharedApplication()).run()
 }

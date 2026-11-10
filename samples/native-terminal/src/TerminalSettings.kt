@@ -17,13 +17,17 @@ internal enum class TerminalColorTheme(val label: String, val colors: TerminalTh
     SOLARIZED("Solarized", TerminalTheme(0x839496, 0x002b36, 0x93a1a1, 0x174652)),
 }
 
-internal data class TerminalSettings(val fontName: String? = null, val fontSize: Double = 14.0,
+internal data class TerminalSettings(val fontName: String? = DEFAULT_TERMINAL_FONT, val fontSize: Double = 14.0,
     val colorTheme: TerminalColorTheme = TerminalColorTheme.DARK, val allowWindowResize: Boolean = false)
 
 /** Null defaults provide an isolated in-memory store for native application tests. */
 internal class TerminalSettingsStore(private val defaults: NSUserDefaults? = NSUserDefaults.standardUserDefaults) {
+    init { registerTerminalFonts() }
     var settings: TerminalSettings = TerminalSettings(
-        defaults?.stringForKey("terminal.font")?.takeIf { it.isNotBlank() && NSFont.fontWithName(it, 14.0) != null },
+        defaults?.stringForKey("terminal.font").let { saved ->
+            if (saved == SYSTEM_FONT_PREFERENCE) null
+            else saved?.takeIf { it.isNotBlank() && NSFont.fontWithName(it, 14.0) != null } ?: DEFAULT_TERMINAL_FONT
+        },
         defaults?.doubleForKey("terminal.fontSize")?.takeIf { it.isFinite() && it in 6.0..96.0 } ?: 14.0,
         TerminalColorTheme.entries.firstOrNull { it.name == defaults?.stringForKey("terminal.theme") } ?: TerminalColorTheme.DARK,
         defaults?.boolForKey("terminal.allowWindowResize") ?: false)
@@ -32,7 +36,7 @@ internal class TerminalSettingsStore(private val defaults: NSUserDefaults? = NSU
     fun save(value: TerminalSettings) {
         require(value.fontSize.isFinite() && value.fontSize in 6.0..96.0)
         settings = value
-        defaults?.setObject(value.fontName.orEmpty(), forKey = "terminal.font")
+        defaults?.setObject(value.fontName ?: SYSTEM_FONT_PREFERENCE, forKey = "terminal.font")
         defaults?.setDouble(value.fontSize, forKey = "terminal.fontSize")
         defaults?.setObject(value.colorTheme.name, forKey = "terminal.theme")
         defaults?.setBool(value.allowWindowResize, forKey = "terminal.allowWindowResize")
@@ -47,6 +51,10 @@ internal class TerminalSettingsStore(private val defaults: NSUserDefaults? = NSU
     }
 }
 
+// Older versions saved an empty string for the default. Keep an explicit system-font
+// choice distinct so those defaults migrate while new user choices survive reloads.
+private const val SYSTEM_FONT_PREFERENCE = "__system_monospaced__"
+
 internal class TerminalSettingsEditor(private val store: TerminalSettingsStore, private val applied: () -> Unit) {
     val font = store(store.settings.fontName.orEmpty())
     val size = store(store.settings.fontSize.toString())
@@ -54,7 +62,9 @@ internal class TerminalSettingsEditor(private val store: TerminalSettingsStore, 
     val windowResize = store(if (store.settings.allowWindowResize) "allow" else "deny")
     val error = store("")
     val fonts: List<ChoiceOption> = listOf(ChoiceOption("", "System Monospaced")) +
-        NSFontManager.sharedFontManager.availableFonts.filterIsInstance<String>()
+        // AppKit's availableFonts cache may omit fonts registered from in-memory data.
+        (registerTerminalFonts() + NSFontManager.sharedFontManager.availableFonts.filterIsInstance<String>() +
+            listOfNotNull(store.settings.fontName)).distinct()
             .filter { !it.startsWith('.') && NSFont.fontWithName(it, 14.0)?.fixedPitch == true || it == store.settings.fontName }
             .sorted().map { ChoiceOption(it, NSFont.fontWithName(it, 14.0)?.displayName ?: it) }
     fun apply() {
