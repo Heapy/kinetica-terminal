@@ -1,4 +1,4 @@
-# Signed macOS preview releases
+# Signed macOS releases
 
 Distribute the Apple Silicon app through GitHub Releases and the existing
 [`Heapy/homebrew-tap`](https://github.com/Heapy/homebrew-tap). A public release
@@ -35,7 +35,7 @@ The paid Team ID is not necessarily the identifier shown for an old Personal Tea
 See Apple's [Developer ID guide](https://developer.apple.com/developer-id/) and
 [custom notarization workflow](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow).
 
-## Build a new preview
+## Build a new release
 
 Use a clean tracked terminal checkout and a clean framework checkout. Preserve the
 user's working changes and installed application by using separate worktrees.
@@ -96,12 +96,13 @@ python3 -c 'import json; r=json.load(open("build/releases/0.4.0/runtime-check.js
 Keep the test window visible during its roughly 10-second run. Direct binary
 launches may leave it occluded; the diagnostic JSON determines success, not
 `open`'s exit status. Never replace or terminate the user's installed app or shells.
-Record new checks separately from historical test results and keep preview
+Record new checks separately from historical test results and keep known
 limitations explicit, including untested older macOS and Intel hardware.
 
 Push the clean release source branch and tag its exact commit. Create a draft
-GitHub prerelease, upload only the four distribution files, download and verify
-their hashes, then publish it. Do not upload staging/submission ZIPs or credentials.
+GitHub release, upload only the four distribution files, download and verify
+their hashes, then publish it as a regular release and mark it Latest. Use a
+prerelease only when explicitly requested. Do not upload staging/submission ZIPs or credentials.
 After the download is public, update `Heapy/homebrew-tap/Casks/kinetica-terminal.rb`
 from the generated cask. Run style, audit and fetch checks before pushing; do not
 install over the user's app to validate the cask.

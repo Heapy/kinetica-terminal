@@ -136,7 +136,7 @@ info = {
     'framework_revision': source['framework_revision'],
     'architecture': source['architecture'],
     'deployment_target': plist['LSMinimumSystemVersion'],
-    'prerelease': True,
+    'prerelease': False,
     'packaging': ('Fresh Release build; Developer ID signed and notarized'
                   if source['version'] == plist['CFBundleShortVersionString'] and source['bundle_version'] == plist['CFBundleVersion']
                   else 'Existing Release executable; bundle version updated; Developer ID signed and notarized'),
@@ -168,7 +168,7 @@ version = info['version']
   app "Kinetica Terminal.app"
 
   caveats <<~EOS
-    This is a preview release. Known limitations are documented at:
+    Known limitations are documented at:
       https://github.com/Heapy/kinetica-terminal/releases/tag/v#{{version}}
   EOS
 end
