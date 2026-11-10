@@ -302,6 +302,9 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
         private set
     internal var screenEpoch: Long = 0
         private set
+    // Explicit history erasure invalidates document caches without cancelling surviving screen selections.
+    internal var historyClearEpoch: Long = 0
+        private set
     internal fun indexOfLine(line: TerminalLine): Int {
         if (!alternateScreen) history.indexOf(line).takeIf { it >= 0 }?.let { return it }
         val row = screen.indexOfFirst { it === line }
@@ -950,7 +953,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
     /** Clear retained primary history, including when a full-screen application is active. */
     public fun clearHistory() {
         flushSynchronizedOutput()
-        history.clear(); primaryGraphics.reapRetired(); selectionEpoch++
+        history.clear(); primaryGraphics.reapRetired(); selectionEpoch++; historyClearEpoch++
         damageAll(); flushDamage()
     }
 
@@ -1686,7 +1689,7 @@ public class TerminalSession(columns: Int = 80, rows: Int = 24, public val scrol
                 }
                 // ED 3 erases only the active screen's history. Unlike the explicit
                 // host clearHistory action, an alternate-screen program cannot erase primary history.
-                3 -> if (!alternateScreen) { history.clear(); primaryGraphics.reapRetired(); damageAll() }
+                3 -> if (!alternateScreen) { history.clear(); primaryGraphics.reapRetired(); historyClearEpoch++; damageAll() }
                 22 -> if (parameterCount == 1) scrollAndClear()
             }
             'K' -> eraseLine(params[0], selective)

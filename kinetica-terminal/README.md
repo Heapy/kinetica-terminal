@@ -507,16 +507,22 @@ Physical keys and exact modifiers determine the binding; Shift+PageUp/PageDown a
 Control/Option combinations remain available to terminal applications. Marked text and frozen
 presentation frames are not scrolled by these shortcuts.
 
-The AppKit surface exposes an accessibility text area with a help description, visible text,
+The AppKit surface exposes an accessibility text area with a help description, all retained history and active text,
 UTF-16 character count/range, line lookup, plain and font-attributed substrings, and selection
-ranges. These ranges index the visible physical rows (including their newline separators);
-scrollback selections are clipped to that text. Rectangular selections expose one range per
+ranges. Soft wraps are joined and written spaces are retained, following Ghostty's SCREEN
+text format. Ranges index this complete document independently of viewport scrolling.
+Rectangular selections expose one range per
 nonempty row through `accessibilitySelectedTextRanges`; the singular range encloses them.
 Selected text retains clipboard formatting, including soft-wrap joining and offscreen selected
 output. Wide/combined glyphs and synchronized-output snapshots preserve their cell mapping.
 Without a selection, `accessibilitySelectedText()` returns null and the range list is empty.
 Selection-change notifications debounce for 100 ms and are cancelled on disposal. This mirrors
 the query families in Ghostty's AppKit runtime, with consistent UTF-16 offsets for NSRange.
+The document is read lazily and cached for 500 ms; screen switches, selection changes,
+history erasure, resizing and hold transitions refresh it immediately. Ordinary output can
+remain cached until expiry. A first query during synchronized output still reads the complete
+previous document, even if the application has already cleared its live history. Disposal
+releases the cached text. As in Ghostty, the reported visible-character range spans the document.
 
 The browser exposes visible output in a persistent DOM text node. Unchanged paints do not
 rewrite it; output updates replace only the changed span, preserving DOM reading ranges
@@ -599,11 +605,13 @@ NSWindow and check the revealed/selected text and absence of Kitty input events.
   independently queryable/saveable. DECSTR preserves them; RIS clears them. `sgrMouse` describes
   the requested 1006 bit; `mouseFormat` describes the active wire format.
 - Mode 2026 keeps parsing and replying while surfaces retain the frame captured at the exact
-  start-of-hold escape sequence. Each view copies only its visible rows and freezes their palette,
+  start-of-hold escape sequence. Each view retains its visible/selected rows and freezes their palette,
   theme and cursor. Both hosts release abandoned holds after one second; repeated enable requests
   cannot extend the deadline. Reset, EOF, and an explicit `resize` also release the hold, even for
   unchanged dimensions. A view mounted during a hold stays blank until release. GPU context
-  recovery and forced software redraws use the captured frame.
+  recovery and forced software redraws use the captured frame. AppKit also retains the complete
+  accessibility document. Row snapshots share immutable cell/grapheme/link storage until a write;
+  compressed history stays packed during capture. Releasing the hold retires these snapshots.
 - Custom renderers can subscribe to `onRenderHold` and call `flushSynchronizedOutput` on their
   deadline. Direct `TerminalViewport` embeddings should supply a `TerminalScheduler` whose
   cancellable callbacks run on the owning thread, and report host visibility through
@@ -1270,7 +1278,8 @@ This is an initial VT implementation, not complete xterm conformance. Known limi
   after 100 ms of inactivity, with up to 512 UTF-16 units of visible selected text; large
   selections are clipped without splitting surrogate pairs. These announcements preserve
   browser reading ranges and stop when the terminal loses focus, is hidden or disposed.
-  Output announcements and richer browser navigation remain incomplete. Full VoiceOver/browser
+  Browser full-history text and richer reading navigation remain incomplete. Ordinary output
+  is not announced, matching Ghostty's selection-only notification policy. Full VoiceOver/browser
   screen-reader acceptance remains open.
 
 ## Native application shortcuts

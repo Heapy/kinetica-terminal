@@ -351,15 +351,22 @@ internal fun terminalSelectAllRange(first: Int, last: Int, line: (Int) -> Termin
 // requested; trailing empty cells/rows do not. No newline is synthesized after selection.
 // cellRange reports (row, column, cell width, UTF-16 start, UTF-16 end) for emitted
 // content. A hard newline has width zero at its source row's right boundary.
+internal interface TerminalTextPositions {
+    fun tracks(row: Int): Boolean
+    fun cell(row: Int, column: Int, width: Int, start: Int, end: Int)
+}
+
+private data class TerminalTextPadding(val row: Int, val column: Int, val offset: Int)
+
 internal fun terminalSelectionText(range: TerminalSelectionRange, line: (Int) -> TerminalLine,
     trimTrailingSpaces: Boolean = false,
-    cellRange: ((Int, Int, Int, Int, Int) -> Unit)? = null,
+    cellRange: TerminalTextPositions? = null,
     cellText: ((Int, Int) -> Unit)? = null): String = buildString {
     if (range.rectangle && range.start.column == range.end.column) return@buildString
     var blankRows = 0
     var firstBlankRow = range.start.line
     var blankCells = 0
-    val blankPositions = if (cellRange == null) null else ArrayList<Pair<Int, Int>>()
+    val blankPositions = if (cellRange == null) null else ArrayList<TerminalTextPadding>()
     for (y in range.start.line..range.end.line) {
         val row = line(y)
         row.readPreservingCompression {
@@ -373,24 +380,26 @@ internal fun terminalSelectionText(range: TerminalSelectionRange, line: (Int) ->
             }
             repeat(blankRows) {
                 val source = firstBlankRow + it
-                cellRange?.invoke(source, line(source).columns, 0, length, length + 1)
+                if (cellRange?.tracks(source) == true) cellRange.cell(source, line(source).columns, 0, length, length + 1)
                 append('\n')
             }
             blankRows = if (row.wrapped) 0 else 1; firstBlankRow = y
             if (y == range.start.line || !line(y - 1).wrapped) { blankCells = 0; blankPositions?.clear() }
+            val track = cellRange?.tracks(y) == true
             for (x in from until to) {
                 if (row.width(x) == 0 || row.isSpacerHead(x)) continue
                 if (!row.hasText(x) || trimTrailingSpaces && row.codePoint(x) == ' '.code) {
-                    blankCells++; blankPositions?.add(y to x); continue
+                    if (track) blankPositions?.add(TerminalTextPadding(y, x, blankCells))
+                    blankCells++; continue
                 }
-                repeat(blankCells) {
-                    blankPositions?.get(it)?.let { (source, column) -> cellRange?.invoke(source, column, 1, length, length + 1) }
-                    append(' ')
+                blankPositions?.forEach {
+                    cellRange?.cell(it.row, it.column, 1, length + it.offset, length + it.offset + 1)
                 }
+                repeat(blankCells) { append(' ') }
                 blankCells = 0; blankPositions?.clear()
                 val start = length
                 row.appendTextTo(this, x)
-                cellRange?.invoke(y, x, row.width(x), start, length)
+                if (track) cellRange?.cell(y, x, row.width(x), start, length)
                 if (length > start) cellText?.invoke(start, length)
             }
         }

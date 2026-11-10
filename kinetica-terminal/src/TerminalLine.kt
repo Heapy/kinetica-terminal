@@ -32,10 +32,13 @@ internal class TerminalLink(val value: TerminalHyperlink) {
 internal data class CellAttributes(val underlineColor: Int = -1, val hyperlink: TerminalLink? = null)
 
 /** Packed primitive storage; no object allocation per ordinary character. */
-public class TerminalLine internal constructor(public val columns: Int, internal val colors: TerminalColors? = null,
-    internal val hyperlinkLimit: Int = 64 * 1024) {
-    private var cells: IntArray? = IntArray(columns * 4)
+public class TerminalLine private constructor(public val columns: Int, internal val colors: TerminalColors?,
+    internal val hyperlinkLimit: Int, initializeStorage: Boolean) {
+    internal constructor(columns: Int, colors: TerminalColors? = null, hyperlinkLimit: Int = 64 * 1024) :
+        this(columns, colors, hyperlinkLimit, initializeStorage = true)
+    private var cells: IntArray? = if (initializeStorage) IntArray(columns * 4) else null
     private var compressedCells: ByteArray? = null
+    private var sharedStorage = false
     private var compressionAttempted = false
     private val data: IntArray get() = cells ?: unpackTerminalCells(checkNotNull(compressedCells), columns).also {
         cells = it; compressedCells = null; compressionAttempted = false
@@ -87,6 +90,16 @@ public class TerminalLine internal constructor(public val columns: Int, internal
     private fun changed(first: Int, end: Int) {
         compressionAttempted = false
         textObservers?.forEach { it(first, end) }
+        // An observer can capture the pre-mutation row. Detach after notification,
+        // including when that callback created the first shared snapshot.
+        if (first < columns && sharedStorage) {
+            cells = cells?.copyOf()
+            combined = combined?.copyOf()
+            attributes = attributes?.copyOf()
+            links = links?.toMutableMap()
+            // Packed bytes are immutable; decoding creates a private cell array.
+            sharedStorage = false
+        }
     }
     internal var hyperlinkBytes: Long = 0
         private set
@@ -102,7 +115,7 @@ public class TerminalLine internal constructor(public val columns: Int, internal
     public var promptMarker: TerminalPromptMarker = TerminalPromptMarker.NONE
         internal set
 
-    init { clear(0, columns, TerminalStyle.DEFAULT, TerminalStyle.DEFAULT, 0) }
+    init { if (initializeStorage) clear(0, columns, TerminalStyle.DEFAULT, TerminalStyle.DEFAULT, 0) }
 
     public fun codePoint(column: Int): Int = data[index(column)] and 0x1fffff
     public fun width(column: Int): Int = (data[index(column)] ushr 21) and 3
@@ -262,13 +275,18 @@ public class TerminalLine internal constructor(public val columns: Int, internal
         setAttributes(target, from.attributes?.get(source))
     }
 
-    internal fun snapshot(colors: TerminalColors? = this.colors): TerminalLine = readPreservingCompression {
-        TerminalLine(columns, colors, hyperlinkLimit).also {
-            for (x in 0 until columns) it.copyCell(this, x, x)
+    /** Share immutable payloads until either row is changed; never decode history to capture it. */
+    internal fun snapshot(colors: TerminalColors? = this.colors): TerminalLine =
+        TerminalLine(columns, colors, hyperlinkLimit, initializeStorage = false).also {
+            it.cells = cells; it.compressedCells = compressedCells
+            it.compressionAttempted = compressionAttempted
+            it.combined = combined; it.attributes = attributes; it.links = links
+            it.combinedCount = combinedCount; it.combinedBytes = combinedBytes
+            it.attributeCount = attributeCount; it.hyperlinkBytes = hyperlinkBytes; it.linkHighWater = linkHighWater
             it.wrapped = wrapped; it.wrapContinuation = wrapContinuation
             it.promptMarker = promptMarker
+            sharedStorage = true; it.sharedStorage = true
         }
-    }
 
     internal fun resized(columns: Int): TerminalLine = TerminalLine(columns, colors, hyperlinkLimit).also { next ->
         for (x in 0 until minOf(this.columns, columns)) next.copyCell(this, x, x)

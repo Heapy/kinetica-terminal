@@ -64,6 +64,8 @@ public class TerminalViewport internal constructor(
         this(session, invalidate, scheduler, ::graphicsNowMillis)
 
     private var frozen: FrozenFrame? = null
+    private var captureAccessibleDocument = false
+    private var frameEpoch = 0L
     private var preedit: TerminalPreedit? = null
     private val renderedPreedit: TerminalPreedit? get() = frozen.let { if (it == null) preedit else it.preedit }
     internal val preeditWidth: Double get() = preedit?.width ?: 0.0
@@ -274,7 +276,12 @@ public class TerminalViewport internal constructor(
             capture && session.cursorVisible && scrollOffset == 0, session.cursorStyle, selection, selected, selectedText, copiedText, colors.theme,
             selectionLines, capturedFirst, gesture, session.screenEpoch, clickRow, pointerClickRecycle, session.faintOpacity, session.boldColor, session.selectionColors, session.minimumContrast,
             if (capture) session.graphicsState.captureFrame(scrollOffset, session.columns, session.rows, session.cellSize) { lines[it] } else emptyList(),
-            if (capture) preedit else null)
+            if (capture) preedit else null,
+            ++frameEpoch,
+            if (!captureAccessibleDocument) null else if (!capture) lines else Array(session.lineCount) { y ->
+                if (y in capturedFirst..capturedLast) selectionLines[y - capturedFirst]
+                else session.line(y).snapshot(colors)
+            })
         if (clickLine >= 0) {
             pointerClickRow = selectionLines[clickLine - capturedFirst]
             pointerClickRecycle = pointerClickRow!!.recycleEpoch
@@ -334,6 +341,29 @@ public class TerminalViewport internal constructor(
 
     private fun visibleLine(row: Int): TerminalLine = frozen?.lines?.get(row) ?: session.line(firstLine + row)
     public fun visibleText(): String = (0 until rows).joinToString("\n") { visibleLine(it).text() }
+
+    /** Hosts opt in before receiving input so a first AX query during a hold has a complete old document. */
+    internal fun enableAccessibleDocument() {
+        captureAccessibleDocument = true
+        // A view mounted during a hold has no completed frame and initially presents blank rows.
+        frozen?.let { if (it.accessibleLines == null) it.accessibleLines = it.lines }
+    }
+
+    internal fun accessibleDocumentKey(): TerminalAccessibleDocumentKey =
+        // A held document depends only on its frame and selection, not hidden live mutations.
+        TerminalAccessibleDocumentKey(
+            if (frozen == null) session.selectionEpoch else null,
+            if (frozen == null) session.historyClearEpoch else null,
+            frozen?.epoch,
+            selection(),
+        )
+
+    internal fun accessibleDocument(): TerminalAccessibleText {
+        check(captureAccessibleDocument)
+        val retained = frozen?.accessibleLines
+        return if (retained == null) terminalAccessibleDocument(session.lineCount, session::line, selection())
+        else terminalAccessibleDocument(retained.size, { retained[it] }, selection())
+    }
 
     internal fun accessibleText(): TerminalAccessibleText = terminalAccessibleText(rows, firstLine, ::visibleLine, selection())
 
@@ -853,7 +883,8 @@ public class TerminalViewport internal constructor(
         val selectionLines: Array<TerminalLine>, val selectionFirst: Int, var inheritedGesture: TerminalSelection.Snapshot?,
         val screenEpoch: Long, val liveClickRow: TerminalLine?, val liveClickRecycle: Long, val faintOpacity: Double, val boldColor: TerminalBoldColor?,
         val selectionColors: TerminalSelectionColors?, val minimumContrast: Double,
-        val graphics: List<TerminalGraphicsFrameEntry>, val preedit: TerminalPreedit?) {
+        val graphics: List<TerminalGraphicsFrameEntry>, val preedit: TerminalPreedit?, val epoch: Long,
+        var accessibleLines: Array<TerminalLine>?) {
         var interacted: Boolean = false
         fun selectionLine(index: Int): TerminalLine = selectionLines[index - selectionFirst]
         fun clearInheritedSelection() {

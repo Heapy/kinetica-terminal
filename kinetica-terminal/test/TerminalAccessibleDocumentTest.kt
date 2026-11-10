@@ -5,6 +5,26 @@ import kotlin.io.encoding.Base64
 import kotlin.test.*
 
 class TerminalAccessibleDocumentTest {
+    @Test fun coordinateCollectionSkipsUnrequestedHistoryRows() {
+        val session = TerminalSession(80, 2, 200)
+        repeat(100) { session.write("row-$it\tvalue\r\n") }
+        var cells = 0
+        val text = terminalSelectionText(
+            TerminalSelectionRange(TerminalCellPosition(0, 0), TerminalCellPosition(session.lineCount - 1, 80)),
+            session::line,
+            cellRange = object : TerminalTextPositions {
+                override fun tracks(row: Int): Boolean = row == 50
+                override fun cell(row: Int, column: Int, width: Int, start: Int, end: Int) {
+                    assertEquals(50, row)
+                    assertTrue(end > start)
+                    cells++
+                }
+            },
+        )
+        assertContains(text, "row-0"); assertContains(text, "row-99")
+        assertTrue(cells in 1..81, "Coordinate callbacks must scale with the requested row, not all history")
+    }
+
     @Test fun fullScreenTextMatchesOriginalGhosttyReadTextFormatting() {
         var checked = 0
         for (encoded in terminalCopyFixtures()) {

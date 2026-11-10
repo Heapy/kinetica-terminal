@@ -5,6 +5,13 @@ internal data class TerminalAccessibleRange(val start: Int, val end: Int)
 
 internal data class TerminalAccessibleText(val text: String, val selections: List<TerminalAccessibleRange>)
 
+internal data class TerminalAccessibleDocumentKey(
+    val selectionEpoch: Long?,
+    val historyClearEpoch: Long?,
+    val frameEpoch: Long?,
+    val selection: TerminalSelectionRange?,
+)
+
 /** Use the same physical rows and trimmed trailing blanks as TerminalViewport.visibleText(). */
 internal fun terminalAccessibleText(
     rows: Int,
@@ -76,8 +83,10 @@ internal fun terminalAccessibleDocument(
     val text = terminalSelectionText(
         TerminalSelectionRange(TerminalCellPosition(0, 0), TerminalCellPosition(rows - 1, line(rows - 1).columns)),
         line,
-        cellRange = if (boundaries.isEmpty()) null else { row, column, width, start, end ->
-            boundaries[row]?.let { offsets ->
+        cellRange = if (boundaries.isEmpty()) null else object : TerminalTextPositions {
+            override fun tracks(row: Int): Boolean = row in boundaries
+            override fun cell(row: Int, column: Int, width: Int, start: Int, end: Int) {
+                val offsets = boundaries.getValue(row)
                 offsets[column] = start
                 if (width > 0) offsets[column + width] = end
             }
@@ -112,4 +121,23 @@ internal fun terminalAccessibleDocument(
         if (end > start) listOf(TerminalAccessibleRange(start, end)) else emptyList()
     }
     return TerminalAccessibleText(text, ranges)
+}
+
+/** Ghostty's lazy 500 ms accessibility cache; coordinate-space changes bypass the age limit. */
+internal class TerminalAccessibleDocumentCache(
+    private val nowMillis: () -> Long,
+    private val read: () -> TerminalAccessibleText,
+) {
+    private var value: TerminalAccessibleText? = null
+    private var key: Any? = null
+    private var readAt = 0L
+
+    fun get(key: Any): TerminalAccessibleText {
+        val now = nowMillis()
+        val current = value
+        if (current != null && this.key == key && now >= readAt && now - readAt < 500) return current
+        return read().also { value = it; this.key = key; readAt = now }
+    }
+
+    fun clear() { value = null; key = null }
 }

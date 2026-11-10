@@ -8,6 +8,76 @@ import platform.Foundation.*
 import kotlin.test.*
 
 class MacOsAccessibilityTest {
+    @Test fun resizeRefreshesAccessibleTextAndCharacterCountImmediately() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession()
+        val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE)
+        view.accessibilityNowMillis = { 0L }
+        try {
+            session.resize(8, 2)
+            session.write("\u001b[?1049habcdefgh")
+            assertEquals("abcdefgh", view.accessibilityValue())
+            session.resize(4, 2)
+            assertEquals("abcd", view.accessibilityValue())
+            assertEquals(4L, view.accessibilityNumberOfCharacters())
+            assertEquals("abcd", view.accessibilityStringForRange(NSMakeRange(0u, 4u)))
+        } finally { view.dispose() }
+    }
+
+    @Test fun fullHistoryAndGlobalSelectionOffsetsAreIndependentOfViewport() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession()
+        val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE)
+        view.accessibilityNowMillis = { 0L }
+        try {
+            session.resize(8, 2)
+            session.write("A😀B\r\nA😀B\r\nlast")
+            val expected = "A😀B\nA😀B\nlast"
+            val value = view.accessibilityValue()
+            assertEquals(expected, value)
+            assertFalse(view.visibleTerminalText().startsWith("A😀B\nA😀B"))
+            view.scrollTo(1); assertSame(value, view.accessibilityValue())
+            view.scrollTo(0); assertSame(value, view.accessibilityValue())
+            assertTrue(view.reveal(session.search("😀").matches[1]))
+            assertEquals(6uL to 2uL, view.accessibilitySelectedTextRange().pair())
+            assertEquals("😀", view.accessibilityStringForRange(view.accessibilitySelectedTextRange()))
+            session.write("\u001b[?1049h\u001b[HALT")
+            assertEquals("ALT", view.accessibilityValue(), "Screen switch bypasses the cache age")
+            session.write("\u001b[?1049l")
+            assertEquals(expected, view.accessibilityValue())
+            session.clearHistory()
+            assertEquals("A😀B\nlast", view.accessibilityValue())
+            session.reset(); assertEquals("", view.accessibilityValue())
+            view.dispose()
+            session.write("after disposal")
+            assertEquals("", view.accessibilityValue())
+            assertEquals(0L, view.accessibilityNumberOfCharacters())
+            assertTrue(view.accessibilitySelectedTextRanges().isEmpty())
+        } finally { view.dispose() }
+    }
+
+    @Test fun firstQueryDuringAHoldRetainsAllHistoryEvenAfterItIsCleared() {
+        NSApplication.sharedApplication()
+        val session = TerminalSession()
+        val view = AppKitTerminalView(session, rendering = TerminalRendering.SOFTWARE)
+        var now = 0L
+        view.accessibilityNowMillis = { now }
+        try {
+            session.resize(8, 2)
+            session.write("old-0\r\nold-1\r\nold-2")
+            session.line(0).compress()
+            session.write("\u001b[?2026h\u001b[3J\u001b[2J\u001b[Hnew")
+            assertEquals("old-0\nold-1\nold-2", view.accessibilityValue())
+            now = 1000
+            assertEquals("old-0\nold-1\nold-2", view.accessibilityValue(), "Cache expiry still reads the held document")
+            session.write("\u001b[?2026l")
+            assertEquals("new", view.accessibilityValue())
+            session.write("\rnext")
+            now = 1499; assertEquals("new", view.accessibilityValue())
+            now = 1500; assertEquals("next", view.accessibilityValue())
+        } finally { view.dispose() }
+    }
+
     @Test fun commandJRevealsExistingSelectionWithoutSendingKittyEvents() {
         NSApplication.sharedApplication()
         val session = TerminalSession()
@@ -30,7 +100,8 @@ class MacOsAccessibilityTest {
             scrolls = 0
             window.sendEvent(key()); window.sendEvent(key(repeat = true)); window.sendEvent(key(release = true))
             assertEquals(session.historySize - 3, view.scrollOffset)
-            assertTrue((view.accessibilityValue() as String).startsWith("row-3\n"))
+            assertTrue(view.visibleTerminalText().startsWith("row-3\n"))
+            assertTrue((view.accessibilityValue() as String).startsWith("row-0\n"))
             assertEquals("row-3", view.accessibilitySelectedText())
             assertEquals(1, scrolls, "Only an actual viewport change reports scroll activity")
             assertEquals("", output.toString())
@@ -55,7 +126,7 @@ class MacOsAccessibilityTest {
         try {
             session.write("a😀e\u0301界\r\nsecond")
             val value = view.accessibilityValue() as String
-            assertTrue(value.startsWith("a😀e\u0301界\nsecond\n"))
+            assertEquals("a😀e\u0301界\nsecond", value)
             assertEquals(value.length.toLong(), view.accessibilityNumberOfCharacters())
             assertEquals(0uL to value.length.toULong(), view.accessibilityVisibleCharacterRange().pair())
             assertEquals("Terminal content area", view.accessibilityHelp())

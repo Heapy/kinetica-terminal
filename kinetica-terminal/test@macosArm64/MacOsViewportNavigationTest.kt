@@ -50,7 +50,7 @@ class MacOsViewportNavigationTest {
                 press(121); assertEquals(session.rows, view.scrollOffset)
                 press(121, repeat = true); assertEquals(0, view.scrollOffset)
                 press(115); assertEquals(history, view.scrollOffset)
-                assertTrue((view.accessibilityValue() as String).startsWith("command-0\noutput-0"))
+                assertTrue(view.visibleTerminalText().startsWith("command-0\noutput-0"))
                 val changes = scrolls
                 press(115, repeat = true)
                 assertEquals(changes, scrolls, "At the history boundary there is no scroll activity")
@@ -59,7 +59,7 @@ class MacOsViewportNavigationTest {
                     press(126, flags)
                     val previous = (history - 1) / 2 * 2
                     assertEquals(history - previous, view.scrollOffset)
-                    assertTrue((view.accessibilityValue() as String).startsWith("command-${previous / 2}\n"))
+                    assertTrue(view.visibleTerminalText().startsWith("command-${previous / 2}\n"))
                     press(125, flags); assertEquals(0, view.scrollOffset)
                 }
                 assertEquals(view, window.firstResponder)

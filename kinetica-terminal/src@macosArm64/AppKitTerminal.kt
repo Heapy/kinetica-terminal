@@ -159,6 +159,13 @@ public class AppKitTerminalView(
         NSRunLoop.mainRunLoop.addTimer(timer, NSRunLoopCommonModes)
         TerminalDisposable { timer.invalidate() }
     })
+    internal var accessibilityNowMillis: () -> Long = { (CACurrentMediaTime() * 1000).toLong() }
+    private val accessibilityDocumentCache = TerminalAccessibleDocumentCache({ accessibilityNowMillis() }) {
+        viewport.accessibleDocument()
+    }
+    internal fun visibleTerminalText(): String = viewport.visibleText()
+    private fun terminalAccessibilityDocument(): TerminalAccessibleText = if (disposed) TerminalAccessibleText("", emptyList())
+        else accessibilityDocumentCache.get(viewport.accessibleDocumentKey())
     private var visibilityObservation: NSObjectProtocol? = null
     private val visibilityBinding = session.attachVisibility(false)
     private var visibilityRefreshQueued = false
@@ -206,6 +213,7 @@ public class AppKitTerminalView(
         private set
 
     init {
+        viewport.enableAccessibleDocument()
         viewport.setVisible(false)
         session.setGraphicsStorageLimit(graphicsStorageBytes)
         setAccessibilityElement(true)
@@ -1087,27 +1095,27 @@ public class AppKitTerminalView(
         if (paths.isEmpty()) return false
         pasteFilePaths(paths); window?.makeFirstResponder(this); return true
     }
-    override fun accessibilityValue(): Any? = viewport.visibleText()
+    override fun accessibilityValue(): Any? = terminalAccessibilityDocument().text
     override fun accessibilityHelp(): String = "Terminal content area"
     override fun accessibilitySelectedText(): String? = viewport.selectedText().takeIf { it.isNotEmpty() }
-    override fun accessibilityNumberOfCharacters(): Long = viewport.visibleText().length.toLong()
+    override fun accessibilityNumberOfCharacters(): Long = terminalAccessibilityDocument().text.length.toLong()
     override fun accessibilityVisibleCharacterRange(): CValue<NSRange> =
-        NSMakeRange(0u, viewport.visibleText().length.toULong())
+        NSMakeRange(0u, terminalAccessibilityDocument().text.length.toULong())
     override fun accessibilitySelectedTextRange(): CValue<NSRange> {
-        val ranges = viewport.accessibleText().selections
+        val ranges = terminalAccessibilityDocument().selections
         return if (ranges.isEmpty()) NSMakeRange(0u, 0u) else
             NSMakeRange(ranges.first().start.toULong(), (ranges.last().end - ranges.first().start).toULong())
     }
-    override fun accessibilitySelectedTextRanges(): List<*> = viewport.accessibleText().selections.map {
+    override fun accessibilitySelectedTextRanges(): List<*> = terminalAccessibilityDocument().selections.map {
         NSValue.valueWithRange(NSMakeRange(it.start.toULong(), (it.end - it.start).toULong()))
     }
     override fun accessibilityLineForIndex(index: Long): Long {
-        val text = viewport.visibleText()
+        val text = terminalAccessibilityDocument().text
         if (index < 0 || index > text.length) return NSNotFound
         return text.take(index.toInt()).count { it == '\n' }.toLong()
     }
     override fun accessibilityStringForRange(range: CValue<NSRange>): String? {
-        val text = viewport.visibleText()
+        val text = terminalAccessibilityDocument().text
         return range.useContents {
             if (location > text.length.toULong() || length > text.length.toULong() - location) return@useContents null
             val start = location.toInt(); val end = start + length.toInt()
@@ -1120,6 +1128,7 @@ public class AppKitTerminalView(
         accessibilityStringForRange(range)?.let { NSAttributedString.create(string = it, attributes = mapOf(NSFontAttributeName to font)) }
     public fun dispose() { if (!disposed) {
         disposed = true; selecting = false; clearLinkPointer(); mouseReporter.reset()
+        accessibilityDocumentCache.clear()
         clipboardPaste.dispose()
         accessibilitySelectionTimer?.invalidate(); accessibilitySelectionTimer = null
         hoverWindowObservation?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }; hoverWindowObservation = null
